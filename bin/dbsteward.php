@@ -14,7 +14,7 @@ try {
     require_once dirname(__FILE__) . '/../lib/DBSteward/dbsteward.php';
   }
   // build diretory scenario
-  if ( is_readable(dirname(__FILE__) . '/../DBSteward/dbsteward.php') ) {
+  else if ( is_readable(dirname(__FILE__) . '/../DBSteward/dbsteward.php') ) {
     require_once dirname(__FILE__) . '/../DBSteward/dbsteward.php';
   }
   else {
