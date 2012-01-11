@@ -554,10 +554,15 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
   }
 
   public static function validate_xml($xml, $echo_status = TRUE) {
-    $dtd_file = dirname(__FILE__) . '/dbsteward.dtd';
+    $dtd_file = dirname(__FILE__) . '/../dbsteward.dtd';
+    if (!is_readable($dtd_file)) {
+      // not source mode? PEAR mode it is!
+      $dtd_file = dirname(__FILE__) . '/../data/DBSteward/DBSteward/dbsteward.dtd';
+    }
     if (!is_readable($dtd_file)) {
       throw new exception("DTD file $dtd_file not readable");
     }
+    $dtd_file = realpath($dtd_file);
     if ($echo_status) {
       dbsteward::console_line(1, "Validating XML (size = " . strlen($xml) . ") against $dtd_file");
     }
