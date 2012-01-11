@@ -27,6 +27,9 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected $xml_file_b;
 
   protected function setUp() {
+    if ( !is_dir(dirname(__FILE__) . '/testdata') ) {
+      mkdir(dirname(__FILE__) . '/testdata');
+    }
     $this->xml_file_a = dirname(__FILE__) . '/testdata/type_diff_xml_a.xml';
     file_put_contents($this->xml_file_a, $this->xml_content_a);
 
