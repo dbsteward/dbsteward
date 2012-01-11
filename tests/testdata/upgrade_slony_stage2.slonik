@@ -1,0 +1,6 @@
+# dbsteward slony stage 2 upgrade file generated Tue, 10 Jan 2012 22:25:56 -0500
+# Old set:  /usr/home/nfs/nkiraly/public_html/releng/dbsteward/trunk/tests/testdata/type_diff_xml_a.xml
+# New set:  /usr/home/nfs/nkiraly/public_html/releng/dbsteward/trunk/tests/testdata/type_diff_xml_b.xml
+
+ECHO 'dbsteward slony stage 2 upgrade file generated Tue, 10 Jan 2012 22:25:56 -0500 starting';
+

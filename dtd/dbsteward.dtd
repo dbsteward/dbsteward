@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  dbsteward definition file structure enforcement
+  @copyright 2010 Collaborative Fusion, Inc.
+  @version $Id: dbsteward.dtd 2263 2012-01-09 09:19:55Z nkiraly $
+-->
+
+<!ELEMENT dbsteward ((includeFile | inlineAssembly)*, database, (language | schema | sql)*) >
+
+<!ELEMENT includeFile EMPTY>
+<!ATTLIST includeFile name CDATA #REQUIRED>
+
+<!ELEMENT inlineAssembly EMPTY>
+<!ATTLIST inlineAssembly name CDATA #REQUIRED>
+
+<!ELEMENT database (host, name, role, slony, configurationParameter*)>
+<!ELEMENT host (#PCDATA)>
+<!ELEMENT name (#PCDATA)>
+
+<!ELEMENT role (application, owner, replication, readonly, customRole?)>
+<!ELEMENT application (#PCDATA)>
+<!ELEMENT owner (#PCDATA)>
+<!ELEMENT replication (#PCDATA)>
+<!ELEMENT readonly (#PCDATA)>
+<!ELEMENT customRole (#PCDATA)>
+
+<!ELEMENT slony (masterNode, replicaNode*, replicationSet, replicationUpgradeSet)>
+<!ELEMENT masterNode EMPTY>
+<!ATTLIST masterNode id CDATA #REQUIRED>
+<!ELEMENT replicaNode EMPTY>
+<!ATTLIST replicaNode id CDATA #REQUIRED>
+<!ATTLIST replicaNode providerId CDATA #REQUIRED>
+<!ELEMENT replicationSet EMPTY>
+<!ATTLIST replicationSet id CDATA #REQUIRED>
+<!ELEMENT replicationUpgradeSet EMPTY>
+<!ATTLIST replicationUpgradeSet id CDATA #REQUIRED>
+
+<!ELEMENT language EMPTY>
+<!ATTLIST language name CDATA #REQUIRED>
+<!ATTLIST language owner CDATA #REQUIRED>
+<!ATTLIST language trusted (true|false) #IMPLIED>
+<!ATTLIST language procedural (true|false) #IMPLIED>
+<!ATTLIST language handler CDATA #IMPLIED>
+<!ATTLIST language validator CDATA #IMPLIED>
+
+<!ELEMENT configurationParameter EMPTY>
+<!ATTLIST configurationParameter name CDATA #REQUIRED>
+<!ATTLIST configurationParameter value CDATA #REQUIRED>
+
+<!ELEMENT schema (table | type | function | sequence | grant | trigger | view)*>
+<!ATTLIST schema name CDATA #REQUIRED>
+<!ATTLIST schema owner CDATA #REQUIRED>
+<!ATTLIST schema description CDATA #IMPLIED>
+
+<!ELEMENT table (column+, index*, constraint*, privilege_function*, grant*, rows?)>
+<!ATTLIST table name CDATA #REQUIRED>
+<!ATTLIST table primaryKey CDATA #REQUIRED>
+<!ATTLIST table primaryKeyName CDATA #IMPLIED>
+<!ATTLIST table owner CDATA #REQUIRED>
+<!ATTLIST table slonyId CDATA #IMPLIED>
+<!ATTLIST table description CDATA #IMPLIED>
+<!ATTLIST table oldName CDATA #IMPLIED>
+
+<!ELEMENT grant EMPTY>
+<!ATTLIST grant operation CDATA #REQUIRED>
+<!ATTLIST grant role CDATA #REQUIRED>
+<!ATTLIST grant with (GRANT|ADMIN) #IMPLIED>
+
+<!ELEMENT trigger EMPTY>
+<!ATTLIST trigger name CDATA #REQUIRED>
+<!ATTLIST trigger sqlFormat CDATA #REQUIRED>
+<!ATTLIST trigger when (FOR|BEFORE|AFTER) #REQUIRED>
+<!ATTLIST trigger event CDATA #REQUIRED>
+<!ATTLIST trigger table CDATA #REQUIRED>
+<!ATTLIST trigger forEach (ROW|STATEMENT) #IMPLIED>
+<!ATTLIST trigger function CDATA #REQUIRED>
+<!ATTLIST trigger type (EXTERNAL) #IMPLIED>
+<!ATTLIST trigger withAppend (true) #IMPLIED>
+
+<!ELEMENT column EMPTY>
+<!ATTLIST column name CDATA #REQUIRED>
+<!ATTLIST column type CDATA #IMPLIED>
+<!ATTLIST column unique (true|false) #IMPLIED>
+<!ATTLIST column null (true|false) #IMPLIED>
+<!ATTLIST column default CDATA #IMPLIED>
+<!ATTLIST column slonyId CDATA #IMPLIED>
+<!ATTLIST column foreignSchema CDATA #IMPLIED>
+<!ATTLIST column foreignTable CDATA #IMPLIED>
+<!ATTLIST column foreignColumn CDATA #IMPLIED>
+<!ATTLIST column foreignKeyName CDATA #IMPLIED>
+<!ATTLIST column foreignOnDelete (NO_ACTION|RESTRICT|CASCADE|SET_NULL|SET_DEFAULT) #IMPLIED>
+<!ATTLIST column foreignOnUpdate (NO_ACTION|RESTRICT|CASCADE|SET_NULL|SET_DEFAULT) #IMPLIED>
+<!ATTLIST column check CDATA #IMPLIED>
+<!ATTLIST column convertUsing CDATA #IMPLIED>
+<!ATTLIST column afterAddPreStage1 CDATA #IMPLIED>
+<!ATTLIST column afterAddPostStage1 CDATA #IMPLIED>
+<!ATTLIST column afterAddPreStage2 CDATA #IMPLIED>
+<!ATTLIST column afterAddPostStage2 CDATA #IMPLIED>
+<!ATTLIST column serialStart CDATA #IMPLIED>
+<!ATTLIST column description CDATA #IMPLIED>
+<!ATTLIST column oldName CDATA #IMPLIED>
+
+<!ELEMENT index (indexDimension+)>
+<!ATTLIST index name CDATA #REQUIRED>
+<!ATTLIST index unique (true|false) #IMPLIED>
+<!ATTLIST index using (btree|gin|KEY) #REQUIRED>
+<!ELEMENT indexDimension (#PCDATA)>
+<!ATTLIST indexDimension name CDATA #REQUIRED>
+
+<!ELEMENT constraint EMPTY>
+<!ATTLIST constraint name CDATA #REQUIRED>
+<!ATTLIST constraint type CDATA #REQUIRED>
+<!ATTLIST constraint definition CDATA #REQUIRED>
+<!ATTLIST constraint foreignSchema CDATA #IMPLIED>
+<!ATTLIST constraint foreignTable CDATA #IMPLIED>
+
+<!ELEMENT rows (row+)>
+<!ATTLIST rows columns CDATA #REQUIRED>
+<!ELEMENT row (col+)>
+<!ATTLIST row delete (true|false) #IMPLIED>
+<!ELEMENT col (#PCDATA)>
+<!ATTLIST col sql (true|false) #IMPLIED>
+<!ATTLIST col null (true|false) #IMPLIED>
+<!ATTLIST col empty (true|false) #IMPLIED>
+
+<!ELEMENT privilegeFunction (#PCDATA)>
+
+<!ELEMENT sequence (grant*)>
+<!ATTLIST sequence name CDATA #REQUIRED>
+<!ATTLIST sequence owner CDATA #REQUIRED>
+<!ATTLIST sequence slonyId CDATA #IMPLIED>
+<!ATTLIST sequence cache CDATA #IMPLIED>
+<!ATTLIST sequence start CDATA #IMPLIED>
+<!ATTLIST sequence min CDATA #IMPLIED>
+<!ATTLIST sequence max CDATA #IMPLIED>
+<!ATTLIST sequence inc CDATA #IMPLIED>
+<!ATTLIST sequence cycle (true|false) #IMPLIED>
+
+<!ELEMENT function (functionParameter*, functionDefinition, grant*)>
+<!ATTLIST function name CDATA #REQUIRED>
+<!ATTLIST function owner CDATA #REQUIRED>
+<!ATTLIST function language CDATA #REQUIRED>
+<!ATTLIST function returns CDATA #REQUIRED>
+<!ATTLIST function description CDATA #IMPLIED>
+<!ATTLIST function procedure (true) #IMPLIED>
+<!ATTLIST function cachePolicy (IMMUTABLE|STABLE|VOLATILE) "VOLATILE">
+<!ATTLIST function securityDefiner (true|false) #IMPLIED>
+<!ATTLIST function forceRedefine (true|false) #IMPLIED>
+<!ELEMENT functionParameter EMPTY>
+<!ATTLIST functionParameter direction (IN|OUT) #IMPLIED>
+<!ATTLIST functionParameter name CDATA #IMPLIED>
+<!ATTLIST functionParameter type CDATA #REQUIRED>
+<!ELEMENT functionDefinition (#PCDATA)>
+
+<!ELEMENT sql (#PCDATA)>
+<!ATTLIST sql author CDATA #REQUIRED>
+<!ATTLIST sql ticket CDATA #REQUIRED>
+<!ATTLIST sql version CDATA #REQUIRED>
+<!ATTLIST sql comment CDATA #REQUIRED>
+<!ATTLIST sql stage (SCHEMA0|SCHEMA1|SCHEMA2|DATA0|DATA1|DATA2) #IMPLIED>
+
+<!ELEMENT type (enum+)>
+<!ATTLIST type name CDATA #REQUIRED>
+<!ATTLIST type type (enum) #REQUIRED>
+<!ELEMENT enum (#PCDATA)>
+<!ATTLIST enum name CDATA #REQUIRED>
+
+<!ELEMENT view (viewQuery+, grant*)>
+<!ATTLIST view name CDATA #REQUIRED>
+<!ATTLIST view owner CDATA #REQUIRED>
+<!ATTLIST view description CDATA #IMPLIED>
+<!ELEMENT viewQuery (#PCDATA)>
+<!ATTLIST viewQuery sqlFormat CDATA #IMPLIED>

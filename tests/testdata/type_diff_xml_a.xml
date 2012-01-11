@@ -1,0 +1,94 @@
+<dbsteward>
+  <database>
+    <host>db-host</host>
+    <name>dbsteward</name>
+    <role>
+      <application>dbsteward_phpunit_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+    <slony>
+      <masterNode id="1"/>
+      <replicaNode id="2" providerId="1"/>
+      <replicaNode id="3" providerId="2"/>
+      <replicationSet id="1"/>
+      <replicationUpgradeSet id="2"/>
+    </slony>
+    <configurationParameter name="TIME ZONE" value="America/New_York"/>
+  </database>
+  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
+  <schema name="dbsteward" owner="ROLE_OWNER">
+    <function name="db_config_parameter" returns="text" language="plpgsql" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
+      <functionParameter name="config_parameter" type="text"/>
+      <functionParameter name="config_value" type="text"/>
+      <functionDefinition>
+        DECLARE
+          q text;
+          name text;
+          n text;
+        BEGIN
+          SELECT INTO name current_database();
+          q := 'ALTER DATABASE ' || name || ' SET ' || config_parameter || ' ''' || config_value || ''';';
+          n := 'DB CONFIG CHANGE: ' || q;
+          RAISE NOTICE '%', n;
+          EXECUTE q;
+          RETURN n;
+        END;
+      </functionDefinition>
+    </function>
+  </schema>
+  <schema name="otherschema" owner="ROLE_OWNER">
+    <type name="event_type" type="enum">
+      <enum name="Read"/>
+      <enum name="Write"/>
+      <enum name="Delete"/>
+    </type>
+    <table name="othertable" owner="ROLE_OWNER" primaryKey="othertable_id" description="othertable for other data" slonyId="50">
+      <column name="othertable_id" type="int"/>
+      <column name="othertable_name" type="varchar(100)" null="false"/>
+      <column name="othertable_detail" type="text" null="false"/>
+      <grant role="ROLE_APPLICATION" operation="SELECT"/>
+    </table>
+  </schema>
+  <schema name="user_info" owner="ROLE_OWNER">
+    <table name="user" owner="ROLE_OWNER" primaryKey="user_id" description="user event log" slonyId="1">
+      <column name="user_id" type="bigserial" slonyId="1"/>
+      <column name="user_name" type="varchar(100)" null="false"/>
+      <column name="user_role" type="varchar(100)" null="false"/>
+      <column name="user_create_date" type="timestamp with time zone" null="false" default="NOW()"/>
+      <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
+      <rows columns="user_id, user_name, user_role">
+        <tabrow>1	toor	super_admin</tabrow>
+      </rows>
+    </table>
+  </schema>
+  <schema name="log" owner="ROLE_OWNER">
+    <table name="event" owner="ROLE_OWNER" primaryKey="event_id" description="user event log" slonyId="2">
+      <column name="event_id" type="bigserial" slonyId="2"/>
+      <column name="user_id" foreignSchema="user_info" foreignTable="user" foreignColumn="user_id" null="false"/>
+      <column name="event_type" type="otherschema.event_type" null="false"/>
+      <column name="event_date" type="date" null="false" default="NOW()"/>
+      <column name="event_detail" type="text" null="false"/>
+      <grant role="ROLE_APPLICATION" operation="SELECT, INSERT"/>
+      <rows columns="event_id user_id, event_type, event_detail">
+        <row>
+          <col>20</col>
+          <col>1</col>
+          <col sql="true">'Read'</col>
+          <col>Profile read</col>
+        </row>
+      </rows>
+    </table>
+    <view name="user_event_log" description="action log with actors" owner="ROLE_OWNER">
+      <viewQuery>
+        SELECT
+          user_info.user.user_id, user_name, user_role
+          event_log_id, event_type, event_date, event_detail
+        FROM log.event
+        JOIN user_info.user ON (user_info.user.user_id = log.event.user_id)
+      </viewQuery>
+      <grant operation="SELECT" role="ROLE_APPLICATION"/>
+    </view>
+  </schema>
+</dbsteward>

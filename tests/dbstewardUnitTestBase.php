@@ -1,0 +1,125 @@
+<?php
+/**
+ * DBSteward unit test framework / base class
+ *
+ * @copyright 2011 Collaborative Fusion, Inc.
+ * @package DBSteward
+ * @subpackage Tests
+ * @version $Id: dbstewardUnitTestBase.php 2266 2012-01-09 18:53:12Z nkiraly $
+ */
+
+require_once 'PHPUnit/Framework/TestCase.php';
+require_once 'PHPUnit/Framework/TestSuite.php';
+
+require_once dirname(__FILE__) . '/../lib/dbsteward.php';
+
+dbsteward::load_sql_formats();
+
+require_once dirname(__FILE__) . '/dbsteward_pgsql8_connection.php';
+require_once dirname(__FILE__) . '/dbsteward_mssql10_connection.php';
+
+class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
+
+  // test cases need to define $this->xml_content_a and $this->xml_content_b for their scenarios
+  protected $xml_content_a = "XML_CONTENT_A_UNDEFINED";
+  protected $xml_content_b = "XML_CONTENT_B_UNDEFINED";
+
+  protected $xml_file_a;
+  protected $xml_file_b;
+
+  protected function setUp() {
+    $this->xml_file_a = dirname(__FILE__) . '/testdata/type_diff_xml_a.xml';
+    file_put_contents($this->xml_file_a, $this->xml_content_a);
+
+    $this->xml_file_b = dirname(__FILE__) . '/testdata/type_diff_xml_b.xml';
+    file_put_contents($this->xml_file_b, $this->xml_content_b);
+    
+    $this->pgsql = new dbsteward_pgsql8_connection();
+    $this->mssql = new dbsteward_mssql10_connection();
+    
+    // be sure to reset dbsteward runtime tracking variables every time
+    pgsql8::$table_slony_ids = array();
+    pgsql8::$sequence_slony_ids = array();
+    pgsql8::$known_pg_identifiers = array();
+  }
+  
+  protected function tearDown() {
+    // make sure connection is closed to DB can be dropped
+    // when running multiple tests
+    $this->pgsql->close_connection();
+    $this->mssql->close_connection();
+  }
+  
+  protected function apply_options_pgsql8() {
+    dbsteward::set_sql_format('pgsql8');
+    dbsteward::$quote_table_names = TRUE;
+    dbsteward::$quote_column_names = TRUE;
+    dbsteward::$quote_object_names = TRUE;
+  }
+  
+  protected function build_db_pgsql8() {
+    $this->apply_options_pgsql8();
+    
+    // build the DDL first, incase dbsteward code wants to throw about something
+    pgsql8::build($this->xml_file_a);
+    
+    $this->pgsql->create_db();
+
+    // build initial "A" database
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/type_diff_xml_a_build.sql');
+  }
+
+  protected function upgrade_db_pgsql8() {
+    $this->apply_options_pgsql8();
+    
+    // build the upgrade DDL first, incase dbsteward code wants to throw about something
+    pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
+
+    // upgrade database to "B" with each stage file
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_schema_stage1.sql');
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_data_stage1.sql');
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_schema_stage2.sql');
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_data_stage2.sql');
+    
+    //@TODO: confirm tables defined in B are present
+  }
+  
+  protected function apply_options_mssql10() {
+    dbsteward::set_sql_format('mssql10');
+    dbsteward::$quote_table_names = TRUE;
+    dbsteward::$quote_column_names = TRUE;
+    dbsteward::$quote_object_names = TRUE;
+  }
+  
+  protected function build_db_mssql10() {
+    $this->markTestIncomplete('Need to iron out MSSQL permissions and connectivity to get MSSQL db creation working');
+    
+    $this->apply_options_mssql10();
+    
+    // build the DDL first, incase dbsteward code wants to throw about something
+    mssql10::build($this->xml_file_a);
+    
+    $this->mssql->create_db();
+
+    // build initial "A" database
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/type_diff_xml_a_build.sql');
+  }
+
+  protected function upgrade_db_mssql10() {
+    $this->apply_options_mssql10();
+    
+    // build the upgrade DDL first, incase dbsteward code wants to throw about something
+    mssql10::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    
+    // upgrade database to "B" with each stage file
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_schema_stage1.sql');
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_data_stage1.sql');
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_schema_stage2.sql');
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_data_stage2.sql');
+    
+    //@TODO: confirm tables defined in B are present
+  }
+
+}
+
+?>
