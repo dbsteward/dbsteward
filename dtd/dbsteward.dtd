@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-  dbsteward definition file structure enforcement
-  @copyright 2010 Collaborative Fusion, Inc.
-  @version $Id: dbsteward.dtd 2263 2012-01-09 09:19:55Z nkiraly $
+  dbsteward XML definition file structure enforcement
+  
+  @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+  @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
 -->
 
 <!ELEMENT dbsteward ((includeFile | inlineAssembly)*, database, (language | schema | sql)*) >

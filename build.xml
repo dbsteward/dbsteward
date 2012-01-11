@@ -1,28 +1,28 @@
 <?xml version="1.0"?>
 <project name="DBSteward" basedir="." default="make">
-<!-- $Id: build.xml 2281 2012-01-11 03:26:31Z nkiraly $ -->
 <!--
-  Phing build definition dependencies:
+  DBSteward build definition
+  
+  @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+  @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
 
-  1) pear/VersionControl_SVN
-     # pear install VersionControl_SVN-0.4.0
+  
+  Phing extension dependencies:
 
-  2) domain51/Phing_d51PearPkg2Task
+  1) domain51/Phing_d51PearPkg2Task
      # pear channel-discover pear.domain51.com
      # pear install domain51/Phing_d51PearPkg2Task
 
-  3) PhpDocumentor
+  2) PhpDocumentor
+     # pear upgrade PhpDocumentor
   
-  4) PHPUnit
+  3) PHPUnit
 
 -->
 
   <taskdef classname="phing.tasks.ext.d51PearPkg2Task" name="d51pearpkg2" />
 
   <property file=".config.properties" override="true" />
-
-  <!-- get the lastrevision of the working copy.  if working copy is not up to date, this will not match the repository HEAD -->
-  <svnlastrevision svnpath="/usr/local/bin/svn" workingcopy="${project.basedir}" propertyname="svn.lastrevision" />
   
   <property name="directory.build" value="${project.basedir}/build" />
   <property name="directory.package" value="${project.basedir}/package" />
@@ -79,7 +79,7 @@ http://dbsteward.org/
       </description>
       
       <lead user="nkiraly" name="Nicholas Kiraly" email="kiraly.nicholas@gmail.com" />
-      <license>Simplified BSD License</license>
+      <license>http://www.opensource.org/licenses/bsd-license.php Simplified BSD License</license>
       
       <version release="${package.version}" api="${package.api_version}" />
       <stability release="beta" api="beta" />
@@ -89,7 +89,9 @@ http://dbsteward.org/
         <pear minimum_version="1.6.0" />
       </dependencies>
       
-      <changelog version="0.9.2" date="2012-01-11" license="Simplified BSD License">
+      <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
+
+      <changelog version="1.0.0" date="2012-01-11" license="Simplified BSD License">
 Initial release of DBSteward package
 
 Supported Database Platform DDL generation:
@@ -102,7 +104,7 @@ Stubbed Database Platform DDL generation:
 
 Supported db structure dump into DBSteward XML:
 * pgsql8    - PostgreSQL 8
-          </changelog>
+        </changelog>
       </d51pearpkg2>
   </target>
   
