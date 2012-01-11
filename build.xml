@@ -104,7 +104,16 @@ Stubbed Database Platform DDL generation:
 
 Supported db structure dump into DBSteward XML:
 * pgsql8    - PostgreSQL 8
-        </changelog>
+      </changelog>
+        
+      <dirroles key="bin">script</dirroles>
+      <replacement path="bin/dbsteward" type="pear-config" from="@php_bin@" to="php_bin" />
+      <replacement path="bin/dbsteward.php" type="pear-config" from="@php_bin@" to="php_bin" />
+      <replacement path="bin/dbsteward.php" type="pear-config" from="@bin_dir@" to="bin_dir" />
+      <release>
+         <install as="dbsteward" name="bin/dbsteward" />
+         <install as="dbsteward.php" name="bin/dbsteward.php" />
+      </release>
       </d51pearpkg2>
   </target>
   
