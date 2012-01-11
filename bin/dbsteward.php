@@ -7,10 +7,20 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-ini_set('memory_limit', -1);
-
 try {
-  require_once dirname(__FILE__) . '/lib/dbsteward.php';
+  // if a local relative /../lib/DBSteward is available, use that instead of the include-based path
+  // this is mostly for development purposes
+  if ( is_readable(dirname(__FILE__) . '/../lib/DBSteward/dbsteward.php') ) {
+    require_once dirname(__FILE__) . '/../lib/DBSteward/dbsteward.php';
+  }
+  // build diretory scenario
+  if ( is_readable(dirname(__FILE__) . '/../DBSteward/dbsteward.php') ) {
+    require_once dirname(__FILE__) . '/../DBSteward/dbsteward.php';
+  }
+  else {
+    // this should be available if we are running as the PEAR installation
+    require_once 'DBSteward/dbsteward.php';
+  }
 
   if (!isset($argv[1]) || strlen($argv[1]) == 0 || $argv[1] == '--help') {
     echo dbsteward::usage();

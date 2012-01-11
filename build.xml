@@ -30,7 +30,10 @@
   
   <fileset dir="${directory.root}">
     <patternset id="files.package">
-      <includesFile name=".catalog-dbsteward" />
+      <include name="LICENSE" />
+      <include name="README" />
+      <include name="bin/*" />
+      <include name="lib/**" />
     </patternset>
   </fileset>
   
@@ -59,6 +62,9 @@
         <patternset refid="files.exclusion" />
       </fileset>
     </copy>
+    <!-- move DBSteward up one, so it gets deployed to share/pear logically -->
+    <move file="${directory.build}/lib/DBSteward" todir="${directory.build}/"/>
+    <delete dir="${directory.build}/lib/" />
   </target>
     
   <target name="make_package" depends="build">

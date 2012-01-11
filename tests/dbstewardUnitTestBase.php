@@ -10,7 +10,7 @@
 require_once 'PHPUnit/Framework/TestCase.php';
 require_once 'PHPUnit/Framework/TestSuite.php';
 
-require_once dirname(__FILE__) . '/../lib/dbsteward.php';
+require_once dirname(__FILE__) . '/../lib/DBSteward/dbsteward.php';
 
 dbsteward::load_sql_formats();
 
