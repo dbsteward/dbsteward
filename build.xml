@@ -110,7 +110,7 @@ Supported db structure dump into DBSteward XML:
   
   <target name="make" depends="make_package">
     <echo msg="Creating PEAR archive" />
-    <delete file="DBSteward-${package.version}.tgz" />
+    <delete file="${project.basedir}/DBSteward-${package.version}.tgz" />
     <delete dir="${directory.package}" />
     <mkdir dir="${directory.package}/DBSteward-${package.version}" />
     <copy todir="${directory.package}/DBSteward-${package.version}">
@@ -118,7 +118,8 @@ Supported db structure dump into DBSteward XML:
         <include name="**" />
       </fileset>
     </copy>
-    <tar compression="gzip" destfile="DBSteward-${package.version}.tgz" basedir="${directory.package}" />
+    <move file="${directory.package}/DBSteward-${package.version}/package.xml" todir="${directory.package}/"/>
+    <tar compression="gzip" destfile="${project.basedir}/DBSteward-${package.version}.tgz" basedir="${directory.package}" />
   </target>
 
   <target name="docs" depends="build">
