@@ -2,10 +2,9 @@
 /**
  * Test the output of dbsteward diffing
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @subpackage Tests
- * @version $Id: outputDiffTest.php 2266 2012-01-09 18:53:12Z nkiraly $
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';

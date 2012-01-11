@@ -2,11 +2,9 @@
 /**
  * DBSteward unit test postgresql connection management
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @package DBSteward
- * @subpackage Tests
- * @version $Id: dbsteward_mssql10_connection.php 2261 2012-01-09 08:37:44Z nkiraly $
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 class dbsteward_mssql10_connection {

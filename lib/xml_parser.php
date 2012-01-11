@@ -2,10 +2,9 @@
 /**
  * DBSteward XML definition file parsing
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * @version $Id: xml_parser.php 2270 2012-01-10 16:18:30Z nkiraly $
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 class xml_parser {

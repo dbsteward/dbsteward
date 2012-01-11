@@ -2,10 +2,9 @@
 /**
  * DBSteward unit test postgresql connection management
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @subpackage Tests
- * @version $Id: dbsteward_pgsql8_connection.php 2266 2012-01-09 18:53:12Z nkiraly $
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 class dbsteward_pgsql8_connection {

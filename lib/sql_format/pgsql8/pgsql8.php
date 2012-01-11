@@ -2,10 +2,10 @@
 /**
  * PostgreSQL specific compiling and differencing functions
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * @version $Id: pgsql8.php 2275 2012-01-10 21:21:53Z nkiraly $
+ * @subpackage pgsql8
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
  
 require_once dirname(__FILE__) . '/../sql99/sql99.php';

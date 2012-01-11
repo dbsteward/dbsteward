@@ -5,10 +5,9 @@
  * full creation script generation
  * sql upgrade script generation
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * @version $Id: dbsteward.php 2268 2012-01-09 19:53:59Z nkiraly $
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 error_reporting(E_ALL);

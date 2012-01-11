@@ -2,10 +2,10 @@
 /**
  * Manipulate postgresql type node
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * $Id: pgsql8_type.php 2261 2012-01-09 08:37:44Z nkiraly $
+ * @subpackage pgsql8
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 class pgsql8_type {

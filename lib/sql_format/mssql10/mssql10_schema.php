@@ -2,10 +2,10 @@
 /**
  * MSSQL schema node manipulation
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * @version $Id: mssql10_schema.php 2267 2012-01-09 19:50:46Z nkiraly $
+ * @subpackage mssql10
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 class mssql10_schema extends sql99_schema {

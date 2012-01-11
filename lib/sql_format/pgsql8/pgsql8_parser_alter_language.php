@@ -2,10 +2,10 @@
 /**
  * Parses ALTER LANGUAGE commands.
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * @version $Id: pgsql8_parser_alter_language.php$
+ * @subpackage pgsql8
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 class pgsql8_parser_alter_language {

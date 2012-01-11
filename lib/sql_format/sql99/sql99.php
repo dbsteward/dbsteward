@@ -2,10 +2,10 @@
 /**
  * SQL99 spec compiling and differencing functions
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * @version $Id: sql99.php 2267 2012-01-09 19:50:46Z nkiraly $
+ * @subpackage sql99
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 require_once dirname(__FILE__) . '/sql99_column.php';

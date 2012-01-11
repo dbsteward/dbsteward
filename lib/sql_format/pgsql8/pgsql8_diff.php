@@ -2,10 +2,10 @@
 /**
  * Diff two DBSteward XML definitions, outputting SQL to get from A to B
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * @version $Id: pgsql8_diff.php 2274 2012-01-10 19:33:52Z nkiraly $
+ * @subpackage pgsql8
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 require_once dirname(__FILE__) . '/pgsql8_dump_loader.php';

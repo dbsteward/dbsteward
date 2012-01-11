@@ -2,10 +2,10 @@
 /**
  * Diff two DBSteward XML definitions, outputting SQL to get from A to B
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * @version $Id: sql99_diff.php 2268 2012-01-09 19:53:59Z nkiraly $
+ * @subpackage sql99
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 require_once dirname(__FILE__) . '/sql99_diff_tables.php';

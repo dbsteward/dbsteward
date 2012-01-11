@@ -2,10 +2,10 @@
 /**
  * Manipulate type node
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * $Id: mysql4_type.php 2261 2012-01-09 08:37:44Z nkiraly $
+ * @subpackage mysql4
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 class mysql4_type {

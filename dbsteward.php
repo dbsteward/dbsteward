@@ -2,10 +2,9 @@
 /**
  * DBSteward - database DDL compiler and difference calculator
  *
- * @copyright 2011 Collaborative Fusion, Inc.
  * @package DBSteward
- * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
- * @version $Id: dbsteward.php 2269 2012-01-09 19:56:27Z nkiraly $
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
 ini_set('memory_limit', -1);
