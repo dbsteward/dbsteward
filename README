@@ -1,31 +1,37 @@
-# What does DBSteward do?
+# What / who is DBSteward for?
 DBSteward is a database definition differencing tool. Database structure and data is defined in a DTD-enforced, human readable XML format.
 
-DBSteward XML definition files can be included and composited by other DBSteward XML definition files to provide a means to overlay installation specific database structure and static data definitions.
+Intended users are application developers and database administrators who maintain database structure changes as part of an application life cycle. Defining your SQL database in a DBSteward XML definition can greatly lower your release engineering costs by removing the need to write and test SQL DDL changes.
 
-DBSteward has 2 main output products of this XML definition:
+Many developers maintain complete and upgrade script versions of their application databases. Upgrade headaches or data loss are reduced by only requiring a developer to maintain a complete definition file. Creating an upgrade from version A to B becomes a compile task, where you ask DBSteward to generate SQL DDL changes by feeding it A and B versions of your database in XML.
+
+## **Are you technical and tired of reading this FAQ already?** Try reading the https://github.com/nkiraly/DBSteward/wiki/Crash-course guide before continuing.
+
+
+# How does DBSteward determine what has changed?
+DBSteward's approach and expectation is that developers only need to maintain the full definition of a database. When run, DBSteward will determine what has changed between the definition XML of two different versions of the database, generating appropriate DDL as output.
+
+DBSteward XML definition files can be included and overlay-composited with other DBSteward XML definition files, providing a way to overlay installation specific database structure and static data definitions.
+
+DBSteward has 2 main output products of XML definition parsing and comparison:
 - Complete DDL - output a 'full' database definition SQL DDL file that can be used to create a complete database based on the XML definition.
 - Upgrade DDL - output a SQL DDL upgrade file which can be used to upgrade an existing database created with the first XML definition file passed to the second.
 
-DBSteward creates an upgrade script as the result of comparing two XML definition sets - upgrade file creation does not require target database connectivity.
+DBSteward creates a DDL upgrade script as the result of comparing two XML definition sets; upgrade file creation does not require target database connectivity.
 
 DBSteward is also capable of reading standard Postgresql pg_dump files or slurping a running Postgresql database and outputting a matching XML definition file.
+
+
+# Why use DBSteward to maintain database structure?
+Maintaining database structure with DBSteward allows developers to make large or small changes and immediately be able to test a fresh database deployment against revised code. The updated definition is then also immediately useful to upgrade an older version to the current one. Being able to generate DDL changes can greatly simplify and speed up database upgrade testing and deployment. At any point during a development cycle, a DBA can generate database definition changes instead of having to maintain complex upgrade scripts or hunt for developers who made a database change.
 
 
 # What SQL RDMS output formats does DBSteward currently support?
 DBSteward currently supports output files in Postgresql 8 / 9, and Microsoft SQL Server 2005 / 2008 compliant SQL DDL. DBSteward was written with an extensible mindset, to allow for additional SQL flavors to be supported rapidly.
 
 
-# Why use DBSteward to maintain database structure?
-Maintaining database structure with DBSteward allows developers to make large or small changes and immediately be able to test a fresh database deployment against revised code. The updated definition is then also immediately useful to upgrade an older version to the current one. Being able to generate DDL changes can greatly simplify and speed up database upgrade testing and deployment. At any point during a development cycle, a DBA can generate database definition changes instead of having to maintain complex upgrade scripts or hunt for developers who made a database change. 
-
-
-# Who should use DBSteward?
-Intended end users are application developers and database administrators who maintain database strucure changes as part of an application life cycle. Maintaining your SQL database in a DBSteward XML definition can greatly lower your release engineering costs by removing the need to write and test SQL DDL changes. Many developers maintain complete and upgrade script versions of their application databases. Upgrade headaches or data loss are reduced by only requiring a developer to maintain a complete definition file. Creating an upgrade from version A to B becomes a compile task, where you ask DBSteward to generate DDL changes by providing it the version A and B complete definition files.
-
-
 # How do I get started?
-To start tinkering with the possibilities, download and install the PEAR package by following the https://github.com/nkiraly/DBSteward/wiki/Crash-course guide for more information and exmaples.
+To start tinkering with the possibilities, download and install the PEAR package by following the https://github.com/nkiraly/DBSteward/wiki/Crash-course guide for more information and real world examples.
 
 You can also of get a checkout at git://github.com/nkiraly/DBSteward.git
 It is runnable in source checkout form, via php bin/dbsteward.php
