@@ -30,7 +30,7 @@
       <column name="import_id" type="character varying(32)"/>
       <column name="register_date" type="timestamp with time zone"/>
       <column name="user_status_list_id" foreignSchema="public" foreignTable="user_status_list" foreignColumn="user_status_list_id"/>
-      <column name="user_access_level_id" null="false" foreignSchema="public" foreignTable="user_access_level" foreignColumn="user_access_level_id"/>
+      <column name="user_access_level_id" null="false" default="1" foreignSchema="public" foreignTable="user_access_level" foreignColumn="user_access_level_id"/>
       <index name="user_name" using="btree">
         <indexDimension name="user_name">entity_id</indexDimension>
       </index>
