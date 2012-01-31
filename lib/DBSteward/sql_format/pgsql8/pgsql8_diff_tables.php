@@ -479,7 +479,10 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           }
         }
         if (!pgsql8_schema::contains_table($new_schema, $table['name'])) {
-          if ( !dbsteward::$ignore_oldname && ($renamed_table_name = pgsql8_schema::table_name_by_old_name($new_schema, $table['name'])) !== false ) {
+          // if new schema is still defined, check for renamed table
+          // new_schema will be null if the new schema is no longer defined at all
+          if ( !dbsteward::$ignore_oldname && is_object($new_schema)
+            && ($renamed_table_name = pgsql8_schema::table_name_by_old_name($new_schema, $table['name'])) !== false ) {
             // table indicating oldName = table['name'] present in new schema? don't do DROP statement
             $old_table_name = pgsql8_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names);
             fwrite($fp, "-- DROP TABLE $old_table_name omitted: new table $renamed_table_name indicates it is the replacement for " . $old_table_name . "\n");
