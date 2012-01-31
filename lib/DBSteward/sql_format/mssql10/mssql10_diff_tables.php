@@ -480,6 +480,11 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
             continue;
           }
         }
+        // if the schema is not in the new definition
+        // skip diffing table drops, they were destroyed with the schema
+        if ( $new_schema == NULL ) {
+          continue;
+        }
         if (!mssql10_schema::contains_table($new_schema, $table['name'])) {
           // if new schema is still defined, check for renamed table
           // new_schema will be null if the new schema is no longer defined at all

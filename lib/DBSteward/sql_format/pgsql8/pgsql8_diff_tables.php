@@ -478,6 +478,11 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             continue;
           }
         }
+        // if the schema is not in the new definition
+        // skip diffing table drops, they were destroyed with the schema
+        if ( $new_schema == NULL ) {
+          continue;
+        }
         if (!pgsql8_schema::contains_table($new_schema, $table['name'])) {
           // if new schema is still defined, check for renamed table
           // new_schema will be null if the new schema is no longer defined at all
