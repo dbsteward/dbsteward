@@ -109,6 +109,7 @@ XML definition diffing
     --ignoreoldname
 XML utils
     --xmlsort=<database.xml> ...
+    --xmlconvert=<database.xml> ...
     --xmldatainsert=<tabledata.xml>
 SQL diffing
     --oldsql=<old.sql> ...
@@ -157,7 +158,8 @@ Postgresql slurp utils
       "singlestageupgrade::",
       "ignoreoldname::",
       "pgdatadiff::",
-      "xmlsort::"
+      "xmlsort::",
+      "xmlconvert::"
     );
     $options = getopt($short_opts, $long_opts);
     //var_dump($options); die('dieoptiondump');
@@ -248,6 +250,11 @@ Postgresql slurp utils
 
     if (isset($options["xmlsort"])) {
       dbsteward::xml_sort($options["xmlsort"]);
+      exit(0);
+    }
+    
+    if (isset($options["xmlconvert"])) {
+      dbsteward::xml_convert($options["xmlconvert"]);
       exit(0);
     }
 
@@ -426,7 +433,23 @@ Postgresql slurp utils
       $file_name = $files[$i];
       $sorted_file_name = $file_name . '.xmlsorted';
       dbsteward::console_line(1, "Sorting XML definition file: " . $file_name);
+      dbsteward::console_line(1, "Sorted XML output file: " . $sorted_file_name);
       xml_parser::file_sort($file_name, $sorted_file_name);
+    }
+  }
+  
+  public function xml_convert($files) {
+    if (!is_array($files)) {
+      $files = array($files);
+    }
+    for ($i = 0; $i < count($files); $i++) {
+      $file_name = $files[$i];
+      $converted_file_name = $file_name . '.xmlconverted';
+      dbsteward::console_line(1, "Upconverting XML definition file: " . $file_name);
+      dbsteward::console_line(1, "Upconvert XML output file: " . $converted_file_name);
+      $doc = simplexml_load_file($file_name);
+      xml_parser::sql_format_convert($doc);
+      $doc->asXML($converted_file_name);
     }
   }
 
