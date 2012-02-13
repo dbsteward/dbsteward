@@ -449,7 +449,9 @@ Postgresql slurp utils
       dbsteward::console_line(1, "Upconvert XML output file: " . $converted_file_name);
       $doc = simplexml_load_file($file_name);
       xml_parser::sql_format_convert($doc);
-      $doc->asXML($converted_file_name);
+      $converted_xml = xml_parser::format_xml($doc->asXML());
+      $converted_xml = str_replace('pgdbxml>', 'dbsteward>', $converted_xml);
+      file_put_contents($converted_file_name, $converted_xml);
     }
   }
 
