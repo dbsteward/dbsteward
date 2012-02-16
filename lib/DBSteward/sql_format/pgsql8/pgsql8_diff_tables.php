@@ -563,23 +563,36 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         // ERROR:  55000: sequence must have same owner as table it is linked to
         // so if the alter statement contains a new serial column,
         // change the user to the slony user for the alter, then (see similar block below)
-        if ( strlen(dbsteward::$new_database->database->role->replication) > 0
+        if ( isset($new_table['slonyId']) && strlen($new_table['slonyId']) > 0
           && stripos($stage1_sql, 'serial') !== false ) {
-          if ( strcasecmp(dbsteward::$new_database->database->role->owner, dbsteward::$new_database->database->role->replication) != 0 ) {
-            $alter = "ALTER TABLE " . $quotedTableName . " OWNER TO " . dbsteward::$new_database->database->role->replication . "; -- dbsteward: postgresql needs to be appeased by making the owner the user we are executing as when pushing DDL through slony\n";
-            fwrite($fp1, $alter);
+          // if replication user is defined, check if ownership switch is needed
+          if ( strlen(dbsteward::$new_database->database->role->replication) > 0 ) {
+            if ( strcasecmp(dbsteward::$new_database->database->role->owner, dbsteward::$new_database->database->role->replication) != 0 ) {
+              $alter = "ALTER TABLE " . $quotedTableName . " OWNER TO " . dbsteward::$new_database->database->role->replication . "; -- dbsteward: postgresql needs to be appeased by making the owner the user we are executing as when pushing DDL through slony\n";
+              fwrite($fp1, $alter);
+            }
           }
         }
 
         $stage1_sql = substr($stage1_sql, 0, -3) . ";\n";
         fwrite($fp1, $stage1_sql);
 
-        // put ownership back (see full exp above)
-        if ( strlen(dbsteward::$new_database->database->role->replication) > 0
+        // replicated table? put ownership back (see full exp above)
+        if ( isset($new_table['slonyId']) && strlen($new_table['slonyId']) > 0
           && stripos($stage1_sql, 'serial') !== false ) {
-          if ( strcasecmp(dbsteward::$new_database->database->role->owner, dbsteward::$new_database->database->role->replication) != 0 ) {
-            $alter = "ALTER TABLE " . $quotedTableName . " OWNER TO " . dbsteward::$new_database->database->role->owner . "; -- dbsteward: postgresql has been appeased (see above)\n";
-            fwrite($fp1, $alter);
+          // if replication user is defined, check ownership switchback
+          if ( strlen(dbsteward::$new_database->database->role->replication) > 0 ) {
+            if ( strcasecmp(dbsteward::$new_database->database->role->owner, dbsteward::$new_database->database->role->replication) != 0 ) {
+              $alter = "ALTER TABLE " . $quotedTableName . " OWNER TO " . dbsteward::$new_database->database->role->owner . "; -- dbsteward: postgresql has been appeased (see above)\n";
+              fwrite($fp1, $alter);
+            }
+          }
+        
+          // we are here because a serial column was added, the application will need permissions on the sequence
+          foreach(dbx::get_permissions($new_table) AS $sa_permission) {
+            // re-grant all permissions, because permssions run through pgsql8_permission::get_sql()
+            // will do implicit serial column permissions to match table permissions
+            fwrite($fp1, pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_table, $sa_permission) . "\n");
           }
         }
       }
