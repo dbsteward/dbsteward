@@ -96,7 +96,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         // notice $include_null_definition is false
         // this is because ADD <column definition>s with NOT NULL will fail when there are existing rows
         
-        $new_column_type = mssql10_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $new_column, &$foreign);
+        $new_column_type = mssql10_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $new_column, $foreign);
 
         /* @DIFFTOOL for FS#15997 - look for columns of a certain type being added
         if ( preg_match('/time|date/i', $new_column_type) > 0 ) {
