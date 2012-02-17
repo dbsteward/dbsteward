@@ -119,10 +119,11 @@ Slony utils
     --slonikconvert=<slonyconfig.slonik>
     --slonycompare=<database.xml> ...
     --slonydiff=<database.xml> ...  --slonydiffnew=<database.xml> ...
-Postgresql slurp utils
+Postgresql definition extraction utilities
     --pgschema
     --pgdatadiff=<againstdatabase.xml> ...
     --dbhost=<hostname>
+    --dbport=<tcpport>
     --dbname=<database_name>
     --dbuser=<username>
     --dbpassword=<password>
@@ -148,6 +149,7 @@ Postgresql slurp utils
       "oldsql::",
       "newsql::",
       "dbhost::",
+      "dbport::",
       "dbname::",
       "dbuser::",
       "dbpassword::",
@@ -224,6 +226,11 @@ Postgresql slurp utils
       && strlen($options["dbhost"]) > 0) {
       $dbhost = $options["dbhost"];
     }
+    $dbport = '5432';
+    if (isset($options["dbport"])
+      && strlen($options["dbport"]) > 0) {
+      $dbhost = $options["dbport"];
+    }
     $dbname = FALSE;
     if (isset($options["dbname"])
       && strlen($options["dbname"]) > 0) {
@@ -288,7 +295,7 @@ Postgresql slurp utils
         else if (strlen($dbuser) === FALSE) {
           throw new exception("pgschema error: dbuser not specified");
         }
-        $output = pgsql8::fetch_pgschema($dbhost, $dbname, $dbuser, $this->cli_dbpassword);
+        $output = pgsql8::fetch_pgschema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
         if ($output_file !== FALSE) {
           dbsteward::console_line(1, "Saving pgschema output to " . $output_file);
           if (!file_put_contents($output, $output_file)) {
@@ -302,7 +309,7 @@ Postgresql slurp utils
       }
 
       if (isset($options['pgdatadiff'])) {
-        pgsql8::pgdatadiff($dbhost, $dbname, $dbuser, $this->cli_dbpassword, $options['pgdatadiff']);
+        pgsql8::pgdatadiff($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['pgdatadiff']);
         exit(0);
       }
 

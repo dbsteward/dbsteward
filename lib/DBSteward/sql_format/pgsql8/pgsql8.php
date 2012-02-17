@@ -1099,7 +1099,7 @@ class pgsql8 {
    *
    * @return string pulled db schema from database, in dbsteward format
    */
-  public function fetch_pgschema($host, $database, $user, $password) {
+  public function fetch_pgschema($host, $port, $database, $user, $password) {
     dbsteward::console_line(1, "Connecting to " . $host . ':' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
@@ -1108,7 +1108,7 @@ class pgsql8 {
       $password = fgets(STDIN);
     }
 
-    pgsql8_db::connect("host=$host port=5432 dbname=$database user=$user password=$password");
+    pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
 
     $doc = new SimpleXMLElement('<dbsteward></dbsteward>');
     // set the document to contain the passed db host, name, etc to meet the DTD and for reference
@@ -1474,7 +1474,7 @@ class pgsql8 {
    * compare composite db doc to specified database
    *
    */
-  public function pgdatadiff($host, $database, $user, $password, $files) {
+  public function pgdatadiff($host, $port, $database, $user, $password, $files) {
     if (!is_array($files)) {
       $files = array($files);
     }
@@ -1486,7 +1486,7 @@ class pgsql8 {
       $password = fgets(STDIN);
     }
 
-    pgsql8_db::connect("host=$host port=5432 dbname=$database user=$user password=$password");
+    pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
 
     $db_doc = pgsql8::build($files);
 
