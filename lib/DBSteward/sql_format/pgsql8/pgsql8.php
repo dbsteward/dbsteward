@@ -1100,7 +1100,7 @@ class pgsql8 {
    * @return string pulled db schema from database, in dbsteward format
    */
   public function fetch_pgschema($host, $port, $database, $user, $password) {
-    dbsteward::console_line(1, "Connecting to " . $host . ':' . $database . ' as ' . $user);
+    dbsteward::console_line(1, "Connecting to " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
       // @TODO: mask the password somehow without requiring a PHP extension

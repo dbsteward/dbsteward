@@ -229,7 +229,7 @@ Postgresql definition extraction utilities
     $dbport = '5432';
     if (isset($options["dbport"])
       && strlen($options["dbport"]) > 0) {
-      $dbhost = $options["dbport"];
+      $dbport = $options["dbport"];
     }
     $dbname = FALSE;
     if (isset($options["dbname"])
