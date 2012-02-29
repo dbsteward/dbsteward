@@ -97,37 +97,48 @@ class dbsteward {
 
   public static function usage() {
     $s = "DBSteward Usage:
-    --sqlformat=<pgsql8|mssql10|mysql4|oracle10g>
-XML definition diffing
-    --xml=<database.xml> ...
-    --newxml=<newdatabase.xml> ...
-    --pgdataxml=<pgdata.xml> ...
-    --onlyschemasql
-    --onlydatasql
-    --onlytable=<schema.table> ...
-    --singlestageupgrade
-    --ignoreoldname
-XML utils
-    --xmlsort=<database.xml> ...
-    --xmlconvert=<database.xml> ...
-    --xmldatainsert=<tabledata.xml>
+Global Switches and Flags
+  --sqlformat=<pgsql8|mssql10|mysql4|oracle10g>
+  --requireslonyid                  require tables and sequences to specify a valid slonyId
+Generating SQL DDL / DML / DCL
+  --xml=<database.xml> ...
+  --pgdataxml=<pgdata.xml> ...      postgresql SELECT database_to_xml() result to overlay in composite definition
+Generating SQL DDL / DML / DCL difference statements to upgrade an 'old' database to the 'new' XML definition
+  --oldxml=<database.xml> ...
+  --newxml=<newdatabase.xml> ...
+  --onlyschemasql
+  --onlydatasql
+  --onlytable=<schema.table> ...
+  --singlestageupgrade              combine upgrade stages into one file
+  --ignoreoldname                   ignore table oldName values when differencing
+XML utilities
+  --xmlsort=<database.xml> ...
+  --xmlconvert=<database.xml> ...
+  --xmldatainsert=<tabledata.xml>
+";
+    return $s;
+  }
+  
+  public static function usage_extended() {
+    $s = dbsteward::usage();
+    $s .= "DBSteward Conversion and Comparison tools:
 SQL diffing
-    --oldsql=<old.sql> ...
-    --newsql=<old.sql> ...
-    --outputfile=<outputfile.ext>
+  --oldsql=<old.sql> ...
+  --newsql=<old.sql> ...
+  --outputfile=<outputfile.ext>
 Slony utils
-    --slonikconvert=<slonyconfig.slonik>
-    --slonycompare=<database.xml> ...
-    --slonydiff=<database.xml> ...  --slonydiffnew=<database.xml> ...
-Postgresql definition extraction utilities
-    --pgschema
-    --pgdatadiff=<againstdatabase.xml> ...
+  --slonikconvert=<slonyconfig.slonik>
+  --slonycompare=<database.xml> ...     generate table SELECT statements for database health comparison between replicas
+  --slonydiffold=<olddatabase.xml> ...  compare table slonyId assignment between two versions of a database definition
+  --slonydiffnew=<newdatabase.xml> ...
+Database definition extraction utilities
+  --dbschemadump
+  --dbdiff=<againstdatabase.xml> ...
     --dbhost=<hostname>
-    --dbport=<tcpport>
+    --dbport=<TCP-port>
     --dbname=<database_name>
     --dbuser=<username>
     --dbpassword=<password>
-    --require-slony-id\t require table and sequence definitions to specify a valid slonyId
 ";
     return $s;
   }
@@ -137,14 +148,15 @@ Postgresql definition extraction utilities
     $long_opts = array(
       "sqlformat::",
       "xml::",
+      "oldxml::",
       "newxml::",
       "pgdataxml::",
       "xmldatainsert::",
       "outputfile::",
-      "pgschema::",
+      "dbschemadump::",
       "slonikconvert::",
       "slonycompare::",
-      "slonydiff::",
+      "slonydiffold::",
       "slonydiffnew::",
       "oldsql::",
       "newsql::",
@@ -159,7 +171,7 @@ Postgresql definition extraction utilities
       "onlytable::",
       "singlestageupgrade::",
       "ignoreoldname::",
-      "pgdatadiff::",
+      "dbdiff::",
       "xmlsort::",
       "xmlconvert::"
     );
@@ -171,18 +183,75 @@ Postgresql definition extraction utilities
       'pgdata' => array()
     );
 
-    // option knobs
+    
+    ///// set the global SQL format
+    if (isset($options["sqlformat"])) {
+      dbsteward::set_sql_format($options["sqlformat"]);
+    }
+
+
+    ///// common parameter for output file for converter functions
+    // for modes that can do it, omitting this parameter will cause output to be directed to stdout
+    $output_file = FALSE;
+    if (isset($options["outputfile"])
+      && strlen($options["outputfile"]) > 0) {
+      $output_file = $options["outputfile"];
+    }
+
+
+    ///// XML parsing switches
+    if (isset($options["singlestageupgrade"])) {
+      dbsteward::$single_stage_upgrade = TRUE;
+      // don't recreate views when in single stage upgrade mode
+      // @TODO: make view diffing smart enough that this doesn't need to be done
+      dbsteward::$always_recreate_views = FALSE;
+    }
+    
+    if (isset($options["ignoreoldname"])) {
+      dbsteward::$ignore_oldname = TRUE;
+    }
+    
     if (isset($options["require-slony-id"])) {
       dbsteward::$require_slony_id = TRUE;
     }
+
+
+    ///// sql_format-specific default options
+    if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
+      dbsteward::$quote_schema_names = FALSE;
+      dbsteward::$quote_table_names = FALSE;
+      dbsteward::$quote_column_names = FALSE;
+    }
+    else if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
+      // needed for MSSQL keyword-named-columns like system_user
+      dbsteward::$quote_table_names = TRUE;
+      dbsteward::$quote_column_names = TRUE;
+    }
+    else if (strcasecmp(dbsteward::get_sql_format(), 'mysql4') == 0) {
+      dbsteward::$quote_schema_names = TRUE;
+      dbsteward::$quote_table_names = TRUE;
+      dbsteward::$quote_column_names = TRUE;
+    }
+    else if (strcasecmp(dbsteward::get_sql_format(), 'oracle10g') == 0) {
+      dbsteward::$quote_schema_names = TRUE;
+      dbsteward::$quote_table_names = TRUE;
+      dbsteward::$quote_column_names = TRUE;
+    }
+    
+    if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') != 0) {
+      if (isset($options['pgdataxml'])) {
+        dbsteward::console_line(0, "pgdataxml parameter is not supported by " . dbsteward::get_sql_format() . " driver");
+        exit(1);
+      }
+    }
+
+
+    ///// SQL DDL DML DCL output flags
     if (isset($options["onlyschemasql"])) {
       dbsteward::$only_schema_sql = TRUE;
     }
     if (isset($options["onlydatasql"])) {
       dbsteward::$only_data_sql = TRUE;
-    }
-    if (isset($options["sqlformat"])) {
-      dbsteward::set_sql_format($options["sqlformat"]);
     }
     if (isset($options['onlytable'])) {
       $onlytables = $options['onlytable'];
@@ -204,23 +273,8 @@ Postgresql definition extraction utilities
       }
     }
 
-    if (isset($options["singlestageupgrade"])) {
-      dbsteward::$single_stage_upgrade = TRUE;
-      // don't recreate views when in single stage upgrade mode
-      // @TODO: make view diffing smart enough that this doesn't need to be done
-      dbsteward::$always_recreate_views = FALSE;
-    }
-    
-    if (isset($options["ignoreoldname"])) {
-      dbsteward::$ignore_oldname = TRUE;
-    }
 
-    $output_file = FALSE;
-    if (isset($options["outputfile"])
-      && strlen($options["outputfile"]) > 0) {
-      $output_file = $options["outputfile"];
-    }
-
+    ///// database connectivity values
     $dbhost = FALSE;
     if (isset($options["dbhost"])
       && strlen($options["dbhost"]) > 0) {
@@ -246,7 +300,8 @@ Postgresql definition extraction utilities
       $this->cli_dbpassword = $options['dbpassword'];
     }
 
-    // functions NOT dependent on sql format
+
+    ///// XML utility functions
     if (isset($options['xmldatainsert'])) {
       if (!isset($options['xml'])) {
         throw new exception("xmldatainsert needs xml parameter defined");
@@ -265,136 +320,125 @@ Postgresql definition extraction utilities
       exit(0);
     }
 
-    // Microsoft SQL Server Format Generator Modes
-    if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
-      // needed for MSSQL keyword-named-columns like system_user
-      dbsteward::$quote_table_names = TRUE;
-      dbsteward::$quote_column_names = TRUE;
-
-      // determine build mode, based on files passed
-      if (count($options['xml']) == 0) {
-        throw new exception("xml file list is empty");
+    
+    ///// XML file parameter sanity checks
+    if ( isset($options['xml']) ) {
+      if (count($options['xml']) > 0 && isset($options['oldxml']) && count($options['oldxml']) > 0) {
+        dbsteward::console_line(0, "Parameter error: xml and oldxml options are not to be mixed. Did you mean newxml?");
+        exit(1);
       }
-      else if (isset($options['newxml'])) {
-        mssql10::build_upgrade($options['xml'], $options['newxml']);
-      }
-      else {
-        mssql10::build($options['xml']);
+      if (count($options['xml']) > 0 && isset($options['newxml']) && count($options['newxml']) > 0) {
+        dbsteward::console_line(0, "Parameter error: xml and newxml options are not to be mixed. Did you mean oldxml?");
+        exit(1);
       }
     }
-    // PostgreSQL SQL Format Generator Modes
-    else if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
-      // one to one mode switches
-      if (isset($options["pgschema"])) {
-        if (strlen($dbhost) === FALSE) {
-          throw new exception("pgschema error: postgresql host not specified");
-        }
-        else if (strlen($dbname) === FALSE) {
-          throw new exception("pgschema error: dbname not specified");
-        }
-        else if (strlen($dbuser) === FALSE) {
-          throw new exception("pgschema error: dbuser not specified");
-        }
-        $output = pgsql8::fetch_pgschema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
-        if ($output_file !== FALSE) {
-          dbsteward::console_line(1, "Saving pgschema output to " . $output_file);
-          if (!file_put_contents($output, $output_file)) {
-            throw new exception("Failed to save pgschema output to " . $output_file);
-          }
-        }
-        else {
-          dbsteward::console_text(1, $output);
-        }
-        exit(0);
-      }
+    if ((isset($options['oldxml']) && count($options['oldxml']) > 0) && (!isset($options['newxml']) || count($options['newxml']) == 0)) {
+      dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
+      exit(1);
+    }
+    if ((!isset($options['oldxml']) || count($options['oldxml']) == 0) && (isset($options['newxml']) && count($options['newxml']) > 0)) {
+      dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
+      exit(1);
+    }
+    
+    
+    ///// determine sql_format before getting into SQL functional modes
+    $sql_format = dbsteward::get_sql_format();
+    if ( ! class_alias($sql_format, 'sql_format_class') ) {
+      throw new exception("Failed to alias $sql_format as sql_format_class");
+    }
 
-      if (isset($options['pgdatadiff'])) {
-        pgsql8::pgdatadiff($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['pgdatadiff']);
-        exit(0);
-      }
 
-      if (isset($options["slonikconvert"])) {
-        $output = slony1_slonik::convert($options["slonikconvert"]);
-        if ($output_file !== FALSE) {
-          dbsteward::console_line(1, "Saving slonikconvert output to " . $output_file);
-          if (!file_put_contents($output, $output_file)) {
-            throw new exception("Failed to save slonikconvert output to " . $output_file);
-          }
-        }
-        else {
-          echo $output;
-        }
-        exit(0);
-      }
 
-      if (isset($options["slonycompare"])) {
-        pgsql8::slony_compare($options["slonycompare"]);
-        exit(0);
-      }
-
-      if (isset($options["slonydiff"])) {
-        pgsql8::slony_diff($options["slonydiff"], $options["slonydiffnew"]);
-        exit(0);
-      }
-
-      if (isset($options["oldsql"]) || isset($options["newsql"])) {
-        if ($output_file === FALSE) {
-          throw new exception("sql diff error: you must specify an outputfile for this mode");
-        }
-        pgsql8::sql_diff($options["oldsql"], $options["newsql"], $output_file);
-        exit(0);
-      }
-
-      $pgdataxml = array();
+    ///// --[new|old]xml option(s) specificity - generate database DDL DML DCL
+    if ( count($options['xml']) > 0 ) {
       if (isset($options['pgdataxml'])) {
         $pgdataxml = $options['pgdataxml'];
+        sql_format_class::build($options['xml'], $pgdataxml);
       }
+      else {
+        sql_format_class::build($options['xml']);
+      }
+    }
+    else if ( count($options['newxml']) > 0 ) {
+      if (isset($options['pgdataxml'])) {
+        $pgdataxml = $options['pgdataxml'];
+        sql_format_class::build_upgrade($options['oldxml'], $options['newxml'], $pgdataxml);
+      }
+      else {
+        sql_format_class::build_upgrade($options['oldxml'], $options['newxml']);
+      }
+    }
+    
+    
+    ///// special comparison and output modes
 
-      // determine build mode, based on files passed
-      if (count($options['xml']) == 0) {
-        throw new exception("xml file list is empty");
+    // dump the schema from a running database
+    if (isset($options["dbschemadump"])) {
+      if (strlen($dbhost) === FALSE) {
+        throw new exception("dbschemadump error: dbhost not specified");
       }
-      else if (isset($options['newxml'])) {
-        pgsql8::build_upgrade($options['xml'], $options['newxml'], $pgdataxml);
+      else if (strlen($dbname) === FALSE) {
+        throw new exception("dbschemadump error: dbname not specified");
       }
-      else {
-        pgsql8::build($options['xml'], $pgdataxml);
+      else if (strlen($dbuser) === FALSE) {
+        throw new exception("dbschemadump error: dbuser not specified");
       }
-    }
-    else if (strcasecmp(dbsteward::get_sql_format(), 'mysql4') == 0) {
-      dbsteward::$quote_schema_names = TRUE;
-      dbsteward::$quote_table_names = TRUE;
-      dbsteward::$quote_column_names = TRUE;
-      
-      // determine build mode, based on files passed
-      if (count($options['xml']) == 0) {
-        throw new exception("xml file list is empty");
-      }
-      else if (isset($options['newxml'])) {
-        mysql4::build_upgrade($options['xml'], $options['newxml']);
+      $output = sql_format_class::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
+      if ($output_file !== FALSE) {
+        dbsteward::console_line(1, "Saving extracted database schema to " . $output_file);
+        if (!file_put_contents($output, $output_file)) {
+          throw new exception("Failed to save extracted database schema to " . $output_file);
+        }
       }
       else {
-        mysql4::build($options['xml']);
+        dbsteward::console_text(1, $output);
       }
+      exit(0);
     }
-    else if (strcasecmp(dbsteward::get_sql_format(), 'oracle10g') == 0) {
-      dbsteward::$quote_schema_names = TRUE;
-      dbsteward::$quote_table_names = TRUE;
-      dbsteward::$quote_column_names = TRUE;
 
-      // determine build mode, based on files passed
-      if (count($options['xml']) == 0) {
-        throw new exception("xml file list is empty");
+    // difference a schema definition against a running database
+    if (isset($options['dbdiff'])) {
+      sql_format_class::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdiff']);
+      exit(0);
+    }
+
+
+    // difference two SQL database dump files
+    if (isset($options["oldsql"]) || isset($options["newsql"])) {
+      if ($output_file === FALSE) {
+        dbsteward::console_line(0, "sql diff error: you must specify an outputfile for this mode");
+        exit(1);
       }
-      else if (isset($options['newxml'])) {
-        oracle10g::build_upgrade($options['xml'], $options['newxml']);
+      sql_format_class::sql_diff($options["oldsql"], $options["newsql"], $output_file);
+      exit(0);
+    }
+
+    // convert a slonik configuration file into DBSteward database definition XML
+    if (isset($options["slonikconvert"])) {
+      $output = slony1_slonik::convert($options["slonikconvert"]);
+      if ($output_file !== FALSE) {
+        dbsteward::console_line(1, "Saving slonikconvert output to " . $output_file);
+        if (!file_put_contents($output, $output_file)) {
+          throw new exception("Failed to save slonikconvert output to " . $output_file);
+        }
       }
       else {
-        oracle10g::build($options['xml']);
+        echo $output;
       }
+      exit(0);
     }
-    else {
-      throw new exception("Unknown sqlformat: " . dbsteward::get_sql_format());
+
+    // generate table SELECT statements for database health comparison between replicas
+    if (isset($options["slonycompare"])) {
+      pgsql8::slony_compare($options["slonycompare"]);
+      exit(0);
+    }
+
+    // compare table slonyId assignment between two versions of a database definition
+    if (isset($options["slonydiffold"])) {
+      pgsql8::slony_diff($options["slonydiffold"], $options["slonydiffnew"]);
+      exit(0);
     }
   }
 

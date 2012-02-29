@@ -22,7 +22,12 @@ try {
     require_once 'DBSteward/dbsteward.php';
   }
 
-  if (!isset($argv[1]) || strlen($argv[1]) == 0 || $argv[1] == '--help') {
+  if (isset($argv[1]) && strcasecmp($argv[1], '--help') == 0) {
+    echo dbsteward::usage_extended();
+    exit(0);
+  }
+  
+  if (!isset($argv[1]) || strlen($argv[1]) == 0) {
     echo dbsteward::usage();
     exit(0);
   }

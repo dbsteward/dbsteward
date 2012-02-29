@@ -1094,12 +1094,12 @@ class pgsql8 {
   }
 
   /**
-   * pull db schema from pg_catalog
+   * extract db schema from pg_catalog
    * based on http://www.postgresql.org/docs/8.3/static/catalogs.html documentation
    *
    * @return string pulled db schema from database, in dbsteward format
    */
-  public function fetch_pgschema($host, $port, $database, $user, $password) {
+  public function extract_schema($host, $port, $database, $user, $password) {
     dbsteward::console_line(1, "Connecting to " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
@@ -1474,7 +1474,7 @@ class pgsql8 {
    * compare composite db doc to specified database
    *
    */
-  public function pgdatadiff($host, $port, $database, $user, $password, $files) {
+  public function compare_db_data($host, $port, $database, $user, $password, $files) {
     if (!is_array($files)) {
       $files = array($files);
     }
