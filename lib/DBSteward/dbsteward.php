@@ -15,6 +15,7 @@ error_reporting(E_ALL);
 require_once dirname(__FILE__) . '/dbx.php';
 require_once dirname(__FILE__) . '/xml_parser.php';
 require_once dirname(__FILE__) . '/sql_parser.php';
+require_once dirname(__FILE__) . '/output_file_segmenter.php';
 
 class dbsteward {
 
@@ -54,6 +55,7 @@ class dbsteward {
 
   public static $create_languages = FALSE;
   public static $require_slony_id = FALSE;
+  public static $output_file_statement_limit = 800;
   public static $ignore_custom_roles = TRUE;
   // when true, custom roles not found will be turned in to database->role->owner
   public static $require_verbose_interval_notation = FALSE;
@@ -110,6 +112,7 @@ Generating SQL DDL / DML / DCL difference statements to upgrade an 'old' databas
   --onlydatasql
   --onlytable=<schema.table> ...
   --singlestageupgrade              combine upgrade stages into one file
+  --maxstatementsperfile            how many DDL / DML / DCL statements per upgrade file segment
   --ignoreoldname                   ignore table oldName values when differencing
 XML utilities
   --xmlsort=<database.xml> ...
@@ -165,11 +168,12 @@ Database definition extraction utilities
       "dbname::",
       "dbuser::",
       "dbpassword::",
-      "require-slony-id::",
+      "requireslonyid::",
       "onlyschemasql::",
       "onlydatasql::",
       "onlytable::",
       "singlestageupgrade::",
+      "maxstatementsperfile::",
       "ignoreoldname::",
       "dbdiff::",
       "xmlsort::",
@@ -197,6 +201,13 @@ Database definition extraction utilities
       && strlen($options["outputfile"]) > 0) {
       $output_file = $options["outputfile"];
     }
+    
+    if (isset($options["maxstatementsperfile"])) {
+      if (!is_numeric($options["maxstatementsperfile"])) {
+        throw new exception("maxstatementsperfile passed is not a number");
+      }
+      dbsteward::$output_file_statement_limit = $options["maxstatementsperfile"];
+    }
 
 
     ///// XML parsing switches
@@ -211,7 +222,7 @@ Database definition extraction utilities
       dbsteward::$ignore_oldname = TRUE;
     }
     
-    if (isset($options["require-slony-id"])) {
+    if (isset($options["requireslonyid"])) {
       dbsteward::$require_slony_id = TRUE;
     }
 
@@ -351,7 +362,7 @@ Database definition extraction utilities
 
 
     ///// --[new|old]xml option(s) specificity - generate database DDL DML DCL
-    if ( count($options['xml']) > 0 ) {
+    if ( isset($options['xml']) && count($options['xml']) > 0 ) {
       if (isset($options['pgdataxml'])) {
         $pgdataxml = $options['pgdataxml'];
         sql_format_class::build($options['xml'], $pgdataxml);

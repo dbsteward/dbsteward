@@ -109,20 +109,26 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         // instead we put the NOT NULL defintion in schema2 once data has been updated in data1
         if (!mssql10_column::null_allowed($new_table, $new_column)) {
           
-          $commands[] = array('stage' => '2',
-            'command' => "\tALTER COLUMN " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " " . $new_column_type . " NOT NULL");
+          $commands[] = array(
+            'stage' => '3',
+            'command' => "\tALTER COLUMN " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " " . $new_column_type . " NOT NULL"
+          );
 
           // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 2
           if (strlen($new_column['default']) > 0) {
-            $commands[] = array('stage' => '1postentire',
-              'command' => "UPDATE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " SET " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " = DEFAULT" . " WHERE " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " IS NULL;");
+            $commands[] = array(
+              'stage' => '1postentire',
+              'command' => "UPDATE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " SET " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " = DEFAULT" . " WHERE " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " IS NULL;"
+            );
           }
         }
 
         // if the column type is a defined enum, add a check constraint to enforce the pseudo-enum
         if (mssql10_column::enum_type_check(dbsteward::$new_database, $new_schema, $new_table, $new_column, $drop_sql, $add_sql)) {
-          $commands[] = array('stage' => '1postentire',
-            'command' => $add_sql);
+          $commands[] = array(
+            'stage' => '1postentire',
+            'command' => $add_sql
+          );
         }
 
         if (mssql10_diff::$add_defaults
@@ -146,13 +152,13 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
                 $commands[] = array('stage' => '1postentire',
                   'command' => trim($db_doc_new_column['afterAddPostStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPostStage1 definition");
               }
-              if (isset($db_doc_new_column['afterAddPreStage2'])) {
-                $commands[] = array('stage' => '2preentire',
-                  'command' => trim($db_doc_new_column['afterAddPreStage2']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPreStage2 definition");
+              if (isset($db_doc_new_column['afterAddPreStage3'])) {
+                $commands[] = array('stage' => '3preentire',
+                  'command' => trim($db_doc_new_column['afterAddPreStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPreStage3 definition");
               }
-              if (isset($db_doc_new_column['afterAddPostStage2'])) {
-                $commands[] = array('stage' => '2postentire',
-                  'command' => trim($db_doc_new_column['afterAddPostStage2']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPostStage2 definition");
+              if (isset($db_doc_new_column['afterAddPostStage3'])) {
+                $commands[] = array('stage' => '3postentire',
+                  'command' => trim($db_doc_new_column['afterAddPostStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPostStage3 definition");
               }
             }
             else {
@@ -185,14 +191,14 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           $old_table_name = mssql10_diff::get_quoted_name($old_table['name'], dbsteward::$quote_table_names);
           $old_column_name = mssql10_diff::get_quoted_name($old_column['name'], dbsteward::$quote_column_names);
           $commands[] = array(
-            'stage' => '2postentire',
+            'stage' => '3postentire',
             'command' => "-- $old_table_name DROP COLUMN $old_column_name omitted: new column $renamed_column_name indicates it is the replacement for " . $old_column_name
           );
         }
         else {
           //echo "NOTICE: add_drop_table_columns()  " . $new_table['name'] . " does not contain " . $old_column['name'] . "\n";
           $commands[] = array(
-            'stage' => '2',
+            'stage' => '3',
             'command' => "\tDROP COLUMN " . mssql10_diff::get_quoted_name($old_column['name'], dbsteward::$quote_column_names)
           );
           // @TODO: when dropping columns with an implicitly created default value
@@ -309,7 +315,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           }
           
           // if the default value is defined in the dbsteward XML
-          // set the value of the column to the default in end of stage 1 so that NOT NULL can be applied in stage 2
+          // set the value of the column to the default in end of stage 1 so that NOT NULL can be applied in stage 3
           // this way custom <sql> tags can be avoided for upgrade generation if defaults are specified
           if ( strlen($new_column['default']) > 0 ) {
             $commands[] = array(
@@ -322,21 +328,25 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           // before altering column, remove any constraint that would stop us from doing so
           foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, 'constraint') as $constraint) { 
             if (preg_match('/' . $new_column['name'] . '[\s,=)]/', $constraint['definition']) > 0) {
-              $commands[] = array('stage' => '2',
-                'command' => pgsql8_table::get_constraint_drop_sql_change_statement($constraint));
+              $commands[] = array(
+                'stage' => '3',
+                'command' => pgsql8_table::get_constraint_drop_sql_change_statement($constraint)
+              );
             }
           }
 
           $commands[] = array(
-            'stage' => '2',
+            'stage' => '3',
             'command' => "\tALTER COLUMN " . $new_column_name . " " . $new_column_type . " NOT NULL"
           );
 
           // add the constraint back on
           foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, 'constraint') as $constraint) { 
             if (preg_match('/' . $new_column['name'] . '[\s,=\)]/', $constraint['definition']) > 0) {
-              $commands[] = array('stage' => '2',
-                'command' => pgsql8_table::get_constraint_sql_change_statement($constraint));
+              $commands[] = array(
+                'stage' => '3',
+                'command' => pgsql8_table::get_constraint_sql_change_statement($constraint)
+              );
             }
           }
         }
@@ -413,11 +423,11 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         // section end comment
         $identity_transition_commands[] = '-- DBSteward: ' . $new_schema['name'] . '.' . $new_table['name'] . ' identity column ' . $new_column['name'] . ' was redefined to ' . $old_id_pkey_col['type'] . ' - table rebuild end' . "\n";
 
-        // put all of the identity_transition_commands into the command list as 2preentire's
+        // put all of the identity_transition_commands into the command list as 3preentire's
         // this will make the identity column changes occur at the beginning schema stage 2
         foreach ($identity_transition_commands as $itc) {
           $commands[] = array(
-            'stage' => '2preentire',
+            'stage' => '3preentire',
             'command' => $itc
           );
         }
@@ -505,12 +515,12 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
    * Outputs commands for addition, removal and modifications of
    * table columns.
    *
-   * @param stage1 output pointer
-   * @param stage2 output pointer
+   * @param stage1 output file segmenter
+   * @param stage3 output file segmenter
    * @param old_table original table
    * @param new_table new table
    */
-  protected static function update_table_columns($fp1, $fp2, $old_table, $new_schema, $new_table) {
+  protected static function update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table) {
     $commands = array();
     $drop_defaults_columns = array();
     mssql10_diff_tables::add_drop_table_columns($commands, $old_table, $new_table);
@@ -521,17 +531,17 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       // do 'pre' 'entire' statements before aggregate table alterations
       for ($i = 0; $i < count($commands); $i++) {
         if ($commands[$i]['stage'] == '1preentire') {
-          fwrite($fp1, $commands[$i]['command'] . "\n");
+          $ofs1->write($commands[$i]['command'] . "\n");
         }
-        else if ($commands[$i]['stage'] == '2preentire') {
-          fwrite($fp2, $commands[$i]['command'] . "\n");
+        else if ($commands[$i]['stage'] == '3preentire') {
+          $ofs3->write($commands[$i]['command'] . "\n");
         }
       }
 
       $quotedTableName = mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names);
 
       $stage1_sql = '';
-      $stage2_sql = '';
+      $stage3_sql = '';
 
       for ($i = 0; $i < count($commands); $i++) {
         if (!isset($commands[$i]['stage']) || !isset($commands[$i]['command'])) {
@@ -545,19 +555,19 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           // this is because ADD column and ALTER COLUMN statements can't be added to n
           $stage1_sql .= "ALTER TABLE " . $quotedTableName . "\n" . $commands[$i]['command'] . ";\n";
         }
-        else if ($commands[$i]['stage'] == '2') {
-          // we have a stage 2 alteration to make
+        else if ($commands[$i]['stage'] == '3') {
+          // we have a stage 3 alteration to make
           // unlike pgsql8_diff_tables, each alteration statement is on its own line
           // this is because ADD column and ALTER COLUMN statements can't be added to n
-          $stage2_sql .= "ALTER TABLE " . $quotedTableName . "\n" . $commands[$i]['command'] . ";\n";
+          $stage3_sql .= "ALTER TABLE " . $quotedTableName . "\n" . $commands[$i]['command'] . ";\n";
         }
       }
 
       if (strlen($stage1_sql) > 0) {
-        fwrite($fp1, $stage1_sql);
+        $ofs1->write($stage1_sql);
       }
-      if (strlen($stage2_sql) > 0) {
-        fwrite($fp2, $stage2_sql);
+      if (strlen($stage3_sql) > 0) {
+        $ofs3->write($stage3_sql);
       }
 
       if (count($drop_defaults_columns) > 0) {
@@ -580,19 +590,19 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         if ($commands[$i]['stage'] == '1preentire') {
           // already taken care of in earlier entire command output loop
         }
-        else if ($commands[$i]['stage'] == '2preentire') {
+        else if ($commands[$i]['stage'] == '3preentire') {
           // already taken care of in earlier entire command output loop
         }
         else if ($commands[$i]['stage'] == '1') {
           // already taken care of in earlier command aggregate loop
         }
-        else if ($commands[$i]['stage'] == '2') {
+        else if ($commands[$i]['stage'] == '3') {
           // already taken care of in earlier command aggregate loop
         }
         else if ($commands[$i]['stage'] == '1postentire') {
           fwrite($fp1, $commands[$i]['command'] . "\n");
         }
-        else if ($commands[$i]['stage'] == '2postentire') {
+        else if ($commands[$i]['stage'] == '3postentire') {
           fwrite($fp2, $commands[$i]['command'] . "\n");
         }
         else {

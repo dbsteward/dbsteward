@@ -19,127 +19,50 @@ require_once dirname(__FILE__) . '/mysql4_diff_views.php';
 class mysql4_diff extends sql99_diff {
 
   /**
-   * Creates SQL diff of two DBSteward XML definition documents
+   * @NOTICE: sql_format specific!
+   * Compare dbsteward::$old_database to dbsteward::$new_database
+   * Generate DDL / DML / DCL statements to upgrade old to new
    *
-   * @return array output files list
-   */
-  public static function diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix) {
-    $files = array();
-    $timestamp = date('r');
-    $old_set_new_set = "-- Old definition:  " . $old_xml_file . "\n" . "-- New definition:  " . $new_xml_file . "\n";
-
-    // setup file pointers, depending on stage file mode -- single (all the same) or multiple
-    if ( dbsteward::$single_stage_upgrade ) {
-      $files['schema_stage1'] = $upgrade_prefix . '_single_stage.sql';
-      $schema_stage1_fp = fopen($files['schema_stage1'], 'w');
-      if ( $schema_stage1_fp === false ) {
-        throw new exception("failed to open upgrade single stage output file " . $files['schema_stage1'] . ' for output');
-      }
-      fwrite($schema_stage1_fp, "-- dbsteward single upgrade file generated " . $timestamp . "\n");
-      fwrite($schema_stage1_fp, $old_set_new_set);
-  
-      $files['schema_stage2'] = $files['schema_stage1'];
-      $schema_stage2_fp =& $schema_stage1_fp;
-  
-      $files['data_stage1'] = $files['schema_stage1'];
-      $data_stage1_fp =& $schema_stage1_fp;
-  
-      $files['data_stage2'] = $files['schema_stage1'];
-      $data_stage2_fp =& $schema_stage1_fp;
-    }
-    else {
-      $files['schema_stage1'] = $upgrade_prefix . '_schema_stage1.sql';
-      $schema_stage1_fp = fopen($files['schema_stage1'], 'w');
-      if ($schema_stage1_fp === FALSE) {
-        throw new exception("failed to open upgrade schema stage 1 output file " . $files['schema_stage1'] . ' for output');
-      }
-      fwrite($schema_stage1_fp, "-- dbsteward schema stage 1 upgrade file generated " . $timestamp . "\n");
-      fwrite($schema_stage1_fp, $old_set_new_set);
-  
-      $files['schema_stage2'] = $upgrade_prefix . '_schema_stage2.sql';
-      $schema_stage2_fp = fopen($files['schema_stage2'], 'w');
-      if ($schema_stage2_fp === FALSE) {
-        throw new exception("failed to open upgrade schema stage 1 output file " . $files['schema_stage2'] . ' for output');
-      }
-      fwrite($schema_stage2_fp, "-- dbsteward schema stage 2 upgrade file generated " . $timestamp . "\n");
-      fwrite($schema_stage2_fp, $old_set_new_set);
-  
-      $files['data_stage1'] = $upgrade_prefix . '_data_stage1.sql';
-      $data_stage1_fp = fopen($files['data_stage1'], 'w');
-      if ($data_stage1_fp === FALSE) {
-        throw new exception("failed to open upgrade schema stage 1 output file " . $files['data_stage1'] . ' for output');
-      }
-      fwrite($data_stage1_fp, "-- dbsteward data stage 1 upgrade file generated " . $timestamp . "\n");
-      fwrite($data_stage1_fp, $old_set_new_set);
-  
-      $files['data_stage2'] = $upgrade_prefix . '_data_stage2.sql';
-      $data_stage2_fp = fopen($files['data_stage2'], 'w');
-      if ($data_stage2_fp === FALSE) {
-        throw new exception("failed to open upgrade schema stage 1 output file " . $files['data_stage2'] . ' for output');
-      }
-      fwrite($data_stage2_fp, "-- dbsteward data stage 2 upgrade file generated " . $timestamp . "\n");
-      fwrite($data_stage2_fp, $old_set_new_set);
-    }
-
-    dbsteward::$old_database = $old_database;
-    dbsteward::$new_database = $new_database;
-
-    mysql4_diff::diff(
-      $schema_stage1_fp,
-      $schema_stage2_fp,
-      $data_stage1_fp,
-      $data_stage2_fp
-    );
-
-    // if we're in single stage mode, all pointers are the same, only close the file pointer once
-    if ( dbsteward::$single_stage_upgrade ) {
-      fclose($schema_stage1_fp);
-    }
-    else {
-      fclose($data_stage2_fp);
-      fclose($data_stage1_fp);
-      fclose($schema_stage2_fp);
-      fclose($schema_stage1_fp);
-    }
-
-    return $files;
-  }
-
-  /**
-   * Creates diff from comparison of two database definitions
+   * Changes are outputted to output_file_segementer members of this class
    *
-   * @param fp output file pointer
-   * @param old_database original database schema
-   * @param new_database new database schema
+   * @param  object  $stage1_ofs  stage 1 output file segmentor
+   * @param  object  $stage2_ofs  stage 2 output file segmentor
+   * @param  object  $stage3_ofs  stage 3 output file segmentor
+   * @param  object  $stage4_ofs  stage 4 output file segmentor
+   * @return void
    */
-  private static function diff($schema_stage1_fp, $schema_stage2_fp, $data_stage1_fp, $data_stage2_fp) {
+  protected static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
     if (mysql4_diff::$as_transaction) {
-      fwrite($schema_stage1_fp, "START TRANSACTION;\n\n");
+      $stage1_ofs->append_header("START TRANSACTION;\n\n");
+      $stage1_ofs->append_footer("\nCOMMIT;\n");
       if ( ! dbsteward::$single_stage_upgrade ) {
-        fwrite($schema_stage2_fp, "START TRANSACTION;\n\n");
-        fwrite($data_stage1_fp, "START TRANSACTION;\n\n");
-        fwrite($data_stage2_fp, "START TRANSACTION;\n\n");
+        $stage2_ofs->append_header("START TRANSACTION;\n\n");
+        $stage3_ofs->append_header("START TRANSACTION;\n\n");
+        $stage4_ofs->append_header("START TRANSACTION;\n\n");
+        $stage2_ofs->append_footer("\nCOMMIT;\n");
+        $stage3_ofs->append_footer("\nCOMMIT;\n");
+        $stage4_ofs->append_footer("\nCOMMIT;\n");
       }
     }
 
     // start with pre-upgrade sql statements that prepare the database to take on its changes
-    dbx::build_staged_sql(dbsteward::$new_database, $schema_stage1_fp, 'SCHEMA0');
-    dbx::build_staged_sql(dbsteward::$new_database, $data_stage1_fp, 'DATA0');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'SCHEMA0');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'DATA0');
 
     dbsteward::console_line(1, "Drop Old Schemas");
-    mysql4_diff::drop_old_schemas($schema_stage2_fp);
+    mysql4_diff::drop_old_schemas($stage3_ofs);
     dbsteward::console_line(1, "Create New Schemas");
-    mysql4_diff::create_new_schemas($schema_stage1_fp);
+    mysql4_diff::create_new_schemas($stage1_ofs);
     dbsteward::console_line(1, "Update Structure");
-    mysql4_diff::update_structure($schema_stage1_fp, $schema_stage2_fp, mysql4_diff::$new_table_dependency);
+    mysql4_diff::update_structure($stage1_ofs, $stage3_ofs, mysql4_diff::$new_table_dependency);
     dbsteward::console_line(1, "Update Permissions");
-    mysql4_diff::update_permissions($schema_stage1_fp, $schema_stage2_fp);
+    mysql4_diff::update_permissions($stage1_ofs, $stage3_ofs);
 
-    mysql4_diff::update_database_config_parameters($schema_stage1_fp);
+    mysql4_diff::update_database_config_parameters($stage1_ofs);
 
     dbsteward::console_line(1, "Update Data");
-    mysql4_diff::update_data($data_stage1_fp, TRUE);
-    mysql4_diff::update_data($data_stage1_fp, FALSE);
+    mysql4_diff::update_data($stage2_ofs, TRUE);
+    mysql4_diff::update_data($stage2_ofs, FALSE);
 
     // append any literal SQL in new not in old at the end of data stage 1
     $old_sql = dbx::get_sql(dbsteward::$old_database);
@@ -161,24 +84,15 @@ class mysql4_diff extends sql99_diff {
         }
       }
       if (!$found) {
-        fwrite($data_stage1_fp, $new_sql[$n] . "\n");
+        fwrite($stage2_ofs, $new_sql[$n] . "\n");
       }
     }
 
     // append stage sql statements to appropriate stage file
-    dbx::build_staged_sql(dbsteward::$new_database, $schema_stage1_fp, 'SCHEMA1');
-    dbx::build_staged_sql(dbsteward::$new_database, $schema_stage2_fp, 'SCHEMA2');
-    dbx::build_staged_sql(dbsteward::$new_database, $data_stage1_fp, 'DATA1');
-    dbx::build_staged_sql(dbsteward::$new_database, $data_stage2_fp, 'DATA2');
-
-    if (mysql4_diff::$as_transaction) {
-      fwrite($schema_stage1_fp, "\nCOMMIT;\n");
-      if ( ! dbsteward::$single_stage_upgrade ) {
-        fwrite($schema_stage2_fp, "\nCOMMIT;\n");
-        fwrite($data_stage1_fp, "\nCOMMIT;\n");
-        fwrite($data_stage2_fp, "\nCOMMIT;\n");
-      }
-    }
+    dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'SCHEMA1');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage3_ofs, 'SCHEMA2');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'DATA1');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage4_ofs, 'DATA2');
   }
 
   /**

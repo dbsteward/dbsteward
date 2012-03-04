@@ -286,7 +286,7 @@ class mssql10 {
     dbsteward::console_line(1, "Calculating new table foreign key dependency order..");
     mssql10_diff::$new_table_dependency = xml_parser::table_dependency_order($new_db_doc);
 
-    $upgrade_files = mssql10_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
+    mssql10_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
 
     return $new_db_doc;
   }

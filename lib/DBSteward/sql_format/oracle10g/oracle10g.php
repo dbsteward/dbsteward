@@ -273,7 +273,7 @@ class oracle10g {
     dbsteward::console_line(1, "Calculating new table foreign key dependency order..");
     oracle10g_diff::$new_table_dependency = xml_parser::table_dependency_order($new_db_doc);
 
-    $upgrade_files = oracle10g_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
+    oracle10g_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
 
     return $new_db_doc;
   }

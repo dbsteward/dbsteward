@@ -175,10 +175,10 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           'stage' => '1',
           'command' => "\tADD COLUMN " . pgsql8_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, pgsql8_diff::$add_defaults, false)
         );
-        // instead we put the NOT NULL defintion in schema2 once data has been updated in data1
+        // instead we put the NOT NULL defintion in stage3 schema changes once data has been updated in stage2 data
         if ( ! pgsql8_column::null_allowed($new_table, $new_column) ) {
           $commands[] = array(
-            'stage' => '2',
+            'stage' => '3',
             'command' => "\tALTER COLUMN " . pgsql8_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " SET NOT NULL"
           );
           // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 2
@@ -229,16 +229,16 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
                   'command' => trim($db_doc_new_column['afterAddPostStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPostStage1 definition"
                 );
               }
-              if ( isset($db_doc_new_column['afterAddPreStage2']) ) {
+              if ( isset($db_doc_new_column['afterAddPreStage3']) ) {
                 $commands[] = array(
-                  'stage' => '2preentire',
-                  'command' => trim($db_doc_new_column['afterAddPreStage2']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPreStage2 definition"
+                  'stage' => '3preentire',
+                  'command' => trim($db_doc_new_column['afterAddPreStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPreStage3 definition"
                 );
               }
-              if ( isset($db_doc_new_column['afterAddPostStage2']) ) {
+              if ( isset($db_doc_new_column['afterAddPostStage3']) ) {
                 $commands[] = array(
-                  'stage' => '2postentire',
-                  'command' => trim($db_doc_new_column['afterAddPostStage2']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPostStage2 definition"
+                  'stage' => '3postentire',
+                  'command' => trim($db_doc_new_column['afterAddPostStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddPostStage3 definition"
                 );
               }
             }
@@ -272,7 +272,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           $old_table_name = pgsql8_diff::get_quoted_name($old_table['name'], dbsteward::$quote_table_names);
           $old_column_name = pgsql8_diff::get_quoted_name($old_column['name'], dbsteward::$quote_column_names);
           $commands[] = array(
-            'stage' => '2postentire',
+            'stage' => '3postentire',
             'command' => "-- $old_table_name DROP COLUMN $old_column_name omitted: new column $renamed_column_name indicates it is the replacement for " . $old_column_name
           );
         }
@@ -280,7 +280,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           //echo "NOTICE: add_drop_table_columns()  " . $new_table['name'] . " does not contain " . $old_column['name'] . "\n";
 
           $commands[] = array(
-            'stage' => '2',
+            'stage' => '3',
             'command' => "\tDROP COLUMN " . pgsql8_diff::get_quoted_name($old_column['name'], dbsteward::$quote_column_names)
           );
         }
@@ -372,7 +372,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           }
 
           // if the default value is defined in the dbsteward XML
-          // set the value of the column to the default in end of stage 1 so that NOT NULL can be applied in stage 2
+          // set the value of the column to the default in end of stage 1 so that NOT NULL can be applied in stage 3
           // this way custom <sql> tags can be avoided for upgrade generation if defaults are specified
           if ( strlen($new_column['default']) > 0 ) {
             $commands[] = array(
@@ -383,7 +383,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           }
 
           $commands[] = array(
-            'stage' => '2',
+            'stage' => '3',
             'command' => "\tALTER COLUMN " . $new_column_name . " SET NOT NULL"
           );
         }
@@ -394,7 +394,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
            ($new_column['type'] == 'int' || $new_column['type'] == 'bigint') ) {
 
           $commands[] = array(
-            'stage' => '2preentire',
+            'stage' => '3preentire',
             'command' => "DROP SEQUENCE IF EXISTS " . pgsql8_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name(pgsql8::identifier_name($new_schema['name'], $new_table['name'], $new_column['name'], '_seq'), dbsteward::$quote_table_names) . ";"
           );
 
@@ -504,12 +504,12 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    * Outputs commands for addition, removal and modifications of
    * table columns.
    *
-   * @param stage1 output pointer
-   * @param stage2 output pointer
+   * @param stage1 output file segmenter
+   * @param stage3 output file segmenter
    * @param old_table original table
    * @param new_table new table
    */
-  private static function update_table_columns($fp1, $fp2, $old_table, $new_schema, $new_table) {
+  private static function update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table) {
     $commands = array();
     $drop_defaults_columns = array();
     self::add_drop_table_columns($commands, $old_table, $new_table);
@@ -520,17 +520,17 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       // do 'pre' 'entire' statements before aggregate table alterations
       for($i=0; $i < count($commands); $i++) {
         if ( $commands[$i]['stage'] == '1preentire' ) {
-          fwrite($fp1, $commands[$i]['command'] . "\n");
+          $ofs1->write($commands[$i]['command'] . "\n");
         }
-        else if ( $commands[$i]['stage'] == '2preentire' ) {
-          fwrite($fp2, $commands[$i]['command'] . "\n");
+        else if ( $commands[$i]['stage'] == '3preentire' ) {
+          $ofs3->write($commands[$i]['command'] . "\n");
         }
       }
 
       $quotedTableName = pgsql8_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names);
 
       $stage1_sql = '';
-      $stage2_sql = '';
+      $stage3_sql = '';
 
       for($i=0; $i < count($commands); $i++) {
         if ( !isset($commands[$i]['stage']) || !isset($commands[$i]['command']) ) {
@@ -546,13 +546,13 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           }
           $stage1_sql .= $commands[$i]['command'] . " ,\n";
         }
-        else if ( $commands[$i]['stage'] == '2' ) {
-          // we have a stage 2 alteration to make
+        else if ( $commands[$i]['stage'] == '3' ) {
+          // we have a stage 3 alteration to make
           // do the alter table prefix if we haven't yet
-          if ( strlen($stage2_sql) == 0 ) {
-            $stage2_sql = "ALTER TABLE " . $quotedTableName . "\n";
+          if ( strlen($stage3_sql) == 0 ) {
+            $stage3_sql = "ALTER TABLE " . $quotedTableName . "\n";
           }
-          $stage2_sql .= $commands[$i]['command'] . " ,\n";
+          $stage3_sql .= $commands[$i]['command'] . " ,\n";
         }
       }
 
@@ -569,13 +569,13 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           if ( strlen(dbsteward::$new_database->database->role->replication) > 0 ) {
             if ( strcasecmp(dbsteward::$new_database->database->role->owner, dbsteward::$new_database->database->role->replication) != 0 ) {
               $alter = "ALTER TABLE " . $quotedTableName . " OWNER TO " . dbsteward::$new_database->database->role->replication . "; -- dbsteward: postgresql needs to be appeased by making the owner the user we are executing as when pushing DDL through slony\n";
-              fwrite($fp1, $alter);
+              $ofs1->write($alter);
             }
           }
         }
 
         $stage1_sql = substr($stage1_sql, 0, -3) . ";\n";
-        fwrite($fp1, $stage1_sql);
+        $ofs1->write($stage1_sql);
 
         // replicated table? put ownership back (see full exp above)
         if ( isset($new_table['slonyId']) && strlen($new_table['slonyId']) > 0
@@ -584,7 +584,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           if ( strlen(dbsteward::$new_database->database->role->replication) > 0 ) {
             if ( strcasecmp(dbsteward::$new_database->database->role->owner, dbsteward::$new_database->database->role->replication) != 0 ) {
               $alter = "ALTER TABLE " . $quotedTableName . " OWNER TO " . dbsteward::$new_database->database->role->owner . "; -- dbsteward: postgresql has been appeased (see above)\n";
-              fwrite($fp1, $alter);
+              $ofs1->write($alter);
             }
           }
         
@@ -592,27 +592,27 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           foreach(dbx::get_permissions($new_table) AS $sa_permission) {
             // re-grant all permissions, because permssions run through pgsql8_permission::get_sql()
             // will do implicit serial column permissions to match table permissions
-            fwrite($fp1, pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_table, $sa_permission) . "\n");
+            $ofs1->write(pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_table, $sa_permission) . "\n");
           }
         }
       }
-      if ( strlen($stage2_sql) > 0 ) {
-        $stage2_sql = substr($stage2_sql, 0, -3) . ";\n";
-        fwrite($fp2, $stage2_sql);
+      if ( strlen($stage3_sql) > 0 ) {
+        $stage3_sql = substr($stage3_sql, 0, -3) . ";\n";
+        $ofs3->write($stage3_sql);
       }
 
       if (count($drop_defaults_columns) > 0) {
-        fwrite($fp1, "\n");
-        fwrite($fp1, "ALTER TABLE " . $quotedTableName . "\n");
+        $ofs1->write("\n");
+        $ofs1->write("ALTER TABLE " . $quotedTableName . "\n");
 
         for ($i=0; $i < count($drop_defaults_columns); $i++) {
-          fwrite($fp1, "\tALTER COLUMN "
+          $ofs1->write("\tALTER COLUMN "
             . pgsql8_diff::get_quoted_name($drop_defaults_columns[$i]['name'], dbsteward::$quote_column_names)
             . " DROP DEFAULT");
           if ($i <count($drop_defaults_columns) - 1) {
-            fwrite($fp1, ",\n");
+            $ofs1->write(",\n");
           } else {
-            fwrite($fp1, ";\n");
+            $ofs1->write(";\n");
           }
         }
       }
@@ -622,20 +622,20 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         if ( $commands[$i]['stage'] == '1preentire' ) {
           // already taken care of in earlier entire command output loop
         }
-        else if ( $commands[$i]['stage'] == '2preentire' ) {
+        else if ( $commands[$i]['stage'] == '3preentire' ) {
           // already taken care of in earlier entire command output loop
         }
         else if ( $commands[$i]['stage'] == '1' ) {
           // already taken care of in earlier command aggregate loop
         }
-        else if ( $commands[$i]['stage'] == '2' ) {
+        else if ( $commands[$i]['stage'] == '3' ) {
           // already taken care of in earlier command aggregate loop
         }
         else if ( $commands[$i]['stage'] == '1postentire' ) {
-          fwrite($fp1, $commands[$i]['command'] . "\n");
+          $ofs1->write($commands[$i]['command'] . "\n");
         }
-        else if ( $commands[$i]['stage'] == '2postentire' ) {
-          fwrite($fp2, $commands[$i]['command'] . "\n");
+        else if ( $commands[$i]['stage'] == '3postentire' ) {
+          $ofs3->write($commands[$i]['command'] . "\n");
         }
         else {
           throw new exception("Unknown stage " . $commands[$i]['stage'] . " during table " . $quotedTableName . " updates");
@@ -644,15 +644,14 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     }
   }
 
-  public static function diff_data($fp, $old_schema, $new_schema) {
+  public static function diff_data($ofs, $old_schema, $new_schema) {
     foreach(dbx::get_tables($new_schema) AS $new_table) {
       $old_table = null;
       // does the old contain the new?
       if ( $old_schema != null && pgsql8_schema::contains_table($old_schema, $new_table['name']) ) {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
-      fwrite(
-        $fp,
+      $ofs->write(
         self::get_data_sql($old_schema, $old_table, $new_schema, $new_table)
       );
     }

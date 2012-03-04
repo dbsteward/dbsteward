@@ -296,7 +296,7 @@ class pgsql8 {
     fwrite($fp, "COMMIT; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional\n\n");
     fclose($fp);
 
-    pgsql8::build_slonik($db_doc, $output_prefix . '_slony.slonik');
+    pgsql8::build_slonik($db_doc, $output_prefix . '_slony_subscription.slonik');
 
     return $db_doc;
   }
@@ -718,7 +718,7 @@ class pgsql8 {
     dbsteward::console_line(1, "Calculating new table foreign key dependency order..");
     pgsql8_diff::$new_table_dependency = xml_parser::table_dependency_order($new_db_doc);
 
-    $upgrade_files = pgsql8_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
+    pgsql8_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
 
     // figure out slony replication differences
     $slonik_header = "# Old set:  " . implode(', ', $old_files) . "\n" . "# New set:  " . implode(', ', $new_files) . "\n";
@@ -730,7 +730,7 @@ class pgsql8 {
   public function build_upgrade_slonik($old_db_doc, $new_db_doc, $slonik_file_prefix, $old_set_new_set = '') {
     $timestamp = date('r');
 
-    $slony_stage1_file = $slonik_file_prefix . '_slony_stage1.slonik';
+    $slony_stage1_file = $slonik_file_prefix . '_stage1_slony.slonik';
     $slony_stage1_fp = fopen($slony_stage1_file, 'w');
     if ($slony_stage1_fp === FALSE) {
       throw new exception("failed to open upgrade slony stage 1 output file " . $slony_stage1_file . ' for output');
@@ -739,7 +739,7 @@ class pgsql8 {
     fwrite($slony_stage1_fp, $old_set_new_set . "\n");
     fwrite($slony_stage1_fp, "ECHO 'dbsteward slony stage 1 upgrade file generated " . date('r') . " starting';\n\n");
 
-    $slony_stage2_file = $slonik_file_prefix . '_slony_stage2.slonik';
+    $slony_stage2_file = $slonik_file_prefix . '_stage2_slony.slonik';
     $slony_stage2_fp = fopen($slony_stage2_file, 'w');
     if ($slony_stage2_fp === FALSE) {
       throw new exception("failed to open upgrade slony stage 2 output file " . $slony_stage2_file . ' for output');

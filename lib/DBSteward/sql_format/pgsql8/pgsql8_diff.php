@@ -34,7 +34,7 @@ class pgsql8_diff extends sql99_diff{
     $new_sql_xml_file = $upgrade_prefix . '_new_sql.xml';
     xml_parser::save_xml($new_sql_xml_file, dbsteward::$new_database->saveXML());
 
-    return self::diff_xml(array($old_sql_xml_file), array($new_sql_xml_file), $upgrade_prefix);
+    self::diff_xml(array($old_sql_xml_file), array($new_sql_xml_file), $upgrade_prefix);
   }
 
   /**
@@ -55,132 +55,54 @@ class pgsql8_diff extends sql99_diff{
     }
     $new_database = xml_parser::sql_format_convert($new_database);
 
-    return self::diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix);
+    pgsql8::diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix);
   }
 
   /**
-   * Creates SQL diff of two DBSteward XML definition documents
+   * @NOTICE: sql_format specific!
+   * Compare dbsteward::$old_database to dbsteward::$new_database
+   * Generate DDL / DML / DCL statements to upgrade old to new
    *
-   * @return array output files list
-   */
-  public static function diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix) {
-    $files = array();
-    $timestamp = date('r');
-    $old_set_new_set = "-- Old definition:  " . $old_xml_file . "\n" . "-- New definition:  " . $new_xml_file . "\n";
-
-    // setup file pointers, depending on stage file mode -- single (all the same) or multiple
-    if ( dbsteward::$single_stage_upgrade ) {
-      $files['schema_stage1'] = $upgrade_prefix . '_single_stage.sql';
-      $schema_stage1_fp = fopen($files['schema_stage1'], 'w');
-      if ( $schema_stage1_fp === false ) {
-        throw new exception("failed to open upgrade single stage output file " . $files['schema_stage1'] . ' for output');
-      }
-      fwrite($schema_stage1_fp, "-- dbsteward single upgrade file generated " . $timestamp . "\n");
-      fwrite($schema_stage1_fp, $old_set_new_set);
-  
-      $files['schema_stage2'] = $files['schema_stage1'];
-      $schema_stage2_fp =& $schema_stage1_fp;
-  
-      $files['data_stage1'] = $files['schema_stage1'];
-      $data_stage1_fp =& $schema_stage1_fp;
-  
-      $files['data_stage2'] = $files['schema_stage1'];
-      $data_stage2_fp =& $schema_stage1_fp;
-    }
-    else {
-      $files['schema_stage1'] = $upgrade_prefix . '_schema_stage1.sql';
-      $schema_stage1_fp = fopen($files['schema_stage1'], 'w');
-      if ( $schema_stage1_fp === false ) {
-        throw new exception("failed to open upgrade schema stage 1 output file " . $files['schema_stage1'] . ' for output');
-      }
-      fwrite($schema_stage1_fp, "-- dbsteward schema stage 1 upgrade file generated " . $timestamp . "\n");
-      fwrite($schema_stage1_fp, $old_set_new_set);
-  
-      $files['schema_stage2'] = $upgrade_prefix . '_schema_stage2.sql';
-      $schema_stage2_fp = fopen($files['schema_stage2'], 'w');
-      if ( $schema_stage2_fp === false ) {
-        throw new exception("failed to open upgrade schema stage 1 output file " . $files['schema_stage2'] . ' for output');
-      }
-      fwrite($schema_stage2_fp, "-- dbsteward schema stage 2 upgrade file generated " . $timestamp . "\n");
-      fwrite($schema_stage2_fp, $old_set_new_set);
-  
-      $files['data_stage1'] = $upgrade_prefix . '_data_stage1.sql';
-      $data_stage1_fp = fopen($files['data_stage1'], 'w');
-      if ( $data_stage1_fp === false ) {
-        throw new exception("failed to open upgrade schema stage 1 output file " . $files['data_stage1'] . ' for output');
-      }
-      fwrite($data_stage1_fp, "-- dbsteward data stage 1 upgrade file generated " . $timestamp . "\n");
-      fwrite($data_stage1_fp, $old_set_new_set);
-  
-      $files['data_stage2'] = $upgrade_prefix . '_data_stage2.sql';
-      $data_stage2_fp = fopen($files['data_stage2'], 'w');
-      if ( $data_stage2_fp === false ) {
-        throw new exception("failed to open upgrade schema stage 1 output file " . $files['data_stage2'] . ' for output');
-      }
-      fwrite($data_stage2_fp, "-- dbsteward data stage 2 upgrade file generated " . $timestamp . "\n");
-      fwrite($data_stage2_fp, $old_set_new_set);
-    }
-
-
-    dbsteward::$old_database = $old_database;
-    dbsteward::$new_database = $new_database;
-
-    self::diff(
-      $schema_stage1_fp,
-      $schema_stage2_fp,
-      $data_stage1_fp,
-      $data_stage2_fp
-    );
-
-    // if we're in single stage mode, all pointers are the same, only close the file pointer once
-    if ( dbsteward::$single_stage_upgrade ) {
-      fclose($schema_stage1_fp);
-    }
-    else {
-      fclose($data_stage2_fp);
-      fclose($data_stage1_fp);
-      fclose($schema_stage2_fp);
-      fclose($schema_stage1_fp);
-    }
-
-    return $files;
-  }
-
-  /**
-   * Creates diff from comparison of two database definitions
+   * Changes are outputted to output_file_segementer members of this class
    *
-   * @param fp output file pointer
-   * @param old_database original database schema
-   * @param new_database new database schema
+   * @param  object  $stage1_ofs  stage 1 output file segmentor
+   * @param  object  $stage2_ofs  stage 2 output file segmentor
+   * @param  object  $stage3_ofs  stage 3 output file segmentor
+   * @param  object  $stage4_ofs  stage 4 output file segmentor
+   * @return void
    */
-  private static function diff($schema_stage1_fp, $schema_stage2_fp, $data_stage1_fp, $data_stage2_fp) {
+  protected static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
     if (self::$as_transaction) {
-      fwrite($schema_stage1_fp, "BEGIN; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional --\n\n");
+      $stage1_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n\n");
+      $stage1_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n");
       if ( ! dbsteward::$single_stage_upgrade ) {
-        fwrite($schema_stage2_fp, "BEGIN; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional --\n\n");
-        fwrite($data_stage1_fp, "BEGIN; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional --\n\n");
-        fwrite($data_stage2_fp, "BEGIN; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional --\n\n");
+        $stage2_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n\n");
+        $stage3_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n\n");
+        $stage4_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n\n");
+        $stage2_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n");
+        $stage3_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n");
+        $stage4_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n");
       }
     }
 
     // start with pre-upgrade sql statements that prepare the database to take on its changes
-    dbx::build_staged_sql(dbsteward::$new_database, $schema_stage1_fp, 'SCHEMA0');
-    dbx::build_staged_sql(dbsteward::$new_database, $data_stage1_fp, 'DATA0');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'SCHEMA0');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'DATA0');
 
     dbsteward::console_line(1, "Drop Old Schemas");
-    self::drop_old_schemas($schema_stage2_fp);
+    self::drop_old_schemas($stage3_ofs);
     dbsteward::console_line(1, "Create New Schemas");
-    self::create_new_schemas($schema_stage1_fp);
+    self::create_new_schemas($stage1_ofs);
     dbsteward::console_line(1, "Update Structure");
-    self::update_structure($schema_stage1_fp, $schema_stage2_fp, self::$new_table_dependency);
+    self::update_structure($stage1_ofs, $stage3_ofs, self::$new_table_dependency);
     dbsteward::console_line(1, "Update Permissions");
-    self::update_permissions($schema_stage1_fp, $schema_stage2_fp);
+    self::update_permissions($stage1_ofs, $stage3_ofs);
 
-    self::update_database_config_parameters($schema_stage1_fp);
+    self::update_database_config_parameters($stage1_ofs);
 
     dbsteward::console_line(1, "Update Data");
-    self::update_data($data_stage1_fp, true);
-    self::update_data($data_stage1_fp, false);
+    self::update_data($stage2_ofs, true);
+    self::update_data($stage2_ofs, false);
 
     // append any literal SQL in new not in old at the end of data stage 1
     $old_sql = dbx::get_sql(dbsteward::$old_database);
@@ -207,33 +129,23 @@ class pgsql8_diff extends sql99_diff{
     }
 
     // append stage sql statements to appropriate stage file
-    dbx::build_staged_sql(dbsteward::$new_database, $schema_stage1_fp, 'SCHEMA1');
-    dbx::build_staged_sql(dbsteward::$new_database, $schema_stage2_fp, 'SCHEMA2');
-    dbx::build_staged_sql(dbsteward::$new_database, $data_stage1_fp, 'DATA1');
-    dbx::build_staged_sql(dbsteward::$new_database, $data_stage2_fp, 'DATA2');
-
-    if (self::$as_transaction) {
-      fwrite($schema_stage1_fp, "\nCOMMIT; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional --\n");
-      if ( ! dbsteward::$single_stage_upgrade ) {
-        fwrite($schema_stage2_fp, "\nCOMMIT; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional --\n");
-        fwrite($data_stage1_fp, "\nCOMMIT; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional --\n");
-        fwrite($data_stage2_fp, "\nCOMMIT; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional --\n");
-      }
-    }
+    dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'SCHEMA1');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'DATA1');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage3_ofs, 'SCHEMA2');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage4_ofs, 'DATA2');
   }
 
   /**
    * Drops old schemas that do not exist anymore.
    *
-   * @param fp output file pointer
-   * @param old_database original database schema
-   * @param new_database new database schema
+   * @param  object  $ofs output file pointer
+   * @return void
    */
-  private static function drop_old_schemas($fp) {
+  private static function drop_old_schemas($ofs) {
     foreach(dbx::get_schemas(dbsteward::$old_database) AS $old_schema) {
       if ( ! dbx::get_schema(dbsteward::$new_database, $old_schema['name']) ) {
         dbsteward::console_line(3, "Drop Old Schema " . $old_schema['name']);
-        fwrite($fp, pgsql8_schema::get_drop_sql($old_schema));
+        $ofs->write(pgsql8_schema::get_drop_sql($old_schema));
       }
     }
   }
@@ -241,13 +153,14 @@ class pgsql8_diff extends sql99_diff{
   /**
    * Creates new schemas (not the objects inside the schemas)
    *
-   * @param $fp    output file pointer
+   * @param  object  $ofs output file pointer
+   * @return void
    */
-  private static function create_new_schemas($fp) {
+  private static function create_new_schemas($ofs) {
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       if (dbx::get_schema(dbsteward::$old_database, $new_schema['name']) == null) {
         dbsteward::console_line(3, "Create New Schema " . $new_schema['name']);
-        fwrite($fp, pgsql8_schema::get_creation_sql($new_schema));
+        $ofs->write(pgsql8_schema::get_creation_sql($new_schema));
       }
     }
   }
@@ -255,19 +168,19 @@ class pgsql8_diff extends sql99_diff{
   /**
    * Updates objects in schemas.
    *
-   * @param $fp1  stage1 output pointer
-   * @param $fp2  stage2 output pointer
+   * @param $ofs1  stage1 output file segmenter
+   * @param $ofs3  stage3 output file segmenter
    */
-  private static function update_structure($fp1, $fp2) {
+  private static function update_structure($ofs1, $ofs3) {
     $type_modified_columns = array();
     
-    pgsql8_diff_languages::diff_languages($fp1);
+    pgsql8_diff_languages::diff_languages($ofs1);
     
     // drop all views in all schemas, regardless whether dependency order is known or not
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
       $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      pgsql8_diff_views::drop_views($fp1, $old_schema, $new_schema);
+      pgsql8_diff_views::drop_views($ofs1, $old_schema, $new_schema);
     }
 
     // if the table dependency order is unknown, bang them in natural order
@@ -275,24 +188,24 @@ class pgsql8_diff extends sql99_diff{
       foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         //@NOTICE: @TODO: this does not honor oldName attributes, does it matter?
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-        pgsql8_diff_types::apply_changes($fp1, $old_schema, $new_schema, $type_modified_columns);
-        pgsql8_diff_functions::diff_functions($fp1, $fp2, $old_schema, $new_schema);
-        pgsql8_diff_sequences::diff_sequences($fp1, $old_schema, $new_schema);
+        pgsql8_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
+        pgsql8_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
+        pgsql8_diff_sequences::diff_sequences($ofs1, $old_schema, $new_schema);
         // remove old constraints before table contraints, so the SQL statements succeed
-        pgsql8_diff_tables::diff_constraints($fp1, $old_schema, $new_schema, 'constraint', true);
-        pgsql8_diff_tables::diff_constraints($fp1, $old_schema, $new_schema, 'primaryKey', true);
-        pgsql8_diff_tables::drop_tables($fp2, $old_schema, $new_schema);
-        pgsql8_diff_tables::diff_tables($fp1, $fp2, $old_schema, $new_schema);
-        pgsql8_diff_indexes::diff_indexes($fp1, $old_schema, $new_schema);
-        pgsql8_diff_tables::diff_clusters($fp1, $old_schema, $new_schema);
-        pgsql8_diff_tables::diff_constraints($fp1, $old_schema, $new_schema, 'primaryKey', false);
-        pgsql8_diff_triggers::diff_triggers($fp1, $old_schema, $new_schema);
+        pgsql8_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', true);
+        pgsql8_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', true);
+        pgsql8_diff_tables::drop_tables($ofs3, $old_schema, $new_schema);
+        pgsql8_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema);
+        pgsql8_diff_indexes::diff_indexes($ofs1, $old_schema, $new_schema);
+        pgsql8_diff_tables::diff_clusters($ofs1, $old_schema, $new_schema);
+        pgsql8_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', false);
+        pgsql8_diff_triggers::diff_triggers($ofs1, $old_schema, $new_schema);
       }
       // non-primary key constraints may be inter-schema dependant, and dependant on other's primary keys
       // and therefore should be done after object creation sections
       foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-        pgsql8_diff_tables::diff_constraints($fp1, $old_schema, $new_schema, 'constraint', false);
+        pgsql8_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', false);
       }
     }
     else {
@@ -310,8 +223,8 @@ class pgsql8_diff extends sql99_diff{
         // do all types and functions on their own before table creation
         // see next loop for other once per schema work
         if ( !in_array(trim($new_schema['name']), $processed_schemas) ) {
-          pgsql8_diff_types::apply_changes($fp1, $old_schema, $new_schema, $type_modified_columns);
-          pgsql8_diff_functions::diff_functions($fp1, $fp2, $old_schema, $new_schema);
+          pgsql8_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
+          pgsql8_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
           $processed_schemas[] = trim($new_schema['name']);
         }
       }
@@ -343,8 +256,8 @@ class pgsql8_diff extends sql99_diff{
         // @NOTICE: when dropping constraints, dbx::renamed_table_check_pointer() is not called for $old_table
         // as pgsql8_diff_tables::diff_constraints_table() will do rename checking when recreating constraints for renamed tables
 
-        pgsql8_diff_tables::diff_constraints_table($fp1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', true);
-        pgsql8_diff_tables::diff_constraints_table($fp1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', true);
+        pgsql8_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', true);
+        pgsql8_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', true);
       }
 
       $processed_schemas = array();
@@ -363,7 +276,7 @@ class pgsql8_diff extends sql99_diff{
         // see above for pre table creation stuff
         // see below for post table creation stuff
         if ( !in_array($new_schema['name'], $processed_schemas) ) {
-          pgsql8_diff_sequences::diff_sequences($fp1, $old_schema, $new_schema);
+          pgsql8_diff_sequences::diff_sequences($ofs1, $old_schema, $new_schema);
           $processed_schemas[] = $new_schema['name'];
         }
         
@@ -379,12 +292,12 @@ class pgsql8_diff extends sql99_diff{
 
         dbx::renamed_table_check_pointer($old_schema, $old_table, $new_schema, $new_table);
 
-        pgsql8_diff_tables::diff_tables($fp1, $fp2, $old_schema, $new_schema, $old_table, $new_table);
-        pgsql8_diff_indexes::diff_indexes_table($fp1, $old_schema, $old_table, $new_schema, $new_table);
-        pgsql8_diff_tables::diff_clusters_table($fp1, $old_schema, $old_table, $new_schema, $new_table);
-        pgsql8_diff_tables::diff_constraints_table($fp1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', false);
-        pgsql8_diff_triggers::diff_triggers_table($fp1, $old_schema, $old_table, $new_schema, $new_table);
-        pgsql8_diff_tables::diff_constraints_table($fp1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', false);
+        pgsql8_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema, $old_table, $new_table);
+        pgsql8_diff_indexes::diff_indexes_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
+        pgsql8_diff_tables::diff_clusters_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
+        pgsql8_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', false);
+        pgsql8_diff_triggers::diff_triggers_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
+        pgsql8_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', false);
       }
 
       // drop old tables in reverse dependency order
@@ -411,7 +324,7 @@ class pgsql8_diff extends sql99_diff{
           throw new exception("old_table " . $item['schema']['name'] . "." . $item['table']['name'] . " not found. This is not expected as this reverse constraint loop was based on the old_table_dependency list!");
         }
 
-        pgsql8_diff_tables::drop_tables($fp2, $old_schema, $new_schema, $old_table, $new_table);
+        pgsql8_diff_tables::drop_tables($ofs3, $old_schema, $new_schema, $old_table, $new_table);
       }
     }
     
@@ -419,16 +332,16 @@ class pgsql8_diff extends sql99_diff{
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
       $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      pgsql8_diff_views::create_views($fp2, $old_schema, $new_schema);
+      pgsql8_diff_views::create_views($ofs3, $old_schema, $new_schema);
     }
   }
 
-  protected static function update_permissions($fp1, $fp2) {
+  protected static function update_permissions($ofs1, $ofs3) {
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
       foreach(dbx::get_permissions($new_schema) AS $new_permission) {
         if ( $old_schema == null || !pgsql8_permission::has_permission($old_schema, $new_permission) ) {
-          fwrite($fp1, pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_schema, $new_permission) . "\n");
+          $ofs1->write(pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_schema, $new_permission) . "\n");
         }
       }
 
@@ -443,7 +356,7 @@ class pgsql8_diff extends sql99_diff{
         }
         foreach(dbx::get_permissions($new_table) AS $new_permission) {
           if ( $old_table == null || !pgsql8_permission::has_permission($old_table, $new_permission) ) {
-            fwrite($fp1, pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_table, $new_permission) . "\n");
+            $ofs1->write(pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_table, $new_permission) . "\n");
           }
         }
       }
@@ -455,7 +368,7 @@ class pgsql8_diff extends sql99_diff{
         }
         foreach(dbx::get_permissions($new_sequence) AS $new_permission) {
           if ( $old_sequence == null || !pgsql8_permission::has_permission($old_sequence, $new_permission) ) {
-            fwrite($fp1, pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_sequence, $new_permission) . "\n");
+            $ofs1->write(pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_sequence, $new_permission) . "\n");
           }
         }
       }
@@ -467,7 +380,7 @@ class pgsql8_diff extends sql99_diff{
         }
         foreach(dbx::get_permissions($new_function) AS $new_permission) {
           if ( $old_function == null || !pgsql8_permission::has_permission($old_function, $new_permission) ) {
-            fwrite($fp1, pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_function, $new_permission) . "\n");
+            $ofs1->write(pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_function, $new_permission) . "\n");
           }
         }
       }
@@ -487,7 +400,7 @@ class pgsql8_diff extends sql99_diff{
           // OR if the view has changed, as that means it has been recreated
           || pgsql8_diff_views::is_view_modified($old_view, $new_view) ) {
             // view permissions are in schema stage 2 file because views are (re)created in that file for SELECT * expansion
-            fwrite($fp2, pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_view, $new_permission) . "\n");
+            $ofs3->write(pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_view, $new_permission) . "\n");
           }
         }
       }
@@ -497,11 +410,11 @@ class pgsql8_diff extends sql99_diff{
   /**
    * Updates data in table definitions
    *
-   * @param fp output file pointer
+   * @param ofs output file segmenter
    * @param old_database original database schema
    * @param new_database new database schema
    */
-  private static function update_data($fp, $delete_mode = false) {
+  private static function update_data($ofs, $delete_mode = false) {
     if ( self::$new_table_dependency != null && count(self::$new_table_dependency) > 0 ) {
       for($i=0; $i < count(self::$new_table_dependency); $i++) {
         // go in reverse when in delete mode
@@ -530,8 +443,7 @@ class pgsql8_diff extends sql99_diff{
         if ( $new_table == null ) {
           throw new exception("table " . $item['table']['name'] . " not found in new database schema " . $new_schema['name']);
         }
-        fwrite(
-          $fp,
+        $ofs->write(
           pgsql8_diff_tables::get_data_sql($old_schema, $old_table, $new_schema, $new_table, $delete_mode)
         );
       }
@@ -540,7 +452,7 @@ class pgsql8_diff extends sql99_diff{
       // dependency order unknown, hit them in natural order
       foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-        pgsql8_diff_tables::diff_data($fp, $old_schema, $new_schema);
+        pgsql8_diff_tables::diff_data($ofs, $old_schema, $new_schema);
       }
     }
   }

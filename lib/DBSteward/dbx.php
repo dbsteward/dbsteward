@@ -750,24 +750,24 @@ class dbx {
     return $primary_key_expression;
   }
 
-  public static function build_staged_sql($db_doc, $fp, $stage) {
-    // push all sql stage=$stage elements to the $fp
+  public static function build_staged_sql($db_doc, $ofs, $stage) {
+    // push all sql stage=$stage elements to the passed $ofs output_file_segmenter
     if ($stage === NULL) {
-      fwrite($fp, "\n-- NON-STAGED SQL COMMANDS\n");
+      $ofs->write("\n-- NON-STAGED SQL COMMANDS\n");
     }
     else {
-      fwrite($fp, "\n-- SQL STAGE " . $stage . " COMMANDS\n");
+      $ofs->write("\n-- SQL STAGE " . $stage . " COMMANDS\n");
     }
     foreach ($db_doc->sql AS $sql_statement) {
       if ((isset($sql_statement['stage']) && strcasecmp($sql_statement['stage'], $stage) == 0) || (!isset($sql_statement['stage']) && $stage === NULL)) {
         if (isset($sql_statement['comment'])
           && strlen($sql_statement['comment'])) {
-          fwrite($fp, "-- " . $sql_statement['comment'] . "\n");
+          $ofs->write("-- " . $sql_statement['comment'] . "\n");
         }
-        fwrite($fp, trim($sql_statement) . "  -- LITERAL_SQL_INCLUDE: this line should be included as-is without any parsing\n");
+        $ofs->write(trim($sql_statement) . "  -- LITERAL_SQL_INCLUDE: this line should be included as-is without any parsing\n");
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
   }
   
   public static function renamed_table_check_pointer($old_schema, &$old_table, $new_schema, $new_table) {
