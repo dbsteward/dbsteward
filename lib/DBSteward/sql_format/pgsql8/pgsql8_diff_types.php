@@ -21,10 +21,10 @@ class pgsql8_diff_types {
    */
   public static function apply_changes($ofs, $old_schema, $new_schema) {
     // drop any types that are no longer defined
-    self::drop_types($fp, $old_schema, $new_schema);
+    self::drop_types($ofs, $old_schema, $new_schema);
     
     // create any types that are new in the new definition
-    self::create_types($fp, $old_schema, $new_schema);
+    self::create_types($ofs, $old_schema, $new_schema);
 
     // there is no alter for types
     // find types that still exist that are different
