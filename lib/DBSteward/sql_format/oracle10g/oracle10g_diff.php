@@ -84,7 +84,7 @@ class oracle10g_diff extends sql99_diff {
         }
       }
       if (!$found) {
-        fwrite($stage2_ofs, $new_sql[$n] . "\n");
+        $stage2_ofs->write($new_sql[$n] . "\n");
       }
     }
 
@@ -98,46 +98,44 @@ class oracle10g_diff extends sql99_diff {
   /**
    * Updates objects in schemas.
    *
-   * @param fp1 stage1 output pointer
-   * @param fp2 stage2 output pointer
-   * @param old_database original database schema
-   * @param new_database new database schema
+   * @param $ofs1  stage1 output file segmenter
+   * @param $ofs3  stage3 output file segmenter
    */
-  private static function update_structure($fp1, $fp2) {
+  private static function update_structure($ofs1, $ofs3) {
     $type_modified_columns = array();
     
     // drop all views in all schemas, regardless whether dependency order is known or not
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
       $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      oracle10g_diff_views::drop_views($fp1, $old_schema, $new_schema);
+      oracle10g_diff_views::drop_views($ofs1, $old_schema, $new_schema);
     }
     
     //@TODO: implement oracle10g_language ? no relevant conversion exists see other TODO's stating this
-    //oracle10g_diff_languages::diff_languages($fp1);
+    //oracle10g_diff_languages::diff_languages($ofs1);
     // if the table dependency order is unknown, bang them in natural order
     if (!is_array(oracle10g_diff::$new_table_dependency)) {
       foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         //@NOTICE: @TODO: this does not honor oldName attributes, does it matter?
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-        oracle10g_diff_types::apply_changes($fp1, $old_schema, $new_schema, $type_modified_columns);
-        oracle10g_diff_functions::diff_functions($fp1, $fp2, $old_schema, $new_schema);
-        oracle10g_diff_sequences::diff_sequences($fp1, $old_schema, $new_schema);
+        oracle10g_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
+        oracle10g_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
+        oracle10g_diff_sequences::diff_sequences($ofs1, $old_schema, $new_schema);
         // remove old constraints before table contraints, so the SQL statements succeed
-        oracle10g_diff_tables::diff_constraints($fp1, $old_schema, $new_schema, 'constraint', TRUE);
-        oracle10g_diff_tables::diff_constraints($fp1, $old_schema, $new_schema, 'primaryKey', TRUE);
-        oracle10g_diff_tables::drop_tables($fp2, $old_schema, $new_schema);
-        oracle10g_diff_tables::diff_tables($fp1, $fp2, $old_schema, $new_schema);
-        oracle10g_diff_indexes::diff_indexes($fp1, $old_schema, $new_schema);
-        oracle10g_diff_tables::diff_clusters($fp1, $old_schema, $new_schema);
-        oracle10g_diff_tables::diff_constraints($fp1, $old_schema, $new_schema, 'primaryKey', FALSE);
-        oracle10g_diff_triggers::diff_triggers($fp1, $old_schema, $new_schema);
+        oracle10g_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', TRUE);
+        oracle10g_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', TRUE);
+        oracle10g_diff_tables::drop_tables($ofs3, $old_schema, $new_schema);
+        oracle10g_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema);
+        oracle10g_diff_indexes::diff_indexes($ofs1, $old_schema, $new_schema);
+        oracle10g_diff_tables::diff_clusters($ofs1, $old_schema, $new_schema);
+        oracle10g_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', FALSE);
+        oracle10g_diff_triggers::diff_triggers($ofs1, $old_schema, $new_schema);
       }
       // non-primary key constraints may be inter-schema dependant, and dependant on other's primary keys
       // and therefore should be done after object creation sections
       foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-        oracle10g_diff_tables::diff_constraints($fp1, $old_schema, $new_schema, 'constraint', FALSE);
+        oracle10g_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', FALSE);
       }
     }
     else {
@@ -153,8 +151,8 @@ class oracle10g_diff extends sql99_diff {
         // do all types and functions on their own before table creation
         // see next loop for other once per schema work
         if (!in_array(trim($new_schema['name']), $processed_schemas)) {
-          oracle10g_diff_types::apply_changes($fp1, $old_schema, $new_schema, $type_modified_columns);
-          oracle10g_diff_functions::diff_functions($fp1, $fp2, $old_schema, $new_schema);
+          oracle10g_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
+          oracle10g_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
           $processed_schemas[] = trim($new_schema['name']);
         }
       }
@@ -186,8 +184,8 @@ class oracle10g_diff extends sql99_diff {
         // @NOTICE: when dropping constraints, dbx::renamed_table_check_pointer() is not called for $old_table
         // as oracle10g_diff_tables::diff_constraints_table() will do rename checking when recreating constraints for renamed tables
 
-        oracle10g_diff_tables::diff_constraints_table($fp1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', TRUE);
-        oracle10g_diff_tables::diff_constraints_table($fp1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', TRUE);
+        oracle10g_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', TRUE);
+        oracle10g_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', TRUE);
       }
 
       $processed_schemas = array();
@@ -206,7 +204,7 @@ class oracle10g_diff extends sql99_diff {
         // see above for pre table creation stuff
         // see below for post table creation stuff
         if (!in_array($new_schema['name'], $processed_schemas)) {
-          oracle10g_diff_sequences::diff_sequences($fp1, $old_schema, $new_schema);
+          oracle10g_diff_sequences::diff_sequences($ofs1, $old_schema, $new_schema);
           $processed_schemas[] = $new_schema['name'];
         }
 
@@ -222,12 +220,12 @@ class oracle10g_diff extends sql99_diff {
         
         dbx::renamed_table_check_pointer($old_schema, $old_table, $new_schema, $new_table);
 
-        oracle10g_diff_tables::diff_tables($fp1, $fp2, $old_schema, $new_schema, $old_table, $new_table);
-        oracle10g_diff_indexes::diff_indexes_table($fp1, $old_schema, $old_table, $new_schema, $new_table);
-        oracle10g_diff_tables::diff_clusters_table($fp1, $old_schema, $old_table, $new_schema, $new_table);
-        oracle10g_diff_tables::diff_constraints_table($fp1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', FALSE);
-        oracle10g_diff_triggers::diff_triggers_table($fp1, $old_schema, $old_table, $new_schema, $new_table);
-        oracle10g_diff_tables::diff_constraints_table($fp1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', FALSE);
+        oracle10g_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema, $old_table, $new_table);
+        oracle10g_diff_indexes::diff_indexes_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
+        oracle10g_diff_tables::diff_clusters_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
+        oracle10g_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', FALSE);
+        oracle10g_diff_triggers::diff_triggers_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
+        oracle10g_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', FALSE);
       }
 
       // drop old tables in reverse dependency order
@@ -254,7 +252,7 @@ class oracle10g_diff extends sql99_diff {
           throw new exception("old_table " . $item['schema']['name'] . "." . $item['table']['name'] . " not found. This is not expected as this reverse constraint loop was based on the old_table_dependency list!");
         }
 
-        oracle10g_diff_tables::drop_tables($fp2, $old_schema, $new_schema, $old_table, $new_table);
+        oracle10g_diff_tables::drop_tables($ofs3, $old_schema, $new_schema, $old_table, $new_table);
       }
     }
     
@@ -262,16 +260,16 @@ class oracle10g_diff extends sql99_diff {
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
       $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      oracle10g_diff_views::create_views($fp1, $old_schema, $new_schema);
+      oracle10g_diff_views::create_views($ofs1, $old_schema, $new_schema);
     }
   }
 
-  protected static function update_permissions($fp1, $fp2) {
+  protected static function update_permissions($ofs1, $ofs3) {
     foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
       foreach (dbx::get_permissions($new_schema) AS $new_permission) {
         if ($old_schema == NULL || !oracle10g_permission::has_permission($old_schema, $new_permission)) {
-          fwrite($fp1, oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_schema, $new_permission) . "\n");
+          $ofs1->write(oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_schema, $new_permission) . "\n");
         }
       }
 
@@ -286,7 +284,7 @@ class oracle10g_diff extends sql99_diff {
         }
         foreach (dbx::get_permissions($new_table) AS $new_permission) {
           if ($old_table == NULL || !oracle10g_permission::has_permission($old_table, $new_permission)) {
-            fwrite($fp1, oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_table, $new_permission) . "\n");
+            $ofs1->write(oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_table, $new_permission) . "\n");
           }
         }
       }
@@ -298,7 +296,7 @@ class oracle10g_diff extends sql99_diff {
         }
         foreach (dbx::get_permissions($new_sequence) AS $new_permission) {
           if ($old_sequence == NULL || !oracle10g_permission::has_permission($old_sequence, $new_permission)) {
-            fwrite($fp1, oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_sequence, $new_permission) . "\n");
+            $ofs1->write(oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_sequence, $new_permission) . "\n");
           }
         }
       }
@@ -310,7 +308,7 @@ class oracle10g_diff extends sql99_diff {
         }
         foreach (dbx::get_permissions($new_function) AS $new_permission) {
           if ($old_function == NULL || !oracle10g_permission::has_permission($old_function, $new_permission)) {
-            fwrite($fp1, oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_function, $new_permission) . "\n");
+            $ofs1->write(oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_function, $new_permission) . "\n");
           }
         }
       }
@@ -330,7 +328,7 @@ class oracle10g_diff extends sql99_diff {
           // OR if the view has changed, as that means it has been recreated
           || oracle10g_diff_views::is_view_modified($old_view, $new_view) ) {
             // view permissions are in schema stage 2 file because views are (re)created in that file for SELECT * expansion
-            fwrite($fp2, oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_view, $new_permission) . "\n");
+            $ofs3->write(oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_view, $new_permission) . "\n");
           }
         }
       }

@@ -10,7 +10,7 @@
 
 class mssql10_diff_tables extends pgsql8_diff_tables {
 
-  public static function diff_clusters_table($fp, $old_schema, $old_table, $new_schema, $new_table) {
+  public static function diff_clusters_table($ofs, $old_schema, $old_table, $new_schema, $new_table) {
     if ($old_table == NULL) {
       $old_cluster = NULL;
     }
@@ -22,21 +22,22 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
 
     if ((($old_cluster == NULL) && ($new_cluster != NULL)) || (($old_cluster != NULL)
       && ($new_cluster != NULL) && (strcmp($new_cluster, $old_cluster) != 0))) {
-      fwrite($fp, "ALTER TABLE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " CLUSTER ON " . mssql10_diff::get_quoted_name($new_cluster, dbsteward::$quote_column_names) . ";\n");
+      $ofs->write("ALTER TABLE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " CLUSTER ON " . mssql10_diff::get_quoted_name($new_cluster, dbsteward::$quote_column_names) . ";\n");
     }
     else if (($old_cluster != NULL) && ($new_cluster == NULL) && mssql10_table::contains_index($new_schema, $new_table, $old_cluster)) {
-      fwrite($fp, "ALTER TABLE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names) . " SET WITHOUT CLUSTER;" . "\n");
+      $ofs->write("ALTER TABLE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names) . " SET WITHOUT CLUSTER;" . "\n");
     }
   }
 
   /**
    * Generate the needed alter table xxx set statistics when needed.
    *
-   * @param fp output file pointer
-   * @param old_table original table
-   * @param new_table new table
+   * @param $ofs        output file pointer
+   * @param $old_table  original table
+   * @param $new_schema new table
+   * @param $new_table  new table
    */
-  protected static function add_alter_statistics($fp, $old_table, $new_schema, $new_table) {
+  protected static function add_alter_statistics($ofs, $old_table, $new_schema, $new_table) {
     $stats = array();
 
     foreach (dbx::get_table_columns($new_table) as $new_column) {
@@ -60,8 +61,8 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     }
 
     foreach ($stats as $key => $value) {
-      fwrite($fp, "\n");
-      fwrite($fp, "ALTER TABLE ONLY " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($key, dbsteward::$quote_table_names) . " ALTER COLUMN " . mssql10_diff::get_quoted_name($key, dbsteward::$quote_column_names) . " SET STATISTICS " . $value . ";\n");
+      $ofs->write("\n");
+      $ofs->write("ALTER TABLE ONLY " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($key, dbsteward::$quote_table_names) . " ALTER COLUMN " . mssql10_diff::get_quoted_name($key, dbsteward::$quote_column_names) . " SET STATISTICS " . $value . ";\n");
     }
   }
 
@@ -438,22 +439,22 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
   /**
    * Checks whether there is a discrepancy in INHERITS for originaland new table.
    *
-   * @param fp output file pointer
+   * @param $ofs      output file segmenter
    * @param old_table original table
    * @param new_table new table
    */
-  protected static function check_inherits($fp, $old_table, $new_schema, $new_table) {
+  protected static function check_inherits($ofs, $old_table, $new_schema, $new_table) {
     throw new exception("DONT CALL ME IN mssql10_diff_tables -- I don't know what to do!");
   }
 
   /**
    * Outputs commands for creation of new tables.
    *
-   * @param fp output file pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
+   * @param $ofs        output file pointer
+   * @param $old_schema original schema
+   * @param $new_schema new schema
    */
-  private static function create_tables($fp, $old_schema, $new_schema, $old_table = NULL, $new_table = NULL) {
+  private static function create_tables($ofs, $old_schema, $new_schema, $old_table = NULL, $new_table = NULL) {
     foreach (dbx::get_tables($new_schema) as $table) {
       if ($new_table != NULL) {
         if (strcasecmp($table['name'], $new_table['name']) != 0) {
@@ -465,11 +466,11 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           // oldName renamed table ? rename table instead of create new one
           $old_table_name = mssql10_diff::get_quoted_name($new_schema['name'], false) . '.' . mssql10_diff::get_quoted_name($table['oldName'], false);
           $new_table_name = mssql10_diff::get_quoted_name($table['name'], false);
-          fwrite($fp, "-- table rename from oldName specification" . "\n"
+          $ofs->write("-- table rename from oldName specification" . "\n"
             . "sp_rename '$old_table_name' , '$new_table_name' ;" . "\n");
         }
         else {
-          fwrite($fp, mssql10_table::get_creation_sql($new_schema, $table) . "\n");
+          $ofs->write(mssql10_table::get_creation_sql($new_schema, $table) . "\n");
         }
       }
     }
@@ -478,11 +479,11 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
   /**
    * Outputs commands for dropping tables.
    *
-   * @param fp output file pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
+   * @param $ofs        output file pointer
+   * @param $old_schema original schema
+   * @param $new_schema new schema
    */
-  public static function drop_tables($fp, $old_schema, $new_schema, $old_table = NULL, $new_table = NULL) {
+  public static function drop_tables($ofs, $old_schema, $new_schema, $old_table = NULL, $new_table = NULL) {
     if ($old_schema != NULL) {
       foreach (dbx::get_tables($old_schema) as $table) {
         if ($old_table != NULL) {
@@ -501,10 +502,10 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           if ( !dbsteward::$ignore_oldname && is_object($new_schema)
             && ($renamed_table_name = mssql10_schema::table_name_by_old_name($new_schema, $table['name'])) !== false ) {
             $old_table_name = mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names);
-            fwrite($fp, "-- DROP TABLE $old_table_name omitted: new table $renamed_table_name indicates it is the replacement for " . $old_table_name . "\n");
+            $ofs->write("-- DROP TABLE $old_table_name omitted: new table $renamed_table_name indicates it is the replacement for " . $old_table_name . "\n");
           }
           else {
-            fwrite($fp, mssql10_table::get_drop_sql($old_schema, $table) . "\n");
+            $ofs->write(mssql10_table::get_drop_sql($old_schema, $table) . "\n");
           }
         }
       }
@@ -571,16 +572,16 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       }
 
       if (count($drop_defaults_columns) > 0) {
-        fwrite($fp1, "\n");
-        fwrite($fp1, "ALTER TABLE " . $quotedTableName . "\n");
+        $ofs1->write("\n");
+        $ofs1->write("ALTER TABLE " . $quotedTableName . "\n");
 
         for ($i = 0; $i < count($drop_defaults_columns); $i++) {
-          fwrite($fp1, "\tALTER COLUMN " . mssql10_diff::get_quoted_name($drop_defaults_columns[$i]['name'], dbsteward::$quote_column_names) . " DROP DEFAULT");
+          $ofs1->write("\tALTER COLUMN " . mssql10_diff::get_quoted_name($drop_defaults_columns[$i]['name'], dbsteward::$quote_column_names) . " DROP DEFAULT");
           if ($i < count($drop_defaults_columns) - 1) {
-            fwrite($fp1, ",\n");
+            $ofs1->write(",\n");
           }
           else {
-            fwrite($fp1, ";\n");
+            $ofs1->write(";\n");
           }
         }
       }
@@ -600,10 +601,10 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           // already taken care of in earlier command aggregate loop
         }
         else if ($commands[$i]['stage'] == '1postentire') {
-          fwrite($fp1, $commands[$i]['command'] . "\n");
+          $ofs1->write($commands[$i]['command'] . "\n");
         }
         else if ($commands[$i]['stage'] == '3postentire') {
-          fwrite($fp2, $commands[$i]['command'] . "\n");
+          $ofs3->write($commands[$i]['command'] . "\n");
         }
         else {
           throw new exception("Unknown stage " . $commands[$i]['stage'] . " during table " . $quotedTableName . " updates");
@@ -612,14 +613,14 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     }
   }
 
-  public static function diff_data($fp, $old_schema, $new_schema) {
+  public static function diff_data($ofs, $old_schema, $new_schema) {
     foreach (dbx::get_tables($new_schema) AS $new_table) {
       $old_table = NULL;
       // does the old contain the new?
       if ($old_schema != NULL && mssql10_schema::contains_table($old_schema, $new_table['name'])) {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
-      fwrite($fp, mssql10_diff_tables::get_data_sql($old_schema, $old_table, $new_schema, $new_table));
+      $ofs->write(mssql10_diff_tables::get_data_sql($old_schema, $old_table, $new_schema, $new_table));
     }
   }
 
@@ -905,12 +906,13 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
   /**
    * Outputs commands for differences in constraints.
    *
-   * @param fp output file pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
-   * @param primary_key determines whether primery keys should be processed or other constraints should be processed
+   * @param object  $ofs              output file pointer
+   * @param object  $old_schema       original schema
+   * @param object  $new_schema       new schema
+   * @param string  $type             type of constraints to process
+   * @param boolean $drop_constraints
    */
-  public static function diff_constraints($fp, $old_schema, $new_schema, $type, $drop_constraints) {
+  public static function diff_constraints($ofs, $old_schema, $new_schema, $type, $drop_constraints) {
     foreach (dbx::get_tables($new_schema) as $new_table) {
       if ($old_schema == NULL) {
         $old_table = NULL;
@@ -919,15 +921,15 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
 
-      mssql10_diff_tables::diff_constraints_table($fp, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints);
+      mssql10_diff_tables::diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints);
     }
   }
 
-  public static function diff_constraints_table($fp, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints = FALSE) {
+  public static function diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints = FALSE) {
     if ($drop_constraints) {
       // drop constraints that no longer exist or are modified
       foreach (mssql10_diff_tables::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint) {
-        fwrite($fp, mssql10_table::get_constraint_drop_sql($constraint, dbsteward::$quote_column_names) . "\n");
+        $ofs->write(mssql10_table::get_constraint_drop_sql($constraint, dbsteward::$quote_column_names) . "\n");
       }
     }
     else {
@@ -939,12 +941,12 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           // so the constraint by the old name, but part of the new table
           // will be referenced properly in the drop statement
           $constraint['table_name'] = $new_table['name'];
-          fwrite($fp, mssql10_table::get_constraint_drop_sql($constraint) . "\n");
+          $ofs->write(mssql10_table::get_constraint_drop_sql($constraint) . "\n");
         }
         
         // add all defined constraints back to the new table
         foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
-          fwrite($fp, mssql10_table::get_constraint_sql($constraint) . "\n");
+          $ofs->write(mssql10_table::get_constraint_sql($constraint) . "\n");
         }
         return;
       }
@@ -952,7 +954,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
 
       // add new constraints
       foreach (mssql10_diff_tables::get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint) {
-        fwrite($fp, mssql10_table::get_constraint_sql($constraint, dbsteward::$quote_column_names) . "\n");
+        $ofs->write(mssql10_table::get_constraint_sql($constraint, dbsteward::$quote_column_names) . "\n");
       }
     }
   }
@@ -1023,15 +1025,15 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
   }
 
   /**
-   * Creates diff of tables.
+   * Outputs DDL for addition, removal and modifications of table columns
    *
-   * @param stage1 output pointer
-   * @param stage2 output pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
+   * @param $ofs1       stage1 output file segmenter
+   * @param $ofs3       stage3 output file segmenter
+   * @param $old_table  original table
+   * @param $new_table  new table
    */
-  public static function diff_tables($fp1, $fp2, $old_schema, $new_schema, $old_table_target = null, $new_table_target = null) {
-    self::create_tables($fp1, $old_schema, $new_schema, $old_table_target, $new_table_target);
+  public static function diff_tables($ofs1, $ofs3, $old_schema, $new_schema, $old_table_target = null, $new_table_target = null) {
+    self::create_tables($ofs1, $old_schema, $new_schema, $old_table_target, $new_table_target);
     
     // were specific tables passed?
     if ( $old_table_target !== null || $new_table_target !== null ) {
@@ -1039,8 +1041,8 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       $new_table = $new_table_target;
 
       if ( $old_table && $new_table) {
-        mssql10_diff_tables::update_table_columns($fp1, $fp2, $old_table, $new_schema, $new_table);
-        mssql10_diff_tables::add_alter_statistics($fp1, $old_table, $new_schema, $new_table);
+        mssql10_diff_tables::update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table);
+        mssql10_diff_tables::add_alter_statistics($ofs1, $old_table, $new_schema, $new_table);
       }
     }
     else {
@@ -1059,8 +1061,8 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           continue;
         }
   
-        mssql10_diff_tables::update_table_columns($fp1, $fp2, $old_table, $new_schema, $new_table);
-        mssql10_diff_tables::add_alter_statistics($fp1, $old_table, $new_schema, $new_table);
+        mssql10_diff_tables::update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table);
+        mssql10_diff_tables::add_alter_statistics($ofs1, $old_table, $new_schema, $new_table);
       }
     }
   }

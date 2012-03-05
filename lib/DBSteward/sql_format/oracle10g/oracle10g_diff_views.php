@@ -1,6 +1,6 @@
 <?php
 /**
- * Diffs views.
+ * View comparison management
  *
  * @package DBSteward
  * @subpackage oracle10g

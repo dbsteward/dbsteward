@@ -13,35 +13,35 @@ class pgsql8_diff_indexes {
   /**
    * Outputs commands for differences in indexes.
    *
-   * @param fp output file pointer
+   * @param $ofs       output file pointer
    * @param old_schema original schema
    * @param new_schema new schema
    */
-  public static function diff_indexes($fp, $old_schema, $new_schema) {
+  public static function diff_indexes($ofs, $old_schema, $new_schema) {
     foreach(dbx::get_tables($new_schema) as $new_table) {
       if ($old_schema == null) {
         $old_table = null;
       } else {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
-      self::diff_indexes_table($fp, $old_schema, $old_table, $new_schema, $new_table);
+      self::diff_indexes_table($ofs, $old_schema, $old_table, $new_schema, $new_table);
     }
   }
 
-  public static function diff_indexes_table($fp, $old_schema, $old_table, $new_schema, $new_table) {
+  public static function diff_indexes_table($ofs, $old_schema, $old_table, $new_schema, $new_table) {
     // Drop indexes that do not exist in new schema or are modified
     foreach(self::get_drop_indexes($old_schema, $old_table, $new_schema, $new_table) as $index) {
-      fwrite($fp, pgsql8_index::get_drop_sql($new_schema, $new_table, $index));
+      $ofs->write(pgsql8_index::get_drop_sql($new_schema, $new_table, $index));
     }
 
     // Add new indexes
     if ($old_schema == null) {
       foreach(dbx::get_table_indexes($new_schema, $new_table) as $index) {
-        fwrite($fp, pgsql8_index::get_creation_sql($new_schema, $new_table, $index) . "\n");
+        $ofs->write(pgsql8_index::get_creation_sql($new_schema, $new_table, $index) . "\n");
       }
     } else {
       foreach(self::get_new_indexes($old_schema, $old_table, $new_schema, $new_table) as $index) {
-        fwrite($fp, pgsql8_index::get_creation_sql($new_schema, $new_table, $index) . "\n");
+        $ofs->write(pgsql8_index::get_creation_sql($new_schema, $new_table, $index) . "\n");
       }
     }
   }

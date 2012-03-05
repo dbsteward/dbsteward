@@ -124,7 +124,7 @@ class pgsql8_diff extends sql99_diff{
         }
       }
       if ( ! $found ) {
-        fwrite($data_stage1_fp, $new_sql[$n] . "\n");
+        $stage2_ofs->write($new_sql[$n] . "\n");
       }
     }
 
@@ -478,11 +478,11 @@ class pgsql8_diff extends sql99_diff{
    * call dbsteward.db_config_parameter() to alter the database settings
    * because the database name is not known to dbsteward when creating the runnable sql
    *
-   * @param resource $fp
+   * @param  object $ofs  output file segmenter
    *
    * @return void
    */
-  public static function update_database_config_parameters($fp) {
+  public static function update_database_config_parameters($ofs) {
     foreach(dbx::get_configuration_parameters(dbsteward::$new_database->database) AS $new_param) {
       $old_param = null;
       if ( is_object(dbsteward::$old_database) ) {
@@ -495,7 +495,7 @@ class pgsql8_diff extends sql99_diff{
           $old_value = $old_param['value'];
         }
         $sql = "SELECT dbsteward.db_config_parameter('" . $new_param['name'] . "', '" . $new_param['value'] . "'); -- old configurationParameter value: " . $old_value;
-        fwrite($fp, $sql . "\n");
+        $ofs->write($sql . "\n");
       }
     }
   }

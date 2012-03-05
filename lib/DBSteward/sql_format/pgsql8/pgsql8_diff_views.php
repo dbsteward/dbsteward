@@ -1,6 +1,6 @@
 <?php
 /**
- * Diffs views.
+ * View comparison management
  *
  * @package DBSteward
  * @subpackage pgsql8
@@ -11,35 +11,35 @@
 class pgsql8_diff_views {
 
   /**
-   * Outputs commands for creation of views.
+   * Create all new or modified views
    *
-   * @param fp output file pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
+   * @param $ofs         output file segmenter
+   * @param $old_schema  original schema
+   * @param $new_schema  new schema
    */
-  public static function create_views($fp, $old_schema, $new_schema) {
+  public static function create_views($ofs, $old_schema, $new_schema) {
     foreach (dbx::get_views($new_schema) as $new_view) {
       if ($old_schema == null
         || !pgsql8_schema::contains_view($old_schema, $new_view['name'])
         || self::is_view_modified(dbx::get_view($old_schema, $new_view['name']), $new_view)) {
-        fwrite($fp, pgsql8_view::get_creation_sql($new_schema, $new_view));
+        $ofs->write(pgsql8_view::get_creation_sql($new_schema, $new_view));
       }
     }
   }
 
   /**
-   * Outputs commands for dropping views.
+   * Drop all missing or modified views
    *
-   * @param fp output file pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
+   * @param $ofs         output file segmenter
+   * @param $old_schema  original schema
+   * @param $new_schema  new schema
    */
-  public static function drop_views($fp, $old_schema, $new_schema) {
+  public static function drop_views($ofs, $old_schema, $new_schema) {
     if ($old_schema != NULL) {
       foreach (dbx::get_views($old_schema) as $old_view) {
         $new_view = dbx::get_view($new_schema, $old_view['name']);
         if ($new_view == NULL || self::is_view_modified($old_view, $new_view)) {
-          fwrite($fp, pgsql8_view::get_drop_sql($old_schema, $old_view) . "\n");
+          $ofs->write(pgsql8_view::get_drop_sql($old_schema, $old_view) . "\n");
         }
       }
     }

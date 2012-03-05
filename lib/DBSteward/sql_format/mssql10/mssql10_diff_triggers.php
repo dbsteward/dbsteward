@@ -17,7 +17,7 @@ class mssql10_diff_triggers {
    * @param oldSchema original schema
    * @param newSchema new schema
    */
-  public static function diff_triggers($fp, $old_schema, $new_schema) {
+  public static function diff_triggers($ofs, $old_schema, $new_schema) {
     foreach (dbx::get_tables($new_schema) as $new_table) {
       if ($old_schema == NULL) {
         $old_table = NULL;
@@ -25,16 +25,16 @@ class mssql10_diff_triggers {
       else {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
-      self::diff_triggers_table($fp, $old_schema, $old_table, $new_schema, $new_table);
+      self::diff_triggers_table($ofs, $old_schema, $old_table, $new_schema, $new_table);
     }
   }
 
-  public static function diff_triggers_table($fp, $old_schema, $old_table, $new_schema, $new_table) {
+  public static function diff_triggers_table($ofs, $old_schema, $old_table, $new_schema, $new_table) {
     // drop triggers that no longer exist or are modified
     foreach (self::get_drop_triggers($old_schema, $old_table, $new_schema, $new_table) as $old_trigger) {
       // only do triggers set to the current sql format
       if (strcasecmp($old_trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
-        fwrite($fp, mssql10_trigger::get_drop_sql($old_schema, $old_trigger) . "\n");
+        $ofs->write(mssql10_trigger::get_drop_sql($old_schema, $old_trigger) . "\n");
       }
     }
 
@@ -42,7 +42,7 @@ class mssql10_diff_triggers {
     foreach (self::get_new_triggers($old_schema, $old_table, $new_schema, $new_table) AS $new_trigger) {
       // only do triggers set to the current sql format
       if (strcasecmp($new_trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
-        fwrite($fp, mssql10_trigger::get_creation_sql($new_schema, $new_trigger) . "\n");
+        $ofs->write(mssql10_trigger::get_creation_sql($new_schema, $new_trigger) . "\n");
       }
     }
   }

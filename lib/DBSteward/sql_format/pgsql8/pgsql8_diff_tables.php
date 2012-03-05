@@ -13,11 +13,11 @@ class pgsql8_diff_tables extends sql99_diff_tables {
   /**
    * Generates and outputs CLUSTER specific DDL if appropriate.
    *
-   * @param fp output file pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
+   * @param $ofs         output file pointer
+   * @param $old_schema  original schema
+   * @param $new_schema  new schema
    */
-  public static function diff_clusters($fp, $old_schema, $new_schema) {
+  public static function diff_clusters($ofs, $old_schema, $new_schema) {
     foreach(dbx::get_tables($new_schema) as $new_table) {
       if ($old_schema == null) {
         $old_table = null;
@@ -25,11 +25,11 @@ class pgsql8_diff_tables extends sql99_diff_tables {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
 
-      self::diff_clusters_table($fp, $old_schema, $old_table, $new_schema, $new_table);
+      self::diff_clusters_table($ofs, $old_schema, $old_table, $new_schema, $new_table);
     }
   }
 
-  public static function diff_clusters_table($fp, $old_schema, $old_table, $new_schema, $new_table) {
+  public static function diff_clusters_table($ofs, $old_schema, $old_table, $new_schema, $new_table) {
     if ($old_table == null) {
       $old_cluster = null;
     } else {
@@ -40,28 +40,28 @@ class pgsql8_diff_tables extends sql99_diff_tables {
 
     if ((($old_cluster == null) && ($new_cluster != null)) ||
         (($old_cluster != null) && ($new_cluster != null) && (strcmp($new_cluster, $old_cluster) != 0) )) {
-      fwrite($fp, "ALTER TABLE "
+      $ofs->write("ALTER TABLE "
         . pgsql8_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
         . " CLUSTER ON "
         . pgsql8_diff::get_quoted_name($new_cluster, dbsteward::$quote_column_names)
         . ";\n");
     } else if (($old_cluster != null) && ($new_cluster == null) && pgsql8_table::contains_index($new_schema, $new_table, $old_cluster)) {
-      fwrite($fp, "ALTER TABLE "
+      $ofs->write("ALTER TABLE "
         . pgsql8_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names)
         . " SET WITHOUT CLUSTER;" . "\n");
     }
   }
 
   /**
-   * Creates diff of tables.
+   * Outputs DDL for addition, removal and modifications of table columns
    *
-   * @param stage1 output pointer
-   * @param stage2 output pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
+   * @param $ofs1       stage1 output pointer
+   * @param $ofs3       stage3 output pointer
+   * @param $old_schema original schema
+   * @param $new_schema new schema
    */
-  public static function diff_tables($fp1, $fp2, $old_schema, $new_schema, $old_table_target = null, $new_table_target = null) {
-    self::create_tables($fp1, $old_schema, $new_schema, $old_table_target, $new_table_target);
+  public static function diff_tables($ofs1, $ofs3, $old_schema, $new_schema, $old_table_target = null, $new_table_target = null) {
+    self::create_tables($ofs1, $old_schema, $new_schema, $old_table_target, $new_table_target);
     
     // were specific tables passed?
     if ( $old_table_target !== null || $new_table_target !== null ) {
@@ -69,9 +69,9 @@ class pgsql8_diff_tables extends sql99_diff_tables {
       $new_table = $new_table_target;
 
       if ( $old_table && $new_table) {
-        self::update_table_columns($fp1, $fp2, $old_table, $new_schema, $new_table);
-        self::check_inherits($fp1, $old_table, $new_schema, $new_table);
-        self::add_alter_statistics($fp1, $old_table, $new_schema, $new_table);
+        self::update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table);
+        self::check_inherits($ofs1, $old_table, $new_schema, $new_table);
+        self::add_alter_statistics($ofs1, $old_table, $new_schema, $new_table);
       }
     }
     else {
@@ -90,9 +90,9 @@ class pgsql8_diff_tables extends sql99_diff_tables {
           continue;
         }
   
-        self::update_table_columns($fp1, $fp2, $old_table, $new_schema, $new_table);
-        self::check_inherits($fp1, $old_table, $new_schema, $new_table);
-        self::add_alter_statistics($fp1, $old_table, $new_schema, $new_table);
+        self::update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table);
+        self::check_inherits($ofs1, $old_table, $new_schema, $new_table);
+        self::add_alter_statistics($ofs1, $old_table, $new_schema, $new_table);
       }
     }
   }
@@ -100,11 +100,11 @@ class pgsql8_diff_tables extends sql99_diff_tables {
   /**
    * Generate the needed alter table xxx set statistics when needed.
    *
-   * @param fp output file pointer
-   * @param old_table original table
-   * @param new_table new table
+   * @param $ofs       output file pointer
+   * @param $old_table original table
+   * @param $new_table new table
    */
-  private static function add_alter_statistics($fp, $old_table, $new_schema, $new_table) {
+  private static function add_alter_statistics($ofs, $old_table, $new_schema, $new_table) {
     $stats = array();
 
     foreach(dbx::get_table_columns($new_table) as $new_column) {
@@ -126,8 +126,8 @@ class pgsql8_diff_tables extends sql99_diff_tables {
     }
 
     foreach($stats as $key => $value) {
-      fwrite($fp, "\n");
-      fwrite($fp, "ALTER TABLE ONLY "
+      $ofs->write("\n" .
+        "ALTER TABLE ONLY "
         . pgsql8_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($key, dbsteward::$quote_table_names)
         . " ALTER COLUMN " . pgsql8_diff::get_quoted_name($key, dbsteward::$quote_column_names)
         . " SET STATISTICS "
@@ -409,11 +409,12 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   /**
    * Checks whether there is a discrepancy in INHERITS for originaland new table.
    *
-   * @param fp output file pointer
-   * @param old_table original table
-   * @param new_table new table
+   * @param $ofs        output file pointer
+   * @param $old_table  original table
+   * @param $new_schema new table
+   * @param $new_table  new table
    */
-  private static function check_inherits($fp, $old_table, $new_schema, $new_table) {
+  private static function check_inherits($ofs, $old_table, $new_schema, $new_table) {
     $old_inherits = isset($old_table['inherits']) ? $old_table['inherits'] : null;
     $new_inherits = isset($new_table['inherits']) ? $new_table['inherits'] : null;
 
@@ -435,11 +436,11 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   /**
    * Outputs commands for creation of new tables.
    *
-   * @param fp output file pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
+   * @param $ofs         output file pointer
+   * @param $old_schema  original schema
+   * @param $new_schema  new schema
    */
-  private static function create_tables($fp, $old_schema, $new_schema, $old_table = null, $new_table = null) {
+  private static function create_tables($ofs, $old_schema, $new_schema, $old_table = null, $new_table = null) {
     foreach(dbx::get_tables($new_schema) as $table) {
       if ( $new_table != null ) {
         if ( strcasecmp($table['name'], $new_table['name']) != 0 ) {
@@ -453,11 +454,11 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           // ALTER TABLE ... RENAME TO does not accept schema qualifiers when renaming a table
           // ALTER TABLE message.message_report RENAME TO report ;
           $new_table_name = pgsql8_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names);
-          fwrite($fp, "-- table rename from oldName specification" . "\n"
+          $ofs->write("-- table rename from oldName specification" . "\n"
             . "ALTER TABLE $old_table_name RENAME TO $new_table_name ;" . "\n");
         }
         else {
-          fwrite($fp, pgsql8_table::get_creation_sql($new_schema, $table, dbsteward::$quote_column_names) . "\n");
+          $ofs->write(pgsql8_table::get_creation_sql($new_schema, $table, dbsteward::$quote_column_names) . "\n");
         }
       }
     }
@@ -466,11 +467,11 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   /**
    * Outputs commands for dropping tables.
    *
-   * @param fp output file pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
+   * @param $ofs         output file pointer
+   * @param $old_schema  original schema
+   * @param $new_schema  new schema
    */
-  public static function drop_tables($fp, $old_schema, $new_schema, $old_table = null, $new_table = null) {
+  public static function drop_tables($ofs, $old_schema, $new_schema, $old_table = null, $new_table = null) {
     if ($old_schema != null) {
       foreach(dbx::get_tables($old_schema) as $table) {
         if ( $old_table != null ) {
@@ -490,10 +491,10 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             && ($renamed_table_name = pgsql8_schema::table_name_by_old_name($new_schema, $table['name'])) !== false ) {
             // table indicating oldName = table['name'] present in new schema? don't do DROP statement
             $old_table_name = pgsql8_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names);
-            fwrite($fp, "-- DROP TABLE $old_table_name omitted: new table $renamed_table_name indicates it is the replacement for " . $old_table_name . "\n");
+            $ofs->write("-- DROP TABLE $old_table_name omitted: new table $renamed_table_name indicates it is the replacement for " . $old_table_name . "\n");
           }
           else {
-            fwrite($fp, pgsql8_table::get_drop_sql($old_schema, $table) . "\n");
+            $ofs->write(pgsql8_table::get_drop_sql($old_schema, $table) . "\n");
           }
         }
       }
@@ -504,10 +505,10 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    * Outputs commands for addition, removal and modifications of
    * table columns.
    *
-   * @param stage1 output file segmenter
-   * @param stage3 output file segmenter
-   * @param old_table original table
-   * @param new_table new table
+   * @param $ofs1       stage1 output file segmenter
+   * @param $ofs3       stage3 output file segmenter
+   * @param $old_table  original table
+   * @param $new_table  new table
    */
   private static function update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table) {
     $commands = array();
@@ -981,12 +982,13 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   /**
    * Outputs commands for differences in constraints.
    *
-   * @param fp output file pointer
-   * @param old_schema original schema
-   * @param new_schema new schema
-   * @param primary_key determines whether primery keys should be processed or other constraints should be processed
+   * @param object  $ofs              output file pointer
+   * @param object  $old_schema       original schema
+   * @param object  $new_schema       new schema
+   * @param string  $type             type of constraints to process
+   * @param boolean $drop_constraints
    */
-  public static function diff_constraints($fp, $old_schema, $new_schema, $type, $drop_constraints) {
+  public static function diff_constraints($ofs, $old_schema, $new_schema, $type, $drop_constraints) {
     foreach(dbx::get_tables($new_schema) as $new_table) {
       if ($old_schema == null) {
         $old_table = null;
@@ -994,15 +996,15 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
 
-      self::diff_constraints_table($fp, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints);
+      self::diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints);
     }
   }
 
-  public static function diff_constraints_table($fp, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints = false) {
+  public static function diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints = false) {
     if ( $drop_constraints ) {
       // drop constraints that no longer exist or are modified
       foreach(self::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint) {
-        fwrite($fp, pgsql8_table::get_constraint_drop_sql($constraint) . "\n");
+        $ofs->write(pgsql8_table::get_constraint_drop_sql($constraint) . "\n");
       }
     }
     else {
@@ -1015,12 +1017,12 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             // so the constraint by the old name, but part of the new table
             // will be referenced properly in the drop statement
             $constraint['table_name'] = $new_table['name'];
-            fwrite($fp, pgsql8_table::get_constraint_drop_sql($constraint) . "\n");
+            $ofs->write(pgsql8_table::get_constraint_drop_sql($constraint) . "\n");
           }
           
           // add all defined constraints back to the new table
           foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
-            fwrite($fp, pgsql8_table::get_constraint_sql($constraint) . "\n");
+            $ofs->write(pgsql8_table::get_constraint_sql($constraint) . "\n");
           }
           return;
         }
@@ -1029,7 +1031,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 
       // add new constraints
       foreach(self::get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint) {
-        fwrite($fp, pgsql8_table::get_constraint_sql($constraint) . "\n");
+        $ofs->write(pgsql8_table::get_constraint_sql($constraint) . "\n");
       }
     }
   }
