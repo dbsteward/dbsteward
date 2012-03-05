@@ -406,16 +406,17 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         
         // mssql10_table:::get_creation_sql() only creates the table
         // now that it has been renamed, recreate the table's indexes keys and triggers
-        $tc_buffer = fopen("php://memory", "rw"); 
-        mssql10_diff_indexes::diff_indexes_table($tc_buffer, NULL, NULL, $new_schema, $new_table);
-        mssql10_diff_tables::diff_constraints_table($tc_buffer, NULL, NULL, $new_schema, $new_table, 'primaryKey', FALSE);
-        mssql10_diff_triggers::diff_triggers_table($tc_buffer, NULL, NULL, $new_schema, $new_table);
-        mssql10_diff_tables::diff_constraints_table($tc_buffer, NULL, NULL, $new_schema, $new_table, 'constraint', FALSE);
+        $tc_buffer = fopen("php://memory", "rw");
+        $tc_ofs = new output_file_segmenter('identity_transition_command', 1, $tc_buffer, 'identity_transition_command_buffer');
+        mssql10_diff_indexes::diff_indexes_table($tc_ofs, NULL, NULL, $new_schema, $new_table);
+        mssql10_diff_tables::diff_constraints_table($tc_ofs, NULL, NULL, $new_schema, $new_table, 'primaryKey', FALSE);
+        mssql10_diff_triggers::diff_triggers_table($tc_ofs, NULL, NULL, $new_schema, $new_table);
+        mssql10_diff_tables::diff_constraints_table($tc_ofs, NULL, NULL, $new_schema, $new_table, 'constraint', FALSE);
         rewind($tc_buffer);
         while (($tc_line = fgets($tc_buffer, 4096)) !== false) {
           $identity_transition_commands[] = $tc_line;
         }
-        fclose($tc_buffer);
+        unset($tc_ofs);
         
         // restore FKEYs other tables have to the table
         foreach($other_tables_foreign_keying_constraints as $constraint) {
