@@ -338,11 +338,11 @@ class oracle10g_diff extends sql99_diff {
   /**
    * Updates objects in schemas.
    *
-   * @param fp output file pointer
-   * @param old_database original database schema
-   * @param new_database new database schema
+   * @param $ofs          output file segmenter
+   * @param $old_database original database schema
+   * @param $new_database new database schema
    */
-  private static function update_data($fp, $delete_mode = FALSE) {
+  private static function update_data($ofs, $delete_mode = FALSE) {
     if (oracle10g_diff::$new_table_dependency != NULL && count(oracle10g_diff::$new_table_dependency) > 0) {
       for ($i = 0; $i < count(oracle10g_diff::$new_table_dependency); $i++) {
         // go in reverse when in delete mode
@@ -371,7 +371,7 @@ class oracle10g_diff extends sql99_diff {
         if ($new_table == NULL) {
           throw new exception("table " . $item['table']['name'] . " not found in new database schema " . $new_schema['name']);
         }
-        fwrite($fp, oracle10g_diff_tables::get_data_sql($old_schema, $old_table, $new_schema, $new_table, $delete_mode));
+        $ofs->write(oracle10g_diff_tables::get_data_sql($old_schema, $old_table, $new_schema, $new_table, $delete_mode));
       }
     }
     else {

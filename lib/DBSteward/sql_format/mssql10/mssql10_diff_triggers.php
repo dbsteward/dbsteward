@@ -13,7 +13,7 @@ class mssql10_diff_triggers {
   /**
    * Outputs commands for differences in triggers.
    *
-   * @param fp output file pointer
+   * @param $ofs          output file segmenter
    * @param oldSchema original schema
    * @param newSchema new schema
    */

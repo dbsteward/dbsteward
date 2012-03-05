@@ -94,7 +94,7 @@ class mssql10_diff extends pgsql8_diff {
         }
       }
       if (!$found) {
-        fwrite($stage2_ofs, $new_sql[$n] . "\n");
+        $stage2_ofs->write($new_sql[$n] . "\n");
       }
     }
 
@@ -138,8 +138,8 @@ class mssql10_diff extends pgsql8_diff {
    *
    * @param ofs1 stage1 output file segmenter
    * @param ofs3 stage3 output file segmenter
-   * @param old_database original database schema
-   * @param new_database new database schema
+   * @param $old_database original database
+   * @param $new_database new database
    */
   private static function update_structure($ofs1, $ofs3) {
     $type_modified_columns = array();

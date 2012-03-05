@@ -84,7 +84,7 @@ class mysql4_diff extends sql99_diff {
         }
       }
       if (!$found) {
-        fwrite($stage2_ofs, $new_sql[$n] . "\n");
+        $stage2_ofs->write($new_sql[$n] . "\n");
       }
     }
 
@@ -338,11 +338,11 @@ class mysql4_diff extends sql99_diff {
   /**
    * Updates objects in schemas.
    *
-   * @param fp output file pointer
-   * @param old_database original database schema
-   * @param new_database new database schema
+   * @param $ofs          output file segmenter
+   * @param $old_database original database
+   * @param $new_database new database
    */
-  private static function update_data($fp, $delete_mode = FALSE) {
+  private static function update_data($ofs, $delete_mode = FALSE) {
     if (mysql4_diff::$new_table_dependency != NULL && count(mysql4_diff::$new_table_dependency) > 0) {
       for ($i = 0; $i < count(mysql4_diff::$new_table_dependency); $i++) {
         // go in reverse when in delete mode
@@ -371,14 +371,14 @@ class mysql4_diff extends sql99_diff {
         if ($new_table == NULL) {
           throw new exception("table " . $item['table']['name'] . " not found in new database schema " . $new_schema['name']);
         }
-        fwrite($fp, mysql4_diff_tables::get_data_sql($old_schema, $old_table, $new_schema, $new_table, $delete_mode));
+        $ofs->write(mysql4_diff_tables::get_data_sql($old_schema, $old_table, $new_schema, $new_table, $delete_mode));
       }
     }
     else {
       // dependency order unknown, hit them in natural order
       foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-        mysql4_diff_tables::diff_data($fp, $old_schema, $new_schema);
+        mysql4_diff_tables::diff_data($ofs, $old_schema, $new_schema);
       }
     }
   }

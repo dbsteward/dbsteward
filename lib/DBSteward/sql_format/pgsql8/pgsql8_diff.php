@@ -411,8 +411,8 @@ class pgsql8_diff extends sql99_diff{
    * Updates data in table definitions
    *
    * @param ofs output file segmenter
-   * @param old_database original database schema
-   * @param new_database new database schema
+   * @param $old_database original database
+   * @param $new_database new database
    */
   private static function update_data($ofs, $delete_mode = false) {
     if ( self::$new_table_dependency != null && count(self::$new_table_dependency) > 0 ) {
