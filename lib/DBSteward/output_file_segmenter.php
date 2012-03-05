@@ -110,7 +110,7 @@ class output_file_segmenter {
     if ( ! $this->segmenting_enabled ) {
       return;
     }
-    if ( $this->statement_count > dbsteward::$output_file_statement_limit ) {
+    if ( $this->statement_count >= dbsteward::$output_file_statement_limit ) {
       $this->next_file_segment();
     }
   }
