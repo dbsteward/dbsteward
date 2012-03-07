@@ -739,14 +739,14 @@ class pgsql8 {
     fwrite($slony_stage1_fp, $old_set_new_set . "\n");
     fwrite($slony_stage1_fp, "ECHO 'dbsteward slony stage 1 upgrade file generated " . date('r') . " starting';\n\n");
 
-    $slony_stage2_file = $slonik_file_prefix . '_stage2_slony.slonik';
-    $slony_stage2_fp = fopen($slony_stage2_file, 'w');
-    if ($slony_stage2_fp === FALSE) {
-      throw new exception("failed to open upgrade slony stage 2 output file " . $slony_stage2_file . ' for output');
+    $slony_stage3_file = $slonik_file_prefix . '_stage3_slony.slonik';
+    $slony_stage3_fp = fopen($slony_stage3_file, 'w');
+    if ($slony_stage3_fp === FALSE) {
+      throw new exception("failed to open upgrade slony stage 2 output file " . $slony_stage3_file . ' for output');
     }
-    fwrite($slony_stage2_fp, "# dbsteward slony stage 2 upgrade file generated " . $timestamp . "\n");
-    fwrite($slony_stage2_fp, $old_set_new_set . "\n");
-    fwrite($slony_stage2_fp, "ECHO 'dbsteward slony stage 2 upgrade file generated " . date('r') . " starting';\n\n");
+    fwrite($slony_stage3_fp, "# dbsteward slony stage 2 upgrade file generated " . $timestamp . "\n");
+    fwrite($slony_stage3_fp, $old_set_new_set . "\n");
+    fwrite($slony_stage3_fp, "ECHO 'dbsteward slony stage 2 upgrade file generated " . date('r') . " starting';\n\n");
 
     // slony replication configuration changes
     // SLONY STAGE 1
@@ -856,12 +856,12 @@ class pgsql8 {
         if (($old_schema === NULL || $old_table === NULL) && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) != 0) {
           // if it has not been declared, create the upgrade set to be merged
           if (!$upgrade_set_created) {
-            self::create_slonik_upgrade_set($slony_stage2_fp, $new_db_doc);
+            self::create_slonik_upgrade_set($slony_stage3_fp, $new_db_doc);
             $upgrade_set_created = TRUE;
           }
 
           // schema or table did not exist before, add it
-          fwrite($slony_stage2_fp, sprintf(slony1_slonik::script_add_table, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_table['slonyId']), $new_schema['name'] . '.' . $new_table['name'], $new_schema['name'] . '.' . $new_table['name'] . ' table replication') . "\n\n");
+          fwrite($slony_stage3_fp, sprintf(slony1_slonik::script_add_table, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_table['slonyId']), $new_schema['name'] . '.' . $new_table['name'], $new_schema['name'] . '.' . $new_table['name'] . ' table replication') . "\n\n");
         }
 
         // add table owned sequence subscriptions for any not already present
@@ -881,12 +881,12 @@ class pgsql8 {
               || $old_table === NULL || $old_column === NULL) && strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) != 0) {
               // if it has not been declared, create the upgrade set to be merged
               if (!$upgrade_set_created) {
-                self::create_slonik_upgrade_set($slony_stage2_fp, $new_db_doc);
+                self::create_slonik_upgrade_set($slony_stage3_fp, $new_db_doc);
                 $upgrade_set_created = TRUE;
               }
 
               $col_sequence = pgsql8::identifier_name($new_schema['name'], $new_table['name'], $new_column['name'], '_seq');
-              fwrite($slony_stage2_fp, sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_column['slonyId']), $new_schema['name'] . '.' . $col_sequence, $new_schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
+              fwrite($slony_stage3_fp, sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_column['slonyId']), $new_schema['name'] . '.' . $col_sequence, $new_schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
             }
           }
         }
@@ -906,20 +906,20 @@ class pgsql8 {
         if (($old_schema === NULL || $old_sequence === NULL) && strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) != 0) {
           // if it has not been declared, create the upgrade set to be merged
           if (!$upgrade_set_created) {
-            self::create_slonik_upgrade_set($slony_stage2_fp, $new_db_doc);
+            self::create_slonik_upgrade_set($slony_stage3_fp, $new_db_doc);
             $upgrade_set_created = TRUE;
           }
 
           // sequence did not previously exist, add it
-          fwrite($slony_stage2_fp, sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_sequence['slonyId']), $new_schema['name'] . '.' . $new_sequence['name'], $new_schema['name'] . '.' . $new_sequence['name'] . ' sequence replication') . "\n\n");
+          fwrite($slony_stage3_fp, sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_sequence['slonyId']), $new_schema['name'] . '.' . $new_sequence['name'], $new_schema['name'] . '.' . $new_sequence['name'] . ' sequence replication') . "\n\n");
         }
       }
     }
 
     // if we created an upgrade set, subscribe and merge it
     if ($upgrade_set_created) {
-      fwrite($slony_stage2_fp, "ECHO 'Waiting for merge set creation';\n");
-      fwrite($slony_stage2_fp, sprintf(
+      fwrite($slony_stage3_fp, "ECHO 'Waiting for merge set creation';\n");
+      fwrite($slony_stage3_fp, sprintf(
           slony1_slonik::script_node_sync_wait,
           $new_db_doc->database->slony->masterNode['id'],
           $new_db_doc->database->slony->masterNode['id'],
@@ -929,16 +929,16 @@ class pgsql8 {
       //
       foreach($new_db_doc->database->slony->replicaNode AS $replica_node) {
         // subscribe replicaNode to its provider node providerId
-        fwrite($slony_stage2_fp, "ECHO 'Subscribing replicaNode " . $replica_node['id'] . " to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
-        fwrite($slony_stage2_fp, sprintf(
+        fwrite($slony_stage3_fp, "ECHO 'Subscribing replicaNode " . $replica_node['id'] . " to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
+        fwrite($slony_stage3_fp, sprintf(
             slony1_slonik::script_subscribe_set,
             $new_db_doc->database->slony->replicationUpgradeSet['id'],
             $replica_node['providerId'],
             $replica_node['id']
           ) . "\n\n");
         // do a sync and wait for it on the subscribing node
-        fwrite($slony_stage2_fp, "ECHO 'Waiting for replicaNode " . $replica_node['id'] . " subscription to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
-        fwrite($slony_stage2_fp, sprintf(
+        fwrite($slony_stage3_fp, "ECHO 'Waiting for replicaNode " . $replica_node['id'] . " subscription to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
+        fwrite($slony_stage3_fp, sprintf(
             slony1_slonik::script_node_sync_wait,
             $new_db_doc->database->slony->masterNode['id'],
             $new_db_doc->database->slony->masterNode['id'],
@@ -947,15 +947,15 @@ class pgsql8 {
       }
 
       // now we can merge the upgrade set to the main
-      fwrite($slony_stage2_fp, "ECHO 'Merging replicationUpgradeSet " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . " to set " . $new_db_doc->database->slony->replicationSet['id'] . "';\n");
-      fwrite($slony_stage2_fp, sprintf(slony1_slonik::script_merge_set,
+      fwrite($slony_stage3_fp, "ECHO 'Merging replicationUpgradeSet " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . " to set " . $new_db_doc->database->slony->replicationSet['id'] . "';\n");
+      fwrite($slony_stage3_fp, sprintf(slony1_slonik::script_merge_set,
           $new_db_doc->database->slony->replicationSet['id'],
           $new_db_doc->database->slony->replicationUpgradeSet['id'],
           $new_db_doc->database->slony->masterNode['id']
         ) . "\n\n");
     }
 
-    fclose($slony_stage2_fp);
+    fclose($slony_stage3_fp);
     fclose($slony_stage1_fp);
   }
 
