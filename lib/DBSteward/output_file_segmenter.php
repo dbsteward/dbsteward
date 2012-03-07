@@ -38,7 +38,7 @@ class output_file_segmenter {
       }
       $this->file_pointer =& $file_pointer;
       $this->current_output_file = $current_output_file;
-      dbsteward::console_line(3, "[File Segment] Fixed output file specified: " . $this->current_output_file);
+      dbsteward::console_line(3, "[File Segment] Fixed output file: " . $this->current_output_file);
       $this->segmenting_enabled = FALSE;
     }
   }

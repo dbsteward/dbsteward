@@ -267,14 +267,15 @@ class pgsql8 {
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';
     dbsteward::console_line(1, "Building complete file " . $build_file);
-    $fp = fopen($build_file, 'w');
-    if ($fp === FALSE) {
+    $build_file_fp = fopen($build_file, 'w');
+    if ($build_file_fp === FALSE) {
       throw new exception("failed to open full file " . $build_file . ' for output');
     }
+    $build_file_ofs = new output_file_segmenter($build_file, 1, $build_file_fp, $build_file);
     if (count(dbsteward::$limit_to_tables) == 0) {
-      fwrite($fp, "-- full database definition file generated " . date('r') . "\n");
+      $build_file_ofs->write("-- full database definition file generated " . date('r') . "\n");
     }
-    fwrite($fp, "BEGIN; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional\n\n");
+    $build_file_ofs->write("BEGIN; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional\n\n");
 
     dbsteward::console_line(1, "Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
@@ -284,39 +285,38 @@ class pgsql8 {
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
       dbsteward::console_line(1, "Defining structure");
-      pgsql8::build_schema($db_doc, $fp, $table_dependency);
+      pgsql8::build_schema($db_doc, $build_file_ofs, $table_dependency);
     }
     if (!dbsteward::$only_schema_sql
       || dbsteward::$only_data_sql) {
       dbsteward::console_line(1, "Defining data inserts");
-      pgsql8::build_data($db_doc, $fp, $table_dependency);
+      pgsql8::build_data($db_doc, $build_file_ofs, $table_dependency);
     }
     dbsteward::$new_database = NULL;
 
-    fwrite($fp, "COMMIT; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional\n\n");
-    fclose($fp);
+    $build_file_ofs->write("COMMIT; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional\n\n");
 
     pgsql8::build_slonik($db_doc, $output_prefix . '_slony_subscription.slonik');
 
     return $db_doc;
   }
 
-  public function build_schema($db_doc, $fp, $table_depends) {
+  public function build_schema($db_doc, $ofs, $table_depends) {
     // language defintions
     if (dbsteward::$create_languages) {
       foreach ($db_doc->language AS $language) {
-        fwrite($fp, pgsql8_language::get_creation_sql($language));
+        $ofs->write(pgsql8_language::get_creation_sql($language));
       }
     }
 
     // schema creation
     foreach ($db_doc->schema AS $schema) {
-      fwrite($fp, pgsql8_schema::get_creation_sql($schema));
+      $ofs->write(pgsql8_schema::get_creation_sql($schema));
 
       // schema grants
       if (isset($schema->grant)) {
         foreach ($schema->grant AS $grant) {
-          fwrite($fp, pgsql8_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
+          $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
         }
       }
     }
@@ -324,7 +324,7 @@ class pgsql8 {
     // types: enumerated list, etc
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->type AS $type) {
-        fwrite($fp, pgsql8_type::get_creation_sql($schema, $type) . "\n");
+        $ofs->write(pgsql8_type::get_creation_sql($schema, $type) . "\n");
       }
     }
 
@@ -332,16 +332,16 @@ class pgsql8 {
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->function AS $function) {
         if (dbsteward::supported_function_language($function)) {
-          fwrite($fp, pgsql8_function::get_creation_sql($schema, $function));
+          $ofs->write(pgsql8_function::get_creation_sql($schema, $function));
           // when pg:build_schema() is doing its thing for straight builds, include function permissions
           // they are not included in pg_function::get_creation_sql()
           foreach(dbx::get_permissions($function) AS $function_permission) {
-            fwrite($fp, pgsql8_permission::get_sql($db_doc, $schema, $function, $function_permission) . "\n");
+            $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $function, $function_permission) . "\n");
           }
         }
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // table structure creation
     foreach ($db_doc->schema AS $schema) {
@@ -349,44 +349,44 @@ class pgsql8 {
       // create defined tables
       foreach ($schema->table AS $table) {
         // table definition
-        fwrite($fp, pgsql8_table::get_creation_sql($schema, $table) . "\n");
+        $ofs->write(pgsql8_table::get_creation_sql($schema, $table) . "\n");
 
         // table indexes
-        pgsql8_diff_indexes::diff_indexes_table($fp, NULL, NULL, $schema, $table);
+        pgsql8_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
 
         // table grants
         if (isset($table->grant)) {
           foreach ($table->grant AS $grant) {
-            fwrite($fp, pgsql8_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
+            $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
           }
         }
 
-        fwrite($fp, "\n");
+        $ofs->write("\n");
       }
 
       // sequences contained in the schema
       if (isset($schema->sequence)) {
         foreach ($schema->sequence AS $sequence) {
-          fwrite($fp, pgsql8_sequence::get_creation_sql($schema, $sequence));
+          $ofs->write(pgsql8_sequence::get_creation_sql($schema, $sequence));
 
           // sequence permission grants
           if (isset($sequence->grant)) {
             foreach ($sequence->grant AS $grant) {
-              fwrite($fp, pgsql8_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
+              $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
             }
           }
         }
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->table AS $table) {
-        pgsql8_diff_tables::diff_constraints_table($fp, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
+        pgsql8_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // foreign key references
     // use the dependency order to specify foreign keys in an order that will satisfy nested foreign keys and etc
@@ -397,42 +397,42 @@ class pgsql8 {
         // don't do anything with this table, it is a magic internal DBSteward value
         continue;
       }
-      pgsql8_diff_tables::diff_constraints_table($fp, NULL, NULL, $schema, $table, 'constraint', FALSE);
+      pgsql8_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'constraint', FALSE);
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // trigger definitions
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->trigger AS $trigger) {
         // only do triggers set to the current sql format
         if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
-          fwrite($fp, pgsql8_trigger::get_creation_sql($schema, $trigger));
+          $ofs->write(pgsql8_trigger::get_creation_sql($schema, $trigger));
         }
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // view creation
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->view AS $view) {
-        fwrite($fp, pgsql8_view::get_creation_sql($schema, $view));
+        $ofs->write(pgsql8_view::get_creation_sql($schema, $view));
 
         // view permission grants
         if (isset($view->grant)) {
           foreach ($view->grant AS $grant) {
-            fwrite($fp, pgsql8_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
+            $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
           }
         }
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // use pgdiff to add any configurationParameters that are defined
     // dbsteward::$new_database is already set in the caller, build()
-    pgsql8_diff::update_database_config_parameters($fp);
+    pgsql8_diff::update_database_config_parameters($ofs);
   }
 
-  public function build_data($db_doc, $fp, $tables) {
+  public function build_data($db_doc, $ofs, $tables) {
     // use the dependency order to then write out the actual data inserts into the data sql file
     $tables_count = count($tables);
     $limit_to_tables_count = count(dbsteward::$limit_to_tables);
@@ -458,7 +458,7 @@ class pgsql8 {
         }
       }
 
-      fwrite($fp, pgsql8_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
+      $ofs->write(pgsql8_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
 
       // set serial primary keys to the max value after inserts have been performed
       // only if the PRIMARY KEY is not a multi column
@@ -477,7 +477,7 @@ class pgsql8 {
         $pk_column_type = strtolower(dbsteward::string_cast($pk['type']));
         if (preg_match(pgsql8::PATTERN_TABLE_LINKED_TYPES, $pk_column_type) > 0) {
           $sql = "SELECT setval(pg_get_serial_sequence('" . $schema['name'] . "." . $table['name'] . "', '" . $pk_column . "'), MAX($pk_column), TRUE) FROM " . $schema['name'] . "." . $table['name'] . ";\n";
-          fwrite($fp, $sql);
+          $ofs->write($sql);
         }
       }
 
@@ -489,7 +489,7 @@ class pgsql8 {
           if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, $column['type']) > 0) {
             $sql = "-- serialStart " . $column['serialStart'] . " specified for " . $schema['name'] . "." . $table['name'] . "." . $column['name'] . "\n";
             $sql .= "SELECT setval(pg_get_serial_sequence('" . $schema['name'] . "." . $table['name'] . "', '" . $column['name'] . "'), " . $column['serialStart'] . ", TRUE);\n";
-            fwrite($fp, $sql);
+            $ofs->write($sql);
           }
           else {
             throw new exception("Unknown column type " . $column['type'] . " for column " . $column['serialStart'] . " specified for " . $schema['name'] . "." . $table['name'] . "." . $column['name'] . " specifying serialStart");
@@ -511,18 +511,19 @@ class pgsql8 {
     }
 
     // include all of the unstaged sql elements
-    dbx::build_staged_sql($db_doc, $fp, NULL);
-    fwrite($fp, "\n");
+    dbx::build_staged_sql($db_doc, $ofs, NULL);
+    $ofs->write("\n");
   }
 
   public function build_slonik($db_doc, $slonik_file) {
     dbsteward::console_line(1, "Building slonik file " . $slonik_file);
-    $fp_slonik = fopen($slonik_file, 'w');
-    if ($fp_slonik === FALSE) {
+    $slonik_fp = fopen($slonik_file, 'w');
+    if ($slonik_fp === FALSE) {
       throw new exception("failed to open slonik file " . $slonik_file . ' for output');
     }
-    fwrite($fp_slonik, "# dbsteward slony full configuration file generated " . date('r') . "\n\n");
-    fwrite($fp_slonik, "ECHO 'dbsteward slony full configuration file generated " . date('r') . " starting';\n\n");
+    $slonik_ofs = new output_file_segmenter($slonik_file, 1, $slonik_fp, $slonik_file);
+    $slonik_ofs->write("# dbsteward slony full configuration file generated " . date('r') . "\n\n");
+    $slonik_ofs->write("ECHO 'dbsteward slony full configuration file generated " . date('r') . " starting';\n\n");
 
     // schema and table structure
     foreach ($db_doc->schema AS $schema) {
@@ -547,7 +548,7 @@ class pgsql8 {
                 self::$sequence_slony_ids[] = dbsteward::string_cast($column['slonyId']);
 
                 $col_sequence = pgsql8::identifier_name($schema['name'], $table['name'], $column['name'], '_seq');
-                fwrite($fp_slonik, sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($db_doc->database->slony->replicationSet['id']), dbsteward::string_cast($db_doc->database->slony->masterNode['id']), dbsteward::string_cast($column['slonyId']), $schema['name'] . '.' . $col_sequence, $schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
+                $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($db_doc->database->slony->replicationSet['id']), dbsteward::string_cast($db_doc->database->slony->masterNode['id']), dbsteward::string_cast($column['slonyId']), $schema['name'] . '.' . $col_sequence, $schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
               }
             }
             else {
@@ -576,7 +577,7 @@ class pgsql8 {
               throw new exception("table slonyId " . $table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
             }
             self::$table_slony_ids[] = dbsteward::string_cast($table['slonyId']);
-            fwrite($fp_slonik, sprintf(slony1_slonik::script_add_table, dbsteward::string_cast($db_doc->database->slony->replicationSet['id']), dbsteward::string_cast($db_doc->database->slony->masterNode['id']), dbsteward::string_cast($table['slonyId']), $schema['name'] . '.' . $table['name'], $schema['name'] . '.' . $table['name'] . ' table replication') . "\n\n");
+            $slonik_ofs->write(sprintf(slony1_slonik::script_add_table, dbsteward::string_cast($db_doc->database->slony->replicationSet['id']), dbsteward::string_cast($db_doc->database->slony->masterNode['id']), dbsteward::string_cast($table['slonyId']), $schema['name'] . '.' . $table['name'], $schema['name'] . '.' . $table['name'] . ' table replication') . "\n\n");
           }
         }
         else {
@@ -605,7 +606,7 @@ class pgsql8 {
               }
               self::$sequence_slony_ids[] = dbsteward::string_cast($sequence['slonyId']);
 
-              fwrite($fp_slonik, sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($db_doc->database->slony->replicationSet['id']), dbsteward::string_cast($db_doc->database->slony->masterNode['id']), dbsteward::string_cast($sequence['slonyId']), $schema['name'] . '.' . $sequence['name'], $schema['name'] . '.' . $sequence['name'] . ' sequence replication') . "\n\n");
+              $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($db_doc->database->slony->replicationSet['id']), dbsteward::string_cast($db_doc->database->slony->masterNode['id']), dbsteward::string_cast($sequence['slonyId']), $schema['name'] . '.' . $sequence['name'], $schema['name'] . '.' . $sequence['name'] . ' sequence replication') . "\n\n");
             }
           }
           else {
@@ -617,8 +618,6 @@ class pgsql8 {
         }
       }
     }
-
-    fclose($fp_slonik);
     
     $highest_table_slony_id = self::get_next_table_slony_id($db_doc) - 1;
     dbsteward::console_line(1, "-- Highest table slonyId: " . $highest_table_slony_id);
@@ -735,18 +734,20 @@ class pgsql8 {
     if ($slony_stage1_fp === FALSE) {
       throw new exception("failed to open upgrade slony stage 1 output file " . $slony_stage1_file . ' for output');
     }
-    fwrite($slony_stage1_fp, "# dbsteward slony stage 1 upgrade file generated " . $timestamp . "\n");
-    fwrite($slony_stage1_fp, $old_set_new_set . "\n");
-    fwrite($slony_stage1_fp, "ECHO 'dbsteward slony stage 1 upgrade file generated " . date('r') . " starting';\n\n");
+    $slony_stage1_ofs = new output_file_segmenter($slony_stage1_file, 1, $slony_stage1_fp, $slony_stage1_file);
+    $slony_stage1_ofs->write("# dbsteward slony stage 1 upgrade file generated " . $timestamp . "\n");
+    $slony_stage1_ofs->write($old_set_new_set . "\n");
+    $slony_stage1_ofs->write("ECHO 'dbsteward slony stage 1 upgrade file generated " . date('r') . " starting';\n\n");
 
     $slony_stage3_file = $slonik_file_prefix . '_stage3_slony.slonik';
     $slony_stage3_fp = fopen($slony_stage3_file, 'w');
     if ($slony_stage3_fp === FALSE) {
       throw new exception("failed to open upgrade slony stage 2 output file " . $slony_stage3_file . ' for output');
     }
-    fwrite($slony_stage3_fp, "# dbsteward slony stage 2 upgrade file generated " . $timestamp . "\n");
-    fwrite($slony_stage3_fp, $old_set_new_set . "\n");
-    fwrite($slony_stage3_fp, "ECHO 'dbsteward slony stage 2 upgrade file generated " . date('r') . " starting';\n\n");
+    $slony_stage3_ofs = new output_file_segmenter($slony_stage3_file, 1, $slony_stage3_fp, $slony_stage3_file);
+    $slony_stage3_ofs->write("# dbsteward slony stage 2 upgrade file generated " . $timestamp . "\n");
+    $slony_stage3_ofs->write($old_set_new_set . "\n");
+    $slony_stage3_ofs->write("ECHO 'dbsteward slony stage 2 upgrade file generated " . date('r') . " starting';\n\n");
 
     // slony replication configuration changes
     // SLONY STAGE 1
@@ -777,14 +778,14 @@ class pgsql8 {
             // is a replicated type?
             if (preg_match(pgsql8::PATTERN_REPLICATED_COLUMN, $old_column['type']) > 0
               && isset($old_column['slonyId']) && strcasecmp('IGNORE_REQUIRED', $old_column['slonyId']) != 0) {
-              fwrite($slony_stage1_fp, sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_column['slonyId'])) . "\n\n");
+              $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_column['slonyId'])) . "\n\n");
             }
           }
 
           if (isset($old_table['slonyId'])
             && strcasecmp('IGNORE_REQUIRED', $old_table['slonyId']) != 0) {
             // drop table subscription to the table
-            fwrite($slony_stage1_fp, sprintf(slony1_slonik::script_drop_table, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_table['slonyId'])) . "\n\n");
+            $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_table, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_table['slonyId'])) . "\n\n");
           }
         }
         if ($new_table !== NULL) {
@@ -804,7 +805,7 @@ class pgsql8 {
 
               if ($new_column === NULL
                 && strcasecmp('IGNORE_REQUIRED', $old_column['slonyId']) != 0) {
-                fwrite($slony_stage1_fp, sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_column['slonyId'])) . "\n\n");
+                $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_column['slonyId'])) . "\n\n");
               }
             }
           }
@@ -824,7 +825,7 @@ class pgsql8 {
 
         if (($new_schema === NULL || $new_sequence === NULL) && strcasecmp('IGNORE_REQUIRED', $old_sequence['slonyId']) != 0) {
           // schema or sequence no longer exists, drop the sequence subscription
-          fwrite($slony_stage1_fp, sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_sequence['slonyId'])) . "\n\n");
+          $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_sequence['slonyId'])) . "\n\n");
         }
       }
     }
@@ -861,7 +862,7 @@ class pgsql8 {
           }
 
           // schema or table did not exist before, add it
-          fwrite($slony_stage3_fp, sprintf(slony1_slonik::script_add_table, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_table['slonyId']), $new_schema['name'] . '.' . $new_table['name'], $new_schema['name'] . '.' . $new_table['name'] . ' table replication') . "\n\n");
+          $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_table, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_table['slonyId']), $new_schema['name'] . '.' . $new_table['name'], $new_schema['name'] . '.' . $new_table['name'] . ' table replication') . "\n\n");
         }
 
         // add table owned sequence subscriptions for any not already present
@@ -886,7 +887,7 @@ class pgsql8 {
               }
 
               $col_sequence = pgsql8::identifier_name($new_schema['name'], $new_table['name'], $new_column['name'], '_seq');
-              fwrite($slony_stage3_fp, sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_column['slonyId']), $new_schema['name'] . '.' . $col_sequence, $new_schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
+              $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_column['slonyId']), $new_schema['name'] . '.' . $col_sequence, $new_schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
             }
           }
         }
@@ -911,15 +912,15 @@ class pgsql8 {
           }
 
           // sequence did not previously exist, add it
-          fwrite($slony_stage3_fp, sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_sequence['slonyId']), $new_schema['name'] . '.' . $new_sequence['name'], $new_schema['name'] . '.' . $new_sequence['name'] . ' sequence replication') . "\n\n");
+          $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_sequence['slonyId']), $new_schema['name'] . '.' . $new_sequence['name'], $new_schema['name'] . '.' . $new_sequence['name'] . ' sequence replication') . "\n\n");
         }
       }
     }
 
     // if we created an upgrade set, subscribe and merge it
     if ($upgrade_set_created) {
-      fwrite($slony_stage3_fp, "ECHO 'Waiting for merge set creation';\n");
-      fwrite($slony_stage3_fp, sprintf(
+      $slony_stage3_ofs->write("ECHO 'Waiting for merge set creation';\n");
+      $slony_stage3_ofs->write(sprintf(
           slony1_slonik::script_node_sync_wait,
           $new_db_doc->database->slony->masterNode['id'],
           $new_db_doc->database->slony->masterNode['id'],
@@ -929,16 +930,16 @@ class pgsql8 {
       //
       foreach($new_db_doc->database->slony->replicaNode AS $replica_node) {
         // subscribe replicaNode to its provider node providerId
-        fwrite($slony_stage3_fp, "ECHO 'Subscribing replicaNode " . $replica_node['id'] . " to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
-        fwrite($slony_stage3_fp, sprintf(
+        $slony_stage3_ofs->write("ECHO 'Subscribing replicaNode " . $replica_node['id'] . " to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
+        $slony_stage3_ofs->write(sprintf(
             slony1_slonik::script_subscribe_set,
             $new_db_doc->database->slony->replicationUpgradeSet['id'],
             $replica_node['providerId'],
             $replica_node['id']
           ) . "\n\n");
         // do a sync and wait for it on the subscribing node
-        fwrite($slony_stage3_fp, "ECHO 'Waiting for replicaNode " . $replica_node['id'] . " subscription to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
-        fwrite($slony_stage3_fp, sprintf(
+        $slony_stage3_ofs->write("ECHO 'Waiting for replicaNode " . $replica_node['id'] . " subscription to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
+        $slony_stage3_ofs->write(sprintf(
             slony1_slonik::script_node_sync_wait,
             $new_db_doc->database->slony->masterNode['id'],
             $new_db_doc->database->slony->masterNode['id'],
@@ -947,20 +948,17 @@ class pgsql8 {
       }
 
       // now we can merge the upgrade set to the main
-      fwrite($slony_stage3_fp, "ECHO 'Merging replicationUpgradeSet " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . " to set " . $new_db_doc->database->slony->replicationSet['id'] . "';\n");
-      fwrite($slony_stage3_fp, sprintf(slony1_slonik::script_merge_set,
+      $slony_stage3_ofs->write("ECHO 'Merging replicationUpgradeSet " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . " to set " . $new_db_doc->database->slony->replicationSet['id'] . "';\n");
+      $slony_stage3_ofs->write(sprintf(slony1_slonik::script_merge_set,
           $new_db_doc->database->slony->replicationSet['id'],
           $new_db_doc->database->slony->replicationUpgradeSet['id'],
           $new_db_doc->database->slony->masterNode['id']
         ) . "\n\n");
     }
-
-    fclose($slony_stage3_fp);
-    fclose($slony_stage1_fp);
   }
 
-  protected static function create_slonik_upgrade_set($fp, $doc) {
-    fwrite($fp, sprintf(slony1_slonik::script_create_set, dbsteward::string_cast($doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($doc->database->slony->masterNode['id']), 'temp upgrade set') . "\n\n");
+  protected static function create_slonik_upgrade_set($ofs, $doc) {
+    $ofs->write(sprintf(slony1_slonik::script_create_set, dbsteward::string_cast($doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($doc->database->slony->masterNode['id']), 'temp upgrade set') . "\n\n");
   }
 
   public static function slony_compare($files) {
@@ -973,14 +971,15 @@ class pgsql8 {
 
     $slony_compare_file = $output_prefix . '_slonycompare.sql';
     dbsteward::console_line(1, "Building slony comparison script " . $slony_compare_file);
-    $fp = fopen($slony_compare_file, 'w');
-    if ($fp === FALSE) {
+    $slony_compare_file_fp = fopen($slony_compare_file, 'w');
+    if ($slony_compare_file_fp === FALSE) {
       throw new exception("failed to open slony comparison script " . $slony_compare_file . ' for output');
     }
-    fwrite($fp, "-- slony comparison script generated " . date('r') . "\n");
-    fwrite($fp, "-- source files: " . implode(', ', $files) . "\n\n");
-    fwrite($fp, "-- Uniformly compare dates and timezones in UTC\n");
-    fwrite($fp, "SET timezone='UTC';\n\n");
+    $slony_compare_ofs = new output_file_segmenter($slony_compare_file, 1, $slony_compare_file_fp, $slony_compare_file);
+    $slony_compare_ofs->write("-- slony comparison script generated " . date('r') . "\n");
+    $slony_compare_ofs->write("-- source files: " . implode(', ', $files) . "\n\n");
+    $slony_compare_ofs->write("-- Uniformly compare dates and timezones in UTC\n");
+    $slony_compare_ofs->write("SET timezone='UTC';\n\n");
 
     foreach ($db_doc->schema AS $schema) {
       // select all table column data, in predictable order (via primary key sort)
@@ -1001,7 +1000,7 @@ class pgsql8 {
           if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, $column['type']) > 0) {
             $sequence_name = pgsql8::identifier_name($schema['name'], $table['name'], $column['name'], '_seq');
             $sql = 'SELECT last_value FROM ' . $schema['name'] . '.' . $sequence_name . ';';
-            fwrite($fp, $sql . "\n");
+            $slony_compare_ofs->write($sql . "\n");
           }
           // explicitly name columns, so that column order is homogenized between replicas of any age/source
           if (dbsteward::$quote_column_names) {
@@ -1015,17 +1014,15 @@ class pgsql8 {
 
         $sql = 'SELECT ' . $table_columns . ' FROM ' . $table_ident . ' ' . $order_by . ';';
 
-        fwrite($fp, $sql . "\n");
+        $slony_compare_ofs->write($sql . "\n");
       }
 
       // select any standalone sequences' value for comparison
       foreach ($schema->sequence AS $sequence) {
         $sql = 'SELECT last_value FROM ' . $schema['name'] . '.' . $sequence['name'] . ';';
-        fwrite($fp, $sql . "\n");
+        $slony_compare_ofs->write($sql . "\n");
       }
     }
-
-    fclose($fp);
 
     return $db_doc;
   }

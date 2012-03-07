@@ -25,12 +25,13 @@ class mssql10 {
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';
     dbsteward::console_line(1, "Building complete file " . $build_file);
-    $fp = fopen($build_file, 'w');
-    if ($fp === FALSE) {
+    $build_file_fp = fopen($build_file, 'w');
+    if ($build_file_fp === FALSE) {
       throw new exception("failed to open full file " . $build_file . ' for output');
     }
+    $build_file_ofs = new output_file_segmenter($build_file, 1, $build_file_fp, $build_file);
     if (count(dbsteward::$limit_to_tables) == 0) {
-      fwrite($fp, "-- full database definition file generated " . date('r') . "\n");
+      $build_file_ofs->write("-- full database definition file generated " . date('r') . "\n");
     }
 
     // error encountered: ALTER DATABASE statement not allowed within multi-statement transaction.
@@ -51,12 +52,12 @@ class mssql10 {
         $assembly_binary_hex = '0x' . bin2hex($assembly_contents);
 
         $ddl = "CREATE ASSEMBLY " . $assembly_name . "\n" . "FROM " . $assembly_binary_hex . "\n" . "WITH PERMISSION_SET = SAFE;\n\n";
-        fwrite($fp, $ddl);
+        $build_file_ofs->write($ddl);
       }
       unset($db_doc->inlineAssembly);
     }
 
-    fwrite($fp, "BEGIN TRANSACTION;\n\n");
+    $build_file_ofs->write("BEGIN TRANSACTION;\n\n");
 
     dbsteward::console_line(1, "Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
@@ -67,25 +68,24 @@ class mssql10 {
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
       dbsteward::console_line(1, "Defining structure");
-      mssql10::build_schema($db_doc, $fp, $table_dependency);
+      mssql10::build_schema($db_doc, $build_file_ofs, $table_dependency);
     }
     if (!dbsteward::$only_schema_sql
       || dbsteward::$only_data_sql) {
       dbsteward::console_line(1, "Defining data inserts");
-      mssql10::build_data($db_doc, $fp, $table_dependency);
+      mssql10::build_data($db_doc, $build_file_ofs, $table_dependency);
     }
     dbsteward::$new_database = NULL;
 
-    fwrite($fp, "COMMIT TRANSACTION;\n\n");
-    fclose($fp);
+    $build_file_ofs->write("COMMIT TRANSACTION;\n\n");
 
     return $db_doc;
   }
 
-  public function build_schema($db_doc, $fp, $table_depends) {
+  public function build_schema($db_doc, $ofs, $table_depends) {
     // explicitly create the ROLE_APPLICATION
     // webservers connect as a user granted this role
-    fwrite($fp, "CREATE ROLE " . $db_doc->database->role->application . ";\n");
+    $ofs->write("CREATE ROLE " . $db_doc->database->role->application . ";\n");
 
     // language defintions
     if (dbsteward::$create_languages) {
@@ -96,12 +96,12 @@ class mssql10 {
 
     // schema creation
     foreach ($db_doc->schema AS $schema) {
-      fwrite($fp, mssql10_schema::get_creation_sql($schema));
+      $ofs->write(mssql10_schema::get_creation_sql($schema));
 
       // schema grants
       if (isset($schema->grant)) {
         foreach ($schema->grant AS $grant) {
-          fwrite($fp, mssql10_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
+          $ofs->write(mssql10_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
         }
       }
     }
@@ -109,7 +109,7 @@ class mssql10 {
     // types: enumerated list, etc
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->type AS $type) {
-        fwrite($fp, mssql10_type::get_creation_sql($schema, $type) . "\n");
+        $ofs->write(mssql10_type::get_creation_sql($schema, $type) . "\n");
       }
     }
 
@@ -117,11 +117,11 @@ class mssql10 {
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->function AS $function) {
         if (dbsteward::supported_function_language($function)) {
-          fwrite($fp, mssql10_function::get_creation_sql($schema, $function));
+          $ofs->write(mssql10_function::get_creation_sql($schema, $function));
         }
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // table structure creation
     foreach ($db_doc->schema AS $schema) {
@@ -129,44 +129,44 @@ class mssql10 {
       // create defined tables
       foreach ($schema->table AS $table) {
         // table definition
-        fwrite($fp, mssql10_table::get_creation_sql($schema, $table) . "\n");
+        $ofs->write(mssql10_table::get_creation_sql($schema, $table) . "\n");
 
         // table indexes
-        mssql10_diff_indexes::diff_indexes_table($fp, NULL, NULL, $schema, $table);
+        mssql10_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
 
         // table grants
         if (isset($table->grant)) {
           foreach ($table->grant AS $grant) {
-            fwrite($fp, mssql10_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
+            $ofs->write(mssql10_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
           }
         }
 
-        fwrite($fp, "\n");
+        $ofs->write("\n");
       }
 
       // sequences contained in the schema
       if (isset($schema->sequence)) {
         foreach ($schema->sequence AS $sequence) {
-          fwrite($fp, mssql10_bit_table::get_creation_sql($schema, $sequence) . "\n");
+          $ofs->write(mssql10_bit_table::get_creation_sql($schema, $sequence) . "\n");
 
           // sequence permission grants
           if (isset($sequence->grant)) {
             foreach ($sequence->grant AS $grant) {
-              fwrite($fp, mssql10_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
+              $ofs->write(mssql10_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
             }
           }
         }
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->table AS $table) {
-        mssql10_diff_tables::diff_constraints_table($fp, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
+        mssql10_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // foreign key references
     // use the dependency order to specify foreign keys in an order that will satisfy nested foreign keys and etc
@@ -177,40 +177,40 @@ class mssql10 {
         // don't do anything with this table, it is a magic internal DBSteward value
         continue;
       }
-      mssql10_diff_tables::diff_constraints_table($fp, NULL, NULL, $schema, $table, 'constraint', FALSE);
+      mssql10_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'constraint', FALSE);
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // trigger definitions
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->trigger AS $trigger) {
         // only do triggers set to the current sql format
         if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
-          fwrite($fp, mssql10_trigger::get_creation_sql($schema, $trigger));
+          $ofs->write(mssql10_trigger::get_creation_sql($schema, $trigger));
         }
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // view creation
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->view AS $view) {
-        fwrite($fp, mssql10_view::get_creation_sql($schema, $view));
+        $ofs->write(mssql10_view::get_creation_sql($schema, $view));
 
         // view permission grants
         if (isset($view->grant)) {
           foreach ($view->grant AS $grant) {
-            fwrite($fp, mssql10_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
+            $ofs->write(mssql10_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
           }
         }
       }
     }
-    fwrite($fp, "\n");
+    $ofs->write("\n");
 
     // @TODO: database configurationParameter support needed ?
   }
 
-  public function build_data($db_doc, $fp, $tables) {
+  public function build_data($db_doc, $ofs, $tables) {
     // use the dependency order to then write out the actual data inserts into the data sql file
     $tables_count = count($tables);
     $limit_to_tables_count = count(dbsteward::$limit_to_tables);
@@ -236,7 +236,7 @@ class mssql10 {
         }
       }
 
-      fwrite($fp, mssql10_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
+      $ofs->write(mssql10_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
 
       // unlike the pg class, we cannot just set identity column start values here with setval without inserting a row
       // see xml_parser::mssql10_type_convert() where the serialStart value is accounted for
@@ -258,8 +258,8 @@ class mssql10 {
     }
 
     // include all of the unstaged sql elements
-    dbx::build_staged_sql($db_doc, $fp, NULL);
-    fwrite($fp, "\n");
+    dbx::build_staged_sql($db_doc, $ofs, NULL);
+    $ofs->write("\n");
   }
 
   public function build_upgrade($old_files, $new_files) {
