@@ -857,7 +857,7 @@ class pgsql8 {
         if (($old_schema === NULL || $old_table === NULL) && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) != 0) {
           // if it has not been declared, create the upgrade set to be merged
           if (!$upgrade_set_created) {
-            self::create_slonik_upgrade_set($slony_stage3_fp, $new_db_doc);
+            self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc);
             $upgrade_set_created = TRUE;
           }
 
@@ -882,7 +882,7 @@ class pgsql8 {
               || $old_table === NULL || $old_column === NULL) && strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) != 0) {
               // if it has not been declared, create the upgrade set to be merged
               if (!$upgrade_set_created) {
-                self::create_slonik_upgrade_set($slony_stage3_fp, $new_db_doc);
+                self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc);
                 $upgrade_set_created = TRUE;
               }
 
@@ -907,7 +907,7 @@ class pgsql8 {
         if (($old_schema === NULL || $old_sequence === NULL) && strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) != 0) {
           // if it has not been declared, create the upgrade set to be merged
           if (!$upgrade_set_created) {
-            self::create_slonik_upgrade_set($slony_stage3_fp, $new_db_doc);
+            self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc);
             $upgrade_set_created = TRUE;
           }
 
