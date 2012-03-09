@@ -52,6 +52,7 @@ class xml_parser {
       
       // if doc defines the database element
       // composite it first, to adhere to the DTD
+      $doc_clone = NULL;
       if ( isset($doc->database) ) {
         $doc_clone = clone $doc;
         $doc_clone_child_nodes = $doc_clone->children();
@@ -70,9 +71,15 @@ class xml_parser {
             unset($doc_clone->{$doc_clone_child_name});
           }
         }
-        self::xml_composite_children($composite, $doc_clone);
+        // these element trees no longer need overlaid from $doc
         unset($doc->inlineAssembly);
         unset($doc->database);
+
+        // if not defined in the composite yet
+        if ( !isset($composite->database) ) {
+          //add database node to the composite so it will be in the right natural order position
+          $composite->addChild('database');
+        }
       }
 
       // do doc includes first, to allow definer to overwrite included file values at the same level
@@ -94,6 +101,12 @@ class xml_parser {
         }
         unset($doc->includeFile);
         unset($composite->includeFile);
+      }
+      
+      // if doc_clone is defined, there were database element values to overlay.
+      // now that includeFile has been processed, put these values overlaid "last"
+      if ( $doc_clone ) {
+        self::xml_composite_children($composite->database, $doc_clone->database);
       }
 
       // includes done, now put $doc values in, to allow definer to overwrite included file values at the same level
