@@ -55,7 +55,7 @@ class dbsteward {
 
   public static $create_languages = FALSE;
   public static $require_slony_id = FALSE;
-  public static $output_file_statement_limit = 800;
+  public static $output_file_statement_limit = 900;
   public static $ignore_custom_roles = TRUE;
   // when true, custom roles not found will be turned in to database->role->owner
   public static $require_verbose_interval_notation = FALSE;

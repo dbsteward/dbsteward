@@ -125,6 +125,13 @@ class output_file_segmenter {
     //@TODO is this method adequate?
     $lines = explode("\n", $sql);
     foreach($lines as $line) {
+      // strip comments off end of line
+      if ( strpos($line, '--') !== FALSE ) {
+        $line = substr($line, 0, strpos($line, '--'));
+      }
+      // kill whitespace at end of line
+      $line = rtrim($line);
+      // does the line end in a semicolon?
       if ( substr($line, -1) == ';' ) {
         $this->statement_count += 1;
       }
