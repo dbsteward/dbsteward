@@ -120,9 +120,9 @@ class pgsql8_column extends sql99_column {
     if ( isset($column['foreignTable']) ) {
       dbx::foreign_key($db_doc, $schema, $table, $column, $foreign);
       $column_type = $foreign['column']['type'];
-      // for foreign keys, serials translate to integers
+      // for foreign keys, translate serial types to their integer base
       if ( strcasecmp('serial', $column_type) == 0 ) {
-        $column_type = 'integer';
+        $column_type = 'int';
       }
       else if ( strcasecmp('bigserial', $column_type) == 0 ) {
         $column_type = 'bigint';

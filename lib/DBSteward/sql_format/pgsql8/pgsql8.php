@@ -1164,11 +1164,10 @@ class pgsql8 {
           $node_column = $node_table->addChild('column');
           $node_column->addAttribute('name', $col_row['column_name']);
           // look for serial columns that are primary keys and collapse them down from integers with sequence defualts into serials
-          // type integer or bigint
+          // type int or bigint
           // is_nullable = NO
           // column_default starts with nextval and contains iq_seq
-          if ((strcasecmp('integer', $col_row['data_type']) == 0
-            || strcasecmp('bigint', $col_row['data_type']) == 0)
+          if ((strcasecmp('int', $col_row['data_type']) == 0 || strcasecmp('bigint', $col_row['data_type']) == 0)
             && strcasecmp($col_row['is_nullable'], 'NO') == 0
             && (stripos($col_row['column_default'], 'nextval') === 0 && stripos($col_row['column_default'], '_seq') !== FALSE)) {
             $col_type = 'serial';
