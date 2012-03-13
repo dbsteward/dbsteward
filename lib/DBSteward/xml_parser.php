@@ -71,10 +71,21 @@ class xml_parser {
             unset($doc_clone->{$doc_clone_child_name});
           }
         }
-        // these element trees no longer need overlaid from $doc
+        // these elements do not need mainline overlaid from $doc
         unset($doc->inlineAssembly);
         unset($doc->database);
-
+      }
+      
+      // if doc_clone is defined, $doc->database was found, add it after inlineAssembly entries
+      // and if there were inlineAssembly elements included,
+      // composite these inlineAssembly elements in very first
+      if ( $doc_clone ) {
+        if ( isset($doc_clone->inlineAssembly) ) {
+          $doc_clone_ila = clone $doc_clone;
+          unset($doc_clone_ila->database);
+          self::xml_composite_children($composite, $doc_clone_ila);
+        }
+        
         // if not defined in the composite yet
         if ( !isset($composite->database) ) {
           //add database node to the composite so it will be in the right natural order position
