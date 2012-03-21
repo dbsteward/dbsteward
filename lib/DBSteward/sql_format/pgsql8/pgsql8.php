@@ -1116,11 +1116,14 @@ class pgsql8 {
     $node_role->addChild('application', $user);
     $node_role->addChild('owner', $user);
     $node_role->addChild('replication', $user);
+    $node_role->addChild('readonly', $user);
     $node_slony = $node_database->addChild('slony');
     $node_slony_master_node = $node_slony->addChild('masterNode');
     $node_slony_master_node->addAttribute('id', '1');
-    $node_slony_set = $node_slony->addChild('set');
-    $node_slony_set->addAttribute('id', '2');
+    $node_slony_replication_set = $node_slony->addChild('replicationSet');
+    $node_slony_replication_set->addAttribute('id', '1');
+    $node_slony_replication_upgrade_set = $node_slony->addChild('replicationUpgradeSet');
+    $node_slony_replication_upgrade_set->addAttribute('id', '2');
 
     // find all tables in the schema that aren't in the built-in schemas
     $sql = "SELECT *

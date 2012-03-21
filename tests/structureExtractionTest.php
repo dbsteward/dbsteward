@@ -75,7 +75,7 @@ XML;
   
   /**
    * 1) Build a database from definition A
-   * 2) Extract schema in to definition B
+   * 2) Extract database schema to definition B
    * 3) Compare and expect zero differences between A and B with DBSteward difference engine
    * 4) Check for and validate tables in resultant definiton
    * 
@@ -86,7 +86,7 @@ XML;
     // 1) Build a database from definition A
     $this->build_db_pgsql8();
 
-    // 2) Extract schema in to definition B
+    // 2) Extract database schema to definition B
     $this->xml_content_b = pgsql8::extract_schema($this->pgsql->get_dbhost(), $this->pgsql->get_dbport(), $this->pgsql->get_dbname(), $this->pgsql->get_dbuser(), $this->pgsql->get_dbpass());
 var_dump($this->xml_content_b);
 
