@@ -1,0 +1,21 @@
+<phpunit verbose="true">
+  <php>
+    <const name="PGSQL8_DBHOST" value="db-white.dev"/>
+    <const name="PGSQL8_DBPORT" value="5432"/>
+    <const name="PGSQL8_DBNAME" value="dbsteward_phpunit"/>
+    <const name="PGSQL8_DBUSER" value="deployment"/>
+    <const name="PGSQL8_DBPASS" value="password1"/>
+    <const name="PGSQL8_DBNAME_MANAGEMENT" value="postgres"/>
+    <const name="PGSQL8_DBUSER_MANAGEMENT" value="deployment"/>
+    <const name="PGSQL8_DBPASS_MANAGEMENT" value="password1"/>
+    
+    <const name="MSSQL10_DBHOST" value="db-mssql.dev"/>
+    <const name="MSSQL10_DBPORT" value="1433"/>
+    <const name="MSSQL10_DBNAME" value="dbsteward_phpunit"/>
+    <const name="MSSQL10_DBUSER" value="deployment"/>
+    <const name="MSSQL10_DBPASS" value="password1"/>
+    <const name="MSSQL10_DBNAME_MANAGEMENT" value="dbsteward_phpunit"/>
+    <const name="MSSQL10_DBUSER_MANAGEMENT" value="deployment"/>
+    <const name="MSSQL10_DBPASS_MANAGEMENT" value="password1"/>
+  </php>
+</phpunit>

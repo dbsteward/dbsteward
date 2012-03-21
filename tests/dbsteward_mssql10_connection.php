@@ -8,12 +8,32 @@
  */
 
 class dbsteward_mssql10_connection {
+  
+  public function get_dbhost() {
+    return constant('MSSQL10_DBHOST');
+  }
+  public function get_dbport() {
+    return constant('MSSQL10_DBPORT');
+  }
+  public function get_dbname() {
+    return constant('MSSQL10_DBNAME');
+  }
+  public function get_dbuser() {
+    return constant('MSSQL10_DBUSER');
+  }
+  public function get_dbpass() {
+    return constant('MSSQL10_DBPASS');
+  }
+  public function get_dbname_management() {
+    return constant('MSSQL10_DBNAME_MANAGEMENT');
+  }
+  public function get_dbuser_management() {
+    return constant('MSSQL10_DBUSER_MANAGEMENT');
+  }
+  public function get_dbpass_management() {
+    return constant('MSSQL10_DBPASS_MANAGEMENT');
+  }
 
-  protected $db_host = "db-mssql.dev:1433";
-  protected $db_user = "deployment";
-  protected $db_pass = "Beefcake9";
-  protected $db_name = "dbsteward_phpunit";
-  protected $connection_string = "";
   protected $conn = null;
 
   /**
@@ -42,10 +62,10 @@ class dbsteward_mssql10_connection {
    * @return void
    */
   public function create_db() {
-    $this->conn = mssql_connect($this->db_host, $this->db_user, $this->db_pass);
-    @mssql_query('DROP DATABASE ' . $this->db_name, $this->conn);
-    mssql_query('CREATE DATABASE ' . $this->db_name, $this->conn);
-    mssql_select_db($this->db_name, $this->conn);
+    $this->conn = mssql_connect($this->get_dbhost(), $this->get_dbuser(), $this->get_dbpass());
+    @mssql_query('DROP DATABASE ' . $this->get_dbname(), $this->conn);
+    mssql_query('CREATE DATABASE ' . $this->get_dbname(), $this->conn);
+    mssql_select_db($this->get_dbname(), $this->conn);
     //@TODO: why won't these run? this is supposed to make the matching application role defined in the XML definition
     $this->query("CREATE USER dbsteward_phpunit_app FROM LOGIN dbsteward;");
     $this->query("EXEC sp_addrolemember 'dbsteward_phpunit_app', 'dbsteward_phpunit_app';");

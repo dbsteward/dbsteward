@@ -78,10 +78,10 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
 
     // upgrade database to "B" with each stage file
-    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_schema_stage1.sql');
-    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_data_stage1.sql');
-    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_schema_stage2.sql');
-    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_data_stage2.sql');
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_stage1_schema1.sql');
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_stage2_data1.sql');
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_stage3_schema1.sql');
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/upgrade_stage4_data1.sql');
     
     //@TODO: confirm tables defined in B are present
   }
@@ -114,10 +114,10 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     mssql10::build_upgrade($this->xml_file_a, $this->xml_file_b);
     
     // upgrade database to "B" with each stage file
-    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_schema_stage1.sql');
-    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_data_stage1.sql');
-    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_schema_stage2.sql');
-    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_data_stage2.sql');
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_stage1_schema1.sql');
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_stage2_data1.sql');
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_stage3_schema1.sql');
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/upgrade_stage4_data1.sql');
     
     //@TODO: confirm tables defined in B are present
   }

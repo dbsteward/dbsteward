@@ -9,9 +9,41 @@
 
 class dbsteward_pgsql8_connection {
 
-  protected $management_connection_string = "host=db-white.dev port=5432 dbname=postgres user=deployment password=password1";
-  protected $connection_string = "host=db-white.dev port=5432 dbname=dbsteward_phpunit user=deployment password=password1";
-  protected $db_name = "dbsteward_phpunit";
+  public function get_dbhost() {
+    return constant('PGSQL8_DBHOST');
+  }
+  public function get_dbport() {
+    return constant('PGSQL8_DBPORT');
+  }
+  public function get_dbname() {
+    return constant('PGSQL8_DBNAME');
+  }
+  public function get_dbuser() {
+    return constant('PGSQL8_DBUSER');
+  }
+  public function get_dbpass() {
+    return constant('PGSQL8_DBPASS');
+  }
+  public function get_dbname_management() {
+    return constant('PGSQL8_DBNAME_MANAGEMENT');
+  }
+  public function get_dbuser_management() {
+    return constant('PGSQL8_DBUSER_MANAGEMENT');
+  }
+  public function get_dbpass_management() {
+    return constant('PGSQL8_DBPASS_MANAGEMENT');
+  }
+  
+  protected function get_management_connection_string() {
+    $c = "host=" . $this->get_dbhost() . " port=" . $this->get_dbport() . " dbname=" 
+      . $this->get_dbname_management() . " user=" . $this->get_dbuser_management() . " password=" . $this->get_dbpass_management() . "";
+    return $c;
+  }
+  protected function get_connection_string() {
+    $c = "host=" . $this->get_dbhost() . " port=" . $this->get_dbport() . " dbname=" 
+      . $this->get_dbname() . " user=" . $this->get_dbuser() . " password=" . $this->get_dbpass() . "";
+    return $c;
+  }
   protected $management_conn = null;
   protected $conn = null;
   
@@ -41,10 +73,10 @@ class dbsteward_pgsql8_connection {
    * @return void
    */
   public function create_db() {
-    $this->conn = pg_connect($this->management_connection_string);
-    @pg_query($this->conn, "DROP DATABASE " . $this->db_name);
-    pg_query($this->conn, "CREATE DATABASE " . $this->db_name);
-    $this->conn = pg_connect($this->connection_string);
+    $this->conn = pg_connect($this->get_management_connection_string());
+    @pg_query($this->conn, "DROP DATABASE " . $this->get_dbname());
+    pg_query($this->conn, "CREATE DATABASE " . $this->get_dbname());
+    $this->conn = pg_connect($this->get_connection_string());
   }
 
   public function run_file($file_names) {

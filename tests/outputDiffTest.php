@@ -80,28 +80,28 @@ XML;
     $this->apply_options_pgsql8();
     pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
 
-    $upgrade_schema_stage1_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_schema_stage1.sql');
-    $upgrade_schema_stage1_sql = preg_replace('/\s+/', ' ', $upgrade_schema_stage1_sql);
+    $upgrade_stage1_schema1_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage1_schema1.sql');
+    $upgrade_stage1_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage1_schema1_sql);
     $this->assertTrue(
-      (boolean)preg_match('/ALTER TABLE dbsteward."serial_test" ALTER COLUMN "test_id" TYPE int/i', $upgrade_schema_stage1_sql),
-      "Column type change was not found in upgrade_schema_stage1.sql:\n$upgrade_schema_stage1_sql"
+      (boolean)preg_match('/ALTER TABLE dbsteward."serial_test" ALTER COLUMN "test_id" TYPE int/i', $upgrade_stage1_schema1_sql),
+      "Column type change was not found in upgrade_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
     $this->assertTrue(
-      (boolean)preg_match('/ALTER COLUMN "test_id" DROP DEFAULT/i', $upgrade_schema_stage1_sql),
-      "Removal of SERIAL default not found in upgrade_schema_stage1.sql:\n$upgrade_schema_stage1_sql"
+      (boolean)preg_match('/ALTER COLUMN "test_id" DROP DEFAULT/i', $upgrade_stage1_schema1_sql),
+      "Removal of SERIAL default not found in upgrade_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
-    $upgrade_schema_stage2_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_schema_stage2.sql');
-    $upgrade_schema_stage2_sql = preg_replace('/\s+/', ' ', $upgrade_schema_stage2_sql);
+    $upgrade_stage3_schema1_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage3_schema1.sql');
+    $upgrade_stage3_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage3_schema1_sql);
     $this->assertTrue(
-      (boolean)preg_match('/DROP SEQUENCE IF EXISTS dbsteward."serial_test_test_id_seq"/i', $upgrade_schema_stage2_sql),
-      "Serial drop was not found in upgrade_schema_stage1.sql:\n$upgrade_schema_stage2_sql"
+      (boolean)preg_match('/DROP SEQUENCE IF EXISTS dbsteward."serial_test_test_id_seq"/i', $upgrade_stage3_schema1_sql),
+      "Serial drop was not found in upgrade_stage3_schema1.sql:\n$upgrade_stage3_schema1_sql"
       );
 
-    $upgrade_slony_stage1_slonik = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_slony_stage1.slonik');
-    $upgrade_slony_stage1_slonik = preg_replace('/\s+/', ' ', $upgrade_slony_stage1_slonik);
+    $upgrade_stage1_slony_slonik = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage1_slony.slonik');
+    $upgrade_stage1_slony_slonik = preg_replace('/\s+/', ' ', $upgrade_stage1_slony_slonik);
     $this->assertTrue(
-      (boolean)preg_match('/SET DROP SEQUENCE \( ORIGIN = 1, ID = 2 \);/i', $upgrade_slony_stage1_slonik),
-      "Serial drop was not found in upgrade_slony_stage1.sql:\n$upgrade_slony_stage1_slonik"
+      (boolean)preg_match('/SET DROP SEQUENCE \( ORIGIN = 1, ID = 2 \);/i', $upgrade_stage1_slony_slonik),
+      "Serial drop was not found in upgrade_stage1_slony.slonik:\n$upgrade_stage1_slony_slonik"
       );
 
   }
