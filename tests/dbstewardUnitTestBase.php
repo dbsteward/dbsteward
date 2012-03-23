@@ -30,10 +30,10 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     if ( !is_dir(dirname(__FILE__) . '/testdata') ) {
       mkdir(dirname(__FILE__) . '/testdata');
     }
-    $this->xml_file_a = dirname(__FILE__) . '/testdata/type_diff_xml_a.xml';
+    $this->xml_file_a = dirname(__FILE__) . '/testdata/unit_test_xml_a.xml';
     file_put_contents($this->xml_file_a, $this->xml_content_a);
 
-    $this->xml_file_b = dirname(__FILE__) . '/testdata/type_diff_xml_b.xml';
+    $this->xml_file_b = dirname(__FILE__) . '/testdata/unit_test_xml_b.xml';
     file_put_contents($this->xml_file_b, $this->xml_content_b);
     
     $this->pgsql = new dbsteward_pgsql8_connection();
@@ -68,7 +68,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->pgsql->create_db();
 
     // build initial "A" database
-    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/type_diff_xml_a_build.sql');
+    $this->pgsql->run_file(dirname(__FILE__) . '/testdata/unit_test_xml_a_build.sql');
   }
 
   protected function upgrade_db_pgsql8() {
@@ -104,7 +104,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->mssql->create_db();
 
     // build initial "A" database
-    $this->mssql->run_file(dirname(__FILE__) . '/testdata/type_diff_xml_a_build.sql');
+    $this->mssql->run_file(dirname(__FILE__) . '/testdata/unit_test_xml_a_build.sql');
   }
 
   protected function upgrade_db_mssql10() {
