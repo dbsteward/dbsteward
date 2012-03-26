@@ -279,6 +279,38 @@ class pgsql8 {
 
     dbsteward::console_line(1, "Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
+    
+    // by default, postgresql will validate the contents of LANGUAGE SQL functions during creation
+    // because we are creating all functions before tables, this doesn't work when LANGUAGE SQL functions
+    // refer to tables yet to be created.
+    // scan language="sql" functions for <functionDefiniton>s that contain FROM (<TABLE>) statements
+    $set_check_function_bodies = TRUE; // on in default postgresql configs
+    dbx::set_default_schema($db_doc, 'public');
+    foreach($db_doc->schema AS $schema) {
+      foreach($schema->function AS $function) {
+        if ( $function['language'] == 'sql' ) {
+          if ( preg_match('/\s+FROM ([\w.]+)\s+/i', $function->functionDefinition, $matches) > 0 ) {
+            $referenced_table_name = $matches[1];
+            $table_schema_name = sql_parser::get_schema_name($referenced_table_name, $db_doc);
+            $node_schema = dbx::get_schema($db_doc, $table_schema_name);
+            $node_table = dbx::get_table($node_schema, sql_parser::get_object_name($referenced_table_name));
+            if ( $node_table ) {
+              // the referenced table is in the definition
+              // turn off check_function_bodies
+              $set_check_function_bodies = FALSE;
+              $set_check_function_bodies_info = "Detected LANGUAGE SQL function " . $schema['name'] . '.' . $function['name'] . " referring to table " . $table_schema_name . '.' . $node_table['name'] . " in the database definition";
+              dbsteward::console_line(2, $set_check_function_bodies_info);
+              break 2;
+            }
+          }
+        }
+      }
+    }
+    if ( !$set_check_function_bodies ) {
+      $build_file_ofs->write("\n");
+      $build_file_ofs->write("SET check_function_bodies = FALSE; -- DBSteward " . $set_check_function_bodies_info . "\n\n");
+    }
+    
     // database-specific implementation code refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
     dbx::set_default_schema($db_doc, 'public');
