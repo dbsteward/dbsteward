@@ -63,7 +63,7 @@ class dbsteward {
   public static $quote_object_names = FALSE;
   public static $quote_table_names = FALSE;
   public static $quote_function_names = FALSE;
-  public static $quote_column_names = TRUE;
+  public static $quote_column_names = FALSE;
   public static $only_schema_sql = FALSE;
   public static $only_data_sql = FALSE;
   public static $limit_to_tables = array();
@@ -102,6 +102,9 @@ class dbsteward {
 Global Switches and Flags
   --sqlformat=<pgsql8|mssql10|mysql4|oracle10g>
   --requireslonyid                  require tables and sequences to specify a valid slonyId
+  --quoteschemanames                quote schema names in SQL output
+  --quotetablenames                 quote table names in SQL output
+  --quotecolumnnames                quote column names in SQL output
 Generating SQL DDL / DML / DCL
   --xml=<database.xml> ...
   --pgdataxml=<pgdata.xml> ...      postgresql SELECT database_to_xml() result to overlay in composite definition
@@ -169,6 +172,9 @@ Database definition extraction utilities
       "dbuser::",
       "dbpassword::",
       "requireslonyid::",
+      "quoteschemanames::",
+      "quotetablenames::",
+      "quotecolumnnames::",
       "onlyschemasql::",
       "onlydatasql::",
       "onlytable::",
@@ -246,6 +252,17 @@ Database definition extraction utilities
     else if (strcasecmp(dbsteward::get_sql_format(), 'oracle10g') == 0) {
       dbsteward::$quote_schema_names = TRUE;
       dbsteward::$quote_table_names = TRUE;
+      dbsteward::$quote_column_names = TRUE;
+    }
+    
+    // user-specified overrides for identifier quoting
+    if (isset($options["quoteschemanames"])) {
+      dbsteward::$quote_schema_names = TRUE;
+    }
+    if (isset($options["quotetablenames"])) {
+      dbsteward::$quote_table_names = TRUE;
+    }
+    if (isset($options["quotecolumnnames"])) {
       dbsteward::$quote_column_names = TRUE;
     }
     
