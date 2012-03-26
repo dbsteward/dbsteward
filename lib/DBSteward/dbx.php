@@ -330,7 +330,7 @@ class dbx {
             'schema_name' => (string)$node_schema['name'],
             'table_name' => (string)$node_table['name'],
             'type' => 'FOREIGN KEY',
-            'definition' => '(' . $column['name'] . ') REFERENCES ' . $foreign['references'],
+            'definition' => '(' . dbsteward::quote_column_name($column['name']) . ') REFERENCES ' . $foreign['references'],
             'foreign_key_data' => $foreign
           );
 
@@ -530,7 +530,7 @@ class dbx {
         $unique_index['name'] = pgsql8::index_name($node_table['name'], $column['name'], 'key');
         $unique_index['unique'] = 'true';
         $unique_index['using'] = 'btree';
-        $unique_index->addChild('indexDimension', (string)$column['name']);
+        $unique_index->addChild('indexDimension', dbsteward::quote_column_name($column['name']));
         $nodes[] = $unique_index;
       }
     }
