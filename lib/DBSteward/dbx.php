@@ -530,7 +530,7 @@ class dbx {
         $unique_index['name'] = pgsql8::index_name($node_table['name'], $column['name'], 'key');
         $unique_index['unique'] = 'true';
         $unique_index['using'] = 'btree';
-        $unique_index->addChild('indexDimension', dbsteward::quote_column_name($column['name']));
+        $unique_index->addChild('indexDimension', $column['name']);
         $nodes[] = $unique_index;
       }
     }
