@@ -93,10 +93,10 @@
 <!ATTLIST column foreignOnUpdate (NO_ACTION|RESTRICT|CASCADE|SET_NULL|SET_DEFAULT) #IMPLIED>
 <!ATTLIST column check CDATA #IMPLIED>
 <!ATTLIST column convertUsing CDATA #IMPLIED>
-<!ATTLIST column afterAddPreStage1 CDATA #IMPLIED>
-<!ATTLIST column afterAddPostStage1 CDATA #IMPLIED>
-<!ATTLIST column afterAddPreStage2 CDATA #IMPLIED>
-<!ATTLIST column afterAddPostStage2 CDATA #IMPLIED>
+<!ATTLIST column beforeAddStage1 CDATA #IMPLIED>
+<!ATTLIST column afterAddStage1 CDATA #IMPLIED>
+<!ATTLIST column beforeAddStage3 CDATA #IMPLIED>
+<!ATTLIST column afterAddStage3 CDATA #IMPLIED>
 <!ATTLIST column serialStart CDATA #IMPLIED>
 <!ATTLIST column description CDATA #IMPLIED>
 <!ATTLIST column oldName CDATA #IMPLIED>
@@ -158,7 +158,7 @@
 <!ATTLIST sql ticket CDATA #REQUIRED>
 <!ATTLIST sql version CDATA #REQUIRED>
 <!ATTLIST sql comment CDATA #REQUIRED>
-<!ATTLIST sql stage (SCHEMA0|SCHEMA1|SCHEMA2|DATA0|DATA1|DATA2) #IMPLIED>
+<!ATTLIST sql stage (STAGE1BEFORE|STAGE1|STAGE2BEFORE|STAGE2|STAGE3|STAGE4) #IMPLIED>
 
 <!ELEMENT type (enum+)>
 <!ATTLIST type name CDATA #REQUIRED>
