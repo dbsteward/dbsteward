@@ -107,7 +107,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
 
         $commands[] = array('stage' => '1',
           'command' => "\tADD " . mssql10_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mssql10_diff::$add_defaults, FALSE));
-        // instead we put the NOT NULL defintion in schema2 once data has been updated in data1
+        // we put the NOT NULL as an alteration in STAGE3 as data will have been updated in STAGE2
         if (!mssql10_column::null_allowed($new_table, $new_column)) {
           
           $commands[] = array(

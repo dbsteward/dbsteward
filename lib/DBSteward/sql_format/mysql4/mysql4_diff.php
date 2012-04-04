@@ -46,8 +46,8 @@ class mysql4_diff extends sql99_diff {
     }
 
     // start with pre-upgrade sql statements that prepare the database to take on its changes
-    dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'SCHEMA0');
-    dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'DATA0');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1BEFORE');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
     dbsteward::console_line(1, "Drop Old Schemas");
     mysql4_diff::drop_old_schemas($stage3_ofs);
@@ -88,11 +88,11 @@ class mysql4_diff extends sql99_diff {
       }
     }
 
-    // append stage sql statements to appropriate stage file
-    dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'SCHEMA1');
-    dbx::build_staged_sql(dbsteward::$new_database, $stage3_ofs, 'SCHEMA2');
-    dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'DATA1');
-    dbx::build_staged_sql(dbsteward::$new_database, $stage4_ofs, 'DATA2');
+    // append stage defined sql statements to appropriate stage file
+    dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage3_ofs, 'STAGE3');
+    dbx::build_staged_sql(dbsteward::$new_database, $stage4_ofs, 'STAGE4');
   }
 
   /**
