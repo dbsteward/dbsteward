@@ -1205,184 +1205,39 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
   }
 
   /**
-   * convert legacy pgdbxml definition document into dbsteward document
-   *
-   * @NOTICE: this should be removed once all clients are on a version based on dbsteward definition files
-   *
-   * this deals with the heirarchal and element name differences between pgdbxml and dbsteward automatically
-   * this function lets dbsteward calculate upgrades from pgdbxml definitions
-   * without having to modify finalized branches defined in pgdbxml
+   * Database system convertions for specific supported sqlFormats
    *
    * @return converted $doc
    */
   public static function sql_format_convert($doc) {
-    // some dbsteward rooted docs are the wrong slony format, only try to alter if replicaNodeLocal found
-    if ( isset($doc->database->slony) && isset($doc->database->slony->replicaNodeLocal) ) {
-      $master_node_id = null;
-      if ( isset($doc->database->slony->masterNode) ) {
-        $master_node_id = trim($doc->database->slony->masterNode);
-        unset($doc->database->slony->masterNode);
-        $node_master_node = $doc->database->slony->addChild('masterNode');
-        $node_master_node['id'] = $master_node_id;
-      }
-
-      if ( isset($doc->database->slony->replicaNodeLocal) ) {
-        $replica_node_id = trim($doc->database->slony->replicaNodeLocal);
-        unset($doc->database->slony->replicaNodeLocal);
-        $node_replica_node = $doc->database->slony->addChild('replicaNode');
-        $node_replica_node->addAttribute('id', $replica_node_id);
-        $node_replica_node->addAttribute('providerId', $master_node_id);
-        $previous_replica_node_id = $replica_node_id;
-      }
-
-      if ( isset($doc->database->slony->replicaNodeRemote) ) {
-        $replica_node_id = trim($doc->database->slony->replicaNodeRemote);
-        unset($doc->database->slony->replicaNodeRemote);
-        $node_replica_node = $doc->database->slony->addChild('replicaNode');
-        $node_replica_node->addAttribute('id', $replica_node_id);
-        $node_replica_node->addAttribute('providerId', $previous_replica_node_id);
-        $previous_replica_node_id = $replica_node_id;
-      }
-
-      if ( isset($doc->database->slony->replicaNodeRemoteBackup) ) {
-        $replica_node_id = trim($doc->database->slony->replicaNodeRemoteBackup);
-        unset($doc->database->slony->replicaNodeRemoteBackup);
-        $node_replica_node = $doc->database->slony->addChild('replicaNode');
-        $node_replica_node->addAttribute('id', $replica_node_id);
-        $node_replica_node->addAttribute('providerId', $previous_replica_node_id);
-      }
-
-      $replica_set_id = null;
-      if ( isset($doc->database->slony->setId) ) {
-        $replica_set_id = trim($doc->database->slony->setId);
-        unset($doc->database->slony->setId);
-        $node_replica_set = $doc->database->slony->addChild('replicationSet');
-        $node_replica_set->addAttribute('id', $replica_set_id);
-      }
-
-      $replica_upgrade_set_id = null;
-      if ( isset($doc->database->slony->upgradeSetId) ) {
-        $replica_upgrade_set_id = trim($doc->database->slony->upgradeSetId);
-        unset($doc->database->slony->upgradeSetId);
-        $node_upgrade_replica_set = $doc->database->slony->addChild('replicationUpgradeSet');
-        $node_upgrade_replica_set->addAttribute('id', $replica_upgrade_set_id);
-      }
-
-    }
-
-    // only process these conversions if root element is pgdbxml
-    if (strcasecmp($doc->getName(), 'pgdbxml') == 0) {
-      //dbsteward::console_line(4, 'column_default_value ' . 'Legacy format converter scan');
-      foreach ($doc->schema AS $schema) {
-        foreach ($schema->table as $table) {
-          foreach ($table->index AS $index) {
-            // index structure changed in dbsteward
-            if (preg_match('/(\w+)\s+\((.*)\)/i', $index['using'], $matches) > 0) {
-              $type = $matches[1];
-              $index['using'] = $type;
-              $dimensions = explode(', ', $matches[2]);
-              $i = 1;
-              foreach ($dimensions AS $dimension) {
-                $node_index_dimension = $index->addChild('indexDimension', $dimension);
-                $node_index_dimension['name'] = 'position_' . $i++;
-              }
-            }
-            // example using: gin(to_tsvector('english', search_terms))
-            else if (preg_match('/gin\((.*)\)/i', $index['using'], $matches) > 0) {
-              // this indexer is only available in postgresql with tsearch2 installed
-              if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') != 0) {
-                var_dump($index);
-                throw new exception("gin vector tree is a pg specific indexer");
-              }
-              $type = 'gin';
-              $index['using'] = $type;
-              $dimensions = array($matches[1]);
-              foreach ($dimensions AS $dimension) {
-                $node_index_dimension = $index->addChild('indexDimension', $dimension);
-                $node_index_dimension['name'] = 'position_' . $i++;
-              }
-            }
-            else {
-              throw new exception("pgdbxml index[using] did not match known patterns: " . $index['using']);
-            }
-          }
-
-          foreach ($table->constraint AS $constraint) {
-            // constraint type enumeration names changed in dbsteward
-            if (strcasecmp($constraint['type'], 'FOREIGNKEY') == 0) {
-              $constraint['type'] = 'FOREIGN KEY';
-            }
-          }
-        }
-
-        // if the trigger was defined in pgdbxml, and sqlFormat is missing, sqlFormat is assumed to be pg
-        foreach ($schema->trigger as $trigger) {
-          if (!isset($trigger['sqlFormat'])) {
-            $trigger['sqlFormat'] = 'pgsql8';
-          }
-        }
-      }
-
-      // translate enum elements into schema type elements
-      $node_schema = & dbx::get_schema($doc, 'public', TRUE);
-      // schemas must have an owner to be valid, so if public wasn't defined yet, fix that
-      if (!isset($node_schema['owner'])) {
-        $node_schema['owner'] = 'ROLE_OWNER';
-      }
-      if (isset($doc->enum)) {
-        // only cycle translation if there are new enums in the root element
-        foreach ($doc->enum AS $enum) {
-          $node_type = & dbx::get_type($node_schema, (string)$enum['name'], TRUE);
-          $node_type['type'] = 'enum';
-          foreach ($enum->enumValue AS $enumValue) {
-            $node_enum = $node_type->addChild('enum');
-            $node_enum['name'] = $enumValue['name'];
-          }
-        }
-        unset($doc->enum);
-      }
-
-      // translate immutable and volatile attributes into the cachePolicy attribute
-      foreach ($doc->schema AS $schema) {
-        foreach ($schema->function as $function) {
-          // if the function is marked volatile = true, make it the enum VOLATILE
-          if (isset($function['volatile'])) {
-            if (strcasecmp($function['volatile'], 'TRUE') == 0) {
-              $function->addAttribute('cachePolicy', 'VOLATILE');
-            }
-            else {
-              $function->addAttribute('cachePolicy', 'STABLE');
-            }
-            unset($function['volatile']);
-          }
-          // regardless of what just happened, if the function was marked immutable, change the cachePolicy to that
-          if (isset($function['immutable'])) {
-            $function->addAttribute('cachePolicy', 'IMMUTABLE');
-            unset($function['immutable']);
-          }
-        }
-      }
-
-      // change root element from dbsteward to dbsteward
-      $xml = $doc->saveXML();
-      $xml = str_ireplace('<pgdbxml>', '<dbsteward>', $xml);
-      $xml = str_ireplace('</pgdbxml>', '</dbsteward>', $xml);
-      $doc = simplexml_load_string($xml);
-    }
-    // END convert legacy format pgdbxml files so dbsteward understands
-    
-    // convert legacy sql format values
+    // legacy 1.0 column add directive attribute conversion
     foreach ($doc->schema AS $schema) {
-      foreach ($schema->view AS $view) {
-        foreach ($view->viewQuery AS $view_query) {
-          if ( isset($view_query['sqlFormat']) && !dbsteward::sql_format_exists($view_query['sqlFormat']) ) {
-            $view_query['sqlFormat'] = xml_parser::legacy_convert_sql_format_token((string)$view_query['sqlFormat']);
+      foreach ($schema->table AS $table) {
+        foreach ($table->column AS $column) {
+          if ( isset($column['afterAddPreStage1']) ) {
+            $column['beforeAddStage1'] = (string)($column['afterAddPreStage1']);
+            unset($column['afterAddPreStage1']);
           }
-        }
-      }
-      foreach ($schema->trigger AS $trigger) {
-        if ( !dbsteward::sql_format_exists($trigger['sqlFormat']) ) {
-          $trigger['sqlFormat'] = xml_parser::legacy_convert_sql_format_token((string)$trigger['sqlFormat']);
+          if ( isset($column['afterAddPostStage1']) ) {
+            $column['afterAddStage1'] = (string)($column['afterAddPostStage1']);
+            unset($column['afterAddPostStage1']);
+          }
+          if ( isset($column['afterAddPreStage2']) ) {
+            $column['beforeAddStage3'] = (string)($column['afterAddPreStage2']);
+            unset($column['afterAddPreStage2']);
+          }
+          if ( isset($column['afterAddPostStage2']) ) {
+            $column['afterAddStage3'] = (string)($column['afterAddPostStage2']);
+            unset($column['afterAddPostStage2']);
+          }
+          if ( isset($column['afterAddPreStage3']) ) {
+            $column['beforeAddStage3'] = (string)($column['afterAddPreStage3']);
+            unset($column['afterAddPreStage3']);
+          }
+          if ( isset($column['afterAddPostStage3']) ) {
+            $column['afterAddStage3'] = (string)($column['afterAddPostStage3']);
+            unset($column['afterAddPostStage3']);
+          }
         }
       }
     }
@@ -1411,7 +1266,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         }
       }
     }
-    // END sql_format 'ms' conversions
+
     return $doc;
   }
 
@@ -1500,20 +1355,6 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     if (isset($column['default']) && strcasecmp($column['default'], "'epoch'") == 0) {
       $column['default'] = "'1970-01-01'";
     }
-  }
-  
-  protected function legacy_convert_sql_format_token($format) {
-    switch($format) {
-      case 'pg':
-      case 'pgsql':
-        $format = 'pgsql8';
-      break;
-      case 'msss':
-      case 'ms':
-        $format = 'mssql10';
-      break;
-    }
-    return $format;
   }
 }
 
