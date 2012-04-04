@@ -388,7 +388,7 @@ Database definition extraction utilities
         sql_format_class::build($options['xml']);
       }
     }
-    else if ( count($options['newxml']) > 0 ) {
+    else if ( isset($options['newxml']) && count($options['newxml']) > 0 ) {
       if (isset($options['pgdataxml'])) {
         $pgdataxml = $options['pgdataxml'];
         sql_format_class::build_upgrade($options['oldxml'], $options['newxml'], $pgdataxml);
