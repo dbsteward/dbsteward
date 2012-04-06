@@ -15,7 +15,7 @@ class outputDiffTest extends dbstewardUnitTestBase {
     parent::setUp();
   }
 
-  public function testSerialToIntPGSQL() {
+  public function testSerialToIntPgsql8() {
     $this->xml_content_a = <<<XML
 <dbsteward>
   <database>
@@ -102,6 +102,102 @@ XML;
     $this->assertTrue(
       (boolean)preg_match('/SET DROP SEQUENCE \( ORIGIN = 1, ID = 2 \);/i', $upgrade_stage1_slony_slonik),
       "Serial drop was not found in upgrade_stage1_slony.slonik:\n$upgrade_stage1_slony_slonik"
+      );
+
+  }
+  
+  public function testSingleStageColumnAndDataChangePgsql8() {
+    $this->xml_content_a = <<<XML
+<dbsteward>
+  <database>
+    <host>db-host</host>
+    <name>dbsteward</name>
+    <role>
+      <application>dbsteward_phpunit_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+    <slony>
+      <masterNode id="1"/>
+      <replicaNode id="2" providerId="1"/>
+      <replicaNode id="3" providerId="2"/>
+      <replicationSet id="1"/>
+      <replicationUpgradeSet id="2"/>
+    </slony>
+    <configurationParameter name="TIME ZONE" value="America/New_York"/>
+  </database>
+  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
+  <schema name="dbsteward" owner="ROLE_OWNER">
+    <table name="user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="1">
+      <column name="user_id" type="uuid" />
+      <column name="user_name" type="varchar(32)" />
+      <rows columns="user_id, user_name">
+        <row>
+          <col>1</col>
+          <col>Admin</col>
+        </row>
+      </rows>
+    </table>
+  </schema>
+</dbsteward>
+XML;
+    $this->xml_content_b = <<<XML
+<dbsteward>
+  <database>
+    <host>db-host</host>
+    <name>dbsteward</name>
+    <role>
+      <application>dbsteward_phpunit_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+    <slony>
+      <masterNode id="1"/>
+      <replicaNode id="2" providerId="1"/>
+      <replicaNode id="3" providerId="2"/>
+      <replicationSet id="1"/>
+      <replicationUpgradeSet id="2"/>
+    </slony>
+    <configurationParameter name="TIME ZONE" value="America/New_York"/>
+  </database>
+  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
+  <schema name="dbsteward" owner="ROLE_OWNER">
+    <table name="user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="1">
+      <column name="user_id" type="uuid" />
+      <column name="user_name" type="varchar(64)" />
+      <rows columns="user_id, user_name">
+        <row>
+          <col>1</col>
+          <col>Administrator</col>
+        </row>
+      </rows>
+    </table>
+  </schema>
+</dbsteward>
+XML;
+    $this->xml_file_a = dirname(__FILE__) . '/testdata/type_diff_xml_a.xml';
+    file_put_contents($this->xml_file_a, $this->xml_content_a);
+    $this->xml_file_b = dirname(__FILE__) . '/testdata/type_diff_xml_b.xml';
+    file_put_contents($this->xml_file_b, $this->xml_content_b);
+
+    $this->apply_options_pgsql8();
+    // these options are applied when specifying --singlestageupgrade
+    dbsteward::$single_stage_upgrade = TRUE;
+    dbsteward::$always_recreate_views = FALSE;
+    pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
+
+    $upgrade_single_stage_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_single_stage.sql');
+    $upgrade_single_stage_sql = preg_replace('/\s+/', ' ', $upgrade_single_stage_sql);
+    $this->assertTrue(
+      (boolean)preg_match('/ALTER TABLE dbsteward\."user" ALTER COLUMN "user_name" TYPE varchar\(64\)/i', $upgrade_single_stage_sql),
+      "user_name column type change was not found in upgrade_single_stage_sql.sql:\n$upgrade_single_stage_sql"
+      );
+
+    $this->assertTrue(
+      (boolean)preg_match('/UPDATE dbsteward\."user" SET "user_name" = E\'Administrator\' WHERE \("user_id" = \'1\'\)/i', $upgrade_single_stage_sql),
+      "Update of user_name column static value not found in upgrade_single_stage_sql.sql:\n$upgrade_single_stage_sql"
       );
 
   }

@@ -41,9 +41,9 @@ class sql99_diff {
       $stage1_ofs->set_header(
         "-- DBSteward single stage upgrade changes - generated " . $timestamp . "\n" .
         $old_set_new_set);
-      $stage2_ofs &= $stage1_ofs;
-      $stage3_ofs &= $stage1_ofs;
-      $stage4_ofs &= $stage1_ofs;
+      $stage2_ofs = &$stage1_ofs;
+      $stage3_ofs = &$stage1_ofs;
+      $stage4_ofs = &$stage1_ofs;
     }
     else {
       $stage1_ofs = new output_file_segmenter($upgrade_prefix . '_stage1_schema', 1);
