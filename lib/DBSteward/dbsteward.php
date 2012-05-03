@@ -436,9 +436,6 @@ Database definition extraction utilities
       else if (strlen($dbuser) === FALSE) {
         throw new exception("dbdatadiff error: dbuser not specified");
       }
-      else if ($output_file === FALSE) {
-        throw new exception("dbdatadiff error: outputfile not specified");
-      }
 
       $output = sql_format_class::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdatadiff']);
       if (!file_put_contents($output_file, $output)) {
