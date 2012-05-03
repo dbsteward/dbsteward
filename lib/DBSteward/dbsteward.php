@@ -412,15 +412,15 @@ Database definition extraction utilities
       else if (strlen($dbuser) === FALSE) {
         throw new exception("dbschemadump error: dbuser not specified");
       }
-      $output = sql_format_class::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
-      if ($output_file !== FALSE) {
-        dbsteward::console_line(1, "Saving extracted database schema to " . $output_file);
-        if (!file_put_contents($output_file, $output)) {
-          throw new exception("Failed to save extracted database schema to " . $output_file);
-        }
+      else if ($output_file === FALSE) {
+        throw new exception("dbschemadump error: outputfile not specified");
       }
-      else {
-        dbsteward::console_text(1, $output);
+
+      $output = sql_format_class::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
+      
+      dbsteward::console_line(1, "Saving extracted database schema to " . $output_file);
+      if (!file_put_contents($output_file, $output)) {
+        throw new exception("Failed to save extracted database schema to " . $output_file);
       }
       exit(0);
     }

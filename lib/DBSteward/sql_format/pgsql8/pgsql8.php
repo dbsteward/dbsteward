@@ -1493,8 +1493,7 @@ class pgsql8 extends sql99 {
       }
     }
 
-    xml_parser::validate_xml($doc->asXML(), FALSE);
-    // sequelch this as we are about to output the XML to stdout
+    xml_parser::validate_xml($doc->asXML());
     return xml_parser::format_xml($doc->saveXML());
   }
 
