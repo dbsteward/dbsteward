@@ -1473,12 +1473,12 @@ class pgsql8 extends sql99 {
     }
     
     // scan all now defined tables
-    // if they do not have a primary key defined
-    // add a placeholder for DTD validity
     $schemas = & dbx::get_schemas($doc);
     foreach ($schemas AS $schema) {
       $tables = & dbx::get_tables($schema);
       foreach($tables AS $table) {
+        // if table does not have a primary key defined
+        // add a placeholder for DTD validity
         if ( !isset($table['primaryKey']) ) {
           $table->addAttribute('primaryKey', 'dbsteward_primary_key_not_found');
           $table_notice_desc = 'DBSTEWARD_EXTRACTION_WARNING: primary key definition not found for ' . $table['name'] . ' - placeholder has been specified for DTD validity';
@@ -1488,6 +1488,18 @@ class pgsql8 extends sql99 {
           }
           else {
             $table['description'] .= $table_notice_desc;
+          }
+        }
+
+        // check owner and grant role definitions
+        if ( !self::is_custom_role_defined($doc, $table['owner']) ) {
+          self::add_custom_role($doc, $table['owner']);
+        }
+        if ( isset($table->grant) ) {
+          foreach($table->grant AS $grant) {
+            if ( !self::is_custom_role_defined($doc, $grant['role']) ) {
+              self::add_custom_role($doc, $grant['role']);
+            }
           }
         }
       }
@@ -1500,6 +1512,7 @@ class pgsql8 extends sql99 {
   /**
    * compare composite db doc to specified database
    *
+   * @return string
    */
   public function compare_db_data($host, $port, $database, $user, $password, $files) {
     if (!is_array($files)) {
@@ -1551,7 +1564,7 @@ class pgsql8 extends sql99 {
               throw new exception($table_name . " column " . $table_column['name'] . " type not found!");
             }
 
-            $col_types[dbsteward::string_cast($table_column['name']) ] = $type;
+            $col_types[dbsteward::string_cast($table_column['name'])] = $type;
           }
 
           foreach ($table->rows->row AS $row) {
@@ -1626,6 +1639,9 @@ class pgsql8 extends sql99 {
         }
       }
     }
+    
+    xml_parser::validate_xml($db_doc->asXML());
+    return xml_parser::format_xml($db_doc->saveXML());
   }
 
   public static function pgdata_homogenize($type, $value) {

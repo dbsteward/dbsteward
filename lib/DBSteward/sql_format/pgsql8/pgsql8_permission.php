@@ -245,7 +245,8 @@ class pgsql8_permission {
       // mssql specific
       'REFERENCES',
       'CREATE TABLE',
-      'ALTER'
+      'ALTER',
+      'TRUNCATE'
     );
 
     $list = array();

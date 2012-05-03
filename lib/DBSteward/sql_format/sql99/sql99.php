@@ -41,6 +41,38 @@ class sql99 {
     }
     return $r;
   }
+  
+  protected static function is_custom_role_defined($doc, $role) {
+    if (isset($doc->database->role->addChild->customRole)) {
+      $custom_roles = array();
+    }
+    else {
+      $custom_roles = preg_split("/[\,\s]+/", strtolower($doc->database->role->customRole), -1, PREG_SPLIT_NO_EMPTY);
+    }
+
+    $macro_roles = array(
+      'PGSQL',
+      'PUBLIC',
+      'ROLE_OWNER',
+      'ROLE_APPLICATION',
+      'ROLE_REPLICATION',
+      'ROLE_READONLY'
+    );
+    if ( in_array(strtoupper($role), $macro_roles) ) {
+      // macro role, say it is defined
+      return TRUE;
+    }
+    return in_array(strtolower($role), $custom_roles);
+  }
+  
+  protected static function add_custom_role($doc, $role) {
+    if (!isset($doc->database->role->customRole)) {
+      $doc->database->role->addChild('customRole', $role);
+    }
+    else {
+      $doc->database->role->customRole .= ',' . $role;
+    }
+  }
 
 }
 

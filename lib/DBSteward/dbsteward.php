@@ -139,7 +139,7 @@ Slony utils
   --slonydiffnew=<newdatabase.xml> ...
 Database definition extraction utilities
   --dbschemadump
-  --dbdiff=<againstdatabase.xml> ...
+  --dbdatadiff=<againstdatabase.xml> ...
     --dbhost=<hostname>
     --dbport=<TCP-port>
     --dbname=<database_name>
@@ -181,7 +181,7 @@ Database definition extraction utilities
       "singlestageupgrade::",
       "maxstatementsperfile::",
       "ignoreoldname::",
-      "dbdiff::",
+      "dbdatadiff::",
       "xmlsort::",
       "xmlconvert::"
     );
@@ -426,8 +426,24 @@ Database definition extraction utilities
     }
 
     // difference a schema definition against a running database
-    if (isset($options['dbdiff'])) {
-      sql_format_class::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdiff']);
+    if (isset($options['dbdatadiff'])) {
+      if (strlen($dbhost) === FALSE) {
+        throw new exception("dbdatadiff error: dbhost not specified");
+      }
+      else if (strlen($dbname) === FALSE) {
+        throw new exception("dbdatadiff error: dbname not specified");
+      }
+      else if (strlen($dbuser) === FALSE) {
+        throw new exception("dbdatadiff error: dbuser not specified");
+      }
+      else if ($output_file === FALSE) {
+        throw new exception("dbdatadiff error: outputfile not specified");
+      }
+
+      $output = sql_format_class::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdatadiff']);
+      if (!file_put_contents($output_file, $output)) {
+        throw new exception("Failed to save extracted database schema to " . $output_file);
+      }
       exit(0);
     }
 
