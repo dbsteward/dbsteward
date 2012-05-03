@@ -25,7 +25,7 @@ require_once dirname(__FILE__) . '/pgsql8_type.php';
 require_once dirname(__FILE__) . '/pgsql8_view.php';
 require_once dirname(__FILE__) . '/pgsql8_diff.php';
 
-class pgsql8 {
+class pgsql8 extends sql99 {
 
   const PATTERN_SERIAL_COLUMN = '/^serial|bigserial$/i';
   
@@ -1172,7 +1172,7 @@ class pgsql8 {
         $node_schema->addAttribute('name', $row['schemaname']);
         $sql = "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = '" . $row['schemaname'] . "'";
         $schema_owner = pgsql8_db::query_str($sql);
-        $node_schema->addAttribute('owner', self::pgschema_role_translate($schema_owner));
+        $node_schema->addAttribute('owner', self::translate_role_name($schema_owner));
       }
       else {
         $node_schema = $nodes[0];
@@ -1183,7 +1183,7 @@ class pgsql8 {
       if (count($nodes) == 0) {
         $node_table = $node_schema->addChild('table');
         $node_table->addAttribute('name', $row['tablename']);
-        $node_table->addAttribute('owner', self::pgschema_role_translate($row['tableowner']));
+        $node_table->addAttribute('owner', self::translate_role_name($row['tableowner']));
         // tablespace @TODO: necssary?
         //hasindexes | hasrules | hastriggers  handled later
         // get columns for the table
@@ -1452,10 +1452,10 @@ class pgsql8 {
       }
 
       // aggregate privileges by role
-      $nodes = $node_table->xpath("grant[@role='" . self::pgschema_role_translate(dbsteward::string_cast($row_grant['grantee'])) . "']");
+      $nodes = $node_table->xpath("grant[@role='" . self::translate_role_name(dbsteward::string_cast($row_grant['grantee'])) . "']");
       if (count($nodes) == 0) {
         $node_grant = $node_table->addChild('grant');
-        $node_grant->addAttribute('role', self::pgschema_role_translate(dbsteward::string_cast($row_grant['grantee'])));
+        $node_grant->addAttribute('role', self::translate_role_name(dbsteward::string_cast($row_grant['grantee'])));
         $node_grant->addAttribute('operation', dbsteward::string_cast($row_grant['privilege_type']));
       }
       else {
@@ -1475,30 +1475,6 @@ class pgsql8 {
     xml_parser::validate_xml($doc->asXML(), FALSE);
     // sequelch this as we are about to output the XML to stdout
     return xml_parser::format_xml($doc->saveXML());
-  }
-
-  /**
-   * translate various real role owners to the ROLE_ enumerations that dbsteward understands
-   *
-   * @param  string  real role owner username
-   *
-   * @return string  translated ROLE_ enumeration
-   */
-  public function pgschema_role_translate($role) {
-    switch (strtolower($role)) {
-      case 'pgsql':
-      case 'deployment':
-        $r = 'ROLE_OWNER';
-      break;
-      case 'dbsteward':
-      case 'application1':
-        $r = 'ROLE_APPLICATION';
-      break;
-      default:
-        throw new exception("Unknown role translation: " . $role);
-      break;
-    }
-    return $r;
   }
 
   /**
