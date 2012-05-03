@@ -1481,7 +1481,8 @@ class pgsql8 extends sql99 {
       foreach($tables AS $table) {
         if ( !isset($table['primaryKey']) ) {
           $table->addAttribute('primaryKey', 'dbsteward_primary_key_not_found');
-          $table_notice_desc = 'DBSTEWARD_EXTRACTION_NOTICE: primary key definition not found for ' . $table['name'] . ' - placeholder has been specified for DTD validity';
+          $table_notice_desc = 'DBSTEWARD_EXTRACTION_WARNING: primary key definition not found for ' . $table['name'] . ' - placeholder has been specified for DTD validity';
+          dbsteward::console_line(1, "WARNING: " . $table_notice_desc);
           if ( !isset($table['description']) ) {
             $table['description'] = $table_notice_desc;
           }
