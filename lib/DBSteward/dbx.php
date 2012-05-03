@@ -109,6 +109,9 @@ class dbx {
   }
 
   public static function &get_schemas(&$node_db) {
+    if ( !is_object($node_db) ) {
+      throw new exception("node_db is not an object, check caller context");
+    }
     $nodes = $node_db->xpath("schema");
     return $nodes;
   }

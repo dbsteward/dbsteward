@@ -1471,6 +1471,26 @@ class pgsql8 extends sql99 {
         $node_grant['with'] = 'GRANT';
       }
     }
+    
+    // scan all now defined tables
+    // if they do not have a primary key defined
+    // add a placeholder for DTD validity
+    $schemas = & dbx::get_schemas($doc);
+    foreach ($schemas AS $schema) {
+      $tables = & dbx::get_tables($schema);
+      foreach($tables AS $table) {
+        if ( !isset($table['primaryKey']) ) {
+          $table->addAttribute('primaryKey', 'dbsteward_primary_key_not_found');
+          $table_notice_desc = 'DBSTEWARD_EXTRACTION_NOTICE: primary key definition not found for ' . $table['name'] . ' - placeholder has been specified for DTD validity';
+          if ( !isset($table['description']) ) {
+            $table['description'] = $table_notice_desc;
+          }
+          else {
+            $table['description'] .= $table_notice_desc;
+          }
+        }
+      }
+    }
 
     xml_parser::validate_xml($doc->asXML(), FALSE);
     // sequelch this as we are about to output the XML to stdout

@@ -415,7 +415,7 @@ Database definition extraction utilities
       $output = sql_format_class::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
       if ($output_file !== FALSE) {
         dbsteward::console_line(1, "Saving extracted database schema to " . $output_file);
-        if (!file_put_contents($output, $output_file)) {
+        if (!file_put_contents($output_file, $output)) {
           throw new exception("Failed to save extracted database schema to " . $output_file);
         }
       }
