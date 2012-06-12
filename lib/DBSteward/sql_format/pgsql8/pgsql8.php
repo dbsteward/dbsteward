@@ -786,21 +786,13 @@ class pgsql8 extends sql99 {
     // unsubscribe to abandoned tables/sequences
     foreach ($old_db_doc->schema AS $old_schema) {
       // look for the schema in the new definition
-      $new_schema = NULL;
-      $nodes = $new_db_doc->xpath("schema[@name='" . dbsteward::string_cast($old_schema['name']) . "']");
-      if (count($nodes) == 1) {
-        $new_schema = $nodes[0];
-      }
+      $new_schema = dbx::get_schema($new_db_doc, $old_schema['name']);
 
       // slony replicated tables that are no longer present
       foreach ($old_schema->table AS $old_table) {
         $new_table = NULL;
-        if ($new_schema !== NULL) {
-          $nodes = $new_schema->xpath("table[@name='" . dbsteward::string_cast($old_table['name']) . "']");
-          if (count($nodes) == 1) {
-            // table still exists in new schema
-            $new_table = $nodes[0];
-          }
+        if ( $new_schema ) {
+          $new_table = dbx::get_table($new_schema, $old_table['name']);
         }
 
         if ($new_schema === NULL || $new_table === NULL) {
@@ -850,11 +842,7 @@ class pgsql8 extends sql99 {
       foreach ($old_schema->sequence AS $old_sequence) {
         $new_sequence = NULL;
         if ($new_schema !== NULL) {
-          $nodes = $new_schema->xpath("sequence[@name='" . dbsteward::string_cast($old_sequence['name']) . "']");
-          if (count($nodes) == 1) {
-            // sequence still exists in new schema
-            $new_sequence = $nodes[0];
-          }
+          $new_sequence = dbx::get_sequence($new_schema, $old_sequence['name']);
         }
 
         if (($new_schema === NULL || $new_sequence === NULL) && strcasecmp('IGNORE_REQUIRED', $old_sequence['slonyId']) != 0) {
@@ -870,22 +858,14 @@ class pgsql8 extends sql99 {
     // new table replication
     foreach ($new_db_doc->schema AS $new_schema) {
       // look for the schema in the old definition
-      $old_schema = NULL;
-      $nodes = $old_db_doc->xpath("schema[@name='" . dbsteward::string_cast($new_schema['name']) . "']");
-      if (count($nodes) == 1) {
-        $old_schema = $nodes[0];
-      }
+      $old_schema = dbx::get_schema($old_db_doc, $new_schema['name']);
 
       // new tables that were not previously present
       // new replicated columns that were not previously present
       foreach ($new_schema->table AS $new_table) {
         $old_table = NULL;
-        if ($old_schema !== NULL) {
-          $nodes = $old_schema->xpath("table[@name='" . dbsteward::string_cast($new_table['name']) . "']");
-          if (count($nodes) == 1) {
-            // table still exists in new schema
-            $old_table = $nodes[0];
-          }
+        if ( $old_schema ) {
+          $old_table = dbx::get_table($old_schema, $new_table['name']);
         }
 
         if (($old_schema === NULL || $old_table === NULL) && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) != 0) {
@@ -930,12 +910,8 @@ class pgsql8 extends sql99 {
       // new stand alone sequences not owned by tables that were not previously present
       foreach ($new_schema->sequence AS $new_sequence) {
         $old_sequence = NULL;
-        if ($old_schema !== NULL) {
-          $nodes = $old_schema->xpath("sequence[@name='" . dbsteward::string_cast($new_sequence['name']) . "']");
-          if (count($nodes) == 1) {
-            // sequence still exists in new schema
-            $old_sequence = $nodes[0];
-          }
+        if ( $old_schema ) {
+          $old_sequence = dbx::get_sequence($old_schema, $new_sequence['name']);
         }
 
         if (($old_schema === NULL || $old_sequence === NULL) && strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) != 0) {
