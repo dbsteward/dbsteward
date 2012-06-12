@@ -810,6 +810,7 @@ class pgsql8 extends sql99 {
             // is a replicated type?
             if (preg_match(pgsql8::PATTERN_REPLICATED_COLUMN, $old_column['type']) > 0
               && isset($old_column['slonyId']) && strcasecmp('IGNORE_REQUIRED', $old_column['slonyId']) != 0) {
+              $slony_stage1_ofs->write("# replicated table column " . $old_schema['name'] . '.' . $old_table['name'] . '.' . $old_column['name'] . " slonyId " . $old_table['slonyId'] . " no longer defined, dropping\n");
               $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_column['slonyId'])) . "\n\n");
             }
           }
@@ -817,6 +818,7 @@ class pgsql8 extends sql99 {
           if (isset($old_table['slonyId'])
             && strcasecmp('IGNORE_REQUIRED', $old_table['slonyId']) != 0) {
             // drop table subscription to the table
+            $slony_stage1_ofs->write("# replicated table " . $old_schema['name'] . '.' . $old_table['name'] . " slonyId " . $old_table['slonyId'] . " no longer defined, dropping\n");
             $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_table, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_table['slonyId'])) . "\n\n");
           }
         }
