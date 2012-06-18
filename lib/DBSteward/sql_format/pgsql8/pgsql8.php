@@ -767,6 +767,7 @@ class pgsql8 extends sql99 {
       throw new exception("failed to open upgrade slony stage 1 output file " . $slony_stage1_file . ' for output');
     }
     $slony_stage1_ofs = new output_file_segmenter($slony_stage1_file, 1, $slony_stage1_fp, $slony_stage1_file);
+    $slony_stage1_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
     $slony_stage1_ofs->write("# dbsteward slony stage 1 upgrade file generated " . $timestamp . "\n");
     $slony_stage1_ofs->write($old_set_new_set . "\n");
     $slony_stage1_ofs->write("ECHO 'dbsteward slony stage 1 upgrade file generated " . date('r') . " starting';\n\n");
@@ -774,12 +775,13 @@ class pgsql8 extends sql99 {
     $slony_stage3_file = $slonik_file_prefix . '_stage3_slony.slonik';
     $slony_stage3_fp = fopen($slony_stage3_file, 'w');
     if ($slony_stage3_fp === FALSE) {
-      throw new exception("failed to open upgrade slony stage 2 output file " . $slony_stage3_file . ' for output');
+      throw new exception("failed to open upgrade slony stage 3 output file " . $slony_stage3_file . ' for output');
     }
     $slony_stage3_ofs = new output_file_segmenter($slony_stage3_file, 1, $slony_stage3_fp, $slony_stage3_file);
-    $slony_stage3_ofs->write("# dbsteward slony stage 2 upgrade file generated " . $timestamp . "\n");
+    $slony_stage3_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
+    $slony_stage3_ofs->write("# dbsteward slony stage 3 upgrade file generated " . $timestamp . "\n");
     $slony_stage3_ofs->write($old_set_new_set . "\n");
-    $slony_stage3_ofs->write("ECHO 'dbsteward slony stage 2 upgrade file generated " . date('r') . " starting';\n\n");
+    $slony_stage3_ofs->write("ECHO 'dbsteward slony stage 3 upgrade file generated " . date('r') . " starting';\n\n");
 
     // slony replication configuration changes
     // SLONY STAGE 1
@@ -854,7 +856,7 @@ class pgsql8 extends sql99 {
 
     $upgrade_set_created = FALSE;
 
-    // SLONY STAGE 2
+    // SLONY STAGE 3
     // new table replication
     foreach ($new_db_doc->schema AS $new_schema) {
       // look for the schema in the old definition

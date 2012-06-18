@@ -9,7 +9,8 @@
  */
 
 class output_file_segmenter {
-  
+
+  protected $comment_line_prefix = "--";
   protected $base_file_name;
   protected $file_segment;
   protected $file_pointer = NULL;
@@ -18,6 +19,8 @@ class output_file_segmenter {
   protected $segmenting_enabled = TRUE;
   protected $content_header = NULL;
   protected $content_footer = NULL;
+  protected $fixed_file_pointer = FALSE;
+  protected $wrote_fixed_file_header = FALSE;
 
   /**
    * constructor
@@ -40,12 +43,18 @@ class output_file_segmenter {
       $this->current_output_file = $current_output_file;
       dbsteward::console_line(3, "[File Segment] Fixed output file: " . $this->current_output_file);
       $this->segmenting_enabled = FALSE;
+      $this->fixed_file_pointer = TRUE;
+      $this->wrote_fixed_file_header = FALSE;
     }
   }
   
   function __destruct() {
     $this->write_footer();
     fclose($this->file_pointer);
+  }
+
+  public function set_comment_line_prefix($prefix) {
+    $this->comment_line_prefix = $prefix;
   }
   
   public function set_header($text) {
@@ -60,7 +69,7 @@ class output_file_segmenter {
     $se = $this->segmenting_enabled;
     $this->segmenting_enabled = FALSE;
 
-    $this->write("-- " . $this->current_output_file . "\n");
+    $this->write($this->comment_line_prefix . " " . $this->current_output_file . "\n");
     $this->write($this->content_header);
 
     $this->segmenting_enabled = $se;
@@ -150,6 +159,12 @@ class output_file_segmenter {
     // this is for first file header setup between set_header() / append_header() and write time
     if ( $this->file_pointer === NULL ) {
       $this->next_file_segment();
+    }
+    // if this segmenter is using a fixed file pointer
+    // need to do write_header() because next_file_segment() isn't going to get called
+    if ( $this->fixed_file_pointer && !$this->wrote_fixed_file_header ) {
+      $this->wrote_fixed_file_header = TRUE;
+      $this->write_header();
     }
     if ( ($bytes_written = fwrite($this->file_pointer, $sql)) === FALSE ) {
       throw new exception("failed to write to file_pointer: " . var_export($this->file_pointer, TRUE) . " text: " . $sql);
