@@ -55,13 +55,13 @@ class structureExtractionTest extends dbstewardUnitTestBase {
   </schema>
   <schema name="hotel" owner="ROLE_OWNER">
     <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id" slonyId="1">
-      <column name="rate_id" type="serial"/>
+      <column name="rate_id" type="integer" null="false"/>
       <column name="rate_group_id" foreignSchema="hotel" foreignTable="rate_group" foreignColumn="rate_group_id" null="false"/>
       <column name="rate_name" type="character varying(120)"/>
-      <column name="rate_value" type="numeric(6, 2)"/>
+      <column name="rate_value" type="numeric"/>
     </table>
     <table name="rate_group" owner="ROLE_OWNER" primaryKey="rate_group_id" slonyId="2">
-      <column name="rate_group_id" type="integer"/>
+      <column name="rate_group_id" type="integer" null="false"/>
       <column name="rate_group_name" type="character varying(100)"/>
       <column name="rate_group_enabled" type="boolean" null="false" default="true"/>
     </table>
@@ -89,35 +89,25 @@ XML;
 
     // 2) Extract database schema to definition B
     $this->xml_content_b = pgsql8::extract_schema($this->pgsql->get_dbhost(), $this->pgsql->get_dbport(), $this->pgsql->get_dbname(), $this->pgsql->get_dbuser(), $this->pgsql->get_dbpass());
+    
+    $this->write_xml_definition_to_disk();
 
     // 3) Compare and expect zero differences between A and B
-    $this->xml_file_a = dirname(__FILE__) . '/testdata/extract_diff_xml_a.xml';
-    file_put_contents($this->xml_file_a, $this->xml_content_a);
-    $this->xml_file_b = dirname(__FILE__) . '/testdata/extract_diff_xml_b.xml';
-    file_put_contents($this->xml_file_b, $this->xml_content_b);
-
     $this->apply_options_pgsql8();
     pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
     
-    $upgrade_stage1_schema1_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage1_schema1.sql');
-    $upgrade_stage1_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage1_schema1_sql);
-    $upgrade_stage1_slony_slonik = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage1_slony.slonik');
-    $upgrade_stage1_slony_slonik = preg_replace('/\s+/', ' ', $upgrade_stage1_slony_slonik);
-    $upgrade_stage2_data1_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage2_data1.sql');
-    $upgrade_stage2_data1_sql = preg_replace('/\s+/', ' ', $upgrade_stage2_data1_sql);
-    $upgrade_stage3_schema1_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage3_schema1.sql');
-    $upgrade_stage3_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage3_schema1_sql);
-    $upgrade_stage3_slony_slonik = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage3_slony.slonik');
-    $upgrade_stage3_slony_slonik = preg_replace('/\s+/', ' ', $upgrade_stage3_slony_slonik);
-    $upgrade_stage4_data1_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage4_data1.sql');
-    $upgrade_stage4_data1_sql = preg_replace('/\s+/', ' ', $upgrade_stage4_data1_sql);
+    $upgrade_stage1_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
+    $upgrade_stage2_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
+    $upgrade_stage3_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
+    $upgrade_stage4_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
 
+    // check for no differences as expressed in DDL / DML
     $this->assertEquals(
       0,
       preg_match('/ALTER TABLE/i', $upgrade_stage1_schema1_sql),
       "ALTER TABLE token found in upgrade_stage1_schema1_sql"
     );
-    
+
     $this->assertEquals(
       0,
       preg_match('/INSERT INTO/i', $upgrade_stage2_data1_sql),
@@ -137,7 +127,100 @@ XML;
     );
     
     
-    // @TODO: 4) Check for and validate tables in resultant XML definiton
+    // 4) Check for and validate tables in resultant XML definiton
+    $this->compare_xml_definition();
+  }
+  
+  protected function write_xml_definition_to_disk() {
+    $this->xml_file_a = __DIR__ . '/testdata/extract_diff_xml_a.xml';
+    file_put_contents($this->xml_file_a, $this->xml_content_a);
+
+    $this->xml_file_b = __DIR__ . '/testdata/extract_diff_xml_b.xml';
+    file_put_contents($this->xml_file_b, $this->xml_content_b);
+  }
+  
+  protected function get_script($file_name) {
+    return file_get_contents($file_name);
+  }
+  
+  protected function get_script_compress($file_name) {
+    // kill excess whitespace and newlines for comparison
+    return preg_replace('/\s+/', ' ', $this->get_script($file_name));
+  }
+  
+  protected function compare_xml_definition() {
+    // are all of the tables defined in A in B?
+    $doc_a = simplexml_load_file($this->xml_file_a);
+    $doc_b = simplexml_load_file($this->xml_file_b);
+    foreach($doc_a->schema AS $schema_a) {
+      $schema_b = dbx::get_schema($doc_b, $schema_a['name']);
+      $this->assertObjectHasAttribute('name', $schema_b, "schema " . $schema_a['name'] . " not found in doc_b");
+      $this->assertEquals($schema_a['name'], $schema_b['name']);
+      foreach($schema_a->table AS $table_a) {
+        $table_b = dbx::get_table($schema_b, $table_a['name']);
+        $this->assertObjectHasAttribute('name', $table_b, "table " . $table_a['name'] . " not found in doc_b schema " . $schema_a['name']);
+        $this->assertEquals($table_a['name'], $table_b['name']);
+      }
+    }
+  }
+  
+  /**
+   * Structure Extraction Testing - Mysql 4
+   *
+   * 1) Build a database from definition A
+   * 2) Extract database schema to definition B
+   * 3) Compare and expect zero differences between A and B with DBSteward difference engine
+   * 4) Check for and validate tables in resultant XML definiton
+   * 
+   * @param   void
+   * @return  void
+   */
+  public function testBuildExtractCompare_mysql4() {
+    // 1) Build a database from definition A
+    $this->build_db_mysql4();
+
+    // 2) Extract database schema to definition B
+    $this->xml_content_b = mysql4::extract_schema($this->pgsql->get_dbhost(), $this->pgsql->get_dbport(), $this->pgsql->get_dbname(), $this->pgsql->get_dbuser(), $this->pgsql->get_dbpass());
+    
+    $this->write_xml_definition_to_disk();
+
+    // 3) Compare and expect zero differences between A and B
+    $this->apply_options_mysql4();
+    mysql4::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    
+    $upgrade_stage1_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
+    $upgrade_stage2_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
+    $upgrade_stage3_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
+    $upgrade_stage4_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
+
+    // check for no differences as expressed in DDL / DML
+    $this->assertEquals(
+      0,
+      preg_match('/ALTER TABLE/i', $upgrade_stage1_schema1_sql),
+      "ALTER TABLE token found in upgrade_stage1_schema1_sql"
+    );
+
+    $this->assertEquals(
+      0,
+      preg_match('/INSERT INTO/i', $upgrade_stage2_data1_sql),
+      "INSERT INTO token found in upgrade_stage2_data1_sql"
+    );
+
+    $this->assertEquals(
+      0,
+      preg_match('/ALTER TABLE/i', $upgrade_stage3_schema1_sql),
+      "ALTER TABLE token found in upgrade_stage3_schema1_sql"
+    );
+    
+    $this->assertEquals(
+      0,
+      preg_match('/DELETE FROM/i', $upgrade_stage4_data1_sql),
+      "DELETE FROM token found in upgrade_stage4_data1_sql"
+    );
+    
+    
+    // 4) Check for and validate tables in resultant XML definiton
+    $this->compare_xml_definition();
   }
   
 }

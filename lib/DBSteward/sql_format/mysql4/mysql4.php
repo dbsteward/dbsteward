@@ -55,12 +55,12 @@ class mysql4 {
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
       dbsteward::console_line(1, "Defining structure");
-      mysql4::build_schema($db_doc, $build_file_fp, $table_dependency);
+      mysql4::build_schema($db_doc, $build_file_ofs, $table_dependency);
     }
     if (!dbsteward::$only_schema_sql
       || dbsteward::$only_data_sql) {
       dbsteward::console_line(1, "Defining data inserts");
-      mysql4::build_data($db_doc, $build_file_fp, $table_dependency);
+      mysql4::build_data($db_doc, $build_file_ofs, $table_dependency);
     }
     dbsteward::$new_database = NULL;
 
