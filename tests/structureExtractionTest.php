@@ -154,11 +154,11 @@ XML;
     $doc_b = simplexml_load_file($this->xml_file_b);
     foreach($doc_a->schema AS $schema_a) {
       $schema_b = dbx::get_schema($doc_b, $schema_a['name']);
-      $this->assertObjectHasAttribute('name', $schema_b, "schema " . $schema_a['name'] . " not found in doc_b");
+      $this->assertTrue(is_object($schema_b), $schema_a['name'] . ' schema_b object pointer not found');
       $this->assertEquals($schema_a['name'], $schema_b['name']);
       foreach($schema_a->table AS $table_a) {
         $table_b = dbx::get_table($schema_b, $table_a['name']);
-        $this->assertObjectHasAttribute('name', $table_b, "table " . $table_a['name'] . " not found in doc_b schema " . $schema_a['name']);
+        $this->assertTrue(is_object($table_b), $table_a['name'] . ' table_b object pointer not found');
         $this->assertEquals($table_a['name'], $table_b['name']);
       }
     }

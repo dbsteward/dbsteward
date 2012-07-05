@@ -1283,7 +1283,7 @@ class pgsql8 extends sql99 {
 
     // for all schemas, all tables - get table constraints .. PRIMARY KEYs, FOREIGN KEYs
     // makes the loop much faster to do it for the whole schema cause of crappy joins
-    // @TODO: known bug - multi-column primary keys can be out of order
+    // @TODO: known bug - multi-column primary keys can be out of order with this query
     $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name, tc.is_deferrable, tc.initially_deferred, rc.match_option AS match_type, rc.update_rule AS on_update, rc.delete_rule AS on_delete, ccu.table_schema AS references_schema, ccu.table_name AS references_table, ccu.column_name AS references_field
       FROM information_schema.table_constraints tc
       LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_catalog = kcu.constraint_catalog AND tc.constraint_schema = kcu.constraint_schema AND tc.constraint_name = kcu.constraint_name
@@ -1366,7 +1366,75 @@ class pgsql8 extends sql99 {
       }
     }
 
-    // @TODO: specify user functions from the database
+
+    // get function info for all functions
+    // this is based on psql 8.4's \df+ query
+    // that are not language c
+    // that are not triggers
+    $sql = "SELECT n.nspname as \"Schema\",
+  p.proname as \"Name\",
+  pg_catalog.pg_get_function_result(p.oid) as \"Result data type\",
+  pg_catalog.pg_get_function_arguments(p.oid) as \"Argument data types\",
+ CASE
+  WHEN p.proisagg THEN 'agg'
+  WHEN p.proiswindow THEN 'window'
+  WHEN p.prorettype = 'pg_catalog.trigger'::pg_catalog.regtype THEN 'trigger'
+  ELSE 'normal'
+END as \"Type\",
+ CASE
+  WHEN p.provolatile = 'i' THEN 'IMMUTABLE'
+  WHEN p.provolatile = 's' THEN 'STABLE'
+  WHEN p.provolatile = 'v' THEN 'VOLATILE'
+END as \"Volatility\",
+  pg_catalog.pg_get_userbyid(p.proowner) as \"Owner\",
+  l.lanname as \"Language\",
+  p.prosrc as \"Source code\",
+  pg_catalog.obj_description(p.oid, 'pg_proc') as \"Description\"
+FROM pg_catalog.pg_proc p
+     LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+     LEFT JOIN pg_catalog.pg_language l ON l.oid = p.prolang
+WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
+  AND l.lanname NOT IN ( 'c' )
+  AND pg_catalog.pg_get_function_result(p.oid) NOT IN ( 'trigger' )";
+    $rs_functions = pgsql8_db::query($sql);
+    while (($row_fxn = pg_fetch_assoc($rs_functions)) !== FALSE) {
+      $node_schema = dbx::get_schema($doc, $row_fxn['Schema'], TRUE);
+      if ( !isset($node_schema['owner']) ) {
+        $sql = "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = '" . $row_fxn['Schema'] . "'";
+        $schema_owner = pgsql8_db::query_str($sql);
+        $node_schema->addAttribute('owner', self::translate_role_name($schema_owner));
+      }
+      if ( !$node_schema ) {
+        throw new exception("failed to find function schema " . $row_fxn['Schema']);
+      }
+      $node_function = dbx::get_function($node_schema, $row_fxn['Name'], $row_fxn['Argument data types'], TRUE);
+
+      $args = preg_split("/[\,]/", $row_fxn['Argument data types'], -1, PREG_SPLIT_NO_EMPTY);
+      foreach($args AS $arg) {
+        $arg_pieces = preg_split("/[\s]+/", trim($arg), -1, PREG_SPLIT_NO_EMPTY);
+        $node_function_parameter = $node_function->addChild('functionParameter');
+        if ( count($arg_pieces) > 1 ) {
+          // if the function parameter is named, retain the name
+          $arg_name = array_shift($arg_pieces);
+          $arg_type = implode(' ', $arg_pieces);
+          $node_function_parameter['name'] = $arg_name;
+          $node_function_parameter['type'] = $arg_type;
+        }
+        else {
+          $node_function_parameter['type'] = trim($arg);
+        }
+      }
+
+      $node_function['returns'] = $row_fxn['Result data type'];
+      $node_function['cachePolicy'] = $row_fxn['Volatility'];
+      $node_function['language'] = $row_fxn['Language'];
+      $node_function['owner'] = $row_fxn['Owner'];
+      // @TODO: how is / figure out how to express securityDefiner attribute in the functions query
+      $node_function['description'] = $row_fxn['Description'];
+      $node_function->addChild('functionDefinition', $row_fxn['Source code']);
+    }
+
+
     // specify any user triggers we can find in the information_schema.triggers view
     $sql = "SELECT *
       FROM information_schema.triggers
@@ -1389,7 +1457,7 @@ class pgsql8 extends sql99 {
         $node_table = $nodes[0];
       }
 
-      // there is a row for each event_manipulation, so we need to aggregate them, see if the trigger already exsists
+      // there is a row for each event_manipulation, so we need to aggregate them, see if the trigger already exists
       $nodes = $node_schema->xpath("trigger[@name='" . $row_trigger['trigger_name'] . "']");
       if (count($nodes) == 0) {
         $node_trigger = $node_schema->addChild('trigger');
@@ -1408,6 +1476,7 @@ class pgsql8 extends sql99 {
       $trigger_function = trim(str_ireplace('EXECUTE PROCEDURE', '', $row_trigger['action_statement']));
       $node_trigger['function'] = dbsteward::string_cast($trigger_function);
     }
+
 
     // find table grants and save them in the xml document
     $sql = "SELECT *
