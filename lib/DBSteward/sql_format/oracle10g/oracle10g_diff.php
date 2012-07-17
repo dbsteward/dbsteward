@@ -327,7 +327,7 @@ class oracle10g_diff extends sql99_diff {
           || !oracle10g_permission::has_permission($old_view, $new_permission)
           // OR if the view has changed, as that means it has been recreated
           || oracle10g_diff_views::is_view_modified($old_view, $new_view) ) {
-            // view permissions are in schema stage 2 file because views are (re)created in that file for SELECT * expansion
+            // view permissions are in stage 3 file because views are (re)created in that file for SELECT * expansion
             $ofs3->write(oracle10g_permission::get_sql(dbsteward::$new_database, $new_schema, $new_view, $new_permission) . "\n");
           }
         }

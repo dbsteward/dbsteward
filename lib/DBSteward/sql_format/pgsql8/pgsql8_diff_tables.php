@@ -181,7 +181,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             'stage' => '3',
             'command' => "\tALTER COLUMN " . pgsql8_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " SET NOT NULL"
           );
-          // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 2
+          // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 3
           if ( strlen($new_column['default']) > 0 ) {
             $commands[] = array(
               'stage' => 'AFTER1',

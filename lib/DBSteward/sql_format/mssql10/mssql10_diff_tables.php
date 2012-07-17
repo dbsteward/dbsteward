@@ -117,7 +117,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
             'command' => "\tALTER COLUMN " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " " . $new_column_type . " NOT NULL"
           );
 
-          // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 2
+          // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 3
           if (strlen($new_column['default']) > 0) {
             $commands[] = array(
               'stage' => 'AFTER1',
@@ -436,7 +436,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         $identity_transition_commands[] = '-- DBSteward: ' . $new_schema['name'] . '.' . $new_table['name'] . ' identity column ' . $new_column['name'] . ' was redefined to ' . $old_id_pkey_col['type'] . ' - table rebuild end' . "\n";
 
         // put all of the identity_transition_commands into the command list as BEFORE3's
-        // this will make the identity column changes occur at the beginning schema stage 2
+        // this will make the identity column changes occur at the beginning of stage 3
         foreach ($identity_transition_commands as $itc) {
           $commands[] = array(
             'stage' => 'BEFORE3',
@@ -719,7 +719,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     //     old_table had an IDENTITY column
     // )
     // SET IDENTITY_INSERT for data row insert statements
-    // this is because the table IDENTITY column will not be stripped until schema stage 2
+    // this is because the table IDENTITY column will not be stripped until stage 3 changes
     // see 'identity()d table' console statements for where this is done
     // reference FS#25730 - dbsteward not properly upgrading serial to int 
     if (strlen($sql) > 0

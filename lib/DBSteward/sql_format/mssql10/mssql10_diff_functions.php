@@ -19,7 +19,7 @@ class mssql10_diff_functions {
    * @param $new_schema new schema
    */
   public static function diff_functions($ofs1, $ofs3, $old_schema, $new_schema) {
-    // drop functions that no longer exist in stage 2
+    // drop functions that no longer exist in stage 3
     if ($old_schema != NULL) {
       foreach (dbx::get_functions($old_schema) as $old_function) {
         if (!mssql10_schema::contains_function($new_schema, mssql10_function::get_declaration($new_schema, $old_function))) {

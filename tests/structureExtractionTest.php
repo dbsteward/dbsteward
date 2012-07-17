@@ -149,13 +149,16 @@ XML;
   }
   
   protected function compare_xml_definition() {
-    // are all of the tables defined in A in B?
     $doc_a = simplexml_load_file($this->xml_file_a);
     $doc_b = simplexml_load_file($this->xml_file_b);
+    
+    // are all of the schemas defined in A in B?
     foreach($doc_a->schema AS $schema_a) {
       $schema_b = dbx::get_schema($doc_b, $schema_a['name']);
       $this->assertTrue(is_object($schema_b), $schema_a['name'] . ' schema_b object pointer not found');
       $this->assertEquals($schema_a['name'], $schema_b['name']);
+      
+      // are all of the tables defined in A in B?
       foreach($schema_a->table AS $table_a) {
         $table_b = dbx::get_table($schema_b, $table_a['name']);
         $this->assertTrue(is_object($table_b), $table_a['name'] . ' table_b object pointer not found');
