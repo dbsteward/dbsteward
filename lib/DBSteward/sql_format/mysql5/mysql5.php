@@ -13,6 +13,7 @@ class mysql5 {
   const QUOTE_CHAR = '`';
 
   public static function build($files) {
+
     if (!is_array($files)) {
       $files = array($files);
     }
