@@ -70,7 +70,7 @@ class pgsql8_sequence {
     }
 
     $cycle = 'NO CYCLE';
-    if ( strlen($node_sequence['cycle']) > 0 ) {
+    if ( strlen($node_sequence['cycle']) > 0  && strcasecmp($node_sequence['cycle'], 'false') != 0) {
       $cycle = 'CYCLE';
     }
 
