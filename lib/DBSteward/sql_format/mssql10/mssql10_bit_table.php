@@ -30,7 +30,9 @@ class mssql10_bit_table {
 
     $sequence_name = mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_sequence['name'], dbsteward::$quote_table_names);
 
-    $ddl = "-- pgsql sequence equivalent implementation\n" . "CREATE TABLE " . $sequence_name . " (" . "\n" . "  id BIGINT IDENTITY(" . $node_sequence['start'] . "," . $node_sequence['inc'] . ")," . "\n" . "  place_holder bit NOT NULL" . "\n" . ");\n";
+    $ddl = "-- this is a pgsql8 equivalency implementation. to use it as a stand alone auto incrementing sequence in mssql, use a query such as\n";
+    $ddl.= "-- INSERT INTO $sequence_name (place_holder) VALUES (1) SELECT SCOPE_IDENTITY()\n";
+    $ddl.= "CREATE TABLE " . $sequence_name . " (" . "\n" . "  id BIGINT IDENTITY(" . $node_sequence['start'] . "," . $node_sequence['inc'] . ")," . "\n" . "  place_holder bit NOT NULL" . "\n" . ");\n";
 
     // @IMPLEMENT: $node_sequence['cache'] ?
     // @IMPLEMENT: $node_sequence['cycle'] ?
