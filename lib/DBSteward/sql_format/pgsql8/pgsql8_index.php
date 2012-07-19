@@ -23,10 +23,10 @@ class pgsql8_index {
     }
 
     $sql .= "INDEX "
-      . pgsql8_diff::get_quoted_name($node_index['name'], dbsteward::$quote_object_names)
+      . pgsql8::get_quoted_name($node_index['name'], dbsteward::$quote_object_names)
       . " ON "
-      . pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.'
-      . pgsql8_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
+      . pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.'
+      . pgsql8::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
     if ( isset($node_index['using']) && strlen($node_index['using']) > 0 ) {
       $sql .= ' USING ' . $node_index['using'];
     }
@@ -41,7 +41,7 @@ class pgsql8_index {
   }
 
   public function get_drop_sql($node_schema, $node_table, $node_index) {
-    $ddl = "DROP INDEX " . pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . "." . pgsql8_diff::get_quoted_name($node_index['name'], dbsteward::$quote_object_names) . ";\n";
+    $ddl = "DROP INDEX " . pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . "." . pgsql8::get_quoted_name($node_index['name'], dbsteward::$quote_object_names) . ";\n";
     return $ddl;
   }
 

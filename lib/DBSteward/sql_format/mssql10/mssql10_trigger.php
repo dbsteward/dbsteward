@@ -71,7 +71,7 @@ class mssql10_trigger extends pgsql8_trigger {
       throw new exception("Failed to find trigger table " . $node_trigger['table'] . " in schema node " . $node_schema['name']);
     }
     $table_name = mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
-    $ddl = "DROP TRIGGER " . pgsql8_diff::get_quoted_name($node_trigger['name'], dbsteward::$quote_object_names) . " ON " . $table_name . ";\n";
+    $ddl = "DROP TRIGGER " . pgsql8::get_quoted_name($node_trigger['name'], dbsteward::$quote_object_names) . " ON " . $table_name . ";\n";
     return $ddl;
   }
 }

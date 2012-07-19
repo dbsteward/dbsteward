@@ -88,8 +88,8 @@ class pgsql8_diff_sequences {
 
         if (strlen($sql) > 0) {
           $ofs->write("ALTER SEQUENCE "
-            . pgsql8_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.'
-            . pgsql8_diff::get_quoted_name($new_sequence['name'], dbsteward::$quote_object_names)
+            . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.'
+            . pgsql8::get_quoted_name($new_sequence['name'], dbsteward::$quote_object_names)
             . $sql . ";\n");
         }
       }

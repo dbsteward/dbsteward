@@ -21,13 +21,13 @@ class pgsql8_trigger {
     if ( $node_table == null ) {
       throw new exception("Failed to find trigger table " . $node_trigger['table'] . " in schema node " . $node_schema['name']);
     }
-    $table_name = pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
+    $table_name = pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
 
     if ( !isset($node_trigger['forEach']) ) {
       throw new exception("trigger forEach must be defined for pg triggers: " . $node_trigger['name']);
     }
 
-    $ddl = "CREATE TRIGGER " . pgsql8_diff::get_quoted_name($node_trigger['name'], dbsteward::$quote_object_names) . "
+    $ddl = "CREATE TRIGGER " . pgsql8::get_quoted_name($node_trigger['name'], dbsteward::$quote_object_names) . "
 \t" . $node_trigger['when'] . ' ' . implode(' OR ', $event_chunks) . "
 \tON " . $table_name . ' FOR EACH ' . $node_trigger['forEach'] . "
 \tEXECUTE PROCEDURE " . $node_trigger['function'] . " ;\n";
@@ -44,8 +44,8 @@ class pgsql8_trigger {
     if ( $node_table == null ) {
       throw new exception("Failed to find trigger table " . $node_trigger['table'] . " in schema node " . $node_schema['name']);
     }
-    $table_name = pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
-    $ddl = "DROP TRIGGER " . pgsql8_diff::get_quoted_name($node_trigger['name'], dbsteward::$quote_object_names) . " ON " . $table_name . ";\n";
+    $table_name = pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
+    $ddl = "DROP TRIGGER " . pgsql8::get_quoted_name($node_trigger['name'], dbsteward::$quote_object_names) . " ON " . $table_name . ";\n";
     return $ddl;
   }
 

@@ -25,16 +25,16 @@ class pgsql8_language {
       . ( strcasecmp(dbsteward::string_cast($node_language['trusted']), 'true') == 0 ? "TRUSTED " : "" )
       . ( strcasecmp(dbsteward::string_cast($node_language['procedural']), 'true') == 0 ? "PROCEDURAL " : "" )
       . "LANGUAGE "
-      . pgsql8_diff::get_quoted_name($node_language['name'], dbsteward::$quote_object_names)
-      . ( strlen($node_language['handler']) > 0 ? "HANDLER " . pgsql8_diff::get_quoted_name($node_language['handler'], dbsteward::$quote_function_names) : "" )
-      . ( strlen($node_language['validator']) > 0 ? "VALIDATOR " . pgsql8_diff::get_quoted_name($node_language['validator'], dbsteward::$quote_function_names) : "" )
+      . pgsql8::get_quoted_name($node_language['name'], dbsteward::$quote_object_names)
+      . ( strlen($node_language['handler']) > 0 ? "HANDLER " . pgsql8::get_quoted_name($node_language['handler'], dbsteward::$quote_function_names) : "" )
+      . ( strlen($node_language['validator']) > 0 ? "VALIDATOR " . pgsql8::get_quoted_name($node_language['validator'], dbsteward::$quote_function_names) : "" )
       . " ;\n";
 
     if ( strlen($node_language['owner']) > 0 ) {
       $ddl .= "ALTER "
         . ( strcasecmp(dbsteward::string_cast($node_language['procedural']), 'true') == 0 ? "PROCEDURAL " : "" )
         . "LANGUAGE "
-        . pgsql8_diff::get_quoted_name($node_language['name'], dbsteward::$quote_object_names)
+        . pgsql8::get_quoted_name($node_language['name'], dbsteward::$quote_object_names)
         . " OWNER TO " . xml_parser::role_enum(dbsteward::$new_database, $node_language['owner'])
         . " ;\n";
     }
@@ -51,7 +51,7 @@ class pgsql8_language {
     $ddl = "DROP "
       . ( strcasecmp(dbsteward::string_cast($node_language['procedural']), 'true') == 0 ? "PROCEDURAL " : "" )
       . " LANGUAGE "
-      . pgsql8_diff::get_quoted_name($node_language['name'], dbsteward::$quote_object_names)
+      . pgsql8::get_quoted_name($node_language['name'], dbsteward::$quote_object_names)
       . " ;";
     return $ddl;
   }
