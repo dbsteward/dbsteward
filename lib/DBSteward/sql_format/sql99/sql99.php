@@ -74,6 +74,26 @@ class sql99 {
     }
   }
 
+  /**
+   * returns if quote_name is true then returns quoted name otherwise returns the original name
+   *
+   * @param name name
+   * @param quote_name whether the name should be quoted
+   *
+   * @return string
+   */
+  public static function get_quoted_name($name, $quoted, $quote_char) {
+    if ( ! preg_match('/^[a-zA-Z_]\w*$/', $name) ) {
+      throw new exception("Invalid identifier: '$name'");
+    }
+
+    if ( $quoted ) {
+      return ($quote_char . $name . $quote_char);
+    } else {
+      return $name;
+    }
+  }
+
 }
 
 ?>
