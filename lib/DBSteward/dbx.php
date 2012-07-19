@@ -735,7 +735,7 @@ class dbx {
       }
       else if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
         $value_type = mssql10_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
-        $primary_key_expression .= mssql10_diff::get_quoted_name($primary_column_name, dbsteward::$quote_column_names) . ' = ' . mssql10::value_escape($value_type, $data_row->col[$column_index]);
+        $primary_key_expression .= mssql10::get_quoted_name($primary_column_name, dbsteward::$quote_column_names) . ' = ' . mssql10::value_escape($value_type, $data_row->col[$column_index]);
       }
       else {
         throw new exception("Unknown sql_format: " . dbsteward::get_sql_format());

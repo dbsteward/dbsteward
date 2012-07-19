@@ -23,7 +23,7 @@ class mssql10_index extends pgsql8_index {
         $sql .= "UNIQUE ";
       }
 
-      $sql .= "INDEX " . mssql10_diff::get_quoted_name($node_index['name'], dbsteward::$quote_object_names) . " ON " . mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
+      $sql .= "INDEX " . mssql10::get_quoted_name($node_index['name'], dbsteward::$quote_object_names) . " ON " . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
       if (isset($node_index['using']) && strlen($node_index['using']) > 0) {
         switch (strtolower($node_index['using'])) {
           case 'btree':
@@ -64,9 +64,9 @@ class mssql10_index extends pgsql8_index {
 
   public function get_drop_sql($node_schema, $node_table, $node_index) {
     $ddl = "DROP INDEX "
-      . mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names)
-      . "." . mssql10_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names)
-      . "." . mssql10_diff::get_quoted_name($node_index['name'], dbsteward::$quote_object_names)
+      . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names)
+      . "." . mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names)
+      . "." . mssql10::get_quoted_name($node_index['name'], dbsteward::$quote_object_names)
       . ";\n";
     //@TODO: drop computed columns after DROP INDEX
     return $ddl;
@@ -102,7 +102,7 @@ class mssql10_index extends pgsql8_index {
       else {
         // not an explicit column, so create one
         $dimension_name = $node_index['name'] . '_' . $i;
-        $add_column_sql .= "ALTER TABLE " . mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names) . "\n" . "  ADD " . $dimension_name . " AS " . (string)$dimension . ";\n";
+        $add_column_sql .= "ALTER TABLE " . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names) . "\n" . "  ADD " . $dimension_name . " AS " . (string)$dimension . ";\n";
       }
 
       $dimension_list .= $dimension_name . ', ';

@@ -59,11 +59,11 @@ class mssql10_function extends pgsql8_function {
     $declaration = str_ireplace("character varying", "varchar", $declaration);
     $declaration = str_ireplace("varying", "varchar", $declaration);
 
-    $ddl = "DROP FUNCTION " . mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_function['name'], dbsteward::$quote_function_names) . ';';
+    $ddl = "DROP FUNCTION " . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_function['name'], dbsteward::$quote_function_names) . ';';
 
     // MSSQL procedure mode?
     if (isset($node_function['procedure'])) {
-      $ddl = "DROP PROCEDURE " . mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_function['name'], dbsteward::$quote_function_names) . ';';
+      $ddl = "DROP PROCEDURE " . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_function['name'], dbsteward::$quote_function_names) . ';';
     }
 
     return $ddl;
@@ -76,7 +76,7 @@ class mssql10_function extends pgsql8_function {
    * @param $node_function
    */
   public static function get_declaration($node_schema, $node_function) {
-    $r = mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_function['name'], dbsteward::$quote_function_names) . '(';
+    $r = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_function['name'], dbsteward::$quote_function_names) . '(';
     $parameters = dbx::get_function_parameters($node_function);
     foreach ($parameters AS $parameter) {
       $arg = '';

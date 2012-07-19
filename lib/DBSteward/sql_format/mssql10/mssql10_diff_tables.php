@@ -22,10 +22,10 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
 
     if ((($old_cluster == NULL) && ($new_cluster != NULL)) || (($old_cluster != NULL)
       && ($new_cluster != NULL) && (strcmp($new_cluster, $old_cluster) != 0))) {
-      $ofs->write("ALTER TABLE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " CLUSTER ON " . mssql10_diff::get_quoted_name($new_cluster, dbsteward::$quote_column_names) . ";\n");
+      $ofs->write("ALTER TABLE " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " CLUSTER ON " . mssql10::get_quoted_name($new_cluster, dbsteward::$quote_column_names) . ";\n");
     }
     else if (($old_cluster != NULL) && ($new_cluster == NULL) && mssql10_table::contains_index($new_schema, $new_table, $old_cluster)) {
-      $ofs->write("ALTER TABLE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names) . " SET WITHOUT CLUSTER;" . "\n");
+      $ofs->write("ALTER TABLE " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($table['name'], dbsteward::$quote_table_names) . " SET WITHOUT CLUSTER;" . "\n");
     }
   }
 
@@ -62,7 +62,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
 
     foreach ($stats as $key => $value) {
       $ofs->write("\n");
-      $ofs->write("ALTER TABLE ONLY " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($key, dbsteward::$quote_table_names) . " ALTER COLUMN " . mssql10_diff::get_quoted_name($key, dbsteward::$quote_column_names) . " SET STATISTICS " . $value . ";\n");
+      $ofs->write("ALTER TABLE ONLY " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($key, dbsteward::$quote_table_names) . " ALTER COLUMN " . mssql10::get_quoted_name($key, dbsteward::$quote_column_names) . " SET STATISTICS " . $value . ";\n");
     }
   }
 
@@ -80,10 +80,10 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       if (!mssql10_table::contains_column($old_table, $new_column['name'])) {
         if ( !dbsteward::$ignore_oldname && mssql10_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
           // oldName renamed column ? rename table column of create new one
-          $renamed_column_schema_name = mssql10_diff::get_quoted_name($new_schema['name'], false);
-          $renamed_column_table_name = mssql10_diff::get_quoted_name($new_table['name'], false);
-          $old_column_name = mssql10_diff::get_quoted_name($new_column['oldName'], false);
-          $new_column_name = mssql10_diff::get_quoted_name($new_column['name'], false);
+          $renamed_column_schema_name = mssql10::get_quoted_name($new_schema['name'], false);
+          $renamed_column_table_name = mssql10::get_quoted_name($new_table['name'], false);
+          $old_column_name = mssql10::get_quoted_name($new_column['oldName'], false);
+          $new_column_name = mssql10::get_quoted_name($new_column['name'], false);
           $commands[] = array(
             'stage' => 'BEFORE1',
             'command' => "-- column rename from oldName specification\n"
@@ -114,14 +114,14 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           
           $commands[] = array(
             'stage' => '3',
-            'command' => "\tALTER COLUMN " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " " . $new_column_type . " NOT NULL"
+            'command' => "\tALTER COLUMN " . mssql10::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " " . $new_column_type . " NOT NULL"
           );
 
           // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 3
           if (strlen($new_column['default']) > 0) {
             $commands[] = array(
               'stage' => 'AFTER1',
-              'command' => "UPDATE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " SET " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " = DEFAULT" . " WHERE " . mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " IS NULL;"
+              'command' => "UPDATE " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " SET " . mssql10::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " = DEFAULT" . " WHERE " . mssql10::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " IS NULL;"
             );
           }
         }
@@ -199,8 +199,8 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       if (!mssql10_table::contains_column($new_table, $old_column['name'])) {
         if ( !dbsteward::$ignore_oldname && ($renamed_column_name = mssql10_table::column_name_by_old_name($new_table, $old_column['name'])) !== false ) {
           // table indicating oldName = table['name'] present in new schema? don't do DROP statement
-          $old_table_name = mssql10_diff::get_quoted_name($old_table['name'], dbsteward::$quote_table_names);
-          $old_column_name = mssql10_diff::get_quoted_name($old_column['name'], dbsteward::$quote_column_names);
+          $old_table_name = mssql10::get_quoted_name($old_table['name'], dbsteward::$quote_table_names);
+          $old_column_name = mssql10::get_quoted_name($old_column['name'], dbsteward::$quote_column_names);
           $commands[] = array(
             'stage' => 'AFTER3',
             'command' => "-- $old_table_name DROP COLUMN $old_column_name omitted: new column $renamed_column_name indicates it is the replacement for " . $old_column_name
@@ -210,7 +210,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           //echo "NOTICE: add_drop_table_columns()  " . $new_table['name'] . " does not contain " . $old_column['name'] . "\n";
           $commands[] = array(
             'stage' => '3',
-            'command' => "\tDROP COLUMN " . mssql10_diff::get_quoted_name($old_column['name'], dbsteward::$quote_column_names)
+            'command' => "\tDROP COLUMN " . mssql10::get_quoted_name($old_column['name'], dbsteward::$quote_column_names)
           );
           // @TODO: when dropping columns with an implicitly created default value
           // a mssql contraint to enforce the default value is created, but how can we reference it
@@ -239,10 +239,10 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         continue;
       }
       
-      $quoted_table_name = mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names);
+      $quoted_table_name = mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names);
 
       $old_column = dbx::get_table_column($old_table, $new_column['name']);
-      $new_column_name = mssql10_diff::get_quoted_name($new_column['name'], dbsteward::$quote_column_names);
+      $new_column_name = mssql10::get_quoted_name($new_column['name'], dbsteward::$quote_column_names);
 
       $old_column_type = null;
       if ( $old_column ) {
@@ -331,7 +331,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           if ( strlen($new_column['default']) > 0 ) {
             $commands[] = array(
               'stage' => 'AFTER1',
-              'command' => "UPDATE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
+              'command' => "UPDATE " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
                 . " SET " . $new_column_name . " = " . $new_column['default'] . " WHERE " . $new_column_name . " IS NULL; -- has_default_now: make modified column that is null the default value before NOT NULL hits"
             );
           }
@@ -394,11 +394,11 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         $identity_transition_commands[] = mssql10_table::get_creation_sql($new_schema, $table_for_modifying);
 
         // copy over all the old data into new data, it's the only way
-        $identity_transition_commands[] = "IF EXISTS(SELECT * FROM " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . ")
-          EXEC('INSERT INTO " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($table_for_modifying['name'], dbsteward::$quote_table_names) . " ( " .
+        $identity_transition_commands[] = "IF EXISTS(SELECT * FROM " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . ")
+          EXEC('INSERT INTO " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($table_for_modifying['name'], dbsteward::$quote_table_names) . " ( " .
             implode(",", mssql10_table::get_column_list($table_for_modifying)) . ")
             SELECT " . implode(",", mssql10_table::get_column_list($table_for_modifying)) . "
-            FROM " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
+            FROM " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
             . " WITH (HOLDLOCK TABLOCKX)');";
         
         // drop FKEYs other tables have to the table
@@ -409,7 +409,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         }
 
         // drop the old table
-        $identity_transition_commands[] = "DROP TABLE " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . ";";
+        $identity_transition_commands[] = "DROP TABLE " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . ";";
         // rename temporary table to original name
         // NOTE: sp_rename only takes an identifier for the new name, if you schema qualify the new name it will get doubled on the table name
         $identity_transition_commands[] = "EXECUTE sp_rename '" . $new_schema['name'] . "." . $table_for_modifying['name'] . "', '" . $new_table['name'] . "', 'OBJECT';";
@@ -475,8 +475,8 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       if (($old_schema == NULL) || !mssql10_schema::contains_table($old_schema, $table['name'])) {
         if ( !dbsteward::$ignore_oldname && mssql10_diff_tables::is_renamed_table($old_schema, $new_schema, $table) ) {
           // oldName renamed table ? rename table instead of create new one
-          $old_table_name = mssql10_diff::get_quoted_name($new_schema['name'], false) . '.' . mssql10_diff::get_quoted_name($table['oldName'], false);
-          $new_table_name = mssql10_diff::get_quoted_name($table['name'], false);
+          $old_table_name = mssql10::get_quoted_name($new_schema['name'], false) . '.' . mssql10::get_quoted_name($table['oldName'], false);
+          $new_table_name = mssql10::get_quoted_name($table['name'], false);
           $ofs->write("-- table rename from oldName specification" . "\n"
             . "sp_rename '$old_table_name' , '$new_table_name' ;" . "\n");
         }
@@ -512,7 +512,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           // new_schema will be null if the new schema is no longer defined at all
           if ( !dbsteward::$ignore_oldname && is_object($new_schema)
             && ($renamed_table_name = mssql10_schema::table_name_by_old_name($new_schema, $table['name'])) !== false ) {
-            $old_table_name = mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names);
+            $old_table_name = mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($table['name'], dbsteward::$quote_table_names);
             $ofs->write("-- DROP TABLE $old_table_name omitted: new table $renamed_table_name indicates it is the replacement for " . $old_table_name . "\n");
           }
           else {
@@ -550,7 +550,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         }
       }
 
-      $quotedTableName = mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names);
+      $quotedTableName = mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names);
 
       $stage1_sql = '';
       $stage3_sql = '';
@@ -587,7 +587,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         $ofs1->write("ALTER TABLE " . $quotedTableName . "\n");
 
         for ($i = 0; $i < count($drop_defaults_columns); $i++) {
-          $ofs1->write("\tALTER COLUMN " . mssql10_diff::get_quoted_name($drop_defaults_columns[$i]['name'], dbsteward::$quote_column_names) . " DROP DEFAULT");
+          $ofs1->write("\tALTER COLUMN " . mssql10::get_quoted_name($drop_defaults_columns[$i]['name'], dbsteward::$quote_column_names) . " DROP DEFAULT");
           if ($i < count($drop_defaults_columns) - 1) {
             $ofs1->write(",\n");
           }
@@ -726,9 +726,9 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       && $new_table_rows
       && ( mssql10_table::has_identity($new_table) || (is_object($old_table) && mssql10_table::has_identity($old_table)) ) ) {
       // this is needed for mssql to allow IDENTITY columns to be explicitly specified
-      $sql = "SET IDENTITY_INSERT " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " ON;\n" . 
+      $sql = "SET IDENTITY_INSERT " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " ON;\n" . 
         $sql .
-             "SET IDENTITY_INSERT " . mssql10_diff::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " OFF;\n";
+             "SET IDENTITY_INSERT " . mssql10::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($new_table['name'], dbsteward::$quote_table_names) . " OFF;\n";
     }
 
     return $sql;
@@ -846,7 +846,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
   }
 
   protected static function get_data_row_delete($schema, $table, $data_row_columns, $data_row, &$sql) {
-    $sql = sprintf("DELETE FROM %s.%s WHERE (%s);\n", mssql10_diff::get_quoted_name($schema['name'], dbsteward::$quote_schema_names), mssql10_diff::get_quoted_name($table['name'], dbsteward::$quote_table_names), dbx::primary_key_expression($schema, $table, $data_row_columns, $data_row));
+    $sql = sprintf("DELETE FROM %s.%s WHERE (%s);\n", mssql10::get_quoted_name($schema['name'], dbsteward::$quote_schema_names), mssql10::get_quoted_name($table['name'], dbsteward::$quote_table_names), dbx::primary_key_expression($schema, $table, $data_row_columns, $data_row));
   }
 
   protected static function get_data_row_insert($node_schema, $node_table, $data_row_columns, $data_row) {
@@ -870,7 +870,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     $columns = substr($columns, 0, -2);
     $values = substr($values, 0, -2);
 
-    $sql = sprintf("INSERT INTO %s.%s (%s) VALUES (%s);\n", mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names), mssql10_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names), $columns, $values);
+    $sql = sprintf("INSERT INTO %s.%s (%s) VALUES (%s);\n", mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names), mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names), $columns, $values);
 
     return $sql;
   }
@@ -893,7 +893,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         $old_col_value = mssql10::column_value_default($node_schema, $node_table, $changed_column['name'], $changed_column['old_col']);
         $old_columns .= $changed_column['name'] . ' = ' . $old_col_value . ', ';
       }
-      $update_col_name = mssql10_diff::get_quoted_name($changed_column['name'], dbsteward::$quote_column_names);
+      $update_col_name = mssql10::get_quoted_name($changed_column['name'], dbsteward::$quote_column_names);
       $update_col_value = mssql10::column_value_default($node_schema, $node_table, $changed_column['name'], $changed_column['new_col']);
       $update_columns .= $update_col_name . ' = ' . $update_col_value . ', ';
     }
@@ -909,7 +909,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     $old_columns = substr($old_columns, 0, -2);
 
     // use multiline comments here, so when data has newlines they can be preserved, but upgrade scripts don't catch on fire
-    $sql = sprintf("UPDATE %s.%s SET %s WHERE (%s); /* old values: %s */\n", mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names), mssql10_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names), $update_columns, dbx::primary_key_expression($node_schema, $node_table, $new_data_row_columns, $new_data_row), $old_columns);
+    $sql = sprintf("UPDATE %s.%s SET %s WHERE (%s); /* old values: %s */\n", mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names), mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names), $update_columns, dbx::primary_key_expression($node_schema, $node_table, $new_data_row_columns, $new_data_row), $old_columns);
 
     return $sql;
   }

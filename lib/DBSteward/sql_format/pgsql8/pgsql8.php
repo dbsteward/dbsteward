@@ -1728,6 +1728,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    * @return string
    */
   public static function get_quoted_name($name, $quote_name) {
+    // @TODO: Extract to generalized quoting in dbsteward
     if ( ! preg_match('/^[a-zA-Z_]\w*$/', $name) ) {
       throw new exception("Invalid identifier: '$name'");
     }

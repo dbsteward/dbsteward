@@ -24,7 +24,7 @@ class mssql10_table extends sql99_table {
       throw new exception("node_table object element name is not table. check stack for offending caller");
     }
 
-    $table_name = mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
+    $table_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
 
     $sql = "CREATE TABLE " . $table_name . " (\n";
 
@@ -42,7 +42,7 @@ class mssql10_table extends sql99_table {
     // @IMPLEMENT: $table['description'] specifier ?
     foreach (dbx::get_table_columns($node_table) as $column) {
       if (isset($column['statistics'])) {
-        $sql .= "\nALTER TABLE ONLY " . $table_name . " ALTER COLUMN " . mssql10_diff::get_quoted_name($column['name'], dbsteward::$quote_column_names) . " SET STATISTICS " . $column['statistics'] . ";\n";
+        $sql .= "\nALTER TABLE ONLY " . $table_name . " ALTER COLUMN " . mssql10::get_quoted_name($column['name'], dbsteward::$quote_column_names) . " SET STATISTICS " . $column['statistics'] . ";\n";
       }
 
       // @IMPLEMENT: $column['description'] specifier ?
@@ -75,7 +75,7 @@ class mssql10_table extends sql99_table {
       var_dump($node_table);
       throw new exception("node_table element type is not table. check stack for offending caller");
     }
-    return "DROP TABLE " . mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names) . ";";
+    return "DROP TABLE " . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names) . ";";
   }
 
   /**
@@ -91,7 +91,7 @@ class mssql10_table extends sql99_table {
       var_dump(array_keys($constraint));
       throw new exception("table_name is blank");
     }
-    $sql = "ALTER TABLE " . mssql10_diff::get_quoted_name($constraint['schema_name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($constraint['table_name'], dbsteward::$quote_table_names) . "\n" . "\tADD CONSTRAINT " . mssql10_diff::get_quoted_name($constraint['name'], dbsteward::$quote_object_names) . ' ' . $constraint['type'] . ' ' . $constraint['definition'];
+    $sql = "ALTER TABLE " . mssql10::get_quoted_name($constraint['schema_name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($constraint['table_name'], dbsteward::$quote_table_names) . "\n" . "\tADD CONSTRAINT " . mssql10::get_quoted_name($constraint['name'], dbsteward::$quote_object_names) . ' ' . $constraint['type'] . ' ' . $constraint['definition'];
 
     // FOREIGN KEY ON DELETE / ON UPDATE handling
     if (isset($constraint['foreignOnDelete']) && strlen($constraint['foreignOnDelete'])) {
@@ -113,7 +113,7 @@ class mssql10_table extends sql99_table {
       var_dump(array_keys($constraint));
       throw new exception("table_name is blank");
     }
-    $sql = "ALTER TABLE " . mssql10_diff::get_quoted_name($constraint['schema_name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($constraint['table_name'], dbsteward::$quote_table_names) . "\n\tDROP CONSTRAINT " . mssql10_diff::get_quoted_name($constraint['name'], dbsteward::$quote_object_names) . ';';
+    $sql = "ALTER TABLE " . mssql10::get_quoted_name($constraint['schema_name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($constraint['table_name'], dbsteward::$quote_table_names) . "\n\tDROP CONSTRAINT " . mssql10::get_quoted_name($constraint['name'], dbsteward::$quote_object_names) . ';';
     return $sql;
   }
 

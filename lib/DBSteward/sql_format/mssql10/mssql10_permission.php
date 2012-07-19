@@ -19,7 +19,7 @@ class mssql10_permission extends pgsql8_permission {
 
     switch ($object_type) {
       case 'SCHEMA':
-        $object_name = mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names);
+        $object_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names);
         for ($i = 0; $i < count($operations); $i++) {
           // see http://msdn.microsoft.com/en-us/library/ms187940.aspx
           if (strcasecmp($operations[$i], 'USAGE') == 0) {
@@ -60,7 +60,7 @@ class mssql10_permission extends pgsql8_permission {
       case 'TABLE':
       case 'VIEW':
       case 'FUNCTION':
-        $object_name = mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10_diff::get_quoted_name($node_object['name'], dbsteward::$quote_table_names);
+        $object_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_object['name'], dbsteward::$quote_table_names);
       break;
       default:
         throw new exception("unknown object type encountered: " . $object_type);

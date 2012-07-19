@@ -21,7 +21,7 @@ class mssql10_schema extends sql99_schema {
       $ddl = '';
     }
     else {
-      $schema_name = mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names);
+      $schema_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names);
 
       $ddl = "CREATE SCHEMA " . $schema_name . ";\n";
 
@@ -38,7 +38,7 @@ class mssql10_schema extends sql99_schema {
    * @return string
    */
   public function get_drop_sql($node_schema) {
-    $ddl = "DROP SCHEMA " . mssql10_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . ";\n";
+    $ddl = "DROP SCHEMA " . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . ";\n";
     return $ddl;
   }
 

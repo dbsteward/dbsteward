@@ -12,37 +12,64 @@ require_once 'PHPUnit/Framework/TestSuite.php';
 
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 require_once __DIR__ . '/../../lib/DBSteward/sql_format/pgsql8/pgsql8.php';
+require_once __DIR__ . '/../../lib/DBSteward/sql_format/mssql10/mssql10.php';
 
 class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
   public function testPgsql8() {
     dbsteward::set_sql_format('pgsql8');
 
-    foreach ( array('schema','table','column','object','function') as $type ) {
-      foreach ( array(TRUE,FALSE) as $quote ) {
-        dbsteward::${"quote_{$type}_names"} = $quote;
-
+    foreach ( array('schema','table','column','object','function') as $object ) {
+      foreach ( array(TRUE,FALSE) as $quoted ) {
         // valid identifiers match /[a-zA-Z_]\w*/
-        $valid_name = "valid_{$type}_" . ($quote ? 'quoted' : 'unquoted') . "_identifier123";
-        $invalid_names = array("in\$$valid_name","0in$valid_name");
+        $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
+        $expected = $quoted ? "\"$valid_name\"" : $valid_name;
 
-        // attempt a valid identifier
-        $expected = $quote ? "\"$valid_name\"" : $valid_name;
-        $this->assertEquals($expected, pgsql8::get_quoted_name($valid_name, dbsteward::${"quote_{$type}_names"}));
+        // test dollar signs (valid in pgsql8, but we don't want them),
+        //      identifiers starting with a digit
+        //      quote characters
+        $invalid_names = array("in\$$valid_name","0in$valid_name", "\"in$valid_name\"");
 
-        // attempt invalid identifiers
-        foreach ( $invalid_names as $invalid_name ) {
-          try {
-            pgsql8::get_quoted_name($invalid_name, dbsteward::${"quote_{$type}_names"});
-          }
-          catch ( Exception $ex ) {
-            if ( stripos($ex->getMessage(), 'Invalid identifier') === FALSE ) {
-              $this->fail("Expected 'Invalid identifier' exception for identifier '$invalid_name', got '" . $ex->getMessage() . "'");
-            }
-            continue;
-          }
-          $this->fail("Expected 'Invalid identifier' exception, but no exception was thrown for identifier '$invalid_name'");
-        }
+        $this->quoteTestCommon('pgsql8', $object, $quoted, $valid_name, $expected, $invalid_names);
       }
+    }
+  }
+
+  public function testMssql10() {
+    dbsteward::set_sql_format('mssql10');
+
+    foreach ( array('schema','table','column','object','function') as $object ) {
+      foreach ( array(TRUE,FALSE) as $quoted ) {
+        // valid identifiers match /[a-zA-Z_]\w*/
+        $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
+        $expected = $quoted ? "\"$valid_name\"" : $valid_name;
+
+        // test dollar signs (valid in pgsql8, but we don't want them),
+        //      identifiers starting with a digit
+        //      quote characters
+        $invalid_names = array("in\$$valid_name","0in$valid_name", "\"in$valid_name\"");
+
+        $this->quoteTestCommon('mssql10', $object, $quoted, $valid_name, $expected, $invalid_names);
+      }
+    }
+  }
+
+  protected function quoteTestCommon($format, $object, $quoted, $valid_name, $expected, $invalid_names) {
+    dbsteward::${"quote_{$object}_names"} = $quoted;
+
+    $this->assertEquals($expected, $format::get_quoted_name($valid_name, dbsteward::${"quote_{$object}_names"}));
+
+    // attempt invalid identifiers
+    foreach ( $invalid_names as $invalid_name ) {
+      try {
+        $format::get_quoted_name($invalid_name, dbsteward::${"quote_{$object}_names"});
+      }
+      catch ( Exception $ex ) {
+        if ( stripos($ex->getMessage(), 'Invalid identifier') === FALSE ) {
+          $this->fail("Expected 'Invalid identifier' exception for identifier '$invalid_name', got '" . $ex->getMessage() . "'");
+        }
+        continue;
+      }
+      $this->fail("Expected 'Invalid identifier' exception, but no exception was thrown for identifier '$invalid_name'");
     }
   }
 }
