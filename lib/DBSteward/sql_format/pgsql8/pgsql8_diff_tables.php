@@ -41,13 +41,13 @@ class pgsql8_diff_tables extends sql99_diff_tables {
     if ((($old_cluster == null) && ($new_cluster != null)) ||
         (($old_cluster != null) && ($new_cluster != null) && (strcmp($new_cluster, $old_cluster) != 0) )) {
       $ofs->write("ALTER TABLE "
-        . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
+        . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name'])
         . " CLUSTER ON "
-        . pgsql8::get_quoted_name($new_cluster, dbsteward::$quote_column_names)
+        . pgsql8::get_quoted_column_name($new_cluster)
         . ";\n");
     } else if (($old_cluster != null) && ($new_cluster == null) && pgsql8_table::contains_index($new_schema, $new_table, $old_cluster)) {
       $ofs->write("ALTER TABLE "
-        . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($table['name'], dbsteward::$quote_table_names)
+        . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($table['name'])
         . " SET WITHOUT CLUSTER;" . "\n");
     }
   }
@@ -128,8 +128,8 @@ class pgsql8_diff_tables extends sql99_diff_tables {
     foreach($stats as $key => $value) {
       $ofs->write("\n" .
         "ALTER TABLE ONLY "
-        . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($key, dbsteward::$quote_table_names)
-        . " ALTER COLUMN " . pgsql8::get_quoted_name($key, dbsteward::$quote_column_names)
+        . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($key)
+        . " ALTER COLUMN " . pgsql8::get_quoted_column_name($key)
         . " SET STATISTICS "
         . $value
         . ";\n");
@@ -150,12 +150,12 @@ class pgsql8_diff_tables extends sql99_diff_tables {
       if (!pgsql8_table::contains_column($old_table, $new_column['name'])) {
         if ( !dbsteward::$ignore_oldname && pgsql8_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
           // oldName renamed column ? rename column instead of create new one
-          $old_column_name = pgsql8::get_quoted_name($new_column['oldName'], dbsteward::$quote_column_names);
-          $new_column_name = pgsql8::get_quoted_name($new_column['name'], dbsteward::$quote_column_names);
+          $old_column_name = pgsql8::get_quoted_column_name($new_column['oldName']);
+          $new_column_name = pgsql8::get_quoted_column_name($new_column['name']);
           $commands[] = array(
             'stage' => 'AFTER1',
             'command' => "-- column rename from oldName specification\n"
-              . "ALTER TABLE " . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
+              . "ALTER TABLE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
               . " RENAME COLUMN $old_column_name TO $new_column_name;"
           );
           continue;
@@ -179,15 +179,15 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         if ( ! pgsql8_column::null_allowed($new_table, $new_column) ) {
           $commands[] = array(
             'stage' => '3',
-            'command' => "\tALTER COLUMN " . pgsql8::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " SET NOT NULL"
+            'command' => "\tALTER COLUMN " . pgsql8::get_quoted_column_name($new_column['name']) . " SET NOT NULL"
           );
           // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 3
           if ( strlen($new_column['default']) > 0 ) {
             $commands[] = array(
               'stage' => 'AFTER1',
-              'command' => "UPDATE " . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
-                . " SET " . pgsql8::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " = DEFAULT"
-                . " WHERE " . pgsql8::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " IS NULL;"
+              'command' => "UPDATE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
+                . " SET " . pgsql8::get_quoted_column_name($new_column['name']) . " = DEFAULT"
+                . " WHERE " . pgsql8::get_quoted_column_name($new_column['name']) . " IS NULL;"
             );
           }
 
@@ -200,8 +200,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         if ( pgsql8_column::has_default_now($new_table, $new_column) ) {
           $commands[] = array(
               'stage' => 'AFTER1',
-              'command' => "UPDATE " . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
-                . " SET " . pgsql8::get_quoted_name($new_column['name'], dbsteward::$quote_column_names) . " = " . $new_column['default'] . " ; -- has_default_now: this statement is to make sure new columns are in sync on replicas"
+              'command' => "UPDATE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
+                . " SET " . pgsql8::get_quoted_column_name($new_column['name']) . " = " . $new_column['default'] . " ; -- has_default_now: this statement is to make sure new columns are in sync on replicas"
             );
         }
 
@@ -269,8 +269,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       if (!pgsql8_table::contains_column($new_table, $old_column['name'])) {
         if ( !dbsteward::$ignore_oldname && ($renamed_column_name = pgsql8_table::column_name_by_old_name($new_table, $old_column['name'])) !== false ) {
           // table indicating oldName = table['name'] present in new schema? don't do DROP statement
-          $old_table_name = pgsql8::get_quoted_name($old_table['name'], dbsteward::$quote_table_names);
-          $old_column_name = pgsql8::get_quoted_name($old_column['name'], dbsteward::$quote_column_names);
+          $old_table_name = pgsql8::get_quoted_table_name($old_table['name']);
+          $old_column_name = pgsql8::get_quoted_column_name($old_column['name']);
           $commands[] = array(
             'stage' => 'AFTER3',
             'command' => "-- $old_table_name DROP COLUMN $old_column_name omitted: new column $renamed_column_name indicates it is the replacement for " . $old_column_name
@@ -281,7 +281,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 
           $commands[] = array(
             'stage' => '3',
-            'command' => "\tDROP COLUMN " . pgsql8::get_quoted_name($old_column['name'], dbsteward::$quote_column_names)
+            'command' => "\tDROP COLUMN " . pgsql8::get_quoted_column_name($old_column['name'])
           );
         }
       }
@@ -308,7 +308,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       }
 
       $old_column = dbx::get_table_column($old_table, $new_column['name']);
-      $new_column_name = pgsql8::get_quoted_name($new_column['name'], dbsteward::$quote_column_names);
+      $new_column_name = pgsql8::get_quoted_column_name($new_column['name']);
 
       $old_column_type = null;
       if ( $old_column ) {
@@ -377,7 +377,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           if ( strlen($new_column['default']) > 0 ) {
             $commands[] = array(
               'stage' => 'AFTER1',
-              'command' => "UPDATE " . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . "." . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
+              'command' => "UPDATE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
                 . " SET " . $new_column_name . " = " . $new_column['default'] . " WHERE " . $new_column_name . " IS NULL; -- has_default_now: make modified column that is null the default value before NOT NULL hits"
             );
           }
@@ -395,7 +395,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 
           $commands[] = array(
             'stage' => 'BEFORE3',
-            'command' => "DROP SEQUENCE IF EXISTS " . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name(pgsql8::identifier_name($new_schema['name'], $new_table['name'], $new_column['name'], '_seq'), dbsteward::$quote_table_names) . ";"
+            'command' => "DROP SEQUENCE IF EXISTS " . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name(pgsql8::identifier_name($new_schema['name'], $new_table['name'], $new_column['name'], '_seq')) . ";"
           );
 
           $commands[] = array(
@@ -420,15 +420,15 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 
     if (($old_inherits == null) && ($new_inherits != null)) {
       throw new exception("Modified INHERITS on TABLE "
-        . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
+        . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name'])
         . ": original table doesn't use INHERITS but new table uses INHERITS " . $new_inherits);
     } else if (($old_inherits != null) && ($new_inherits == null)) {
       throw new exception("Modified INHERITS on TABLE "
-        . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
+        . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name'])
         . ": original table uses INHERITS " . $old_inherits . " but new table doesn't use INHERITS");
     } else if (($old_inherits != null) && ($new_inherits != null) && $old_inherits != $new_inherits) {
       throw new exception("Modified INHERITS on TABLE "
-        . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
+        . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name'])
         . ": original table uses INHERITS " . $old_inherits . " but new table uses INHERITS " . $new_inherits);
     }
   }
@@ -450,10 +450,10 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       if (($old_schema == null) || !pgsql8_schema::contains_table($old_schema, $table['name'])) {
         if ( !dbsteward::$ignore_oldname && pgsql8_diff_tables::is_renamed_table($old_schema, $new_schema, $table) ) {
           // oldName renamed table ? rename table instead of create new one
-          $old_table_name = pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($table['oldName'], dbsteward::$quote_table_names);
+          $old_table_name = pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($table['oldName']);
           // ALTER TABLE ... RENAME TO does not accept schema qualifiers when renaming a table
           // ALTER TABLE message.message_report RENAME TO report ;
-          $new_table_name = pgsql8::get_quoted_name($table['name'], dbsteward::$quote_table_names);
+          $new_table_name = pgsql8::get_quoted_table_name($table['name']);
           $ofs->write("-- table rename from oldName specification" . "\n"
             . "ALTER TABLE $old_table_name RENAME TO $new_table_name ;" . "\n");
         }
@@ -490,7 +490,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           if ( !dbsteward::$ignore_oldname && is_object($new_schema)
             && ($renamed_table_name = pgsql8_schema::table_name_by_old_name($new_schema, $table['name'])) !== false ) {
             // table indicating oldName = table['name'] present in new schema? don't do DROP statement
-            $old_table_name = pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($table['name'], dbsteward::$quote_table_names);
+            $old_table_name = pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($table['name']);
             $ofs->write("-- DROP TABLE $old_table_name omitted: new table $renamed_table_name indicates it is the replacement for " . $old_table_name . "\n");
           }
           else {
@@ -528,7 +528,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         }
       }
 
-      $quotedTableName = pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names);
+      $quotedTableName = pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name']);
 
       $stage1_sql = '';
       $stage3_sql = '';
@@ -608,7 +608,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 
         for ($i=0; $i < count($drop_defaults_columns); $i++) {
           $ofs1->write("\tALTER COLUMN "
-            . pgsql8::get_quoted_name($drop_defaults_columns[$i]['name'], dbsteward::$quote_column_names)
+            . pgsql8::get_quoted_column_name($drop_defaults_columns[$i]['name'])
             . " DROP DEFAULT");
           if ($i <count($drop_defaults_columns) - 1) {
             $ofs1->write(",\n");
@@ -895,8 +895,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   private static function get_data_row_delete($schema, $table, $data_row_columns, $data_row, &$sql) {
     $sql = sprintf(
       "DELETE FROM %s.%s WHERE (%s);\n",
-      pgsql8::get_quoted_name($schema['name'], dbsteward::$quote_schema_names),
-      pgsql8::get_quoted_name($table['name'], dbsteward::$quote_table_names),
+      pgsql8::get_quoted_schema_name($schema['name']),
+      pgsql8::get_quoted_table_name($table['name']),
       dbx::primary_key_expression($schema, $table, $data_row_columns, $data_row)
     );
   }
@@ -924,8 +924,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 
     $sql = sprintf(
       "INSERT INTO %s.%s (%s) VALUES (%s);\n",
-      pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names),
-      pgsql8::get_quoted_name($node_table['name'], dbsteward::$quote_table_names),
+      pgsql8::get_quoted_schema_name($node_schema['name']),
+      pgsql8::get_quoted_table_name($node_table['name']),
       $columns,
       $values
     );
@@ -951,7 +951,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         $old_col_value = pgsql8::column_value_default($node_schema, $node_table, $changed_column['name'], $changed_column['old_col']);
         $old_columns .= $changed_column['name'] . ' = ' . $old_col_value . ', ';
       }
-      $update_col_name = pgsql8::get_quoted_name($changed_column['name'], dbsteward::$quote_column_names);
+      $update_col_name = pgsql8::get_quoted_column_name($changed_column['name']);
       $update_col_value = pgsql8::column_value_default($node_schema, $node_table, $changed_column['name'], $changed_column['new_col']);
       $update_columns .= $update_col_name . ' = ' . $update_col_value . ', ';
     }
@@ -969,8 +969,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     // use multiline comments here, so when data has newlines they can be preserved, but upgrade scripts don't catch on fire
     $sql = sprintf(
       "UPDATE %s.%s SET %s WHERE (%s); /* old values: %s */\n",
-      pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names),
-      pgsql8::get_quoted_name($node_table['name'], dbsteward::$quote_table_names),
+      pgsql8::get_quoted_schema_name($node_schema['name']),
+      pgsql8::get_quoted_table_name($node_table['name']),
       $update_columns,
       dbx::primary_key_expression($node_schema, $node_table, $new_data_row_columns, $new_data_row),
       $old_columns

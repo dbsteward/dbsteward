@@ -28,7 +28,7 @@ class pgsql8_type {
           $values .= ",";
         }
       }
-      $type_name = pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($node_type['name'], dbsteward::$quote_object_names);
+      $type_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_type['name']);
       $ddl = "CREATE TYPE " . $type_name . " AS ENUM (" . $values . ");";
     }
     else {
@@ -43,7 +43,7 @@ class pgsql8_type {
    * @return created SQL command
    */
   public static function get_drop_sql($node_schema, $node_type) {
-    $type_name = pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($node_type['name'], dbsteward::$quote_object_names);
+    $type_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_type['name']);
     $ddl = "DROP TYPE " . $type_name . ";";
     return $ddl;
   }
@@ -77,10 +77,10 @@ class pgsql8_type {
       $new_table = $table_item['table'];
       foreach(dbx::get_table_columns($new_table) AS $new_column) {
         // is the column the passed type?
-        $unquoted_type_name = pgsql8::get_quoted_name($node_schema['name'], false) . '.' . pgsql8::get_quoted_name($node_type['name'], false);
+        $unquoted_type_name = $node_schema['name'] . '.' . $node_type['name'];
         if ( strcasecmp($new_column['type'], $unquoted_type_name) == 0 ) {
-          $ddl .= "ALTER TABLE " . pgsql8::get_quoted_name($new_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($new_table['name'], dbsteward::$quote_table_names)
-            . " ALTER COLUMN " . pgsql8::get_quoted_name($new_column['name'], dbsteward::$quote_column_names)
+          $ddl .= "ALTER TABLE " . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name'])
+            . " ALTER COLUMN " . pgsql8::get_quoted_column_name($new_column['name'])
             . " TYPE " . pgsql8_type::alter_column_type_placeholder_type($node_type) . ";\n";
 
           // add column to the beginning of the list so it will be done before earlier changes (foreign key ordering)
@@ -128,10 +128,10 @@ class pgsql8_type {
     $ddl = '';
     
     foreach($columns AS $column_map) {
-      $ddl .= "ALTER TABLE " . pgsql8::get_quoted_name($column_map['alter_column_schema']['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($column_map['alter_column_table']['name'], dbsteward::$quote_table_names)
-        . " ALTER COLUMN " . pgsql8::get_quoted_name($column_map['alter_column_column']['name'], dbsteward::$quote_column_names)
-        . " TYPE " . pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($node_type['name'], dbsteward::$quote_object_names)
-        . " USING " . pgsql8::get_quoted_name($column_map['alter_column_column']['name'], dbsteward::$quote_column_names) . "::" . pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($node_type['name'], dbsteward::$quote_object_names) . ";\n";
+      $ddl .= "ALTER TABLE " . pgsql8::get_quoted_schema_name($column_map['alter_column_schema']['name']) . '.' . pgsql8::get_quoted_table_name($column_map['alter_column_table']['name'])
+        . " ALTER COLUMN " . pgsql8::get_quoted_column_name($column_map['alter_column_column']['name'])
+        . " TYPE " . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_type['name'])
+        . " USING " . pgsql8::get_quoted_column_name($column_map['alter_column_column']['name']) . "::" . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_type['name']) . ";\n";
     }
     
     return $ddl;

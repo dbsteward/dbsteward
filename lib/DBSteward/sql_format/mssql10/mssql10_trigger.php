@@ -21,9 +21,9 @@ class mssql10_trigger extends pgsql8_trigger {
     if ($node_table == NULL) {
       throw new exception("Failed to find trigger table " . $node_trigger['table'] . " in schema node " . $node_schema['name']);
     }
-    $table_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
+    $table_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_table['name']);
 
-    $trigger_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_trigger['name'], dbsteward::$quote_schema_names);
+    $trigger_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_schema_name($node_trigger['name']);
 
     // check for when's allowed by MSSQL -- see http://msdn.microsoft.com/en-us/library/ms189799.aspx
     // { FOR | AFTER | INSTEAD OF }
@@ -70,8 +70,8 @@ class mssql10_trigger extends pgsql8_trigger {
     if ($node_table == NULL) {
       throw new exception("Failed to find trigger table " . $node_trigger['table'] . " in schema node " . $node_schema['name']);
     }
-    $table_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
-    $ddl = "DROP TRIGGER " . pgsql8::get_quoted_name($node_trigger['name'], dbsteward::$quote_object_names) . " ON " . $table_name . ";\n";
+    $table_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_table['name']);
+    $ddl = "DROP TRIGGER " . pgsql8::get_quoted_object_name($node_trigger['name']) . " ON " . $table_name . ";\n";
     return $ddl;
   }
 }

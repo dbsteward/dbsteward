@@ -446,7 +446,7 @@ class mysql4 {
    *
    * @return string
    */
-  public static function get_quoted_name($name, $quote_name) {
+  protected static function get_quoted_name($name, $quote_name) {
     // @TODO: Extract to generalized quoting in dbsteward
     if ( ! preg_match('/^[a-zA-Z_]\w*$/', $name) ) {
       throw new exception("Invalid identifier: '$name'");
@@ -457,6 +457,26 @@ class mysql4 {
     } else {
       return $name;
     }
+  }
+
+  public static function get_quoted_schema_name($name) {
+    return self::get_quoted_name($name, dbsteward::$quote_schema_names);
+  }
+
+  public static function get_quoted_table_name($name) {
+    return self::get_quoted_name($name, dbsteward::$quote_table_names);
+  }
+
+  public static function get_quoted_column_name($name) {
+    return self::get_quoted_name($name, dbsteward::$quote_column_names);
+  }
+
+  public static function get_quoted_function_name($name) {
+    return self::get_quoted_name($name, dbsteward::$quote_function_names);
+  }
+
+  public static function get_quoted_object_name($name) {
+    return self::get_quoted_name($name, dbsteward::$quote_object_names);
   }
 }
 

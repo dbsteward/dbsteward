@@ -21,8 +21,8 @@ class mssql10_type {
 
     $enum_values = mssql10_type::get_enum_values($node_type);
 
-    $table_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
-    $column_name = mssql10::get_quoted_name($column['name'], dbsteward::$quote_column_names);
+    $table_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_table['name']);
+    $column_name = mssql10::get_quoted_column_name($column['name']);
     $constraint_name = pgsql8::index_name($node_table['name'], $column['name'], '_check_enum');
     $enum_list = "'" . implode("','", $enum_values) . "'";
 
@@ -43,8 +43,8 @@ class mssql10_type {
 
     $enum_values = mssql10_type::get_enum_values($node_type);
 
-    $table_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
-    $column_name = mssql10::get_quoted_name($column['name'], dbsteward::$quote_column_names);
+    $table_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_table['name']);
+    $column_name = mssql10::get_quoted_column_name($column['name']);
     $constraint_name = pgsql8::index_name($node_table['name'], $column['name'], '_check_enum');
     $enum_list = "'" . implode("','", $enum_values) . "'";
 
@@ -74,7 +74,7 @@ class mssql10_type {
     // this is due to the fact there are no enumerated types in MSSQL
     // so, for application reference without VIEW DEFINITION permissions given to the application role
     // create a value reference table for the enumeration's possible values, for the application to refer to
-    $reference_table_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_type['name'] . '_enum_values', dbsteward::$quote_table_names);
+    $reference_table_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_type['name'] . '_enum_values');
     // enum types rewritten as varchar(255) -- see mssql10_column::column_type()
     $ddl = "CREATE TABLE " . $reference_table_name . " (
       enum_value varchar(255)
@@ -92,7 +92,7 @@ class mssql10_type {
   
   public static function get_enum_value_insert($node_schema, $node_type) {
     $ddl = '';
-    $reference_table_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_type['name'] . '_enum_values', dbsteward::$quote_table_names);
+    $reference_table_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_type['name'] . '_enum_values');
     foreach (mssql10_type::get_enum_values($node_type) AS $enum_value) {
       $ddl .= "INSERT INTO " . $reference_table_name . " VALUES ( '" . $enum_value . "' );\n";
     }
@@ -101,7 +101,7 @@ class mssql10_type {
   
   public static function get_enum_value_delete($node_schema, $node_type) {
     $ddl = '';
-    $reference_table_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_type['name'] . '_enum_values', dbsteward::$quote_table_names);
+    $reference_table_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_type['name'] . '_enum_values');
     $ddl = "DELETE FROM " . $reference_table_name . ";\n";
     return $ddl;
   }
@@ -128,7 +128,7 @@ class mssql10_type {
       $new_table = $table_item['table'];
       foreach(dbx::get_table_columns($new_table) AS $new_column) {
         // is the column the passed type?
-        $unquoted_type_name = mssql10::get_quoted_name($node_schema['name'], false) . '.' . mssql10::get_quoted_name($node_type['name'], false);
+        $unquoted_type_name = $node_schema['name'] . '.' . $node_type['name'];
         if ( strcasecmp($new_column['type'], $unquoted_type_name) == 0 ) {
           $ddl .= mssql10_type::get_drop_check_sql($new_schema, $new_table, $new_column, $node_type);
 

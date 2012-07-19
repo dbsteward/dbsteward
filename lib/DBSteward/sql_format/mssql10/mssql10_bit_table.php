@@ -28,7 +28,7 @@ class mssql10_bit_table {
       throw new exception("increment by value is not numeric: " . $node_sequence['inc']);
     }
 
-    $sequence_name = mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_sequence['name'], dbsteward::$quote_table_names);
+    $sequence_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_sequence['name']);
 
     $ddl = "-- this is a pgsql8 equivalency implementation. to use it as a stand alone auto incrementing sequence in mssql, use a query such as\n";
     $ddl.= "-- INSERT INTO $sequence_name (place_holder) VALUES (1) SELECT SCOPE_IDENTITY()\n";
@@ -49,7 +49,7 @@ class mssql10_bit_table {
    * @return string
    */
   public function get_drop_sql($node_schema, $node_sequence) {
-    $ddl = "DROP TABLE " . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_sequence['name'], dbsteward::$quote_table_names) . ";\n";
+    $ddl = "DROP TABLE " . mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_sequence['name']) . ";\n";
     return $ddl;
   }
 }

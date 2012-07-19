@@ -20,7 +20,7 @@ class mssql10_view extends pgsql8_view {
       $ddl = "-- " . dbsteward::string_cast($node_view['description']) . "\n";
     }
 
-    $ddl = "CREATE VIEW " . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_view['name'], dbsteward::$quote_table_names);
+    $ddl = "CREATE VIEW " . mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_view['name']);
     $ddl .= "\n\tAS " . mssql10_view::get_view_query($node_view) . ";\n";
 
     // @IMPLEMENT: $node_view['owner'] ?
@@ -33,7 +33,7 @@ class mssql10_view extends pgsql8_view {
    * @return string
    */
   public function get_drop_sql($node_schema, $node_view) {
-    $ddl = "DROP VIEW " . mssql10::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . mssql10::get_quoted_name($node_view['name'], dbsteward::$quote_table_names) . ";\n";
+    $ddl = "DROP VIEW " . mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_view['name']) . ";\n";
     return $ddl;
   }
 }

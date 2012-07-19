@@ -24,7 +24,7 @@ class pgsql8_table extends sql99_table {
       throw new exception("node_table object element name is not table. check stack for offending caller");
     }
 
-    $table_name = pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
+    $table_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_table['name']);
 
     $sql = "CREATE TABLE " . $table_name . " (\n";
 
@@ -50,13 +50,13 @@ class pgsql8_table extends sql99_table {
       if ( isset($column['statistics']) ) {
         $sql .= "\nALTER TABLE ONLY "
           . $table_name
-          . " ALTER COLUMN " . pgsql8::get_quoted_name($column['name'], dbsteward::$quote_column_names)
+          . " ALTER COLUMN " . pgsql8::get_quoted_column_name($column['name'])
           . " SET STATISTICS " . $column['statistics'] . ";\n";
       }
 
       // column comments
       if ( isset($column['description']) && strlen($column['description']) > 0 ) {
-        $sql .= "\nCOMMENT ON COLUMN " . $table_name . '.' . pgsql8::get_quoted_name($column['name'], dbsteward::$quote_column_names)
+        $sql .= "\nCOMMENT ON COLUMN " . $table_name . '.' . pgsql8::get_quoted_column_name($column['name'])
           . " IS '" . pg_escape_string(dbsteward::string_cast($column['description'])) . "';\n";
       }
     }
@@ -100,7 +100,7 @@ class pgsql8_table extends sql99_table {
       var_dump($node_table);
       throw new exception("node_table element type " . $node_table->getName() . " != table. check stack for offending caller");
     }
-    return "DROP TABLE " . pgsql8::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8::get_quoted_name($node_table['name'], dbsteward::$quote_table_names) . ";";
+    return "DROP TABLE " . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_table['name']) . ";";
   }
 
   /**
@@ -117,8 +117,8 @@ class pgsql8_table extends sql99_table {
       throw new exception("table_name is blank");
     }
     $sql = "ALTER TABLE "
-      . pgsql8::get_quoted_name($constraint['schema_name'], dbsteward::$quote_schema_names) . '.'
-      . pgsql8::get_quoted_name($constraint['table_name'], dbsteward::$quote_table_names) . "\n"
+      . pgsql8::get_quoted_schema_name($constraint['schema_name']) . '.'
+      . pgsql8::get_quoted_table_name($constraint['table_name']) . "\n"
       . static::get_constraint_sql_change_statement($constraint);
 
     $sql .= ';';
@@ -127,7 +127,7 @@ class pgsql8_table extends sql99_table {
 
   public static function get_constraint_sql_change_statement($constraint) {
     $sql = "\tADD CONSTRAINT "
-      . pgsql8::get_quoted_name($constraint['name'], dbsteward::$quote_object_names) . ' '
+      . pgsql8::get_quoted_object_name($constraint['name']) . ' '
       . $constraint['type'] . ' '
       . $constraint['definition'] ;
 
@@ -144,7 +144,7 @@ class pgsql8_table extends sql99_table {
 
   public static function get_constraint_drop_sql_change_statement($constraint) {
       return "\tDROP CONSTRAINT "
-        . pgsql8::get_quoted_name($constraint['name'], dbsteward::$quote_object_names);
+        . pgsql8::get_quoted_object_name($constraint['name']);
   }
 
   public function get_constraint_drop_sql($constraint) {
@@ -156,8 +156,8 @@ class pgsql8_table extends sql99_table {
       throw new exception("table_name is blank");
     }
     $sql = "ALTER TABLE "
-      . pgsql8::get_quoted_name($constraint['schema_name'], dbsteward::$quote_schema_names) . '.'
-      . pgsql8::get_quoted_name($constraint['table_name'], dbsteward::$quote_table_names) . "\n"
+      . pgsql8::get_quoted_schema_name($constraint['schema_name']) . '.'
+      . pgsql8::get_quoted_table_name($constraint['table_name']) . "\n"
       . static::get_constraint_drop_sql_change_statement($constraint)
       . ';';
     return $sql;

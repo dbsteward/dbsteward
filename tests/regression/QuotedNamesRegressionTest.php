@@ -42,10 +42,10 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
         dbsteward::${"quote_{$object}_names"} = $quoted;
 
         // attempt valid identifiers
-        $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
+        $valid_name = "valid_{$format}_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
         $expected = $quoted ? ($format::QUOTE_CHAR . $valid_name . $format::QUOTE_CHAR) : $valid_name;
 
-        $this->assertEquals($expected, $format::get_quoted_name($valid_name, dbsteward::${"quote_{$object}_names"}));
+        $this->assertEquals($expected, call_user_func("$format::get_quoted_{$object}_name",$valid_name));
 
         // attempt invalid identifiers - expect exceptions
         $invalid_names = array_map(function ($prefix) use ($valid_name) { return $prefix . $valid_name; }, $invalid_prefixes);
@@ -53,7 +53,7 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
 
         foreach ( $invalid_names as $invalid_name ) {
           try {
-            $format::get_quoted_name($invalid_name, dbsteward::${"quote_{$object}_names"});
+            call_user_func("$format::get_quoted_{$object}_name",$invalid_name);
           }
           catch ( Exception $ex ) {
             if ( stripos($ex->getMessage(), 'Invalid identifier') === FALSE ) {
