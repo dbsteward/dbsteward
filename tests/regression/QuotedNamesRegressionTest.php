@@ -67,7 +67,9 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
         // test dollar signs
         //      identifiers starting with a digit
         //      quote characters
-        $invalid_names = array("in\$$valid_name","0in$valid_name", "`in$valid_name`");
+        // and, because MySQL supports all kinds of weird stuff,
+        //      spaces, hyphens, quote chars, dots
+        $invalid_names = array("in\$$valid_name","0in$valid_name", "`in$valid_name`", "in $valid_name", "in-$valid_name", "in`$valid_name", "in.$valid_name");
 
         $this->quoteTestCommon('mysql4', $object, $quoted, $valid_name, $expected, $invalid_names);
       }
