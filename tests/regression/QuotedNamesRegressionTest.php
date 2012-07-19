@@ -13,6 +13,7 @@ require_once 'PHPUnit/Framework/TestSuite.php';
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 require_once __DIR__ . '/../../lib/DBSteward/sql_format/pgsql8/pgsql8.php';
 require_once __DIR__ . '/../../lib/DBSteward/sql_format/mssql10/mssql10.php';
+require_once __DIR__ . '/../../lib/DBSteward/sql_format/mysql4/mysql4.php';
 
 class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
   public function testPgsql8() {
@@ -49,6 +50,25 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
         $invalid_names = array("in\$$valid_name","0in$valid_name", "\"in$valid_name\"");
 
         $this->quoteTestCommon('mssql10', $object, $quoted, $valid_name, $expected, $invalid_names);
+      }
+    }
+  }
+
+  public function testMysql4() {
+    dbsteward::set_sql_format('mysql4');
+
+    foreach ( array('schema','table','column','object','function') as $object ) {
+      foreach ( array(TRUE,FALSE) as $quoted ) {
+        // valid identifiers match /[a-zA-Z_]\w*/
+        $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
+        $expected = $quoted ? "`$valid_name`" : $valid_name;
+
+        // test dollar signs (valid in pgsql8, but we don't want them),
+        //      identifiers starting with a digit
+        //      quote characters
+        $invalid_names = array("in\$$valid_name","0in$valid_name", "`in$valid_name`");
+
+        $this->quoteTestCommon('mysql4', $object, $quoted, $valid_name, $expected, $invalid_names);
       }
     }
   }

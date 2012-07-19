@@ -435,6 +435,27 @@ class mysql4 {
   public static function primary_key_split($primary_key_string) {
     return preg_split("/[\,\s]+/", $primary_key_string, -1, PREG_SPLIT_NO_EMPTY);
   }
+
+  /**
+   * returns if quote_name is true then returns quoted name otherwise returns the original name
+   *
+   * @param name name
+   * @param quote_name whether the name should be quoted
+   *
+   * @return string
+   */
+  public static function get_quoted_name($name, $quote_name) {
+    // @TODO: Extract to generalized quoting in dbsteward
+    if ( ! preg_match('/^[a-zA-Z_]\w*$/', $name) ) {
+      throw new exception("Invalid identifier: '$name'");
+    }
+
+    if ( $quote_name ) {
+      return ("`" . $name . "`");
+    } else {
+      return $name;
+    }
+  }
 }
 
 ?>
