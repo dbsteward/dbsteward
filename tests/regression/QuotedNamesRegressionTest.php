@@ -18,108 +18,53 @@ require_once __DIR__ . '/../../lib/DBSteward/sql_format/oracle10g/oracle10g.php'
 
 class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
   public function testPgsql8() {
-    dbsteward::set_sql_format('pgsql8');
-
-    foreach ( array('schema','table','column','object','function') as $object ) {
-      foreach ( array(TRUE,FALSE) as $quoted ) {
-        // valid identifiers match /[a-zA-Z_]\w*/
-        $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
-        $expected = $quoted ? (pgsql8::QUOTE_CHAR . $valid_name . pgsql8::QUOTE_CHAR) : $valid_name;
-
-        // test dollar signs (valid in pgsql8, but we don't want them),
-        //      identifiers starting with a digit
-        //      quote characters
-        $invalid_names = array("in\$$valid_name","0in$valid_name", (pgsql8::QUOTE_CHAR . "in$valid_name" . pgsql8::QUOTE_CHAR));
-
-        $this->quoteTestCommon('pgsql8', $object, $quoted, $valid_name, $expected, $invalid_names);
-      }
-    }
+    $this->quoteTestCommon('pgsql8');
   }
 
   public function testMssql10() {
-    dbsteward::set_sql_format('mssql10');
-
-    foreach ( array('schema','table','column','object','function') as $object ) {
-      foreach ( array(TRUE,FALSE) as $quoted ) {
-        // valid identifiers match /[a-zA-Z_]\w*/
-        $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
-        $expected = $quoted ? (mssql10::QUOTE_CHAR . $valid_name . mssql10::QUOTE_CHAR) : $valid_name;
-
-        // test dollar signs
-        //      identifiers starting with a digit
-        //      quote characters
-        $invalid_names = array("in\$$valid_name","0in$valid_name", (mssql10::QUOTE_CHAR . "in$valid_name" . mssql10::QUOTE_CHAR));
-
-        $this->quoteTestCommon('mssql10', $object, $quoted, $valid_name, $expected, $invalid_names);
-      }
-    }
+    $this->quoteTestCommon('mssql10');
   }
 
   public function testMysql4() {
-    dbsteward::set_sql_format('mysql4');
-
-    foreach ( array('schema','table','column','object','function') as $object ) {
-      foreach ( array(TRUE,FALSE) as $quoted ) {
-        // valid identifiers match /[a-zA-Z_]\w*/
-        $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
-        $expected = $quoted ? (mysql4::QUOTE_CHAR . $valid_name . mysql4::QUOTE_CHAR) : $valid_name;
-
-        // test dollar signs
-        //      identifiers starting with a digit
-        //      quote characters
-        // and, because MySQL supports all kinds of weird stuff,
-        //      spaces, hyphens, quote chars, dots
-        $invalid_names = array(
-          "in\$$valid_name",
-          "0in$valid_name",
-          (mysql4::QUOTE_CHAR . "in$valid_name" . mysql4::QUOTE_CHAR),
-          "in $valid_name",
-          "in-$valid_name",
-          'in' . mysql4::QUOTE_CHAR . $valid_name,
-          "in.$valid_name"
-        );
-
-        $this->quoteTestCommon('mysql4', $object, $quoted, $valid_name, $expected, $invalid_names);
-      }
-    }
+    $this->quoteTestCommon('mysql4', array('in ', 'in-', 'in'.mysql4::QUOTE_CHAR, 'in.'));
   }
 
   public function testOracle10g() {
-    dbsteward::set_sql_format('oracle10g');
+    $this->quoteTestCommon('oracle10g');
+  }
+
+  protected function quoteTestCommon($format, $additional_invalid = array()) {
+    dbsteward::set_sql_format($format);
+    $invalid_prefixes = array_merge(array('in$','0in'), $additional_invalid);
 
     foreach ( array('schema','table','column','object','function') as $object ) {
       foreach ( array(TRUE,FALSE) as $quoted ) {
-        // valid identifiers match /[a-zA-Z_]\w*/
+        dbsteward::${"quote_{$object}_names"} = $quoted;
+
+        // attempt valid identifiers
         $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
-        $expected = $quoted ? (oracle10g::QUOTE_CHAR . $valid_name . oracle10g::QUOTE_CHAR) : $valid_name;
+        $expected = $quoted ? ($format::QUOTE_CHAR . $valid_name . $format::QUOTE_CHAR) : $valid_name;
 
-        // test dollar signs
-        //      identifiers starting with a digit
-        //      quote characters
-        $invalid_names = array("in\$$valid_name","0in$valid_name", (oracle10g::QUOTE_CHAR . "in$valid_name" . oracle10g::QUOTE_CHAR));
+        $this->assertEquals($expected, $format::get_quoted_name($valid_name, dbsteward::${"quote_{$object}_names"}));
 
-        $this->quoteTestCommon('oracle10g', $object, $quoted, $valid_name, $expected, $invalid_names);
-      }
-    }
-  }
+        // attempt invalid identifiers - expect exceptions
+        $invalid_names = array_map(function ($prefix) use ($valid_name) { return $prefix . $valid_name; }, $invalid_prefixes);
+        $invalid_names[] = ($format::QUOTE_CHAR . $valid_name . $format::QUOTE_CHAR);
 
-  protected function quoteTestCommon($format, $object, $quoted, $valid_name, $expected, $invalid_names) {
-    dbsteward::${"quote_{$object}_names"} = $quoted;
-
-    $this->assertEquals($expected, $format::get_quoted_name($valid_name, dbsteward::${"quote_{$object}_names"}));
-
-    // attempt invalid identifiers
-    foreach ( $invalid_names as $invalid_name ) {
-      try {
-        $format::get_quoted_name($invalid_name, dbsteward::${"quote_{$object}_names"});
-      }
-      catch ( Exception $ex ) {
-        if ( stripos($ex->getMessage(), 'Invalid identifier') === FALSE ) {
-          $this->fail("Expected 'Invalid identifier' exception for identifier '$invalid_name', got '" . $ex->getMessage() . "'");
+        foreach ( $invalid_names as $invalid_name ) {
+          try {
+            $format::get_quoted_name($invalid_name, dbsteward::${"quote_{$object}_names"});
+          }
+          catch ( Exception $ex ) {
+            if ( stripos($ex->getMessage(), 'Invalid identifier') === FALSE ) {
+              $this->fail("Expected 'Invalid identifier' exception for identifier '$invalid_name', got '" . $ex->getMessage() . "'");
+            }
+            continue;
+          }
+          $this->fail("Expected 'Invalid identifier' exception, but no exception was thrown for identifier '$invalid_name'");
         }
-        continue;
+
       }
-      $this->fail("Expected 'Invalid identifier' exception, but no exception was thrown for identifier '$invalid_name'");
     }
   }
 }
