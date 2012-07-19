@@ -25,6 +25,8 @@ require_once dirname(__FILE__) . '/oracle10g_diff.php';
 
 class oracle10g {
 
+  const QUOTE_CHAR = '"';
+
   public static function build($files) {
     if (!is_array($files)) {
       $files = array($files);
@@ -451,7 +453,7 @@ class oracle10g {
     }
 
     if ( $quote_name ) {
-      return ("\"" . $name . "\"");
+      return (oracle10g::QUOTE_CHAR . $name . oracle10g::QUOTE_CHAR);
     } else {
       return $name;
     }

@@ -15,6 +15,8 @@ require_once dirname(__FILE__) . '/mssql10_diff.php';
 
 class mssql10 {
 
+  const QUOTE_CHAR = '"';
+
   public static function build($files) {
     if (!is_array($files)) {
       $files = array($files);
@@ -464,7 +466,7 @@ class mssql10 {
     }
 
     if ( $quote_name ) {
-      return ("\"" . $name . "\"");
+      return (mssql10::QUOTE_CHAR . $name . mssql10::QUOTE_CHAR);
     } else {
       return $name;
     }

@@ -25,6 +25,8 @@ require_once dirname(__FILE__) . '/mysql4_diff.php';
 
 class mysql4 {
 
+  const QUOTE_CHAR = '`';
+
   public static function build($files) {
     if (!is_array($files)) {
       $files = array($files);
@@ -451,7 +453,7 @@ class mysql4 {
     }
 
     if ( $quote_name ) {
-      return ("`" . $name . "`");
+      return (mysql4::QUOTE_CHAR . $name . mysql4::QUOTE_CHAR);
     } else {
       return $name;
     }

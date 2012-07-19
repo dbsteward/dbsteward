@@ -24,12 +24,12 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
       foreach ( array(TRUE,FALSE) as $quoted ) {
         // valid identifiers match /[a-zA-Z_]\w*/
         $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
-        $expected = $quoted ? "\"$valid_name\"" : $valid_name;
+        $expected = $quoted ? (pgsql8::QUOTE_CHAR . $valid_name . pgsql8::QUOTE_CHAR) : $valid_name;
 
         // test dollar signs (valid in pgsql8, but we don't want them),
         //      identifiers starting with a digit
         //      quote characters
-        $invalid_names = array("in\$$valid_name","0in$valid_name", "\"in$valid_name\"");
+        $invalid_names = array("in\$$valid_name","0in$valid_name", (pgsql8::QUOTE_CHAR . "in$valid_name" . pgsql8::QUOTE_CHAR));
 
         $this->quoteTestCommon('pgsql8', $object, $quoted, $valid_name, $expected, $invalid_names);
       }
@@ -43,12 +43,12 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
       foreach ( array(TRUE,FALSE) as $quoted ) {
         // valid identifiers match /[a-zA-Z_]\w*/
         $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
-        $expected = $quoted ? "\"$valid_name\"" : $valid_name;
+        $expected = $quoted ? (mssql10::QUOTE_CHAR . $valid_name . mssql10::QUOTE_CHAR) : $valid_name;
 
         // test dollar signs
         //      identifiers starting with a digit
         //      quote characters
-        $invalid_names = array("in\$$valid_name","0in$valid_name", "\"in$valid_name\"");
+        $invalid_names = array("in\$$valid_name","0in$valid_name", (mssql10::QUOTE_CHAR . "in$valid_name" . mssql10::QUOTE_CHAR));
 
         $this->quoteTestCommon('mssql10', $object, $quoted, $valid_name, $expected, $invalid_names);
       }
@@ -62,14 +62,22 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
       foreach ( array(TRUE,FALSE) as $quoted ) {
         // valid identifiers match /[a-zA-Z_]\w*/
         $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
-        $expected = $quoted ? "`$valid_name`" : $valid_name;
+        $expected = $quoted ? (mysql4::QUOTE_CHAR . $valid_name . mysql4::QUOTE_CHAR) : $valid_name;
 
         // test dollar signs
         //      identifiers starting with a digit
         //      quote characters
         // and, because MySQL supports all kinds of weird stuff,
         //      spaces, hyphens, quote chars, dots
-        $invalid_names = array("in\$$valid_name","0in$valid_name", "`in$valid_name`", "in $valid_name", "in-$valid_name", "in`$valid_name", "in.$valid_name");
+        $invalid_names = array(
+          "in\$$valid_name",
+          "0in$valid_name",
+          (mysql4::QUOTE_CHAR . "in$valid_name" . mysql4::QUOTE_CHAR),
+          "in $valid_name",
+          "in-$valid_name",
+          'in' . mysql4::QUOTE_CHAR . $valid_name,
+          "in.$valid_name"
+        );
 
         $this->quoteTestCommon('mysql4', $object, $quoted, $valid_name, $expected, $invalid_names);
       }
@@ -83,12 +91,12 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
       foreach ( array(TRUE,FALSE) as $quoted ) {
         // valid identifiers match /[a-zA-Z_]\w*/
         $valid_name = "valid_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
-        $expected = $quoted ? "\"$valid_name\"" : $valid_name;
+        $expected = $quoted ? (oracle10g::QUOTE_CHAR . $valid_name . oracle10g::QUOTE_CHAR) : $valid_name;
 
         // test dollar signs
         //      identifiers starting with a digit
         //      quote characters
-        $invalid_names = array("in\$$valid_name","0in$valid_name", "\"in$valid_name\"");
+        $invalid_names = array("in\$$valid_name","0in$valid_name", (oracle10g::QUOTE_CHAR . "in$valid_name" . oracle10g::QUOTE_CHAR));
 
         $this->quoteTestCommon('oracle10g', $object, $quoted, $valid_name, $expected, $invalid_names);
       }
