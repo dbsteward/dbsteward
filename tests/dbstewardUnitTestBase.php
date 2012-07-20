@@ -17,7 +17,7 @@ dbsteward::load_sql_formats();
 require_once __DIR__ . '/dbsteward_sql99_connection.php';
 require_once __DIR__ . '/dbsteward_pgsql8_connection.php';
 require_once __DIR__ . '/dbsteward_mssql10_connection.php';
-require_once __DIR__ . '/dbsteward_mysql4_connection.php';
+require_once __DIR__ . '/dbsteward_mysql5_connection.php';
 
 class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
@@ -40,7 +40,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     
     $this->pgsql = new dbsteward_pgsql8_connection();
     $this->mssql = new dbsteward_mssql10_connection();
-    $this->mysql = new dbsteward_mysql4_connection();
+    $this->mysql = new dbsteward_mysql5_connection();
     
     // be sure to reset dbsteward runtime tracking variables every time
     pgsql8::$table_slony_ids = array();
@@ -126,18 +126,18 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     //@TODO: confirm tables defined in B are present
   }
   
-  protected function apply_options_mysql4() {
-    dbsteward::set_sql_format('mysql4');
+  protected function apply_options_mysql5() {
+    dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
   }
   
-  protected function build_db_mysql4() {
-    $this->apply_options_mysql4();
+  protected function build_db_mysql5() {
+    $this->apply_options_mysql5();
     
     // build the DDL first, incase dbsteward code wants to throw about something
-    mysql4::build($this->xml_file_a);
+    mysql5::build($this->xml_file_a);
     
     $this->mysql->create_db();
 
@@ -145,11 +145,11 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->mysql->run_file(__DIR__ . '/testdata/unit_test_xml_a_build.sql');
   }
 
-  protected function upgrade_db_mysql4() {
-    $this->apply_options_mysql4();
+  protected function upgrade_db_mysql5() {
+    $this->apply_options_mysql5();
     
     // build the upgrade DDL first, incase dbsteward code wants to throw about something
-    mysql4::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    mysql5::build_upgrade($this->xml_file_a, $this->xml_file_b);
     
     // upgrade database to "B" with each stage file
     $this->mysql->run_file(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');

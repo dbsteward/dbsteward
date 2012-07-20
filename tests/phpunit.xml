@@ -18,13 +18,13 @@
     <const name="MSSQL10_DBUSER_MANAGEMENT" value="deployment"/>
     <const name="MSSQL10_DBPASS_MANAGEMENT" value="password1"/>
     
-    <const name="MYSQL4_DBHOST" value="db-mysql4.dev"/>
-    <const name="MYSQL4_DBPORT" value="1433"/>
-    <const name="MYSQL4_DBNAME" value="dbsteward_phpunit"/>
-    <const name="MYSQL4_DBUSER" value="deployment"/>
-    <const name="MYSQL4_DBPASS" value="password1"/>
-    <const name="MYSQL4_DBNAME_MANAGEMENT" value="mysql"/>
-    <const name="MYSQL4_DBUSER_MANAGEMENT" value="deployment"/>
-    <const name="MYSQL4_DBPASS_MANAGEMENT" value="password1"/>
+    <const name="MYSQL5_DBHOST" value="db-mysql5.dev"/>
+    <const name="MYSQL5_DBPORT" value="1433"/>
+    <const name="MYSQL5_DBNAME" value="dbsteward_phpunit"/>
+    <const name="MYSQL5_DBUSER" value="deployment"/>
+    <const name="MYSQL5_DBPASS" value="password1"/>
+    <const name="MYSQL5_DBNAME_MANAGEMENT" value="mysql"/>
+    <const name="MYSQL5_DBUSER_MANAGEMENT" value="deployment"/>
+    <const name="MYSQL5_DBPASS_MANAGEMENT" value="password1"/>
   </php>
 </phpunit>

@@ -1,16 +1,16 @@
 <?php
 /**
- * DBSteward unit test mysql4 server connection management
+ * DBSteward unit test mysql5 server connection management
  *
  * @package DBSteward
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-class dbsteward_mysql4_connection extends dbsteward_sql99_connection {
+class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
   
   function __construct() {
-    $this->sql_format = 'mysql4';
+    $this->sql_format = 'mysql5';
   }
 
   /**
@@ -35,7 +35,7 @@ class dbsteward_mysql4_connection extends dbsteward_sql99_connection {
   }
 
   /**
-   * connect and create mysql4 database for testing
+   * connect and create mysql5 database for testing
    * @return void
    */
   public function create_db() {

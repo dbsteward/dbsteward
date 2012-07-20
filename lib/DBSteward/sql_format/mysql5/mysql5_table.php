@@ -3,12 +3,12 @@
  * Manipulate table nodes
  *
  * @package DBSteward
- * @subpackage mysql4
+ * @subpackage mysql5
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-class mysql4_table extends sql99_table {
+class mysql5_table extends sql99_table {
 
   /**
    * Creates and returns SQL for creation of the table.
@@ -24,25 +24,25 @@ class mysql4_table extends sql99_table {
       throw new exception("node_table object element name is not table. check stack for offending caller");
     }
 
-    $table_name = mysql4::get_quoted_schema_name($node_schema['name']) . '.' . mysql4::get_quoted_table_name($node_table['name']);
+    $table_name = mysql5::get_quoted_schema_name($node_schema['name']) . '.' . mysql5::get_quoted_table_name($node_table['name']);
 
     $sql = "CREATE TABLE " . $table_name . " (\n";
 
     foreach (dbx::get_table_columns($node_table) as $column) {
-      $sql .= "\t" . mysql4_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, FALSE) . ",\n";
+      $sql .= "\t" . mysql5_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, FALSE) . ",\n";
     }
 
     $sql = substr($sql, 0, strlen($sql) - 2);
     $sql .= "\n)";
     if (isset($node_table['inherits']) && strlen($node_table['inherits']) > 0) {
-      //@TODO: this does not look like it is supported in mysql4
+      //@TODO: this does not look like it is supported in mysql5
     }
     $sql .= ";";
 
     // @IMPLEMENT: $table['description'] specifier ?
     foreach (dbx::get_table_columns($node_table) as $column) {
       if (isset($column['statistics'])) {
-        $sql .= "\nALTER TABLE ONLY " . $table_name . " ALTER COLUMN " . mysql4::get_quoted_column_name($column['name']) . " SET STATISTICS " . $column['statistics'] . ";\n";
+        $sql .= "\nALTER TABLE ONLY " . $table_name . " ALTER COLUMN " . mysql5::get_quoted_column_name($column['name']) . " SET STATISTICS " . $column['statistics'] . ";\n";
       }
 
       // @IMPLEMENT: $column['description'] specifier ?
@@ -73,7 +73,7 @@ class mysql4_table extends sql99_table {
       var_dump($node_table);
       throw new exception("node_table element type is not table. check stack for offending caller");
     }
-    return "DROP TABLE " . mysql4::get_quoted_schema_name($node_schema['name']) . '.' . mysql4::get_quoted_table_name($node_table['name']) . ";";
+    return "DROP TABLE " . mysql5::get_quoted_schema_name($node_schema['name']) . '.' . mysql5::get_quoted_table_name($node_table['name']) . ";";
   }
 
   /**
@@ -89,7 +89,7 @@ class mysql4_table extends sql99_table {
       var_dump(array_keys($constraint));
       throw new exception("table_name is blank");
     }
-    $sql = "ALTER TABLE " . mysql4::get_quoted_schema_name($constraint['schema_name']) . '.' . mysql4::get_quoted_table_name($constraint['table_name']) . "\n" . "\tADD CONSTRAINT " . mysql4::get_quoted_object_name($constraint['name']) . ' ' . $constraint['type'] . ' ' . $constraint['definition'];
+    $sql = "ALTER TABLE " . mysql5::get_quoted_schema_name($constraint['schema_name']) . '.' . mysql5::get_quoted_table_name($constraint['table_name']) . "\n" . "\tADD CONSTRAINT " . mysql5::get_quoted_object_name($constraint['name']) . ' ' . $constraint['type'] . ' ' . $constraint['definition'];
 
     // FOREIGN KEY ON DELETE / ON UPDATE handling
     if (isset($constraint['foreignOnDelete']) && strlen($constraint['foreignOnDelete'])) {
@@ -111,7 +111,7 @@ class mysql4_table extends sql99_table {
       var_dump(array_keys($constraint));
       throw new exception("table_name is blank");
     }
-    $sql = "ALTER TABLE " . mysql4::get_quoted_schema_name($constraint['schema_name']) . '.' . mysql4::get_quoted_table_name($constraint['table_name']) . "\n\tDROP CONSTRAINT " . mysql4::get_quoted_object_name($constraint['name']) . ';';
+    $sql = "ALTER TABLE " . mysql5::get_quoted_schema_name($constraint['schema_name']) . '.' . mysql5::get_quoted_table_name($constraint['table_name']) . "\n\tDROP CONSTRAINT " . mysql5::get_quoted_object_name($constraint['name']) . ';';
     return $sql;
   }
 

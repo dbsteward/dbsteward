@@ -1,15 +1,15 @@
 <?php
 /**
- * Manipulate view node
+ * Diffs sequences.
  *
  * @package DBSteward
- * @subpackage mysql4
+ * @subpackage mysql5
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-class mysql4_view extends pgsql8_view {
-  
+class mysql5_diff_sequences {
+
 }
 
 ?>

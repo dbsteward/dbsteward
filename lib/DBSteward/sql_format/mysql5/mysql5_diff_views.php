@@ -1,14 +1,14 @@
 <?php
 /**
- * MSSQL permission node manipulation
+ * View comparison management
  *
  * @package DBSteward
- * @subpackage mysql4
+ * @subpackage mysql5
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-class mysql4_permission extends pgsql8_permission {
+class mysql5_diff_views {
 
 }
 

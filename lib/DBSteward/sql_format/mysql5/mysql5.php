@@ -3,7 +3,7 @@
  * MySQL 4 SQL Server specific compiling and differencing functions
  *
  * @package DBSteward
- * @subpackage mysql4
+ * @subpackage mysql5
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
@@ -11,19 +11,19 @@
 require_once dirname(__FILE__) . '/../sql99/sql99.php';
 require_once dirname(__FILE__) . '/../pgsql8/pgsql8.php';
 
-require_once dirname(__FILE__) . '/mysql4_column.php';
-require_once dirname(__FILE__) . '/mysql4_function.php';
-require_once dirname(__FILE__) . '/mysql4_permission.php';
-require_once dirname(__FILE__) . '/mysql4_index.php';
-require_once dirname(__FILE__) . '/mysql4_schema.php';
-require_once dirname(__FILE__) . '/mysql4_sequence.php';
-require_once dirname(__FILE__) . '/mysql4_table.php';
-require_once dirname(__FILE__) . '/mysql4_type.php';
-require_once dirname(__FILE__) . '/mysql4_trigger.php';
-require_once dirname(__FILE__) . '/mysql4_view.php';
-require_once dirname(__FILE__) . '/mysql4_diff.php';
+require_once dirname(__FILE__) . '/mysql5_column.php';
+require_once dirname(__FILE__) . '/mysql5_function.php';
+require_once dirname(__FILE__) . '/mysql5_permission.php';
+require_once dirname(__FILE__) . '/mysql5_index.php';
+require_once dirname(__FILE__) . '/mysql5_schema.php';
+require_once dirname(__FILE__) . '/mysql5_sequence.php';
+require_once dirname(__FILE__) . '/mysql5_table.php';
+require_once dirname(__FILE__) . '/mysql5_type.php';
+require_once dirname(__FILE__) . '/mysql5_trigger.php';
+require_once dirname(__FILE__) . '/mysql5_view.php';
+require_once dirname(__FILE__) . '/mysql5_diff.php';
 
-class mysql4 {
+class mysql5 {
 
   const QUOTE_CHAR = '`';
 
@@ -57,12 +57,12 @@ class mysql4 {
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
       dbsteward::console_line(1, "Defining structure");
-      mysql4::build_schema($db_doc, $build_file_ofs, $table_dependency);
+      mysql5::build_schema($db_doc, $build_file_ofs, $table_dependency);
     }
     if (!dbsteward::$only_schema_sql
       || dbsteward::$only_data_sql) {
       dbsteward::console_line(1, "Defining data inserts");
-      mysql4::build_data($db_doc, $build_file_ofs, $table_dependency);
+      mysql5::build_data($db_doc, $build_file_ofs, $table_dependency);
     }
     dbsteward::$new_database = NULL;
 
@@ -79,18 +79,18 @@ class mysql4 {
     // language defintions
     if (dbsteward::$create_languages) {
       foreach ($db_doc->language AS $language) {
-        //@TODO: implement mysql4_language ? no relevant conversion exists see other TODO's stating this
+        //@TODO: implement mysql5_language ? no relevant conversion exists see other TODO's stating this
       }
     }
 
     // schema creation
     foreach ($db_doc->schema AS $schema) {
-      $ofs->write(mysql4_schema::get_creation_sql($schema));
+      $ofs->write(mysql5_schema::get_creation_sql($schema));
 
       // schema grants
       if (isset($schema->grant)) {
         foreach ($schema->grant AS $grant) {
-          $ofs->write(mysql4_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
+          $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
         }
       }
     }
@@ -98,7 +98,7 @@ class mysql4 {
     // types: enumerated list, etc
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->type AS $type) {
-        $ofs->write(mysql4_type::get_creation_sql($schema, $type) . "\n");
+        $ofs->write(mysql5_type::get_creation_sql($schema, $type) . "\n");
       }
     }
 
@@ -106,7 +106,7 @@ class mysql4 {
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->function AS $function) {
         if (dbsteward::supported_function_language($function)) {
-          $ofs->write(mysql4_function::get_creation_sql($schema, $function));
+          $ofs->write(mysql5_function::get_creation_sql($schema, $function));
         }
       }
     }
@@ -118,15 +118,15 @@ class mysql4 {
       // create defined tables
       foreach ($schema->table AS $table) {
         // table definition
-        $ofs->write(mysql4_table::get_creation_sql($schema, $table) . "\n");
+        $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n");
 
         // table indexes
-        mysql4_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
+        mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
 
         // table grants
         if (isset($table->grant)) {
           foreach ($table->grant AS $grant) {
-            $ofs->write(mysql4_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
+            $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
           }
         }
 
@@ -136,12 +136,12 @@ class mysql4 {
       // sequences contained in the schema
       if (isset($schema->sequence)) {
         foreach ($schema->sequence AS $sequence) {
-          $ofs->write(mysql4_sequence::get_creation_sql($schema, $sequence));
+          $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequence));
 
           // sequence permission grants
           if (isset($sequence->grant)) {
             foreach ($sequence->grant AS $grant) {
-              $ofs->write(mysql4_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
+              $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
             }
           }
         }
@@ -152,7 +152,7 @@ class mysql4 {
     // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->table AS $table) {
-        mysql4_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
+        mysql5_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
       }
     }
     $ofs->write("\n");
@@ -166,7 +166,7 @@ class mysql4 {
         // don't do anything with this table, it is a magic internal DBSteward value
         continue;
       }
-      mysql4_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'constraint', FALSE);
+      mysql5_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'constraint', FALSE);
     }
     $ofs->write("\n");
 
@@ -175,7 +175,7 @@ class mysql4 {
       foreach ($schema->trigger AS $trigger) {
         // only do triggers set to the current sql format
         if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
-          $ofs->write(mysql4_trigger::get_creation_sql($schema, $trigger));
+          $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger));
         }
       }
     }
@@ -184,12 +184,12 @@ class mysql4 {
     // view creation
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->view AS $view) {
-        $ofs->write(mysql4_view::get_creation_sql($schema, $view));
+        $ofs->write(mysql5_view::get_creation_sql($schema, $view));
 
         // view permission grants
         if (isset($view->grant)) {
           foreach ($view->grant AS $grant) {
-            $ofs->write(mysql4_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
+            $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
           }
         }
       }
@@ -225,10 +225,10 @@ class mysql4 {
         }
       }
 
-      $ofs->write(mysql4_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
+      $ofs->write(mysql5_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
 
       // unlike the pg class, we cannot just set identity column start values here with setval without inserting a row
-      // see xml_parser::mysql4_type_convert() where the serialStart value is accounted for
+      // see xml_parser::mysql5_type_convert() where the serialStart value is accounted for
       // check if primary key is a column of this table - FS#17481
       $primary_keys_exist = self::primary_key_split($table['primaryKey']);
       // set serial columns with serialStart defined to that value
@@ -271,11 +271,11 @@ class mysql4 {
 
     // msdiff needs these to intelligently create SQL difference statements in dependency order
     dbsteward::console_line(1, "Calculating old table foreign key dependency order..");
-    mysql4_diff::$old_table_dependency = xml_parser::table_dependency_order($old_db_doc);
+    mysql5_diff::$old_table_dependency = xml_parser::table_dependency_order($old_db_doc);
     dbsteward::console_line(1, "Calculating new table foreign key dependency order..");
-    mysql4_diff::$new_table_dependency = xml_parser::table_dependency_order($new_db_doc);
+    mysql5_diff::$new_table_dependency = xml_parser::table_dependency_order($new_db_doc);
 
-    mysql4_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
+    mysql5_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
 
     return $new_db_doc;
   }
@@ -308,7 +308,7 @@ class mysql4 {
       if ($node_column === NULL) {
         throw new exception("Failed to find table " . $node_table['name'] . " column " . $data_column_name . " for default value check");
       }
-      $value_type = mysql4_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
+      $value_type = mysql5_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
 
       // else if col is zero length, make it default, or DB NULL
       if (strlen($node_col) == 0) {
@@ -317,7 +317,7 @@ class mysql4 {
         $column_default_value = xml_parser::column_default_value($node_table, $data_column_name, $dummy_data_column);
         if ($column_default_value != NULL) {
           // run default value through value_escape to allow data value conversions to happen
-          $value = mysql4::value_escape($value_type, $column_default_value);
+          $value = mysql5::value_escape($value_type, $column_default_value);
         }
         // else put a NULL in the values list
         else {
@@ -325,7 +325,7 @@ class mysql4 {
         }
       }
       else {
-        $value = mysql4::value_escape($value_type, dbsteward::string_cast($node_col));
+        $value = mysql5::value_escape($value_type, dbsteward::string_cast($node_col));
       }
     }
     return $value;
@@ -349,7 +349,7 @@ class mysql4 {
 
       // strip quoting if it is a quoted type, it will be added after conditional conversion
       if (preg_match($PATTERN_QUOTED_TYPES, $type) > 0) {
-        $value = mysql4::strip_single_quoting($value);
+        $value = mysql5::strip_single_quoting($value);
       }
 
       // complain when assholes use colon time notation instead of postgresql verbose for interval expressions
@@ -368,9 +368,9 @@ class mysql4 {
       }
 
       // special case for postgresql type value conversion
-      // the boolean type for the column would have been translated to char(1) by xml_parser::mysql4_type_convert()
+      // the boolean type for the column would have been translated to char(1) by xml_parser::mysql5_type_convert()
       if (strcasecmp($type, 'char(1)') == 0) {
-        $value = mysql4::boolean_value_convert($value);
+        $value = mysql5::boolean_value_convert($value);
       }
       // convert datetimeoffset(7) columns to valid MSSQL value format
       // YYYY-MM-DDThh:mm:ss[.nnnnnnn][{+|-}hh:mm]
@@ -384,7 +384,7 @@ class mysql4 {
         $value = date('Y-m-dTG:i:s', strtotime($value));
         // use date() to make date format conformant
       }
-      // time with time zone is converted to time in xml_parser::mysql4_type_convert()
+      // time with time zone is converted to time in xml_parser::mysql5_type_convert()
       // because of that, truncate values for time type that are > 8 chars in length
       else if (strcasecmp($type, 'time') == 0
         && strlen($value) > 8) {

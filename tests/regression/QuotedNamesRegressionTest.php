@@ -13,7 +13,7 @@ require_once 'PHPUnit/Framework/TestSuite.php';
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 require_once __DIR__ . '/../../lib/DBSteward/sql_format/pgsql8/pgsql8.php';
 require_once __DIR__ . '/../../lib/DBSteward/sql_format/mssql10/mssql10.php';
-require_once __DIR__ . '/../../lib/DBSteward/sql_format/mysql4/mysql4.php';
+require_once __DIR__ . '/../../lib/DBSteward/sql_format/mysql5/mysql5.php';
 require_once __DIR__ . '/../../lib/DBSteward/sql_format/oracle10g/oracle10g.php';
 
 class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
@@ -26,7 +26,7 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
   }
 
   public function testMysql4() {
-    $this->quoteTestCommon('mysql4', array('in ', 'in-', 'in'.mysql4::QUOTE_CHAR, 'in.'));
+    $this->quoteTestCommon('mysql5', array('in ', 'in-', 'in'.mysql5::QUOTE_CHAR, 'in.'));
   }
 
   public function testOracle10g() {

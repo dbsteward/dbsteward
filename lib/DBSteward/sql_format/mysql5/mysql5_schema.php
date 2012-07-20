@@ -3,12 +3,12 @@
  * schema node manipulation
  *
  * @package DBSteward
- * @subpackage mysql4
+ * @subpackage mysql5
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-class mysql4_schema extends sql99_schema {
+class mysql5_schema extends sql99_schema {
   
   /**
    * Creates and returns SQL for creation of the schema.
@@ -21,7 +21,7 @@ class mysql4_schema extends sql99_schema {
       $ddl = '';
     }
     else {
-      $schema_name = mysql4::get_quoted_schema_name($node_schema['name']);
+      $schema_name = mysql5::get_quoted_schema_name($node_schema['name']);
 
       $ddl = "CREATE SCHEMA " . $schema_name . ";\n";
 
@@ -38,7 +38,7 @@ class mysql4_schema extends sql99_schema {
    * @return string
    */
   public function get_drop_sql($node_schema) {
-    $ddl = "DROP SCHEMA " . mysql4::get_quoted_schema_name($node_schema['name']) . ";\n";
+    $ddl = "DROP SCHEMA " . mysql5::get_quoted_schema_name($node_schema['name']) . ";\n";
     return $ddl;
   }
 

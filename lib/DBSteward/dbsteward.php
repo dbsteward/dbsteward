@@ -100,7 +100,7 @@ class dbsteward {
   public static function usage() {
     $s = "DBSteward Usage:
 Global Switches and Flags
-  --sqlformat=<pgsql8|mssql10|mysql4|oracle10g>
+  --sqlformat=<pgsql8|mssql10|mysql5|oracle10g>
   --requireslonyid                  require tables and sequences to specify a valid slonyId
   --quoteschemanames                quote schema names in SQL output
   --quotetablenames                 quote table names in SQL output
@@ -244,7 +244,7 @@ Database definition extraction utilities
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;
     }
-    else if (strcasecmp(dbsteward::get_sql_format(), 'mysql4') == 0) {
+    else if (strcasecmp(dbsteward::get_sql_format(), 'mysql5') == 0) {
       dbsteward::$quote_schema_names = TRUE;
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;

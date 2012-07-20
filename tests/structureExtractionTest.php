@@ -178,18 +178,18 @@ XML;
    * @param   void
    * @return  void
    */
-  public function testBuildExtractCompare_mysql4() {
+  public function testBuildExtractCompare_mysql5() {
     // 1) Build a database from definition A
-    $this->build_db_mysql4();
+    $this->build_db_mysql5();
 
     // 2) Extract database schema to definition B
-    $this->xml_content_b = mysql4::extract_schema($this->pgsql->get_dbhost(), $this->pgsql->get_dbport(), $this->pgsql->get_dbname(), $this->pgsql->get_dbuser(), $this->pgsql->get_dbpass());
+    $this->xml_content_b = mysql5::extract_schema($this->pgsql->get_dbhost(), $this->pgsql->get_dbport(), $this->pgsql->get_dbname(), $this->pgsql->get_dbuser(), $this->pgsql->get_dbpass());
     
     $this->write_xml_definition_to_disk();
 
     // 3) Compare and expect zero differences between A and B
-    $this->apply_options_mysql4();
-    mysql4::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    $this->apply_options_mysql5();
+    mysql5::build_upgrade($this->xml_file_a, $this->xml_file_b);
     
     $upgrade_stage1_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
     $upgrade_stage2_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage2_data1.sql');

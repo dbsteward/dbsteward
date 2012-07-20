@@ -136,7 +136,7 @@ class oracle10g {
       // sequences contained in the schema
       if (isset($schema->sequence)) {
         foreach ($schema->sequence AS $sequence) {
-          $ofs->write(mysql4_sequence::get_creation_sql($schema, $sequence));
+          $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequence));
 
           // sequence permission grants
           if (isset($sequence->grant)) {
