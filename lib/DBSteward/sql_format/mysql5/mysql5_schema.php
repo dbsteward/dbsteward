@@ -16,20 +16,7 @@ class mysql5_schema extends sql99_schema {
    * @return created SQL
    */
   public function get_creation_sql($node_schema) {
-    if (strcasecmp('dbo', $node_schema['name']) == 0) {
-      // don't create the dbo schema
-      $ddl = '';
-    }
-    else {
-      $schema_name = mysql5::get_quoted_schema_name($node_schema['name']);
-
-      $ddl = "CREATE SCHEMA " . $schema_name . ";\n";
-
-      // @IMPLEMENT: $node_schema['owner'] ?
-      // @IMPLEMENT: $node_schema['description'] ?
-    }
-
-    return $ddl;
+    throw new exception('The MySQL driver currently doesn\'t support schemas other than public');
   }
   
   /**
@@ -38,8 +25,7 @@ class mysql5_schema extends sql99_schema {
    * @return string
    */
   public function get_drop_sql($node_schema) {
-    $ddl = "DROP SCHEMA " . mysql5::get_quoted_schema_name($node_schema['name']) . ";\n";
-    return $ddl;
+    throw new exception('The MySQL driver currently doesn\'t support dropping schemas');
   }
 
 }
