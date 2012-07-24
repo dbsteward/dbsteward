@@ -24,49 +24,11 @@ class mysql5_sequence {
    *
    * @return created SQL command
    */
-  public function get_creation_sql($node_schema, $node_sequence) {
-    if ( isset($node_sequence['start']) && !is_numeric((string)$node_sequence['start']) ) {
-      throw new exception("start value is not numeric: " . $node_sequence['start']);
-    }
-    if ( isset($node_sequence['inc']) && !is_numeric((string)$node_sequence['inc']) ) {
-      throw new exception("increment by value is not numeric: " . $node_sequence['inc']);
-    }
-    if ( isset($node_sequence['min']) && !is_numeric((string)$node_sequence['min']) ) {
-      throw new exception("minimum value is not numeric: " . $node_sequence['min']);
-    }
-    if ( isset($node_sequence['max']) && !is_numeric((string)$node_sequence['max']) ) {
-      throw new exception("maximum value is not numeric: " . $node_sequence['max']);
-    }
+  public function get_creation_sql($node_schema, $node_sequences) {
+    $values = array();
 
-    if ( isset($node_sequence['inc']) ) {
-      $increment = (int)$node_sequence['inc'];
-    }
-    else {
-      $increment = '1';
-    }
-
-    $max_value = (int)$node_sequence['max'];
-    if ( $max_value > 0 ) {
-      $max = $max_value;
-    }
-    else {
-      $max = 'DEFAULT';
-    }
-
-    $min_value = (int)$node_sequence['min'];
-    if ( $min_value > 0 ) {
-      $min = $min_value;
-    }
-    else {
-      $min = 'DEFAULT';
-    }
-
-    $start_value = (int)$node_sequence['start'];
-    if ( $start_value > 0 ) {
-      $start = $start_value;
-    }
-    else {
-      $start = $min;
+    if ( ! is_array($node_sequences) ) {
+      $node_sequences = array($node_sequences);
     }
 
     foreach ( $node_sequences as $node_sequence ) {
@@ -126,7 +88,6 @@ class mysql5_sequence {
       $values[] = "('$name', $increment, $min, $max, $start, $cycle)";
     }
 
-    $sequence_name = $node_sequence['name'];
     $table_name = mysql5::get_quoted_table_name(self::TABLE_NAME);
     $seq_col = mysql5::get_quoted_column_name(self::SEQ_COL);
     $inc_col = mysql5::get_quoted_column_name(self::INC_COL);
@@ -135,12 +96,14 @@ class mysql5_sequence {
     $cur_col = mysql5::get_quoted_column_name(self::CUR_COL);
     $cyc_col = mysql5::get_quoted_column_name(self::CYC_COL);
 
+    $values = implode(",\n  ", $values);
+
     return <<<SQL
 -- see http://www.microshell.com/database/mysql/emulating-nextval-function-to-get-sequence-in-mysql/
 INSERT INTO $table_name
   ($seq_col, $inc_col, $min_col, $max_col, $cur_col, $cyc_col)
-VALUE
-  ('$sequence_name', $increment, $min, $max, $start, $cycle);
+VALUES
+  $values;
 SQL;
   }
 
@@ -205,11 +168,16 @@ SQL;
    *
    * @return string
    */
-  public static function get_drop_sql($node_schema, $node_sequence) {
-    $sequence_name = $node_sequence['name'];
+  public static function get_drop_sql($node_schema, $node_sequences) {
     $table_name = mysql5::get_quoted_table_name(self::TABLE_NAME);
     $seq_col = mysql5::get_quoted_column_name(self::SEQ_COL);
-    return "DELETE FROM $table_name WHERE $seq_col = '$sequence_name';\n";
+
+    if ( ! is_array($node_sequences) ) {
+      $node_sequences = array($node_sequences);
+    }
+
+    $sequence_names = "('" . implode("', '", array_map(function($n) { return $n['name']; }, $node_sequences)) . "')";
+    return "DELETE FROM $table_name WHERE $seq_col IN $sequence_names;";
   }
 }
 

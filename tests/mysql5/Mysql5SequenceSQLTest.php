@@ -127,7 +127,7 @@ XML;
 
     $schema = new SimpleXMLElement($xml);
 
-    $expected = "DELETE FROM `__sequences` WHERE `name` = 'the_sequence';";
+    $expected = "DELETE FROM `__sequences` WHERE `name` IN ('the_sequence');";
 
     $actual = trim(preg_replace('/--.*/','',mysql5_sequence::get_drop_sql($schema, $schema->sequence)));
 
@@ -145,62 +145,36 @@ XML;
 
     $schema = new SimpleXMLElement($xml);
 
-    $expected = '';
+    $expected = <<<SQL
+INSERT INTO `__sequences`
+  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
+VALUES
+  ('seq0', 3, DEFAULT, 10, 2, TRUE),
+  ('seq1', 3, DEFAULT, 10, 2, TRUE),
+  ('seq2', 3, DEFAULT, 10, 2, TRUE);
+SQL;
 
-    for ( $i=0; $i<3; $i++ ) {
-      $expected .= $this->getExpectedSequenceDDL("seq$i", 3, 'DEFAULT', 10, 2, 'TRUE');
-    }
-
-    $actual = '';
+    $seqs = array();
     foreach ( $schema->sequence as $seq ) {
-      $actual .= trim(preg_replace('/--.*/','',mysql5_sequence::get_creation_sql($schema, $seq)));
+      $seqs[] = $seq;
     }
+
+    $actual = trim(preg_replace('/--.*/','',mysql5_sequence::get_creation_sql($schema, $seqs)));
 
     $this->assertEquals($expected, $actual);
+
+    $expected_drop = "DELETE FROM `__sequences` WHERE `name` IN ('seq0', 'seq1', 'seq2');";
+    $actual_drop = trim(preg_replace('/--.*/','',mysql5_sequence::get_drop_sql($schema, $seqs)));
+
+    $this->assertEquals($expected_drop, $actual_drop);
   }
 
   protected function getExpectedSequenceDDL($name, $inc, $min, $max, $start, $cycle) {
     return <<<SQL
 INSERT INTO `__sequences`
   (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
-VALUE
+VALUES
   ('$name', $inc, $min, $max, $start, $cycle);
-SQL;
-  }
-
-  protected function getExpectedSequenceShimDDL() {
-    return <<<SQL
-CREATE TABLE `__sequences` (
-  `name` varchar(100) NOT NULL,
-  `increment` int(11) unsigned NOT NULL DEFAULT 1,
-  `min_value` int(11) unsigned NOT NULL DEFAULT 1,
-  `max_value` bigint(20) unsigned NOT NULL DEFAULT 18446744073709551615,
-  `cur_value` bigint(20) unsigned DEFAULT 1,
-  `cycle` boolean NOT NULL DEFAULT FALSE,
-  PRIMARY KEY (`name`)
-) ENGINE=MyISAM;
-
-DELIMITER $$
-CREATE FUNCTION `nextval` (`seq_name` varchar(100))
-RETURNS bigint(20) NOT DETERMINISTIC
-BEGIN
-  DECLARE cur_val bigint(20);
-
-  SELECT `cur_value` INTO cur_val FROM `__sequences` WHERE `name` = seq_name;
-   
-  IF cur_val IS NOT NULL THEN
-    UPDATE `__sequences`
-    SET `cur_value` = IF (
-      (`cur_value` + `increment`) > `max_value`,
-      IF (`cycle` = TRUE, `min_value`, NULL),
-      `cur_value` + `increment`
-    )
-    WHERE `name` = seq_name;
-  END IF;
-
-  RETURN cur_val;
-END$$
-DELIMITER ;
 SQL;
   }
 }
