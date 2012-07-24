@@ -163,7 +163,7 @@
 <!ELEMENT type (enum+)>
 <!ATTLIST type name CDATA #REQUIRED>
 <!ATTLIST type type (enum) #REQUIRED>
-<!ELEMENT enum (#PCDATA)>
+<!ELEMENT enum EMPTY>
 <!ATTLIST enum name CDATA #REQUIRED>
 
 <!ELEMENT view (viewQuery+, grant*)>
