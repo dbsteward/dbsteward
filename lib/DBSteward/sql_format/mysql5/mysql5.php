@@ -12,6 +12,8 @@ class mysql5 {
 
   const QUOTE_CHAR = '`';
 
+  public static $quote_function_parameters = TRUE;
+
   public static function build($files) {
 
     if (!is_array($files)) {
@@ -437,6 +439,10 @@ class mysql5 {
 
   public static function get_quoted_function_name($name) {
     return sql99::get_quoted_name($name, dbsteward::$quote_function_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_function_parameter($name) {
+    return sql99::get_quoted_name($name, self::$quote_function_parameters, self::QUOTE_CHAR);
   }
 
   public static function get_quoted_object_name($name) {

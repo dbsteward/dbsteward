@@ -544,6 +544,10 @@ Database definition extraction utilities
     $language = strtolower($function['language']);
     switch ($language) {
       case 'sql':
+        if (strcasecmp(dbsteward::get_sql_format(), 'mysql5') == 0) {
+          return TRUE;
+        }
+        //fallthru
       case 'plpgsql':
         if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
           return TRUE;
