@@ -8,6 +8,10 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
+require_once __DIR__ . '/mysql5.php';
+require_once __DIR__ . '/../sql99/sql99_table.php';
+require_once __DIR__ . '/mysql5_column.php';
+
 class mysql5_table extends sql99_table {
 
   /**

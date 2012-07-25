@@ -40,7 +40,16 @@ class mysql5_type extends sql99_type {
 
     $enum_name .= '';
 
-    return self::$enums[$enum_name];
+    if ( isset(self::$enums[$enum_name]) ) {
+      return self::$enums[$enum_name];
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  public static function get_enum_type_declaration($values) {
+    return "ENUM('" . implode("','", $values) . "')";
   }
 
   public static function clear_registered_enums() {

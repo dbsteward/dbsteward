@@ -26,6 +26,30 @@ class sql99_column {
 
     return $null_allowed;
   }
+  
+  /**
+   * Returns default value for given column type. If no default value
+   * is specified then null is returned.
+   *
+   * @param type column type
+   *
+   * @return found default value or null
+   */
+  public static function get_default_value($type) {
+    $default_value = null;
+
+    if ( preg_match("/^smallint$|^int.*$|^bigint$|^decimal.*$|^numeric.*$|^real$|^double precision$|^float.*$|^double$|^money$/i", $type) > 0 ) {
+      $default_value = "0";
+    }
+    else if ( preg_match("/^character varying.*$|^varchar.*$|^char.*$|^text$/i", $type) > 0 ) {
+      $default_value = "''";
+    }
+    else if ( preg_match("/^boolean$/i", $type) > 0 ) {
+      $default_value = "false";
+    }
+
+    return $default_value;
+  }
 
 }
 

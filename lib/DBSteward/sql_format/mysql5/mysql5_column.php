@@ -8,7 +8,11 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-class mysql5_column extends pgsql8_column {
+require_once __DIR__ . '/mysql5.php';
+require_once __DIR__ . '/../sql99/sql99_column.php';
+require_once __DIR__ . '/mysql5_type.php';
+
+class mysql5_column extends sql99_column {
   
   /**
    * Returns full definition of the column.
@@ -18,21 +22,64 @@ class mysql5_column extends pgsql8_column {
    *
    * @return full definition of the column
    */
-  public function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true) {
-    $column_type = mysql5_column::column_type($db_doc, $node_schema, $node_table, $node_column, $foreign);
+  public static function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true) {
+    $flags = '';
+
+    // if the column is a foreign key, solve for the foreignKey type
+    if ( isset($node_column['foreignTable']) ) {
+      dbx::foreign_key($db_doc, $node_schema, $node_table, $node_column, $foreign);
+      $foreign_type = $foreign['column']['type'];
+      if ( strcasecmp('serial', $column_type) == 0 ) {
+        $column_type = 'int';
+      }
+      else if ( strcasecmp('bigserial', $column_type) == 0 ) {
+        $column_type = 'bigint';
+      }
+      else {
+        throw new Exception("Invalid foreign column type $column_type for local key {$node_column['name']}");
+      }
+    }
+    elseif ( ! isset($node_column['type']) ) {
+      throw new Exception("column missing type -- " . $table['name'] . "." . $column['name']);
+    }
+    // if the column type matches a registered enum type, inject the enum declaration here
+    elseif ( $values = mysql5_type::get_enum_values($node_column['type'].'') ) {
+      $column_type = mysql5_type::get_enum_type_declaration($values);
+    }
+    elseif ( $node_column['type'] == 'serial' ) {
+      $column_type = 'int';
+      $flags .= " AUTO_INCREMENT";
+      // @TODO: startSerial?
+    }
+    elseif ( $node_column['type'] == 'bigserial' ) {
+      $column_type = 'bigint';
+      $flags .= " AUTO_INCREMENT";
+      // @TODO: startSerial?
+    }
+    else {
+      $column_type = $node_column['type'].'';
+    }
+
     $definition = mysql5::get_quoted_column_name($node_column['name']) . ' ' . $column_type;
 
-    if (strlen($node_column['default']) > 0) {
+    if ($include_null_definition && !self::null_allowed($node_table, $node_column) ) {
+      $definition .= " NOT NULL";
+    }
+
+    $definition .= $flags;
+
+    if ( strlen($node_column['default']) > 0 ) {
       $definition .= " DEFAULT " . $node_column['default'];
-    } else if ( !mysql5_column::null_allowed($node_table, $node_column) && $add_defaults) {
-      $default_col_value = mysql5_column::get_default_value($node_column['type']);
+    }
+    else if ( !self::null_allowed($node_table, $node_column) && $add_defaults ) {
+      $default_col_value = self::get_default_value($node_column['type']);
       if ($default_col_value != null) {
         $definition .= " DEFAULT " . $default_col_value;
       }
     }
 
-    if ($include_null_definition && !mysql5_column::null_allowed($node_table, $node_column) ) {
-      $definition .= " NOT NULL";
+    if ( strlen($node_column['description']) > 0 ) {
+      $definition .= " COMMENT '" . str_replace("'","\'",$node_column['description']) . "'";
     }
 
     return $definition;
