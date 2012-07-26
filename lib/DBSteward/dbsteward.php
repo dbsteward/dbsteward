@@ -510,11 +510,8 @@ Database definition extraction utilities
   }
 
   public static function quote_column_name($column_name) {
-    $quoted_column_name = $column_name;
-    if (dbsteward::$quote_column_names) {
-      $quoted_column_name = '"' . $quoted_column_name . '"';
-    }
-    return $quoted_column_name;
+    $format = self::$sql_format;
+    return $format::get_quoted_column_name($column_name);
   }
 
   public function xml_sort($files) {
