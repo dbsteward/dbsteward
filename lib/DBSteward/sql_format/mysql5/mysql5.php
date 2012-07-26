@@ -448,6 +448,14 @@ class mysql5 {
   public static function get_quoted_object_name($name) {
     return sql99::get_quoted_name($name, dbsteward::$quote_object_names, self::QUOTE_CHAR);
   }
+
+  public static function get_fully_qualified_table_name($schema_name, $table_name) {
+    return static::get_quoted_table_name($table_name);
+  }
+
+  public static function get_fully_qualified_column_name($schema_name, $table_name, $column_name) {
+    return static::get_fully_qualified_table_name($schema_name, $table_name) . '.' . static::get_quoted_column_name($column_name);
+  }
 }
 
 ?>
