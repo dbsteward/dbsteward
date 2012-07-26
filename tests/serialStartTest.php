@@ -1,0 +1,181 @@
+<?php
+/**
+ * DBSteward serial start confirmat test
+ *
+ * 1) Confirm serial starts are applied when creating new tables
+ * 2) Confirm when adding new tables with serial columns that serial starts are applied in stage 2
+ *
+ *
+ * @package DBSteward
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
+ */
+
+require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
+
+class serialStartTest extends dbstewardUnitTestBase {
+
+  protected function setUp() {
+    $this->xml_content_a = <<<XML
+<dbsteward>
+  <database>
+    <host>db-host</host>
+    <name>dbsteward</name>
+    <role>
+      <application>dbsteward_phpunit_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+    <slony>
+      <masterNode id="1"/>
+      <replicaNode id="2" providerId="1"/>
+      <replicaNode id="3" providerId="2"/>
+      <replicationSet id="1"/>
+      <replicationUpgradeSet id="2"/>
+    </slony>
+    <configurationParameter name="TIME ZONE" value="America/New_York"/>
+  </database>
+  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
+  <schema name="dbsteward" owner="ROLE_OWNER">
+    <function name="db_config_parameter" returns="text" language="plpgsql" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
+      <functionParameter name="config_parameter" type="text"/>
+      <functionParameter name="config_value" type="text"/>
+      <functionDefinition>
+        DECLARE
+          q text;
+          name text;
+          n text;
+        BEGIN
+          SELECT INTO name current_database();
+          q := 'ALTER DATABASE ' || name || ' SET ' || config_parameter || ' ''' || config_value || ''';';
+          n := 'DB CONFIG CHANGE: ' || q;
+          RAISE NOTICE '%', n;
+          EXECUTE q;
+          RETURN n;
+        END;
+      </functionDefinition>
+    </function>
+  </schema>
+  <schema name="user_info" owner="ROLE_OWNER">
+    <table name="user" owner="ROLE_OWNER" primaryKey="user_id" description="user logins" slonyId="1">
+      <column name="user_id" type="bigserial" serialStart="1234" slonyId="1"/>
+      <column name="user_name" type="varchar(100)" null="false"/>
+      <column name="user_role" type="varchar(100)" null="false"/>
+      <column name="user_create_date" type="timestamp with time zone" null="false" default="NOW()"/>
+      <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
+      <rows columns="user_id, user_name, user_role">
+        <tabrow>1	toor	super_admin</tabrow>
+      </rows>
+    </table>
+  </schema>
+</dbsteward>
+XML;
+    $this->xml_content_b = <<<XML
+<dbsteward>
+  <database>
+    <host>db-host</host>
+    <name>dbsteward</name>
+    <role>
+      <application>dbsteward_phpunit_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+    <slony>
+      <masterNode id="1"/>
+      <replicaNode id="2" providerId="1"/>
+      <replicaNode id="3" providerId="2"/>
+      <replicationSet id="1"/>
+      <replicationUpgradeSet id="2"/>
+    </slony>
+    <configurationParameter name="TIME ZONE" value="America/New_York"/>
+  </database>
+  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
+  <schema name="dbsteward" owner="ROLE_OWNER">
+    <function name="db_config_parameter" returns="text" language="plpgsql" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
+      <functionParameter name="config_parameter" type="text"/>
+      <functionParameter name="config_value" type="text"/>
+      <functionDefinition>
+        DECLARE
+          q text;
+          name text;
+          n text;
+        BEGIN
+          SELECT INTO name current_database();
+          q := 'ALTER DATABASE ' || name || ' SET ' || config_parameter || ' ''' || config_value || ''';';
+          n := 'DB CONFIG CHANGE: ' || q;
+          RAISE NOTICE '%', n;
+          EXECUTE q;
+          RETURN n;
+        END;
+      </functionDefinition>
+    </function>
+  </schema>
+  <schema name="user_info" owner="ROLE_OWNER">
+    <table name="user" owner="ROLE_OWNER" primaryKey="user_id" description="user logins" slonyId="1">
+      <column name="user_id" type="bigserial" serialStart="1234" slonyId="1"/>
+      <column name="user_name" type="varchar(100)" null="false"/>
+      <column name="user_role" type="varchar(100)" null="false"/>
+      <column name="user_create_date" type="timestamp with time zone" null="false" default="NOW()"/>
+      <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
+      <rows columns="user_id, user_name, user_role">
+        <tabrow>1	toor	super_admin</tabrow>
+      </rows>
+    </table>
+    <table name="user_attribute" owner="ROLE_OWNER" primaryKey="user_id" description="user attribute data" slonyId="2">
+      <column name="user_id" foreignSchema="user_info" foreignTable="user" foreignColumn="user_id"/>
+      <column name="user_attribute_id" type="bigserial" serialStart="5678" slonyId="2"/>
+      <column name="user_attribute_name" type="varchar(200)" null="false"/>
+      <column name="user_attribute_value" type="text" null="false"/>
+      <column name="user_attribute_create_date" type="timestamp with time zone" null="false" default="NOW()"/>
+      <column name="user_attribute_modify_date" type="timestamp with time zone" null="false" default="NOW()"/>
+      <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
+    </table>
+  </schema>
+</dbsteward>
+XML;
+
+    parent::setUp();
+  }
+  
+  public function testSerialStartPGSQL8() {
+    // build version a
+    $this->build_db_pgsql8();
+    
+    $xml_a_sql = file_get_contents(dirname(__FILE__) . '/testdata/unit_test_xml_a_build.sql');
+    $xml_a_sql = preg_replace('/\s+/', ' ', $xml_a_sql);
+    // 1) Confirm serial starts are applied when creating new tables
+    $this->assertRegExp(
+      '/-- serialStart 1234 specified for user_info.user.user_id/i',
+      $xml_a_sql,
+      "serialStart specification not announced in a comment in testdata/unit_test_xml_a_build.sql"
+    );
+    $this->assertRegExp(
+      "/SELECT setval\(pg_get_serial_sequence\('user_info.user', 'user_id'\), 1234, TRUE\);/i",
+      $xml_a_sql,
+      "sequence start not being set via setval in testdata/unit_test_xml_a_build.sql"
+    );
+    
+    // diff and apply upgrade
+    $this->upgrade_db_pgsql8();
+    
+    $xml_b_upgrade_stage2_data1_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage2_data1.sql');
+    $xml_b_upgrade_stage2_data1_sql = preg_replace('/\s+/', ' ', $xml_b_upgrade_stage2_data1_sql);
+    // 2) Confirm when adding new tables with serial columns that serial starts are applied in stage 2
+    $this->assertRegExp(
+      '/-- serialStart 5678 specified for user_info.user_attribute.user_attribute_id/i',
+      $xml_b_upgrade_stage2_data1_sql,
+      "serialStart specification not announced in a comment in testdata/unit_test_xml_a_build.sql"
+    );
+    $this->assertRegExp(
+      "/SELECT setval\(pg_get_serial_sequence\('user_info.user_attribute', 'user_attribute_id'\), 5678, TRUE\);/i",
+      $xml_b_upgrade_stage2_data1_sql,
+      "sequence start not being set via setval in testdata/unit_test_xml_a_build.sql"
+    );
+    
+  }
+  
+}
+
+?>
