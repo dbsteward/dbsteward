@@ -20,39 +20,37 @@ class mysql5_table extends sql99_table {
    * @return created SQL command
    */
   public function get_creation_sql($node_schema, $node_table) {
-    if ($node_schema->getName() != 'schema') {
+    if ( $node_schema->getName() != 'schema' ) {
       throw new exception("node_schema object element name is not schema. check stack for offending caller");
     }
 
-    if ($node_table->getName() != 'table') {
+    if ( $node_table->getName() != 'table' ) {
       throw new exception("node_table object element name is not table. check stack for offending caller");
     }
 
-    $table_name = mysql5::get_quoted_schema_name($node_schema['name']) . '.' . mysql5::get_quoted_table_name($node_table['name']);
-
-    $sql = "CREATE TABLE " . $table_name . " (\n";
-
-    foreach (dbx::get_table_columns($node_table) as $column) {
-      $sql .= "\t" . mysql5_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, FALSE) . ",\n";
+    if ( strlen($node_table['inherits']) > 0 ) {
+      //@TODO: implement compatibility with pgsql table inheritance
+      dbsteward::console_line(1, "Skipping table '{$node_table['name']}' because MySQL does not support table inheritance");
+      return "-- Skipping table '{$node_table['name']}' because MySQL does not support table inheritance";
     }
 
-    $sql = substr($sql, 0, strlen($sql) - 2);
-    $sql .= "\n)";
-    if (isset($node_table['inherits']) && strlen($node_table['inherits']) > 0) {
-      //@TODO: this does not look like it is supported in mysql5
+    $table_name = mysql5::get_quoted_table_name($node_table['name']);
+
+    $sql = "CREATE TABLE $table_name (\n";
+
+    $cols = array();
+    foreach ( $node_table->column as $column ) {
+      $cols[] = mysql5_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, false);
     }
+    $sql .= "  " . implode(",\n  ", $cols) . "\n)";
+
+    if ( strlen($node_table['description']) > 0 ) {
+      $sql .= "\nCOMMENT '" . str_replace("'","\'",$node_table['description']) . "'";
+    }
+
     $sql .= ";";
 
-    // @IMPLEMENT: $table['description'] specifier ?
-    foreach (dbx::get_table_columns($node_table) as $column) {
-      if (isset($column['statistics'])) {
-        $sql .= "\nALTER TABLE ONLY " . $table_name . " ALTER COLUMN " . mysql5::get_quoted_column_name($column['name']) . " SET STATISTICS " . $column['statistics'] . ";\n";
-      }
-
-      // @IMPLEMENT: $column['description'] specifier ?
-      
-      // @TODO: should an equivalent to mssql10_column::enum_type_check() be implemented here?
-    }
+    // @TODO: implement column statistics
 
     // @IMPLMENT table ownership with $node_table['owner'] ?
     return $sql;
@@ -77,46 +75,7 @@ class mysql5_table extends sql99_table {
       var_dump($node_table);
       throw new exception("node_table element type is not table. check stack for offending caller");
     }
-    return "DROP TABLE " . mysql5::get_quoted_schema_name($node_schema['name']) . '.' . mysql5::get_quoted_table_name($node_table['name']) . ";";
-  }
-
-  /**
-   * create SQL To create the constraint passed in the $constraint array
-   *
-   * @return string
-   */
-  public function get_constraint_sql($constraint) {
-    if (!is_array($constraint)) {
-      throw new exception("constraint is not an array?");
-    }
-    if (strlen($constraint['table_name']) == 0) {
-      var_dump(array_keys($constraint));
-      throw new exception("table_name is blank");
-    }
-    $sql = "ALTER TABLE " . mysql5::get_quoted_schema_name($constraint['schema_name']) . '.' . mysql5::get_quoted_table_name($constraint['table_name']) . "\n" . "\tADD CONSTRAINT " . mysql5::get_quoted_object_name($constraint['name']) . ' ' . $constraint['type'] . ' ' . $constraint['definition'];
-
-    // FOREIGN KEY ON DELETE / ON UPDATE handling
-    if (isset($constraint['foreignOnDelete']) && strlen($constraint['foreignOnDelete'])) {
-      $sql .= " ON DELETE " . $constraint['foreignOnDelete'];
-    }
-    if (isset($constraint['foreignOnUpdate']) && strlen($constraint['foreignOnUpdate'])) {
-      $sql .= " ON UPDATE " . $constraint['foreignOnUpdate'];
-    }
-
-    $sql .= ';';
-    return $sql;
-  }
-
-  public function get_constraint_drop_sql($constraint) {
-    if (!is_array($constraint)) {
-      throw new exception("constraint is not an array?");
-    }
-    if (strlen($constraint['table_name']) == 0) {
-      var_dump(array_keys($constraint));
-      throw new exception("table_name is blank");
-    }
-    $sql = "ALTER TABLE " . mysql5::get_quoted_schema_name($constraint['schema_name']) . '.' . mysql5::get_quoted_table_name($constraint['table_name']) . "\n\tDROP CONSTRAINT " . mysql5::get_quoted_object_name($constraint['name']) . ';';
-    return $sql;
+    return "DROP TABLE " . mysql5::get_quoted_table_name($node_table['name']) . ";";
   }
 
 }
