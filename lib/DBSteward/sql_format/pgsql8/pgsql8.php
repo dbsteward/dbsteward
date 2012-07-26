@@ -27,6 +27,8 @@ require_once dirname(__FILE__) . '/pgsql8_diff.php';
 
 class pgsql8 extends sql99 {
 
+  const QUOTE_CHAR = '"';
+
   const PATTERN_SERIAL_COLUMN = '/^serial|bigserial$/i';
   
   const PATTERN_REPLICATED_COLUMN = '/^serial|bigserial$/i';

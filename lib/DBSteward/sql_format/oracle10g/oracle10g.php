@@ -25,6 +25,8 @@ require_once dirname(__FILE__) . '/oracle10g_diff.php';
 
 class oracle10g {
 
+  const QUOTE_CHAR = '"';
+
   public static function build($files) {
     if (!is_array($files)) {
       $files = array($files);
@@ -434,6 +436,26 @@ class oracle10g {
    */
   public static function primary_key_split($primary_key_string) {
     return preg_split("/[\,\s]+/", $primary_key_string, -1, PREG_SPLIT_NO_EMPTY);
+  }
+
+  public static function get_quoted_schema_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_schema_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_table_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_table_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_column_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_column_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_function_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_function_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_object_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_object_names, self::QUOTE_CHAR);
   }
 }
 

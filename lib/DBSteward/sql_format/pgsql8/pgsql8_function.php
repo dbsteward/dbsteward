@@ -100,7 +100,7 @@ class pgsql8_function {
    * @param $node_function
    */
   public static function get_declaration($node_schema, $node_function) {
-    $r = pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . $node_function['name'] . '(';
+    $r = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . $node_function['name'] . '(';
     $parameters = dbx::get_function_parameters($node_function);
     foreach($parameters AS $parameter) {
       $arg = '';

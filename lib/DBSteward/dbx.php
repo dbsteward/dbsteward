@@ -261,7 +261,7 @@ class dbx {
         $primary_key_columns = preg_split("/[\,\s]+/", $node_table['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
         $primary_key_list = '';
         foreach ($primary_key_columns AS $primary_key_column) {
-          $primary_key_list .= pgsql8_diff::get_quoted_name($primary_key_column, dbsteward::$quote_column_names) . ', ';
+          $primary_key_list .= pgsql8::get_quoted_column_name($primary_key_column) . ', ';
         }
         $primary_key_list = substr($primary_key_list, 0, -2);
 
@@ -731,11 +731,11 @@ class dbx {
 
       if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
         $value_type = pgsql8_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
-        $primary_key_expression .= pgsql8_diff::get_quoted_name($primary_column_name, dbsteward::$quote_column_names) . ' = ' . pgsql8::value_escape($value_type, $data_row->col[$column_index]);
+        $primary_key_expression .= pgsql8::get_quoted_column_name($primary_column_name) . ' = ' . pgsql8::value_escape($value_type, $data_row->col[$column_index]);
       }
       else if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
         $value_type = mssql10_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
-        $primary_key_expression .= mssql10_diff::get_quoted_name($primary_column_name, dbsteward::$quote_column_names) . ' = ' . mssql10::value_escape($value_type, $data_row->col[$column_index]);
+        $primary_key_expression .= mssql10::get_quoted_column_name($primary_column_name) . ' = ' . mssql10::value_escape($value_type, $data_row->col[$column_index]);
       }
       else {
         throw new exception("Unknown sql_format: " . dbsteward::get_sql_format());

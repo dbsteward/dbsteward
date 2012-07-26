@@ -74,6 +74,45 @@ class sql99 {
     }
   }
 
+  /**
+   * returns if quote_name is true then returns quoted name otherwise returns the original name
+   *
+   * @param name name
+   * @param quote_name whether the name should be quoted
+   *
+   * @return string
+   */
+  public static function get_quoted_name($name, $quoted, $quote_char) {
+    if ( ! preg_match('/^[a-zA-Z_]\w*$/', $name) ) {
+      throw new exception("Invalid identifier: '$name'");
+    }
+
+    if ( $quoted ) {
+      return ($quote_char . $name . $quote_char);
+    } else {
+      return $name;
+    }
+  }
+
+  public static function get_quoted_schema_name($name) {
+    return static::get_quoted_name($name, dbsteward::$quote_schema_names, static::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_table_name($name) {
+    return static::get_quoted_name($name, dbsteward::$quote_table_names, static::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_column_name($name) {
+    return static::get_quoted_name($name, dbsteward::$quote_column_names, static::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_function_name($name) {
+    return static::get_quoted_name($name, dbsteward::$quote_function_names, static::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_object_name($name) {
+    return static::get_quoted_name($name, dbsteward::$quote_object_names, static::QUOTE_CHAR);
+  }
 }
 
 ?>

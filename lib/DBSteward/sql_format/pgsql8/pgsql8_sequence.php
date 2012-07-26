@@ -79,7 +79,7 @@ class pgsql8_sequence {
       $owned_by = " OWNED BY " . $node_sequence['ownedBy'];
     }
 
-    $sequence_name = pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($node_sequence['name'], dbsteward::$quote_object_names);
+    $sequence_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_sequence['name']);
 
     $ddl = "CREATE SEQUENCE " . $sequence_name . "
 \tSTART WITH " . $start . "
@@ -108,7 +108,7 @@ class pgsql8_sequence {
    * @return string
    */
   public function get_drop_sql($node_schema, $node_sequence) {
-    $ddl = "DROP SEQUENCE " . pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($node_sequence['name'], dbsteward::$quote_object_names) . ";\n";
+    $ddl = "DROP SEQUENCE " . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_sequence['name']) . ";\n";
     return $ddl;
   }
 
