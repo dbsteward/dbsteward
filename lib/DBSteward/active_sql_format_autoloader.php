@@ -42,7 +42,9 @@ class active_sql_format_autoloader {
       }
 
       require_once $file;
-      class_alias($actual, $class);
+      if ( ! class_alias($actual, $class) ) {
+        throw new Exception("Could not alias class $actual as $class");
+      }
     }
   }
   public static function loadFormat($class) {
