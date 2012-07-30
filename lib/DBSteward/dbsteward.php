@@ -662,14 +662,6 @@ Database definition extraction utilities
   public static function sql_format_exists($format) {
     return in_array($format, dbsteward::get_sql_formats());
   }
-  
-  public static function load_sql_formats() {
-    $sql_format_dir = dirname(__FILE__) . "/sql_format/";
-    $formats = dbsteward::get_sql_formats();
-    foreach($formats AS $format) {
-      require_once($sql_format_dir . "/" . $format . "/" . $format . ".php");
-    }
-  }
 
 }
 

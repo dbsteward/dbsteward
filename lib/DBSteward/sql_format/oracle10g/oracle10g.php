@@ -8,21 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/../sql99/sql99.php';
-require_once dirname(__FILE__) . '/../pgsql8/pgsql8.php';
-
-require_once dirname(__FILE__) . '/oracle10g_column.php';
-require_once dirname(__FILE__) . '/oracle10g_function.php';
-require_once dirname(__FILE__) . '/oracle10g_permission.php';
-require_once dirname(__FILE__) . '/oracle10g_index.php';
-require_once dirname(__FILE__) . '/oracle10g_schema.php';
-require_once dirname(__FILE__) . '/oracle10g_sequence.php';
-require_once dirname(__FILE__) . '/oracle10g_table.php';
-require_once dirname(__FILE__) . '/oracle10g_type.php';
-require_once dirname(__FILE__) . '/oracle10g_trigger.php';
-require_once dirname(__FILE__) . '/oracle10g_view.php';
-require_once dirname(__FILE__) . '/oracle10g_diff.php';
-
 class oracle10g {
 
   const QUOTE_CHAR = '"';

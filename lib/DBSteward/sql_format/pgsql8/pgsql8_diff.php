@@ -8,16 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/pgsql8_dump_loader.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_functions.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_indexes.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_languages.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_sequences.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_tables.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_types.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_triggers.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_views.php';
-
 class pgsql8_diff extends sql99_diff{
 
   /**

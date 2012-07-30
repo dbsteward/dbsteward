@@ -12,8 +12,6 @@ require_once 'PHPUnit/Framework/TestSuite.php';
 
 require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 
-dbsteward::load_sql_formats();
-
 require_once __DIR__ . '/dbsteward_sql99_connection.php';
 require_once __DIR__ . '/dbsteward_pgsql8_connection.php';
 require_once __DIR__ . '/dbsteward_mssql10_connection.php';

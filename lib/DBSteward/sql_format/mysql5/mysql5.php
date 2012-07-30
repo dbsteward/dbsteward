@@ -8,21 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/../sql99/sql99.php';
-require_once dirname(__FILE__) . '/../pgsql8/pgsql8.php';
-
-require_once dirname(__FILE__) . '/mysql5_column.php';
-require_once dirname(__FILE__) . '/mysql5_function.php';
-require_once dirname(__FILE__) . '/mysql5_permission.php';
-require_once dirname(__FILE__) . '/mysql5_index.php';
-require_once dirname(__FILE__) . '/mysql5_schema.php';
-require_once dirname(__FILE__) . '/mysql5_sequence.php';
-require_once dirname(__FILE__) . '/mysql5_table.php';
-require_once dirname(__FILE__) . '/mysql5_type.php';
-require_once dirname(__FILE__) . '/mysql5_trigger.php';
-require_once dirname(__FILE__) . '/mysql5_view.php';
-require_once dirname(__FILE__) . '/mysql5_diff.php';
-
 class mysql5 {
 
   const QUOTE_CHAR = '`';

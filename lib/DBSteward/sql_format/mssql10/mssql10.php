@@ -8,11 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/../sql99/sql99.php';
-require_once dirname(__FILE__) . '/../pgsql8/pgsql8.php';
-
-require_once dirname(__FILE__) . '/mssql10_diff.php';
-
 class mssql10 {
 
   const QUOTE_CHAR = '"';

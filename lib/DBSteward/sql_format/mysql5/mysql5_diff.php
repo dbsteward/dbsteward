@@ -8,14 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/mysql5_diff_indexes.php';
-require_once dirname(__FILE__) . '/mysql5_diff_functions.php';
-require_once dirname(__FILE__) . '/mysql5_diff_sequences.php';
-require_once dirname(__FILE__) . '/mysql5_diff_tables.php';
-require_once dirname(__FILE__) . '/mysql5_diff_triggers.php';
-require_once dirname(__FILE__) . '/mysql5_diff_types.php';
-require_once dirname(__FILE__) . '/mysql5_diff_views.php';
-
 class mysql5_diff extends sql99_diff {
 
   /**
