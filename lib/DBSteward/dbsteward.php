@@ -372,33 +372,25 @@ Database definition extraction utilities
       dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
       exit(1);
     }
-    
-    
-    ///// determine sql_format before getting into SQL functional modes
-    $sql_format = dbsteward::get_sql_format();
-    if ( ! class_alias($sql_format, 'sql_format_class') ) {
-      throw new exception("Failed to alias $sql_format as sql_format_class");
-    }
-
 
 
     ///// --[new|old]xml option(s) specificity - generate database DDL DML DCL
     if ( isset($options['xml']) && count($options['xml']) > 0 ) {
       if (isset($options['pgdataxml'])) {
         $pgdataxml = $options['pgdataxml'];
-        sql_format_class::build($options['xml'], $pgdataxml);
+        format::build($options['xml'], $pgdataxml);
       }
       else {
-        sql_format_class::build($options['xml']);
+        format::build($options['xml']);
       }
     }
     else if ( isset($options['newxml']) && count($options['newxml']) > 0 ) {
       if (isset($options['pgdataxml'])) {
         $pgdataxml = $options['pgdataxml'];
-        sql_format_class::build_upgrade($options['oldxml'], $options['newxml'], $pgdataxml);
+        format::build_upgrade($options['oldxml'], $options['newxml'], $pgdataxml);
       }
       else {
-        sql_format_class::build_upgrade($options['oldxml'], $options['newxml']);
+        format::build_upgrade($options['oldxml'], $options['newxml']);
       }
     }
     
@@ -420,7 +412,7 @@ Database definition extraction utilities
         throw new exception("dbschemadump error: outputfile not specified");
       }
 
-      $output = sql_format_class::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
+      $output = format::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
       
       dbsteward::console_line(1, "Saving extracted database schema to " . $output_file);
       if (!file_put_contents($output_file, $output)) {
@@ -441,7 +433,7 @@ Database definition extraction utilities
         throw new exception("dbdatadiff error: dbuser not specified");
       }
 
-      $output = sql_format_class::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdatadiff']);
+      $output = format::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdatadiff']);
       if (!file_put_contents($output_file, $output)) {
         throw new exception("Failed to save extracted database schema to " . $output_file);
       }
@@ -455,7 +447,7 @@ Database definition extraction utilities
         dbsteward::console_line(0, "sql diff error: you must specify an outputfile for this mode");
         exit(1);
       }
-      sql_format_class::sql_diff($options["oldsql"], $options["newsql"], $output_file);
+      format::sql_diff($options["oldsql"], $options["newsql"], $output_file);
       exit(0);
     }
 
