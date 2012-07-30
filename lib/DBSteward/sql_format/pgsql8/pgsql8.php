@@ -7,23 +7,6 @@
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
- 
-require_once dirname(__FILE__) . '/../sql99/sql99.php';
-
-require_once dirname(__FILE__) . '/pgsql8_db.php';
-require_once dirname(__FILE__) . '/slony1_slonik.php';
-require_once dirname(__FILE__) . '/pgsql8_permission.php';
-require_once dirname(__FILE__) . '/pgsql8_column.php';
-require_once dirname(__FILE__) . '/pgsql8_function.php';
-require_once dirname(__FILE__) . '/pgsql8_index.php';
-require_once dirname(__FILE__) . '/pgsql8_language.php';
-require_once dirname(__FILE__) . '/pgsql8_schema.php';
-require_once dirname(__FILE__) . '/pgsql8_sequence.php';
-require_once dirname(__FILE__) . '/pgsql8_table.php';
-require_once dirname(__FILE__) . '/pgsql8_trigger.php';
-require_once dirname(__FILE__) . '/pgsql8_type.php';
-require_once dirname(__FILE__) . '/pgsql8_view.php';
-require_once dirname(__FILE__) . '/pgsql8_diff.php';
 
 class pgsql8 extends sql99 {
 
