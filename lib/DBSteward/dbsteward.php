@@ -12,10 +12,13 @@
 
 error_reporting(E_ALL);
 
+define('SQLFORMAT_DIR', __DIR__ . '/sql_format');
+
 require_once dirname(__FILE__) . '/dbx.php';
 require_once dirname(__FILE__) . '/xml_parser.php';
 require_once dirname(__FILE__) . '/sql_parser.php';
 require_once dirname(__FILE__) . '/output_file_segmenter.php';
+require_once dirname(__FILE__) . '/active_sql_format_autoloader.php';
 
 class dbsteward {
 
@@ -36,6 +39,7 @@ class dbsteward {
    */
   public function set_sql_format($format) {
     if ( dbsteward::sql_format_exists($format) ) {
+      active_sql_format_autoloader::init($format);
       dbsteward::$sql_format= $format;
     }
     else {
