@@ -49,6 +49,7 @@ class sql99_constraint {
       $foreign['column']['type'] = $nested_fkey['column']['type'];
     }
 
+    // @TODO: Generalize pgsql8::index_name
     $foreign['name'] = pgsql8::index_name($node_table['name'], $column['name'], 'fkey');
     $foreign['references'] = static::get_foreign_key_reference_sql($foreign);
 
@@ -191,6 +192,51 @@ class sql99_constraint {
       }
     }
     return $constraints;
+  }
+
+  public function equals($constraint_a, $constraint_b) {
+    if ( strcasecmp($constraint_a['name'], $constraint_b['name']) != 0 ) {
+      return false;
+    }
+    $a_type = null;
+    $b_type = null;
+    if ( isset($constraint_a['type']) ) {
+      $a_type = (string)$constraint_a['type'];
+    }
+    if ( isset($constraint_b['type']) ) {
+      $b_type = (string)$constraint_b['type'];
+    }
+    if ( strcasecmp($a_type, $b_type) != 0 ) {
+      return false;
+    }
+
+    $a_foreign_on_delete = null;
+    $b_foreign_on_delete = null;
+    if ( isset($constraint_a['foreignOnDelete']) ) {
+      $a_foreign_on_delete = $constraint_a['foreignOnDelete'];
+    }
+    if ( isset($constraint_b['foreignOnDelete']) ) {
+      $b_foreign_on_delete = $constraint_b['foreignOnDelete'];
+    }
+    if ( strcasecmp($a_foreign_on_delete, $b_foreign_on_delete) != 0 ) {
+      return false;
+    }
+
+    $a_foreign_on_update = null;
+    $b_foreign_on_update = null;
+    if ( isset($constraint_a['foreignOnUpdate']) ) {
+      $a_foreign_on_update = $constraint_a['foreignOnUpdate'];
+    }
+    if ( isset($constraint_b['foreignOnUpdate']) ) {
+      $b_foreign_on_update = $constraint_b['foreignOnUpdate'];
+    }
+    if ( strcasecmp($a_foreign_on_update, $b_foreign_on_update) != 0 ) {
+      return false;
+    }
+
+    $equals = strcasecmp($constraint_a['definition'], $constraint_b['definition']) == 0;
+
+    return $equals;
   }
 
   /**
