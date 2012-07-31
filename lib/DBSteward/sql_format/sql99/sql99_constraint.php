@@ -56,7 +56,29 @@ class sql99_constraint {
   }
 
   public static function get_foreign_key_reference_sql($foreign) {
-    return sql99::get_fully_qualified_table_name($foreign['schema']['name'], $foreign['table']['name']) . ' (' . sql99::get_quoted_column_name($foreign['column']) . ')';
+    return format::get_fully_qualified_table_name($foreign['schema']['name'], $foreign['table']['name']) . ' (' . format::get_quoted_column_name($foreign['column']['name']) . ')';
+  }
+  
+  /**
+   * @NOTE: because this gets the defintion from the composite list returned by get_table_constraints
+   * the constraint is not returned by reference as it is not modifiable like other get functions in this class
+   * when saving changes to constraints, need to lookup the child where they would come from explicitly
+   */
+  public static function get_table_constraint($db_doc, $node_schema, $node_table, $name) {
+    $constraints = self::get_table_constraints($db_doc, $node_schema, $node_table, 'all');
+    $return_constraint = NULL;
+    foreach ($constraints AS $constraint) {
+      if (strcasecmp($constraint['name'], $name) == 0) {
+        if ($return_constraint == NULL) {
+          $return_constraint = $constraint;
+        }
+        else {
+          var_dump($constraints);
+          throw new exception("more than one table " . $node_schema['name'] . '.' . $node_table['name'] . " constraint called " . $name . " found");
+        }
+      }
+    }
+    return $return_constraint;
   }
 
   /**
@@ -190,8 +212,8 @@ class sql99_constraint {
     }
   }
 
-  public static function get_primary_key_definition($node_table, $column_quote_fn='sql99::get_quoted_column_name') {
-    return '(' . implode(', ', array_map($column_quote_fn, static::primary_key_split($node_table['primaryKey']))) . ')';
+  public static function get_primary_key_definition($node_table) {
+    return '(' . implode(', ', array_map('format::get_quoted_column_name', static::primary_key_split($node_table['primaryKey']))) . ')';
   }
 
   /**

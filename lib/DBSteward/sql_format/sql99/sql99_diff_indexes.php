@@ -34,17 +34,17 @@ class sql99_diff_indexes {
   public static function diff_indexes_table($ofs, $old_schema, $old_table, $new_schema, $new_table) {
     // Drop indexes that do not exist in new schema or are modified
     foreach(static::get_drop_indexes($old_schema, $old_table, $new_schema, $new_table) as $index) {
-      $ofs->write(static::get_index_drop_sql($new_schema, $new_table, $index)."\n");
+      $ofs->write(format_index::get_drop_sql($new_schema, $new_table, $index)."\n");
     }
 
     // Add new indexes
     if ($old_schema == null) {
       foreach(dbx::get_table_indexes($new_schema, $new_table) as $index) {
-        $ofs->write(static::get_index_create_sql($new_schema, $new_table, $index)."\n");
+        $ofs->write(format_index::get_creation_sql($new_schema, $new_table, $index)."\n");
       }
     } else {
       foreach(static::get_new_indexes($old_schema, $old_table, $new_schema, $new_table) as $index) {
-        $ofs->write(static::get_index_create_sql($new_schema, $new_table, $index)."\n");
+        $ofs->write(format_index::get_creation_sql($new_schema, $new_table, $index)."\n");
       }
     }
   }
@@ -66,10 +66,10 @@ class sql99_diff_indexes {
     if (($new_table != null) && ($old_table != null)) {
       foreach(dbx::get_table_indexes($old_schema, $old_table) as $index) {
         $old_index = dbx::get_table_index($new_schema, $new_table, $index['name']);
-        if ( !sql99_table::contains_index($new_schema, $new_table, $index['name']) ) {
+        if ( !format_table::contains_index($new_schema, $new_table, $index['name']) ) {
             $list[] = $index;
         }
-        else if ( !sql99_index::equals($old_index, $index) ) {
+        else if ( !format_index::equals($old_index, $index) ) {
           $list[] = $index;
         }
       }
@@ -97,10 +97,10 @@ class sql99_diff_indexes {
       } else {
         foreach(dbx::get_table_indexes($new_schema, $new_table) as $index) {
           $old_index = dbx::get_table_index($old_schema, $old_table, $index['name']);
-          if ( !sql99_table::contains_index($old_schema, $old_table, $index['name']) ) {
+          if ( !format_table::contains_index($old_schema, $old_table, $index['name']) ) {
             $list[] = $index;
           }
-          else if ( !sql99_index::equals($old_index, $index) ) {
+          else if ( !format_index::equals($old_index, $index) ) {
             $list[] = $index;
           }
         }
@@ -108,13 +108,5 @@ class sql99_diff_indexes {
     }
 
     return $list;
-  }
-
-  protected static function get_index_drop_sql($schema, $table, $index) {
-    throw new Exception('Must be overridden by specific sql_format driver');
-  }
-
-  protected static function get_index_create_sql($schema, $table, $index) {
-    throw new Exception('Must be overridden by specific sql_format driver');
   }
 }

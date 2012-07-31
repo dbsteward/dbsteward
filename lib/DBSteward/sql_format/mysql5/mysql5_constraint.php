@@ -17,14 +17,6 @@ class mysql5_constraint extends sql99_constraint {
     return "PRIMARY";
   }
 
-  public static function get_primary_key_definition($node_table) {
-    return parent::get_primary_key_definition($node_table, 'mysql5::get_quoted_column_name');
-  }
-
-  public static function get_foreign_key_reference_sql($foreign) {
-    return mysql5::get_fully_qualified_table_name($foreign['schema']['name'], $foreign['table']['name']) . ' (' . mysql5::get_quoted_column_name($foreign['column']['name']) . ')';
-  }
-
   /**
    * create SQL To create the constraint passed in the $constraint array
    *

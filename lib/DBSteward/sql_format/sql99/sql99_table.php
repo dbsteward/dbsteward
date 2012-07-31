@@ -38,7 +38,7 @@ class sql99_table {
    * @return boolean   true if table contains given constraint $name otherwise false
    */
   public static function contains_constraint($db_doc, $node_schema, $node_table, $name) {
-    return dbx::get_table_constraint($db_doc, $node_schema, $node_table, $name) != null;
+    return format_constraint::get_table_constraint($db_doc, $node_schema, $node_table, $name) != null;
   }
 
   /**
