@@ -137,10 +137,9 @@
 <!ATTLIST sequence inc CDATA #IMPLIED>
 <!ATTLIST sequence cycle (true|false) #IMPLIED>
 
-<!ELEMENT function (functionParameter*, functionDefinition, grant*)>
+<!ELEMENT function (functionParameter*, functionDefinition+, grant*)>
 <!ATTLIST function name CDATA #REQUIRED>
 <!ATTLIST function owner CDATA #REQUIRED>
-<!ATTLIST function language CDATA #REQUIRED>
 <!ATTLIST function returns CDATA #REQUIRED>
 <!ATTLIST function description CDATA #IMPLIED>
 <!ATTLIST function procedure (true) #IMPLIED>
@@ -152,6 +151,8 @@
 <!ATTLIST functionParameter name CDATA #IMPLIED>
 <!ATTLIST functionParameter type CDATA #REQUIRED>
 <!ELEMENT functionDefinition (#PCDATA)>
+<!ATTLIST functionDefinition language CDATA #REQUIRED>
+<!ATTLIST functionDefinition sqlFormat CDATA #REQUIRED>
 
 <!ELEMENT sql (#PCDATA)>
 <!ATTLIST sql author CDATA #REQUIRED>

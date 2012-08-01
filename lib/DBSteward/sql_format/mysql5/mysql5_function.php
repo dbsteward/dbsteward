@@ -8,10 +8,11 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once __DIR__ . '/mysql5.php';
-require_once __DIR__ . '/../sql99/sql99_function.php';
-
 class mysql5_function extends sql99_function {
+  public static function supported_language($language) {
+    return strcasecmp($language, 'sql') == 0;
+  }
+
   public static function get_creation_sql($node_schema, $node_function) {
     $name = mysql5::get_quoted_function_name($node_function['name']);
 
@@ -53,12 +54,18 @@ class mysql5_function extends sql99_function {
       $sql .= "SQL SECURITY DEFINER\n";
     }
 
-    $sql .= trim($node_function->functionDefinition) . '$_$';
+    $sql .= trim(static::get_definition($node_function)) . '$_$';
     $sql .= "\nDELIMITER ;";
     return $sql;
   }
 
   public static function get_drop_sql($node_schema, $node_function) {
+    if ( ! static::has_definition($node_function) ) {
+      $note = "Not dropping function '{$node_function['name']}' - no definitions for mysql5";
+      dbsteward::console_line(1, $note);
+      return "-- $note\n";
+    }
     return "DROP FUNCTION IF EXISTS " . mysql5::get_quoted_function_name($node_function['name']) . ";";
   }
+
 }

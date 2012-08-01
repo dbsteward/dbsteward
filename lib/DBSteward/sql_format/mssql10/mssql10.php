@@ -113,7 +113,7 @@ class mssql10 {
     // function definitions
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->function AS $function) {
-        if (dbsteward::supported_function_language($function)) {
+        if (mssql10_function::has_definition($function)) {
           $ofs->write(mssql10_function::get_creation_sql($schema, $function));
         }
       }

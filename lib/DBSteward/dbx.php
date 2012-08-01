@@ -425,7 +425,7 @@ class dbx {
     // filter out versions of functon in languages that are not relevant to the current format being processed
     $filtered_nodes = array();
     foreach ($nodes as $node) {
-      if (dbsteward::supported_function_language($node)) {
+      if (format_function::has_definition($node)) {
         $filtered_nodes[] = $node;
       }
     }
@@ -468,7 +468,7 @@ class dbx {
     // filter out versions of functon in languages that are not relevant to the current format being processed
     $filtered_nodes = array();
     foreach ($nodes as $node) {
-      if (dbsteward::supported_function_language($node)) {
+      if (format_function::has_definition($node)) {
         $filtered_nodes[] = $node;
       }
     }

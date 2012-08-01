@@ -143,9 +143,9 @@ class xml_parser {
 
       $tag_name = $child->getName();
 
-      // functions are uniquely identified by their name and language parameters
       if (strcasecmp('function', $tag_name) == 0) {
-        $nodes = $base->xpath($tag_name . "[@name='" . $child['name'] . "' and @language='" . $child['language'] . "']");
+        $nodes = $base->xpath($tag_name . "[@name='" . $child['name'] . "']");
+
         // doesn't exist
         if (count($nodes) == 0) {
           $node = $base->addChild($tag_name, dbsteward::string_cast($child));
@@ -176,6 +176,16 @@ class xml_parser {
                 // continue 2 to go to next node in $nodes
                 continue 2;
               }
+            }
+
+            // check to make sure there aren't duplicate sqlFormats
+            $f = function ($n) { return strtolower($n['sqlFormat']); };
+            $base_formats = array_map($f, $base_node->xpath("functionDefinition"));
+            $overlay_formats = array_map($f, $child->xpath("functionDefinition"));
+
+            // if there isn't a functionDefinition with the same sqlFormat
+            if ( count(array_intersect($base_formats, $overlay_formats)) == 0 ) {
+              continue;
             }
 
             // made it through the whole parameter list without breaking out

@@ -44,10 +44,10 @@ class typeDiffTest extends dbstewardUnitTestBase {
   </database>
   <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
   <schema name="dbsteward" owner="ROLE_OWNER">
-    <function name="db_config_parameter" returns="text" language="plpgsql" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
+    <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
       <functionParameter name="config_parameter" type="text"/>
       <functionParameter name="config_value" type="text"/>
-      <functionDefinition>
+      <functionDefinition language="plpgsql" sqlFormat="pgsql8">
         DECLARE
           q text;
           name text;
@@ -140,10 +140,10 @@ XML;
   </database>
   <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
   <schema name="dbsteward" owner="ROLE_OWNER">
-    <function name="db_config_parameter" returns="text" language="plpgsql" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
+    <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
       <functionParameter name="config_parameter" type="text"/>
       <functionParameter name="config_value" type="text"/>
-      <functionDefinition>
+      <functionDefinition language="plpgsql" sqlFormat="pgsql8">
         DECLARE
           q text;
           name text;

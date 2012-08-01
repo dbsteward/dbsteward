@@ -113,9 +113,9 @@
       <grant operation="ALL" role="ROLE_APPLICATION"/>
     </table>
 
-    <function name="destroy_session" owner="ROLE_OWNER" language="sql" returns="VOID" description="Deletes session data from the database">
+    <function name="destroy_session" owner="ROLE_OWNER" returns="VOID" description="Deletes session data from the database">
       <functionParameter type="character varying"/>
-      <functionDefinition>
+      <functionDefinition language="sql" sqlFormat="pgsql8">
         DELETE FROM session_information WHERE session_id=$1;
       </functionDefinition>
       <grant operation="USAGE,SELECT" role="ROLE_APPLICATION"/>

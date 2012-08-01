@@ -42,29 +42,29 @@ class duplicateFunctionTest extends dbstewardUnitTestBase {
       <column name="othertable_detail" type="text" null="false"/>
       <grant role="ROLE_APPLICATION" operation="SELECT"/>
     </table>
-    <function name="lpad" returns="text" language="sql" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for PGSQL">
+    <function name="lpad" returns="text" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for PGSQL">
       <functionParameter type="text"/>
       <functionParameter type="int"/>
       <functionParameter type="text"/>
-      <functionDefinition>
+      <functionDefinition language="sql" sqlFormat="pgsql8">
         SELECT LPAD($1, $2, $3);
       </functionDefinition>
       <grant role="PUBLIC" operation="EXECUTE"/>
     </function>
-    <function name="lpad" returns="text" language="sql" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for PGSQL">
+    <function name="lpad" returns="text" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for PGSQL">
       <functionParameter type="text"/>
       <functionParameter type="int"/>
       <functionParameter type="text"/>
-      <functionDefinition>
+      <functionDefinition language="sql" sqlFormat="pgsql8">
         SELECT LPAD($1, $2, $3);
       </functionDefinition>
       <grant role="PUBLIC" operation="EXECUTE"/>
     </function>
-    <function name="lpad" returns="varchar(MAX)" language="tsql" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MSSQL">
+    <function name="lpad" returns="varchar(MAX)" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MSSQL">
       <functionParameter name="base_str" type="varchar(MAX)"/>
       <functionParameter name="str_len" type="int"/>
       <functionParameter name="pad_str" type="varchar(MAX)"/>
-      <functionDefinition>
+      <functionDefinition language="tsql" sqlFormat="mssql10">
         BEGIN
           DECLARE @base_str_len int,
                   @pad_len int,
@@ -85,11 +85,11 @@ class duplicateFunctionTest extends dbstewardUnitTestBase {
       <grant role="ROLE_APPLICATION" operation="EXECUTE"/>
       <grant role="PUBLIC" operation="EXECUTE"/>
     </function>
-    <function name="lpad" returns="varchar(MAX)" language="tsql" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MSSQL">
+    <function name="lpad" returns="varchar(MAX)"  owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MSSQL">
       <functionParameter name="base_str" type="varchar(MAX)"/>
       <functionParameter name="str_len" type="int"/>
       <functionParameter name="pad_str" type="varchar(MAX)"/>
-      <functionDefinition>
+      <functionDefinition language="tsql" sqlFormat="mssql10">
         BEGIN
           DECLARE @base_str_len int,
                   @pad_len int,
@@ -139,20 +139,20 @@ XML;
       <column name="othertable_detail" type="text" null="false"/>
       <grant role="ROLE_APPLICATION" operation="SELECT"/>
     </table>
-    <function name="lpad" returns="text" language="sql" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for PGSQL">
+    <function name="lpad" returns="text" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for PGSQL">
       <functionParameter type="text"/>
       <functionParameter type="int"/>
       <functionParameter type="text"/>
-      <functionDefinition>
+      <functionDefinition language="sql" sqlFormat="pgsql8">
         SELECT LPAD($1, $2, $3);
       </functionDefinition>
       <grant role="PUBLIC" operation="EXECUTE"/>
     </function>
-    <function name="lpad" returns="text" language="sql" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for PGSQL -- whitespace altered to make function diff upgrade happen, only in section definition">
+    <function name="lpad" returns="text" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for PGSQL -- whitespace altered to make function diff upgrade happen, only in section definition">
       <functionParameter type="text"/>
       <functionParameter type="int"/>
       <functionParameter type="text"/>
-      <functionDefinition>
+      <functionDefinition language="sql" sqlFormat="pgsql8">
         SELECT LPAD(
           $1,
           $2,
@@ -161,11 +161,11 @@ XML;
       </functionDefinition>
       <grant role="PUBLIC" operation="EXECUTE"/>
     </function>
-    <function name="lpad" returns="varchar(MAX)" language="tsql" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MSSQL">
+    <function name="lpad" returns="varchar(MAX)" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MSSQL">
       <functionParameter name="base_str" type="varchar(MAX)"/>
       <functionParameter name="str_len" type="int"/>
       <functionParameter name="pad_str" type="varchar(MAX)"/>
-      <functionDefinition>
+      <functionDefinition language="tsql" sqlFormat="mssql10">
         BEGIN
           DECLARE @base_str_len int,
                   @pad_len int,
@@ -190,11 +190,11 @@ XML;
       <grant role="ROLE_APPLICATION" operation="EXECUTE"/>
       <grant role="PUBLIC" operation="EXECUTE"/>
     </function>
-    <function name="lpad" returns="varchar(MAX)" language="tsql" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MSSQL -- whitespace altered to make function diff upgrade happen, only in section definition">
+    <function name="lpad" returns="varchar(MAX)" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MSSQL -- whitespace altered to make function diff upgrade happen, only in section definition">
       <functionParameter name="base_str" type="varchar(MAX)"/>
       <functionParameter name="str_len" type="int"/>
       <functionParameter name="pad_str" type="varchar(MAX)"/>
-      <functionDefinition>
+      <functionDefinition language="tsql" sqlFormat="mssql10">
         BEGIN
           DECLARE @base_str_len int,
                   @pad_len int,

@@ -25,11 +25,11 @@ class Mysql5FunctionSQLTest extends PHPUnit_Framework_TestCase {
   public function testSupported() {
     $xml = <<<XML
 <schema name="test" owner="NOBODY">
-  <function name="test_fn" returns="text" language="sql">
+  <function name="test_fn" returns="text">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
     <functionParameter name="c" type="date"/>
-    <functionDefinition>
+    <functionDefinition language="sql" sqlFormat="mysql5">
       RETURN 'xyz';
     </functionDefinition>
   </function>
@@ -37,17 +37,26 @@ class Mysql5FunctionSQLTest extends PHPUnit_Framework_TestCase {
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $this->assertTrue(dbsteward::supported_function_language($schema->function));
+    $this->assertTrue(mysql5_function::supported_language('sql'));
+    $this->assertFalse(mysql5_function::supported_language('tsql'));
+    $this->assertTrue(mysql5_function::has_definition($schema->function));
+
+    $schema->function->functionDefinition['language'] = 'tsql';
+    $this->assertFalse(mysql5_function::has_definition($schema->function));
+
+    $schema->function->functionDefinition['language'] = 'sql';
+    $schema->function->functionDefinition['sqlFormat'] = 'pgsql8';
+    $this->assertFalse(mysql5_function::has_definition($schema->function));
   }
 
   public function testSimple() {
     $xml = <<<XML
 <schema name="test" owner="NOBODY">
-  <function name="test_fn" returns="text" language="sql">
+  <function name="test_fn" returns="text">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
     <functionParameter name="c" type="date"/>
-    <functionDefinition>
+    <functionDefinition language="sql" sqlFormat="mysql5">
       RETURN 'xyz';
     </functionDefinition>
   </function>
@@ -75,11 +84,11 @@ SQL;
   public function testCachePolicy() {
     $xml = <<<XML
 <schema name="test" owner="NOBODY">
-  <function name="test_fn" returns="text" language="sql" cachePolicy="IMMUTABLE">
+  <function name="test_fn" returns="text" cachePolicy="IMMUTABLE">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
     <functionParameter name="c" type="date"/>
-    <functionDefinition>
+    <functionDefinition language="sql" sqlFormat="mysql5">
       RETURN 'xyz';
     </functionDefinition>
   </function>
@@ -143,8 +152,8 @@ SQL;
   public function testOwner() {
     $xml = <<<XML
 <schema name="test" owner="NOBODY">
-  <function name="test_fn" returns="text" language="sql" owner="SOMEBODY">
-    <functionDefinition>
+  <function name="test_fn" returns="text" owner="SOMEBODY">
+    <functionDefinition language="sql" sqlFormat="mysql5">
       RETURN 'xyz';
     </functionDefinition>
   </function>
@@ -172,11 +181,11 @@ SQL;
   public function testDefiner() {
     $xml = <<<XML
 <schema name="test" owner="NOBODY">
-  <function name="test_fn" returns="text" language="sql" securityDefiner="true">
+  <function name="test_fn" returns="text" securityDefiner="true">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
     <functionParameter name="c" type="date"/>
-    <functionDefinition>
+    <functionDefinition language="sql" sqlFormat="mysql5">
       RETURN 'xyz';
     </functionDefinition>
   </function>
@@ -204,11 +213,11 @@ SQL;
   public function testDrop() {
     $xml = <<<XML
 <schema name="test" owner="NOBODY">
-  <function name="test_fn" returns="text" language="sql" securityDefiner="true">
+  <function name="test_fn" returns="text" securityDefiner="true">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
     <functionParameter name="c" type="date"/>
-    <functionDefinition>
+    <functionDefinition language="sql" sqlFormat="mysql5">
       RETURN 'xyz';
     </functionDefinition>
   </function>
@@ -221,5 +230,63 @@ XML;
     $actual = trim(mysql5_function::get_drop_sql($schema, $schema->function));
 
     $this->assertEquals($expected, $actual);
+  }
+
+  public function testOtherFormats() {
+    $xml = <<<XML
+<schema name="test" owner="NOBODY">
+  <function name="test_fn" returns="text" securityDefiner="true">
+    <functionParameter name="a" type="text"/>
+    <functionParameter name="b" type="int"/>
+    <functionParameter name="c" type="date"/>
+    <functionDefinition language="tsql" sqlFormat="mssql10">
+      RETURN 'xyz';
+    </functionDefinition>
+  </function>
+</schema>
+XML;
+
+    $schema = new SimpleXMLElement($xml);
+
+    $this->assertEquals("-- Not dropping function 'test_fn' - no definitions for mysql5",trim(mysql5_function::get_drop_sql($schema, $schema->function)));
+
+    try {
+      mysql5_function::get_creation_sql($schema, $schema->function);
+    }
+    catch ( Exception $ex ) {
+      if ( stripos($ex->getMessage(), 'no function definitions in a known language for format mysql5') === false ) {
+        throw $ex;
+      }
+
+      $xml = <<<XML
+<schema name="test" owner="NOBODY">
+  <function name="test_fn" returns="text" securityDefiner="true">
+    <functionParameter name="a" type="text"/>
+    <functionParameter name="b" type="int"/>
+    <functionParameter name="c" type="date"/>
+    <functionDefinition language="sql" sqlFormat="mysql5">
+      RETURN 'xyz';
+    </functionDefinition>
+    <functionDefinition language="sql" sqlFormat="mysql5">
+      RETURN 'xyz';
+    </functionDefinition>
+  </function>
+</schema>
+XML;
+
+      $schema = new SimpleXMLElement($xml);
+
+      try {
+        mysql5_function::get_creation_sql($schema, $schema->function);
+      }
+      catch ( Exception $ex ) {
+        if ( stripos($ex->getMessage(), 'duplicate function definition for mysql5/sql') === false ) {
+          throw $ex;
+        }
+        return;
+      }
+      $this->fail('Expected exception for duplicate function definitions');
+    }
+    $this->fail('Expected exception for no function definitions');
   }
 }

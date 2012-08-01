@@ -92,7 +92,7 @@ class mysql5 {
 
     // function definitions
     foreach ($schema->function AS $function) {
-      if (dbsteward::supported_function_language($function)) {
+      if (mysql5_function::has_definition($function)) {
         $ofs->write(mysql5_function::get_creation_sql($schema, $function));
       }
     }
