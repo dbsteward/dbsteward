@@ -49,8 +49,7 @@ class sql99_constraint {
       $foreign['column']['type'] = $nested_fkey['column']['type'];
     }
 
-    // @TODO: Generalize pgsql8::index_name
-    $foreign['name'] = pgsql8::index_name($node_table['name'], $column['name'], 'fkey');
+    $foreign['name'] = format_index::index_name($node_table['name'], $column['name'], 'fkey');
     $foreign['references'] = static::get_foreign_key_reference_sql($foreign);
 
     return $foreign;
@@ -254,7 +253,7 @@ class sql99_constraint {
       return dbsteward::string_cast($node_table['primaryKeyName']);
     }
     else {
-      return pgsql8::index_name($node_table['name'], NULL, 'pkey');
+      return format_index::index_name($node_table['name'], NULL, 'pkey');
     }
   }
 
