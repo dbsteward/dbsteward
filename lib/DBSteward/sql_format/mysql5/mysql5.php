@@ -34,13 +34,13 @@ class mysql5 {
       $build_file_ofs->write("-- full database definition file generated " . date('r') . "\n");
     }
 
-    $build_file_ofs->write("BEGIN TRANSACTION;\n\n");
+    $build_file_ofs->write("START TRANSACTION;\n\n");
 
     dbsteward::console_line(1, "Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
     // database-specific implementation refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
-    dbx::set_default_schema($db_doc, 'dbo');
+    dbx::set_default_schema($db_doc, 'public');
 
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
@@ -60,89 +60,81 @@ class mysql5 {
   }
 
   public function build_schema($db_doc, $ofs, $table_depends) {
-    // explicitly create the ROLE_APPLICATION
-    // webservers connect as a user granted this role
-    $ofs->write("CREATE ROLE " . $db_doc->database->role->application . ";\n");
-
     // language defintions
-    if (dbsteward::$create_languages) {
-      foreach ($db_doc->language AS $language) {
-        //@TODO: implement mysql5_language ? no relevant conversion exists see other TODO's stating this
-      }
+    if ( dbsteward::$create_languages ) {
+      dbsteward::console_line(1, "Ignoring language declarations because MySQL does not support languages other than 'sql'");
     }
 
     // schema creation
-    foreach ($db_doc->schema AS $schema) {
-      $ofs->write(mysql5_schema::get_creation_sql($schema));
-
-      // schema grants
-      if (isset($schema->grant)) {
-        foreach ($schema->grant AS $grant) {
-          $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
-        }
+    $schema = NULL;
+    foreach ( $db_doc->schema AS $sch ) {
+      if ( strcasecmp($sch['name'], 'public') != 0 ) {
+        dbsteward::console_line(1, "Ignoring schema '{$sch['name']}' because the MySQL driver currently doesn't support schemas other than public");
+        continue;
       }
+
+      $schema = $sch;
     }
+
+    if ( $schema === NULL ) {
+      throw new exception("No public schema was found.");
+    }
+
+    // schema grants @TODO: come back to this
+    // foreach ( $schema->grant AS $grant ) {
+    //   $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
+    // }
     
     // types: enumerated list, etc
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->type AS $type) {
-        $ofs->write(mysql5_type::get_creation_sql($schema, $type) . "\n");
-      }
+    foreach ( $schema->type AS $type ) {
+      $ofs->write(mysql5_type::get_creation_sql($schema, $type) . "\n");
     }
 
     // function definitions
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->function AS $function) {
-        if (dbsteward::supported_function_language($function)) {
-          $ofs->write(mysql5_function::get_creation_sql($schema, $function));
-        }
+    foreach ($schema->function AS $function) {
+      if (dbsteward::supported_function_language($function)) {
+        $ofs->write(mysql5_function::get_creation_sql($schema, $function));
       }
     }
     $ofs->write("\n");
 
-    // table structure creation
-    foreach ($db_doc->schema AS $schema) {
+    // create defined tables
+    foreach ( $schema->table AS $table ) {
+      // table definition
+      $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n");
 
-      // create defined tables
-      foreach ($schema->table AS $table) {
-        // table definition
-        $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n");
+      // table indexes
+      mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
 
-        // table indexes
-        mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
+      // table grants @TODO: come back to this
+      // if (isset($table->grant)) {
+      //   foreach ($table->grant AS $grant) {
+      //     $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
+      //   }
+      // }
 
-        // table grants
-        if (isset($table->grant)) {
-          foreach ($table->grant AS $grant) {
-            $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
-          }
-        }
-
-        $ofs->write("\n");
-      }
-
-      // sequences contained in the schema
-      if (isset($schema->sequence)) {
-        foreach ($schema->sequence AS $sequence) {
-          $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequence));
-
-          // sequence permission grants
-          if (isset($sequence->grant)) {
-            foreach ($sequence->grant AS $grant) {
-              $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
-            }
-          }
-        }
-      }
+      $ofs->write("\n");
     }
+
+    // sequences contained in the schema
+    foreach ($schema->sequence AS $sequence) {
+      $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequence));
+
+      // sequence permission grants @TODO: Come back to this
+      // if (isset($sequence->grant)) {
+      //   foreach ($sequence->grant AS $grant) {
+      //     $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
+      //   }
+      // }
+    }
+
     $ofs->write("\n");
 
     // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->table AS $table) {
-        mysql5_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
-      }
+    foreach ($schema->table AS $table) {
+      mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
     }
+    
     $ofs->write("\n");
 
     // foreign key references
@@ -154,33 +146,29 @@ class mysql5 {
         // don't do anything with this table, it is a magic internal DBSteward value
         continue;
       }
-      mysql5_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'constraint', FALSE);
+      mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'constraint', FALSE);
     }
     $ofs->write("\n");
 
     // trigger definitions
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->trigger AS $trigger) {
-        // only do triggers set to the current sql format
-        if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
-          $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger));
-        }
+    foreach ($schema->trigger AS $trigger) {
+      // only do triggers set to the current sql format
+      if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
+        $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger));
       }
     }
     $ofs->write("\n");
 
     // view creation
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->view AS $view) {
-        $ofs->write(mysql5_view::get_creation_sql($schema, $view));
+    foreach ($schema->view AS $view) {
+      $ofs->write(mysql5_view::get_creation_sql($schema, $view));
 
-        // view permission grants
-        if (isset($view->grant)) {
-          foreach ($view->grant AS $grant) {
-            $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
-          }
-        }
-      }
+      // view permission grants @TODO: come back to this
+      // if (isset($view->grant)) {
+      //   foreach ($view->grant AS $grant) {
+      //     $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
+      //   }
+      // }
     }
     $ofs->write("\n");
 
