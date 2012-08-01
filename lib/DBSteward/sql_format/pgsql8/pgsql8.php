@@ -508,18 +508,17 @@ class pgsql8 extends sql99 {
         $pk = $nodes[0];
         $pk_column_type = strtolower(dbsteward::string_cast($pk['type']));
         if (preg_match(pgsql8::PATTERN_TABLE_LINKED_TYPES, $pk_column_type) > 0) {
-          $sql = "SELECT setval(pg_get_serial_sequence('" . $schema['name'] . "." . $table['name'] . "', '" . $pk_column . "'), MAX($pk_column), TRUE) FROM " . $schema['name'] . "." . $table['name'] . ";\n";
-          $ofs->write($sql);
+          // only set the pkey to MAX() if serialStart is not defined
+          if ( !isset($pk['serialStart']) ) {
+            $sql = "SELECT setval(pg_get_serial_sequence('" . $schema['name'] . "." . $table['name'] . "', '" . $pk_column . "'), MAX($pk_column), TRUE) FROM " . $schema['name'] . "." . $table['name'] . ";\n";
+            $ofs->write($sql);
+          }
         }
       }
 
       // check if primary key is a column of this table - FS#17481
       $primary_keys_exist = self::primary_key_split($table['primaryKey']);
       foreach ($table->column AS $column) {
-        // set serial columns with serialStart defined to that value
-        // this is done in build_data to ensure the serial start is (re)set post row insertion
-        pgsql8_column::get_serial_start_dml($ofs, $schema, $table, $column);
-
         // while looping through columns, check to see if primary key is one of them
         // if it is remove it from the primary keys array, at the end of loop array should be empty
         $key = array_search($column['name'], $primary_keys_exist);
