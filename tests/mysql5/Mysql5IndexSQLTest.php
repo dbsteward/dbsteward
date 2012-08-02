@@ -60,7 +60,7 @@ XML;
     $xml = <<<XML
 <schema name="public" owner="NOBODY">
   <table name="test" owner="NOBODY">
-    <column name="a"/>
+    <column name="a" unique="true"/>
     <index name="unique_idx" unique="true">
       <indexDimension>a</indexDimension>
     </index>
@@ -72,11 +72,17 @@ XML;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $unique = trim(preg_replace('/--.*/','',mysql5_index::get_creation_sql($schema, $schema->table, $schema->table->index[0])));
-    $not_unique = trim(preg_replace('/--.*/','',mysql5_index::get_creation_sql($schema, $schema->table, $schema->table->index[1])));
+    $expected = array(
+      "CREATE UNIQUE INDEX `unique_idx` ON `test` (`a`);",
+      "CREATE INDEX `not_unique_idx` ON `test` (`a`);",
+      "CREATE UNIQUE INDEX `test_a_key` ON `test` (`a`) USING BTREE;"
+    );
 
-    $this->assertEquals("CREATE UNIQUE INDEX `unique_idx` ON `test` (`a`);", $unique);
-    $this->assertEquals("CREATE INDEX `not_unique_idx` ON `test` (`a`);", $not_unique);
+    $actual = array_map(function ($index) use (&$schema) {
+      return trim(preg_replace('/--.*/','',mysql5_index::get_creation_sql($schema, $schema->table, $index)));
+    }, dbx::get_table_indexes($schema, $schema->table));
+
+    $this->assertEquals($expected, $actual);
   }
 
   public function testCompound() {
