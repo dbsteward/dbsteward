@@ -186,4 +186,30 @@ XML;
     $this->assertEquals($expected_s1, mysql5_column::get_full_definition($schema, $schema, $schema->table, $schema->table->column[0], true));
     $this->assertEquals($expected_s2, mysql5_column::get_full_definition($schema, $schema, $schema->table, $schema->table->column[1], true));
   }
+
+  public function testForeignKeys() {
+    $xml = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="test_id">
+    <column name="test_id" type="serial"/>
+    <column name="other_id"
+      foreignSchema="public"
+      foreignTable="other"
+      foreignColumn="other_id"
+      foreignKeyName="other_id_fk"
+      foreignOnDelete="NO_ACTION"
+      foreignOnUpdate="cascade"/>
+  </table>
+  <table name="other" primaryKey="other_id">
+    <column name="other_id" type="serial"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+    $dbs = new SimpleXMLElement($xml);
+
+    $expected = "`other_id` int";
+    $this->assertEquals($expected, mysql5_column::get_full_definition($dbs, $dbs->schema, $dbs->schema->table, $dbs->schema->table->column[1], true));
+  }
 }

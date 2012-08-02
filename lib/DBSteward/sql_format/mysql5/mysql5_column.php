@@ -20,15 +20,16 @@ class mysql5_column extends sql99_column {
    */
   public static function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true) {
     $flags = '';
+    $column_type = '';
 
     // if the column is a foreign key, solve for the foreignKey type
     if ( isset($node_column['foreignTable']) ) {
-      dbx::foreign_key($db_doc, $node_schema, $node_table, $node_column, $foreign);
+      $foreign = format_constraint::foreign_key_lookup($db_doc, $node_schema, $node_table, $node_column);
       $foreign_type = $foreign['column']['type'];
-      if ( strcasecmp('serial', $column_type) == 0 ) {
+      if ( strcasecmp('serial', $foreign_type) == 0 ) {
         $column_type = 'int';
       }
-      else if ( strcasecmp('bigserial', $column_type) == 0 ) {
+      else if ( strcasecmp('bigserial', $foreign_type) == 0 ) {
         $column_type = 'bigint';
       }
       else {
@@ -82,5 +83,3 @@ class mysql5_column extends sql99_column {
   }
 
 }
-
-?>
