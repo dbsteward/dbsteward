@@ -8,9 +8,6 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once __DIR__ . '/mysql5.php';
-require_once __DIR__ . '/../sql99/sql99_constraint.php';
-
 class mysql5_constraint extends sql99_constraint {
 
   public static function get_primary_key_name($node_table) {

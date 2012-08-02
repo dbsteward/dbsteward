@@ -8,9 +8,6 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once __DIR__ . '/mysql5.php';
-require_once __DIR__ . '/../sql99/sql99_type.php';
-
 class mysql5_type extends sql99_type {
   private static $enums = array();
 
@@ -56,5 +53,3 @@ class mysql5_type extends sql99_type {
     self::$enums = array();
   }
 }
-
-?>

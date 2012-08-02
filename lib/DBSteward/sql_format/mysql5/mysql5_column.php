@@ -8,10 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once __DIR__ . '/mysql5.php';
-require_once __DIR__ . '/../sql99/sql99_column.php';
-require_once __DIR__ . '/mysql5_type.php';
-
 class mysql5_column extends sql99_column {
   
   /**
