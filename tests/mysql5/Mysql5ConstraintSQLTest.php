@@ -183,6 +183,107 @@ XML;
     $this->assertEquals("ALTER TABLE `test` DROP FOREIGN KEY `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
   }
 
+  public function testCyclicForeignKeys() {
+    $xml = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="test_self" primaryKey="test_id">
+    <column name="test_id" type="serial"/>
+    <column name="other_id"
+      foreignSchema="public"
+      foreignTable="test_self"
+      foreignColumn="test_id"
+      foreignKeyName="test_id_fk"
+      foreignOnDelete="NO_ACTION"
+      foreignOnUpdate="cascade"/>
+  </table>
+  <table name="test1" primaryKey="test_id">
+    <column name="test_id" type="serial"/>
+    <column name="other_id"
+      foreignSchema="public"
+      foreignTable="test2"
+      foreignColumn="other_id"
+      foreignKeyName="test_id_fk"
+      foreignOnDelete="NO_ACTION"
+      foreignOnUpdate="cascade"/>
+  </table>
+  <table name="test2" primaryKey="test_id">
+    <column name="test_id" type="serial"/>
+    <column name="other_id"
+      foreignSchema="public"
+      foreignTable="test3"
+      foreignColumn="other_id"
+      foreignKeyName="test_id_fk"
+      foreignOnDelete="NO_ACTION"
+      foreignOnUpdate="cascade"/>
+  </table>
+  <table name="test3" primaryKey="test_id">
+    <column name="test_id" type="serial"/>
+    <column name="other_id"
+      foreignSchema="public"
+      foreignTable="test1"
+      foreignColumn="other_id"
+      foreignKeyName="test_id_fk"
+      foreignOnDelete="NO_ACTION"
+      foreignOnUpdate="cascade"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+    $dbs = new SimpleXMLElement($xml);
+
+    $constraints = mysql5_constraint::get_table_constraints($dbs, $dbs->schema, $dbs->schema->table[0]);
+
+    // should contain primary key and foreign key
+    $this->assertEquals(2, count($constraints));
+    $this->assertEquals('PRIMARY KEY', $constraints[0]['type']);
+    $this->assertEquals('FOREIGN KEY', $constraints[1]['type']);
+
+    $fk = $constraints[1];
+
+    $expected = array(
+      'name' => 'test_id_fk',
+      'schema_name' => 'public',
+      'table_name' => 'test_self',
+      'type' => 'FOREIGN KEY',
+      'definition' => '(`other_id`) REFERENCES `test_self` (`test_id`)',
+      'foreign_key_data' => array(
+        'schema' => $dbs->schema,
+        'table' => $dbs->schema->table[0],
+        'column' => $dbs->schema->table[0]->column,
+        'references' => '`test_self` (`test_id`)',
+        'name' => 'test_id_fk'
+      ),
+      'foreignOnDelete' => 'NO_ACTION',
+      'foreignOnUpdate' => 'CASCADE'
+    );
+    $this->assertEquals($expected, $fk);
+
+    $expected = "ALTER TABLE `test_self` ADD FOREIGN KEY `test_id_fk` (`other_id`) REFERENCES `test_self` (`test_id`) ON DELETE NO ACTION ON UPDATE CASCADE;";
+    $actual = mysql5_constraint::get_constraint_sql($fk);
+    $this->assertEquals($expected, $actual);
+
+    $this->assertEquals("ALTER TABLE `test_self` DROP FOREIGN KEY `test_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
+
+    $dbs->schema->table[0]->column[1]['foreignColumn'] = 'other_id';
+
+    try {
+      // FK pointing to self
+      mysql5_constraint::get_table_constraints($dbs, $dbs->schema, $dbs->schema->table[0]);
+    }
+    catch ( Exception $ex ) {
+      $this->assertEquals("Foreign key cyclic dependency detected! Local column `test_self`.`other_id` pointing to foreign column `test_self`.`other_id`", $ex->getMessage());
+    }
+
+    try {
+      // FK 1 pointing to FK 2 pointing to FK 3 pointing to FK 1
+      mysql5_constraint::get_table_constraints($dbs, $dbs->schema, $dbs->schema->table[1]);
+    }
+    catch ( Exception $ex ) {
+      $this->assertEquals("Foreign key cyclic dependency detected! Local column `test1`.`other_id` pointing to foreign column `test2`.`other_id`", $ex->getMessage());
+    }
+  }
+
   public function testChecks() {
     $xml = <<<XML
 <dbsteward>

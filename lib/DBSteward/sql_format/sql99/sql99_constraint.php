@@ -10,7 +10,7 @@
 
 class sql99_constraint {
 
-  public static function foreign_key_lookup($db_doc, $node_schema, $node_table, $column) {
+  public static function foreign_key_lookup($db_doc, $node_schema, $node_table, $column, $visited = array()) {
     $foreign = array();
     $foreign['schema'] = dbx::get_schema($db_doc, $column['foreignSchema']);
     if ( ! $foreign['schema'] ) {
@@ -40,10 +40,16 @@ class sql99_constraint {
     // column type is missing, and resolved foreign is also a foreign key?
     // recurse and find the cascading foreign key
     if ( empty($foreign['column']['type']) && !empty($foreign['column']['foreignColumn']) ) {
-      //dbsteward::console_line(4, "Seeking nested foreign key for " . dbsteward::string_cast($foreign['schema']['name']) . "." . dbsteward::string_cast($foreign['table']['name']) . "." . $foreign['column']['name']);
-      $nested_fkey = array();
-      self::foreign_key($db_doc, $foreign['schema'], $foreign['table'], $foreign['column'], $nested_fkey);
-      //var_dump($nested_fkey['column']);
+      // make sure we don't visit the same column twice
+      $foreign_col = format::get_fully_qualified_column_name($foreign['schema']['name'], $foreign['table']['name'], $foreign['column']['name']);
+      if ( in_array($foreign_col, $visited) ) {
+        $local = format::get_fully_qualified_column_name($node_schema['name'], $node_table['name'], $column['name']);
+        throw new Exception("Foreign key cyclic dependency detected! Local column $local pointing to foreign column $foreign_col");
+      }
+      $visited[] = $foreign_col;
+
+      $nested_fkey = self::foreign_key_lookup($db_doc, $foreign['schema'], $foreign['table'], $foreign['column'], $visited);
+
       // make a separate clone of the column element because we are specifying the type only for foreign key type referencing
       $foreign['column'] = new SimpleXMLElement($foreign['column']->asXML());
       $foreign['column']['type'] = $nested_fkey['column']['type'];
