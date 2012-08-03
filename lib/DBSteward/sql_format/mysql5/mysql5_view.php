@@ -16,14 +16,10 @@ class mysql5_view extends sql99_view {
 
     $view_name = mysql5::get_fully_qualified_table_name($node_schema['name'],$node_view['name']);
 
-    $ddl = "CREATE OR REPLACE VIEW $view_name\n";
-    $ddl.= "  AS " . static::get_view_query($node_view) . ";\n";
+    $definer = (strlen($node_view['owner']) > 0) ? $node_view['owner'] : 'CURRENT_USER';
 
-    // @TODO: Implement as DEFINER = ____
-    // if ( isset($node_view['owner']) && strlen($node_view['owner']) > 0 ) {
-    //   $ddl .= "ALTER VIEW " . $view_name
-    //     . "\n\tOWNER TO " . xml_parser::role_enum(dbsteward::$new_database, $node_view['owner']) . ";\n";
-    // }
+    $ddl = "CREATE OR REPLACE DEFINER = $definer SECURITY DEFINER VIEW $view_name\n";
+    $ddl.= "  AS " . static::get_view_query($node_view) . ";\n";
 
     return $ddl;
   }

@@ -34,7 +34,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-CREATE OR REPLACE VIEW `view`
+CREATE OR REPLACE DEFINER = SOMEBODY SECURITY DEFINER VIEW `view`
   AS SELECT * FROM sometable;
 SQL;
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql($schema, $schema->view)));
@@ -57,7 +57,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-CREATE OR REPLACE VIEW `view`
+CREATE OR REPLACE DEFINER = SOMEBODY SECURITY DEFINER VIEW `view`
   AS SELECT * FROM mysql5table;
 SQL;
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql($schema, $schema->view)));
