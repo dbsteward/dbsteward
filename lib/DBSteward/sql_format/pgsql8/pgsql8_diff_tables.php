@@ -662,7 +662,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     $sql = '';
     if ( $old_table == null ) {
       if ( !$delete_mode ) {
-        // old table doesnt exist, just pump inserts
+        // old table doesnt exist, pump inserts
         $new_table_rows = dbx::get_table_rows($new_table);
         if ( $new_table_rows ) {
           $new_table_row_columns = preg_split("/[\,\s]+/", $new_table_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
@@ -676,6 +676,10 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             }
           }
         }
+        
+        // set serial columns with serialStart defined to that value
+        // this is done in get_data_sql to ensure the serial start is set post row insertion
+        $sql .= pgsql8_column::get_serial_start_dml($new_schema, $new_table);
       }
     }
     else {

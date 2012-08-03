@@ -236,10 +236,8 @@ class mssql10 {
       $ofs->write(mssql10_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
 
       // unlike the pg class, we cannot just set identity column start values here with setval without inserting a row
-      // see xml_parser::mssql10_type_convert() where the serialStart value is accounted for
       // check if primary key is a column of this table - FS#17481
       $primary_keys_exist = self::primary_key_split($table['primaryKey']);
-      // set serial columns with serialStart defined to that value
       foreach ($table->column AS $column) {
         // while looping through columns, check to see if primary key is one of them
         // if it is remove it from the primary keys array, at the end of loop array should be empty
