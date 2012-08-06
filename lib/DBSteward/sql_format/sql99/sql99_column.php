@@ -51,6 +51,35 @@ class sql99_column {
     return $default_value;
   }
 
+  public static function is_serial($type) {
+    return preg_match('/^serial[48]?|bigserial$/i', $type) > 0;
+  }
+  
+  /**
+   * Return DML to set serial start value if defined
+   *
+   * @param  $schema
+   * @param  $table
+   * @param  $column
+   *
+   * @return string DML to set serial starts
+   */
+  public static function get_serial_start_dml($schema, $table, $column = NULL) {
+    $sql = NULL;
+    if ( $column === NULL ) {
+      foreach ($table->column AS $column) {
+        $sql .= static::get_serial_start_dml($schema, $table, $column);
+      }
+    }
+    else if (isset($column['serialStart'])) {
+      if (static::is_serial($column['type'])) {
+        $sql = "-- serialStart " . $column['serialStart'] . " specified for " . $schema['name'] . "." . $table['name'] . "." . $column['name'] . "\n";
+        $sql .= static::get_serial_start_setval_sql($schema, $table, $column) . "\n";
+      }
+      else {
+        throw new exception("Unknown column type " . $column['type'] . " for column " . $column['serialStart'] . " specified for " . $schema['name'] . "." . $table['name'] . "." . $column['name'] . " is specifying serialStart");
+      }
+    }
+    return $sql;
+  }
 }
-
-?>

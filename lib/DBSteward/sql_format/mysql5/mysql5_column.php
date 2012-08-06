@@ -82,4 +82,13 @@ class mysql5_column extends sql99_column {
     return $definition;
   }
 
+  public static function get_serial_sequence_name($schema, $table, $column) {
+    return '__'.$schema['name'].'_'.$table['name'].'_'.$column['name'].'_serial_seq';
+  }
+
+  public static function get_serial_start_setval_sql($schema, $table, $column) {
+    $sequence_name = static::get_serial_sequence_name($schema, $table, $column);
+    return "SELECT setval('$sequence_name', {$column['serialStart']}, TRUE);";
+  }
+
 }
