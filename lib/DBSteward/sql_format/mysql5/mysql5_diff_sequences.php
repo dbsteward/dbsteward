@@ -35,7 +35,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
       // there *are* sequences in the new schema, so if there didn't used to be,
       // we need to add the shim in before adding any sequences
       if ( empty($old_sequences) ) {
-        $ofs->write(mysql5_sequence::get_shim_creation_sql());
+        $ofs->write(mysql5_sequence::get_shim_creation_sql()."\n\n");
         $ofs->write(mysql5_sequence::get_creation_sql($new_schema, $new_sequences)."\n");
       }
       else {
