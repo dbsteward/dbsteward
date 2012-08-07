@@ -47,8 +47,7 @@ class mysql5_trigger extends sql99_trigger {
     }
     $table_name = mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']);
 
-    // need to change the delimiter because mysql is dumb about statement terminators in compound statements
-    $ddl = "DELIMITER \$_\$\n";
+    $ddl = "";
     $single = count($events) == 1;
     foreach ( $events as $event ) {
       if ( ! ($event = self::validate_event($event)) ) {
@@ -56,15 +55,17 @@ class mysql5_trigger extends sql99_trigger {
       }
 
       $trigger_name = mysql5::get_quoted_object_name($node_trigger['name'] . ($single? '' : "_$event"));
+      $trigger_fn = trim($node_trigger['function']);
+      if ( substr($trigger_fn, -1) != ';' ) {
+        $trigger_fn .= ';';
+      }
 
       $ddl .= <<<SQL
 CREATE TRIGGER $trigger_name $when $event ON $table_name
-FOR EACH ROW {$node_trigger['function']}
-\$_\$
+FOR EACH ROW $trigger_fn
 
 SQL;
     }
-    $ddl .= "DELIMITER ;\n";
 
     return $notes.$ddl;
   }

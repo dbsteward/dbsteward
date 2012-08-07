@@ -33,11 +33,8 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-DELIMITER \$_\$
 CREATE TRIGGER `trigger` BEFORE INSERT ON `table`
-FOR EACH ROW EXECUTE xyz
-\$_\$
-DELIMITER ;
+FOR EACH ROW EXECUTE xyz;
 SQL;
 
     $actual = trim(mysql5_trigger::get_creation_sql($schema, $schema->trigger));
@@ -58,17 +55,12 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-DELIMITER \$_\$
 CREATE TRIGGER `trigger_INSERT` BEFORE INSERT ON `table`
-FOR EACH ROW EXECUTE xyz
-\$_\$
+FOR EACH ROW EXECUTE xyz;
 CREATE TRIGGER `trigger_UPDATE` BEFORE UPDATE ON `table`
-FOR EACH ROW EXECUTE xyz
-\$_\$
+FOR EACH ROW EXECUTE xyz;
 CREATE TRIGGER `trigger_DELETE` BEFORE DELETE ON `table`
-FOR EACH ROW EXECUTE xyz
-\$_\$
-DELIMITER ;
+FOR EACH ROW EXECUTE xyz;
 SQL;
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_trigger::get_creation_sql($schema, $schema->trigger)));
     $this->assertEquals($expected, $actual);
