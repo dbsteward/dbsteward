@@ -794,6 +794,26 @@ class dbx {
     $old_table = dbx::get_table($old_schema, $new_table['oldName']);
     return $old_table;
   }
+
+  public static function to_array($thing, $key=false) {
+    if (!($thing instanceof SimpleXMLElement)) {
+      $thing = (array)$thing;
+    }
+
+    $arr = array();
+    if ($key === false) {
+      foreach ($thing as $child) {
+        $arr[] = $child;
+      }
+    }
+    else {
+      foreach ($thing as $child) {
+        $arr[] = $child[$key];
+      }
+    }
+
+    return $arr;
+  }
   
 }
 
