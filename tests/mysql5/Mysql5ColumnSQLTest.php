@@ -180,8 +180,8 @@ XML;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $expected_s1 = "`s1` int AUTO_INCREMENT";
-    $expected_s2 = "`s2` bigint NOT NULL AUTO_INCREMENT";
+    $expected_s1 = "`s1` int NOT NULL";
+    $expected_s2 = "`s2` bigint NOT NULL";
 
     $this->assertEquals($expected_s1, mysql5_column::get_full_definition($schema, $schema, $schema->table, $schema->table->column[0], true));
     $this->assertEquals($expected_s2, mysql5_column::get_full_definition($schema, $schema, $schema->table, $schema->table->column[1], true));

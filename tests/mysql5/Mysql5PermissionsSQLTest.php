@@ -23,4 +23,6 @@ class Mysql5PermissionsSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_object_names = TRUE;
   }
 
+  public function testShutUpPhpUnit() {}
+
 }

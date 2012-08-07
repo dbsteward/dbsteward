@@ -8,10 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once __DIR__ . '/mysql5.php';
-require_once __DIR__ . '/../sql99/sql99_table.php';
-require_once __DIR__ . '/mysql5_column.php';
-
 class mysql5_table extends sql99_table {
 
   /**
@@ -41,6 +37,7 @@ class mysql5_table extends sql99_table {
     $cols = array();
     foreach ( $node_table->column as $column ) {
       $cols[] = mysql5_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, false);
+
     }
     $sql .= "  " . implode(",\n  ", $cols) . "\n)";
 
@@ -51,8 +48,8 @@ class mysql5_table extends sql99_table {
     $sql .= ";";
 
     // @TODO: implement column statistics
+    // @TODO: table ownership with $node_table['owner'] ?
 
-    // @IMPLMENT table ownership with $node_table['owner'] ?
     return $sql;
   }
 
@@ -78,6 +75,46 @@ class mysql5_table extends sql99_table {
     return "DROP TABLE " . mysql5::get_quoted_table_name($node_table['name']) . ";";
   }
 
-}
+  public static function get_sequences_needed($schema, $table) {
+    $sequences = array();
+    $owner = $table['owner'];
 
-?>
+    foreach ( $table->column as $column ) {
+      // we need a sequence for each serial column
+      if ( mysql5_column::is_serial($column['type']) ) {
+        $sequence_name = mysql5_column::get_serial_sequence_name($schema, $table, $column);
+        $sequences[] = new SimpleXMLElement("<sequence name=\"$sequence_name\" owner=\"$owner\"/>");
+      }
+    }
+
+    return $sequences;
+  }
+
+  public static function get_triggers_needed($schema, $table) {
+    $triggers = array();
+
+    foreach ( $table->column as $column ) {
+      // we need a trigger for each serial column
+      if ( mysql5_column::is_serial($column['type']) ) {
+        $trigger_name = mysql5_column::get_serial_trigger_name($schema, $table, $column);
+        $sequence_name = mysql5_column::get_serial_sequence_name($schema, $table, $column);
+        $table_name = $table['name'];
+        $column_name = mysql5::get_quoted_column_name($column['name']);
+        $xml = <<<XML
+<trigger name="$trigger_name"
+         sqlFormat="mysql5"
+         when="BEFORE"
+         event="INSERT"
+         table="$table_name"
+         forEach="ROW"
+         function="SET NEW.$column_name = COALESCE(NEW.$column_name, nextval('$sequence_name'));"/>
+XML;
+        $triggers[] = new SimpleXMLElement($xml);
+      }
+
+      // @TODO: convert DEFAULT expressions (not constants) to triggers for pgsql compatibility
+    }
+
+    return $triggers;
+  }
+}

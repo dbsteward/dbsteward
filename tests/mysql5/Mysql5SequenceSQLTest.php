@@ -153,17 +153,12 @@ VALUES
   ('seq2', 3, DEFAULT, 10, 2, TRUE);
 SQL;
 
-    $seqs = array();
-    foreach ( $schema->sequence as $seq ) {
-      $seqs[] = $seq;
-    }
-
-    $actual = trim(preg_replace('/--.*/','',mysql5_sequence::get_creation_sql($schema, $seqs)));
+    $actual = trim(preg_replace('/--.*/','',mysql5_sequence::get_creation_sql($schema, $schema->sequence)));
 
     $this->assertEquals($expected, $actual);
 
     $expected_drop = "DELETE FROM `__sequences` WHERE `name` IN ('seq0', 'seq1', 'seq2');";
-    $actual_drop = trim(preg_replace('/--.*/','',mysql5_sequence::get_drop_sql($schema, $seqs)));
+    $actual_drop = trim(preg_replace('/--.*/','',mysql5_sequence::get_drop_sql($schema, $schema->sequence)));
 
     $this->assertEquals($expected_drop, $actual_drop);
   }

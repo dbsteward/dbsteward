@@ -8,8 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once __DIR__ . '/mysql5.php';
-
 class mysql5_sequence {
 
   const TABLE_NAME = '__sequences';
@@ -29,11 +27,7 @@ class mysql5_sequence {
   public function get_creation_sql($node_schema, $node_sequences) {
     $values = array();
 
-    if ( ! is_array($node_sequences) ) {
-      $node_sequences = array($node_sequences);
-    }
-
-    foreach ( $node_sequences as $node_sequence ) {
+    foreach ( dbx::to_array($node_sequences) as $node_sequence ) {
       if ( isset($node_sequence['start']) && !is_numeric((string)$node_sequence['start']) ) {
         throw new exception("start value is not numeric: " . $node_sequence['start']);
       }
@@ -287,11 +281,7 @@ SQL;
     $table_name = mysql5::get_quoted_table_name(self::TABLE_NAME);
     $seq_col = mysql5::get_quoted_column_name(self::SEQ_COL);
 
-    if ( ! is_array($node_sequences) ) {
-      $node_sequences = array($node_sequences);
-    }
-
-    $sequence_names = "('" . implode("', '", array_map(function($n) { return $n['name']; }, $node_sequences)) . "')";
+    $sequence_names = "('" . implode("', '", array_map(function($n) { return $n['name']; }, dbx::to_array($node_sequences))) . "')";
     return "DELETE FROM $table_name WHERE $seq_col IN $sequence_names;";
   }
 }

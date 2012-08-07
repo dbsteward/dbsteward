@@ -20,6 +20,7 @@ class Mysql5TableSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
+    dbsteward::$quote_object_names = TRUE;
   }
 
   public function testSimple() {
@@ -44,6 +45,28 @@ SQL;
     $this->assertEquals($expected, mysql5_table::get_creation_sql($schema, $schema->table));
 
     $this->assertEquals("DROP TABLE `test`;", mysql5_table::get_drop_sql($schema, $schema->table));
+  }
+
+  public function testSerials() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="id" owner="NOBODY" description="test desc'ription">
+    <column name="id" type="serial"/>
+    <column name="other" type="bigserial"/>
+  </table>
+</schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+
+    $expected = <<<SQL
+CREATE TABLE `test` (
+  `id` int NOT NULL,
+  `other` bigint NOT NULL
+)
+COMMENT 'test desc\'ription';
+SQL;
+
+    $this->assertEquals($expected, mysql5_table::get_creation_sql($schema, $schema->table));
   }
 
   public function testInheritance() {

@@ -8,10 +8,6 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once __DIR__ . '/mysql5.php';
-require_once __DIR__ . '/mysql5_sequence.php';
-require_once __DIR__ . '/../sql99/sql99_diff_sequences.php';
-
 class mysql5_diff_sequences extends sql99_diff_sequences {
   public static function diff_sequences($ofs, $old_schema, $new_schema) {
     $new_sequences = dbx::get_sequences($new_schema);

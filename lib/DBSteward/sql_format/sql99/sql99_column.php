@@ -54,6 +54,18 @@ class sql99_column {
   public static function is_serial($type) {
     return preg_match('/^serial[48]?|bigserial$/i', $type) > 0;
   }
+
+  public static function convert_serial($type) {
+    if ( strcasecmp($type, 'serial') == 0 || strcasecmp($type, 'serial4') == 0 ) {
+      return 'int';
+    }
+    elseif ( strcasecmp($type, 'bigserial') == 0 || strcasecmp($type, 'serial8') == 0 ) {
+      return 'bigint';
+    }
+    else {
+      throw new Exception("Attempted to convert non-serial type to integral type");
+    }
+  }
   
   /**
    * Return DML to set serial start value if defined
