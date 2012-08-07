@@ -712,11 +712,11 @@ class dbx {
    * @return string
    */
   public static function primary_key_expression($node_schema, $node_table, $data_row_columns, $data_row) {
-    $primary_keys = pgsql8_table::primary_key_columns($node_table);
+    $primary_keys = format_table::primary_key_columns($node_table);
     $primary_key_index = xml_parser::data_row_overlay_primary_key_index($primary_keys, $data_row_columns, $data_row_columns);
 
     // figure out the primary key expression
-    $primary_key_expression = '';
+    $primary_key_expression = array();
     for ($i = 0; $i < count($primary_keys); $i++) {
       if (!isset($primary_key_index[$primary_keys[$i]])) {
         throw new exception("primar key column named " . $primary_keys[$i] . " not found in primary_key_index");
@@ -729,28 +729,15 @@ class dbx {
       // get the type of the column, chasing foreign keys if necessary
       $node_column = dbx::get_table_column($node_table, $primary_column_name);
 
-      if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
-        $value_type = pgsql8_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
-        $primary_key_expression .= pgsql8::get_quoted_column_name($primary_column_name) . ' = ' . pgsql8::value_escape($value_type, $data_row->col[$column_index]);
-      }
-      else if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
-        $value_type = mssql10_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
-        $primary_key_expression .= mssql10::get_quoted_column_name($primary_column_name) . ' = ' . mssql10::value_escape($value_type, $data_row->col[$column_index]);
-      }
-      else {
-        throw new exception("Unknown sql_format: " . dbsteward::get_sql_format());
-      }
-
-      if ($i < count($primary_keys) - 1) {
-        $primary_key_expression .= ' AND ';
-      }
+      $value_type = format_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
+      $primary_key_expression[] = format::get_quoted_column_name($primary_column_name) . ' = ' . format::value_escape($value_type, $data_row->col[$column_index]);
     }
 
-    if (strlen($primary_key_expression) == 0) {
+    if (count($primary_key_expression) == 0) {
       throw new exception($node_table['name'] . " primary_key_expression is empty, determinate loop failed");
     }
 
-    return $primary_key_expression;
+    return implode(' AND ', $primary_key_expression);
   }
 
   public static function build_staged_sql($db_doc, $ofs, $stage) {
