@@ -906,7 +906,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
       }
       else {
         ////dbsteward::console_line(7, 'column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default value ' . $column_node['default']);
-        $default_value = pgsql8::strip_string_quoting($default_value);
+        $default_value = format::strip_string_quoting($default_value);
       }
     }
 
