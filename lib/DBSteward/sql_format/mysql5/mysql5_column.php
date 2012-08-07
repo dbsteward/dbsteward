@@ -65,7 +65,10 @@ class mysql5_column extends sql99_column {
     if ( isset($node_column['foreignTable']) ) {
       $foreign = format_constraint::foreign_key_lookup($db_doc, $node_schema, $node_table, $node_column);
       $foreign_type = $foreign['column']['type'];
-      return static::convert_serial($foreign_type);
+      if ( static::is_serial($foreign_type) ) {
+        return static::convert_serial($foreign_type);
+      }
+      return $foreign_type;
     }
 
     // if there's no type specified, that's a problem
@@ -74,7 +77,7 @@ class mysql5_column extends sql99_column {
     }
 
     // if the column type matches a registered enum type, inject the enum declaration here
-    if ( $values = mysql5_type::get_enum_values($node_column['type'].'') ) {
+    if ( $values = mysql5_type::get_enum_values((string)$node_column['type']) ) {
      return mysql5_type::get_enum_type_declaration($values);
     }
 
