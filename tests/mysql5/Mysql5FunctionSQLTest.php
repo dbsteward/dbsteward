@@ -20,11 +20,23 @@ class Mysql5FunctionSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
+
+    $db_doc_xml = <<<XML
+<dbsteward>
+  <database>
+    <role>
+      <owner>the_owner</owner>
+      <customRole>SOMEBODY</customRole>
+    </role>
+  </database>
+</dbsteward>
+XML;
+    dbsteward::$new_database = new SimpleXMLElement($db_doc_xml);
   }
 
   public function testSupported() {
     $xml = <<<XML
-<schema name="test" owner="NOBODY">
+<schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
@@ -51,7 +63,7 @@ XML;
 
   public function testSimple() {
     $xml = <<<XML
-<schema name="test" owner="NOBODY">
+<schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
@@ -65,15 +77,13 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-DELIMITER \$_\$
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL
 MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
-RETURN 'xyz';\$_\$
-DELIMITER ;
+RETURN 'xyz';
 SQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
@@ -83,7 +93,7 @@ SQL;
 
   public function testCachePolicy() {
     $xml = <<<XML
-<schema name="test" owner="NOBODY">
+<schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text" cachePolicy="IMMUTABLE">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
@@ -97,15 +107,13 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-DELIMITER \$_\$
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL
 NO SQL
 DETERMINISTIC
 SQL SECURITY INVOKER
-RETURN 'xyz';\$_\$
-DELIMITER ;
+RETURN 'xyz';
 SQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
@@ -115,15 +123,13 @@ SQL;
     $schema->function['cachePolicy'] = "STABLE";
 
     $expected = <<<SQL
-DELIMITER \$_\$
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL
 READS SQL DATA
 DETERMINISTIC
 SQL SECURITY INVOKER
-RETURN 'xyz';\$_\$
-DELIMITER ;
+RETURN 'xyz';
 SQL;
 
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
@@ -133,15 +139,13 @@ SQL;
     $schema->function['cachePolicy'] = "VOLATILE";
 
     $expected = <<<SQL
-DELIMITER \$_\$
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL
 MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
-RETURN 'xyz';\$_\$
-DELIMITER ;
+RETURN 'xyz';
 SQL;
 
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
@@ -151,7 +155,7 @@ SQL;
 
   public function testOwner() {
     $xml = <<<XML
-<schema name="test" owner="NOBODY">
+<schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text" owner="SOMEBODY">
     <functionDefinition language="sql" sqlFormat="mysql5">
       RETURN 'xyz';
@@ -162,15 +166,13 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-DELIMITER \$_\$
 CREATE DEFINER = SOMEBODY FUNCTION `test_fn` ()
 RETURNS text
 LANGUAGE SQL
 MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
-RETURN 'xyz';\$_\$
-DELIMITER ;
+RETURN 'xyz';
 SQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
@@ -180,7 +182,7 @@ SQL;
 
   public function testDefiner() {
     $xml = <<<XML
-<schema name="test" owner="NOBODY">
+<schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text" securityDefiner="true">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
@@ -194,15 +196,13 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-DELIMITER \$_\$
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL
 MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY DEFINER
-RETURN 'xyz';\$_\$
-DELIMITER ;
+RETURN 'xyz';
 SQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
@@ -212,7 +212,7 @@ SQL;
 
   public function testDrop() {
     $xml = <<<XML
-<schema name="test" owner="NOBODY">
+<schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text" securityDefiner="true">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
@@ -234,7 +234,7 @@ XML;
 
   public function testOtherFormats() {
     $xml = <<<XML
-<schema name="test" owner="NOBODY">
+<schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text" securityDefiner="true">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>
@@ -259,7 +259,7 @@ XML;
       }
 
       $xml = <<<XML
-<schema name="test" owner="NOBODY">
+<schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text" securityDefiner="true">
     <functionParameter name="a" type="text"/>
     <functionParameter name="b" type="int"/>

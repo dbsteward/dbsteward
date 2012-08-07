@@ -21,6 +21,18 @@ class Mysql5ViewSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
+    
+    $db_doc_xml = <<<XML
+<dbsteward>
+  <database>
+    <role>
+      <owner>the_owner</owner>
+      <customRole>SOMEBODY</customRole>
+    </role>
+  </database>
+</dbsteward>
+XML;
+    dbsteward::$new_database = new SimpleXMLElement($db_doc_xml);
   }
 
   public function testSimple() {

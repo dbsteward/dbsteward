@@ -16,9 +16,9 @@ class mysql5_function extends sql99_function {
   public static function get_creation_sql($node_schema, $node_function) {
     $name = mysql5::get_quoted_function_name($node_function['name']);
 
-    $definer = (strlen($node_function['owner']) > 0) ? $node_function['owner'] : 'CURRENT_USER';
+    $definer = (strlen($node_function['owner']) > 0) ? xml_parser::role_enum(dbsteward::$new_database,$node_function['owner']) : 'CURRENT_USER';
 
-    $sql = "DELIMITER \$_\$\nCREATE DEFINER = $definer FUNCTION $name (";
+    $sql = "CREATE DEFINER = $definer FUNCTION $name (";
 
     if ( isset($node_function->functionParameter) ) {
       $params = array();
@@ -54,8 +54,7 @@ class mysql5_function extends sql99_function {
       $sql .= "SQL SECURITY DEFINER\n";
     }
 
-    $sql .= trim(static::get_definition($node_function)) . '$_$';
-    $sql .= "\nDELIMITER ;";
+    $sql .= trim(static::get_definition($node_function)) . "\n";
     return $sql;
   }
 
