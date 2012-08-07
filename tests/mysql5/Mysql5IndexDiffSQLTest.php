@@ -96,7 +96,9 @@ XML;
   public function testAddNew() {
     $expected = <<<SQL
 CREATE INDEX `test_idxa` ON `test` (`a`);
+
 CREATE INDEX `test_idxb` ON `test` (`b`);
+
 CREATE INDEX `test_idxc` ON `test` (`c`);
 SQL;
     $this->common($this->xml_0, $this->xml_3, $expected);
@@ -105,6 +107,7 @@ SQL;
   public function testAddSome() {
     $expected = <<<SQL
 CREATE INDEX `test_idxb` ON `test` (`b`);
+
 CREATE INDEX `test_idxc` ON `test` (`c`);
 SQL;
     $this->common($this->xml_1, $this->xml_3, $expected);
@@ -113,7 +116,9 @@ SQL;
   public function testDropAll() {
     $expected = <<<SQL
 DROP INDEX `test_idxa` ON `test`;
+
 DROP INDEX `test_idxb` ON `test`;
+
 DROP INDEX `test_idxc` ON `test`;
 SQL;
     $this->common($this->xml_3, $this->xml_0, $expected);
@@ -122,6 +127,7 @@ SQL;
   public function testDropSome() {
     $expected = <<<SQL
 DROP INDEX `test_idxb` ON `test`;
+
 DROP INDEX `test_idxc` ON `test`;
 SQL;
     $this->common($this->xml_3, $this->xml_1, $expected);
@@ -130,6 +136,7 @@ SQL;
   public function testChangeOne() {
     $expected = <<<SQL
 DROP INDEX `test_idxa` ON `test`;
+
 CREATE UNIQUE INDEX `test_idxa` ON `test` (`a`);
 SQL;
     $this->common($this->xml_1a, $this->xml_1b, $expected);
@@ -138,8 +145,11 @@ SQL;
   public function testAddSomeAndChange() {
     $expected = <<<SQL
 DROP INDEX `test_idxa` ON `test`;
+
 CREATE INDEX `test_idxa` ON `test` (`a`);
+
 CREATE INDEX `test_idxb` ON `test` (`b`);
+
 CREATE INDEX `test_idxc` ON `test` (`c`);
 SQL;
     $this->common($this->xml_1a, $this->xml_3, $expected);
@@ -148,8 +158,11 @@ SQL;
   public function testDropSomeAndChange() {
     $expected = <<<SQL
 DROP INDEX `test_idxa` ON `test`;
+
 DROP INDEX `test_idxb` ON `test`;
+
 DROP INDEX `test_idxc` ON `test`;
+
 CREATE INDEX `test_idxa` ON `test` (`a`) USING HASH;
 SQL;
     $this->common($this->xml_3, $this->xml_1a, $expected);

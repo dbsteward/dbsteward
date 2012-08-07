@@ -77,7 +77,7 @@ class mysql5 {
     }
 
     if ( $schema === NULL ) {
-      throw new exception("No public schema was found.");
+      throw new exception("No public schema was found. MySQL must have a public schema");
     }
 
     // schema grants @TODO: come back to this
@@ -93,15 +93,22 @@ class mysql5 {
     // function definitions
     foreach ($schema->function AS $function) {
       if (mysql5_function::has_definition($function)) {
-        $ofs->write(mysql5_function::get_creation_sql($schema, $function));
+        $ofs->write(mysql5_function::get_creation_sql($schema, $function)."\n\n");
       }
     }
-    $ofs->write("\n");
+
+    $sequences = array();
+    $triggers = array();
 
     // create defined tables
     foreach ( $schema->table AS $table ) {
+
+      // get sequences and triggers needed to make this table work
+      $sequences = array_merge($sequences, mysql5_table::get_sequences_needed($schema, $table));
+      $triggers = array_merge($triggers, mysql5_table::get_triggers_needed($schema, $table));
+
       // table definition
-      $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n");
+      $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n\n");
 
       // table indexes
       mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
@@ -117,18 +124,11 @@ class mysql5 {
     }
 
     // sequences contained in the schema
-    foreach ($schema->sequence AS $sequence) {
-      $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequence));
-
-      // sequence permission grants @TODO: Come back to this
-      // if (isset($sequence->grant)) {
-      //   foreach ($sequence->grant AS $grant) {
-      //     $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
-      //   }
-      // }
+    $sequences = array_merge($sequences, dbx::to_array($schema->sequence));
+    if ( count($sequences) > 0 ) {
+      $ofs->write(mysql5_sequence::get_shim_creation_sql()."\n\n");
+      $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequences)."\n\n");
     }
-
-    $ofs->write("\n");
 
     // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
     foreach ($schema->table AS $table) {
@@ -140,28 +140,31 @@ class mysql5 {
     // foreign key references
     // use the dependency order to specify foreign keys in an order that will satisfy nested foreign keys and etc
     for ($i = 0; $i < count($table_depends); $i++) {
-      $schema = $table_depends[$i]['schema'];
+      $dep_schema = $table_depends[$i]['schema'];
       $table = $table_depends[$i]['table'];
       if ( $table['name'] === dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME ) {
         // don't do anything with this table, it is a magic internal DBSteward value
         continue;
       }
-      mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'constraint', FALSE);
-    }
-    $ofs->write("\n");
-
-    // trigger definitions
-    foreach ($schema->trigger AS $trigger) {
-      // only do triggers set to the current sql format
-      if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
-        $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger));
+      if ( strcasecmp($dep_schema['name'],'public') == 0 ) {
+        // only process tables in the public schema
+        mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $dep_schema, $table, 'constraint', FALSE);
       }
     }
     $ofs->write("\n");
 
+    // trigger definitions
+    $triggers = array_merge($triggers, dbx::to_array($schema->trigger));
+    foreach ($triggers AS $trigger) {
+      // only do triggers set to the current sql format
+      if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
+        $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger)."\n");
+      }
+    }
+
     // view creation
     foreach ($schema->view AS $view) {
-      $ofs->write(mysql5_view::get_creation_sql($schema, $view));
+      $ofs->write(mysql5_view::get_creation_sql($schema, $view)."\n");
 
       // view permission grants @TODO: come back to this
       // if (isset($view->grant)) {
@@ -170,7 +173,6 @@ class mysql5 {
       //   }
       // }
     }
-    $ofs->write("\n");
 
     // @TODO: database configurationParameter support needed ?
   }
@@ -204,7 +206,6 @@ class mysql5 {
       $ofs->write(mysql5_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
 
       // unlike the pg class, we cannot just set identity column start values here with setval without inserting a row
-      // see xml_parser::mysql5_type_convert() where the serialStart value is accounted for
       // check if primary key is a column of this table - FS#17481
       $primary_keys_exist = self::primary_key_split($table['primaryKey']);
       foreach ($table->column AS $column) {

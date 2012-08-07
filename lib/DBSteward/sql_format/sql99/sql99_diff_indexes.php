@@ -34,17 +34,17 @@ class sql99_diff_indexes {
   public static function diff_indexes_table($ofs, $old_schema, $old_table, $new_schema, $new_table) {
     // Drop indexes that do not exist in new schema or are modified
     foreach(static::get_drop_indexes($old_schema, $old_table, $new_schema, $new_table) as $index) {
-      $ofs->write(format_index::get_drop_sql($new_schema, $new_table, $index)."\n");
+      $ofs->write(format_index::get_drop_sql($new_schema, $new_table, $index)."\n\n");
     }
 
     // Add new indexes
     if ($old_schema == null) {
       foreach(dbx::get_table_indexes($new_schema, $new_table) as $index) {
-        $ofs->write(format_index::get_creation_sql($new_schema, $new_table, $index)."\n");
+        $ofs->write(format_index::get_creation_sql($new_schema, $new_table, $index)."\n\n");
       }
     } else {
       foreach(static::get_new_indexes($old_schema, $old_table, $new_schema, $new_table) as $index) {
-        $ofs->write(format_index::get_creation_sql($new_schema, $new_table, $index)."\n");
+        $ofs->write(format_index::get_creation_sql($new_schema, $new_table, $index)."\n\n");
       }
     }
   }

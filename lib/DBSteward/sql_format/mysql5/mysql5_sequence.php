@@ -213,7 +213,7 @@ BEGIN
     END IF;
 
     -- update our session-local table for currval()
-    REPLACE INTO `__sequences_currvals` (`name`, `currval`) 
+    REPLACE INTO `__sequences_currvals` (`name`, `currval`)
     VALUE (seq_name, @__sequences_lastval);
   END IF;
 
@@ -233,7 +233,7 @@ END;
 -- We only allow the 3-parameter form, because MySQL doesn't support optional or default parameters
 DROP FUNCTION IF EXISTS `setval`;
 CREATE FUNCTION `setval` (`seq_name` varchar(100), `value` bigint(20), `advance` BOOLEAN)
-RETURNS bigint(20) NOT DETERMINISTIC 
+RETURNS bigint(20) NOT DETERMINISTIC
 BEGIN
 
   -- update the sequence

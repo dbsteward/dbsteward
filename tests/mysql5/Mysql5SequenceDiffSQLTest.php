@@ -232,7 +232,7 @@ BEGIN
       WHERE `name` = seq_name;
     END IF;
 
-    REPLACE INTO `__sequences_currvals` (`name`, `currval`) 
+    REPLACE INTO `__sequences_currvals` (`name`, `currval`)
     VALUE (seq_name, @__sequences_lastval);
   END IF;
 
@@ -241,7 +241,7 @@ END;
 
 DROP FUNCTION IF EXISTS `setval`;
 CREATE FUNCTION `setval` (`seq_name` varchar(100), `value` bigint(20), `advance` BOOLEAN)
-RETURNS bigint(20) NOT DETERMINISTIC 
+RETURNS bigint(20) NOT DETERMINISTIC
 BEGIN
 
   UPDATE `__sequences`

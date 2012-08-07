@@ -19,12 +19,12 @@ class mysql5_view extends sql99_view {
     $definer = (strlen($node_view['owner']) > 0) ? xml_parser::role_enum(dbsteward::$new_database,$node_view['owner']) : 'CURRENT_USER';
 
     $ddl = "CREATE OR REPLACE DEFINER = $definer SECURITY DEFINER VIEW $view_name\n";
-    $ddl.= "  AS " . static::get_view_query($node_view) . ";\n";
+    $ddl.= "  AS " . static::get_view_query($node_view) . ";";
 
     return $ddl;
   }
 
   public static function get_drop_sql($node_schema, $node_view) {
-    return "DROP VIEW IF EXISTS " . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_view['name']) . ";\n";
+    return "DROP VIEW IF EXISTS " . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_view['name']) . ";";
   }
 }

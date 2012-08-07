@@ -54,7 +54,7 @@ class mysql5_function extends sql99_function {
       $sql .= "SQL SECURITY DEFINER\n";
     }
 
-    $sql .= trim(static::get_definition($node_function)) . "\n";
+    $sql .= trim(static::get_definition($node_function));
     return $sql;
   }
 
