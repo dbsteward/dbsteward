@@ -69,24 +69,22 @@ class mysql5_column extends sql99_column {
     }
 
     // if there's no type specified, that's a problem
-    elseif ( ! isset($node_column['type']) ) {
+    if ( ! isset($node_column['type']) ) {
       throw new Exception("column missing type -- " . $table['name'] . "." . $column['name']);
     }
 
     // if the column type matches a registered enum type, inject the enum declaration here
-    elseif ( $values = mysql5_type::get_enum_values($node_column['type'].'') ) {
+    if ( $values = mysql5_type::get_enum_values($node_column['type'].'') ) {
      return mysql5_type::get_enum_type_declaration($values);
     }
 
     // translate serials to their corresponding int types
-    elseif ( static::is_serial($node_column['type']) ) {
+    if ( static::is_serial($node_column['type']) ) {
       return static::convert_serial($node_column['type']);
     }
 
     // nothing special about this type
-    else {
-      return (string)$node_column['type'];
-    }
+    return (string)$node_column['type'];
   }
 
   public static function get_serial_sequence_name($schema, $table, $column) {
