@@ -207,17 +207,9 @@ class mysql5 {
 
       // unlike the pg class, we cannot just set identity column start values here with setval without inserting a row
       // check if primary key is a column of this table - FS#17481
-      $primary_keys_exist = self::primary_key_split($table['primaryKey']);
-      foreach ($table->column AS $column) {
-        // while looping through columns, check to see if primary key is one of them
-        // if it is remove it from the primary keys array, at the end of loop array should be empty
-        $key = array_search($column['name'], $primary_keys_exist);
-        if (is_numeric($key)) {
-          unset($primary_keys_exist[$key]);
-        }
-      }
-      // throw an error if the table is using a primaryKey column that does not actually exist
-      if (!empty($primary_keys_exist)) {
+      $primary_keys_specified = format_table::primary_key_columns($table);
+      $column_names = dbx::to_array($table->column, 'name');
+      if (count(array_diff($primary_keys_specified, $column_names)) != 0) {
         throw new exception('Primary key ' . $table['primaryKey'] . ' does not exist as a column in table ' . $table['name']);
       }
     }
@@ -266,44 +258,44 @@ class mysql5 {
    */
   public static function column_value_default($node_schema, $node_table, $data_column_name, $node_col) {
     // if marked, make it null or default, depending on column options
-    if (isset($node_col['null'])
-      && strcasecmp('true', $node_col['null']) == 0) {
-      $value = 'NULL';
+    if ( isset($node_col['null']) && strcasecmp('true', $node_col['null']) == 0 ) {
+      return 'NULL';
     }
+
     // columns that specify empty attribute are made empty strings
-    else if (isset($node_col['empty']) && strcasecmp('true', $node_col['empty']) == 0) {
-      // string escape prefix needed? -- see pgsql8::E_ESCAPE usage
-      $value = "''";
+    if ( isset($node_col['empty']) && strcasecmp('true', $node_col['empty']) == 0 ) {
+      return "''";
     }
+
     // don't esacape columns marked literal sql values
-    else if (isset($node_col['sql']) && strcasecmp($node_col['sql'], 'true') == 0) {
-      $value = '(' . $node_col . ')';
+    if ( isset($node_col['sql']) && strcasecmp($node_col['sql'], 'true') == 0 ) {
+      return '(' . $node_col . ')';
+    }
+
+    $node_column = dbx::get_table_column($node_table, $data_column_name);
+    if ( $node_column === NULL ) {
+      throw new exception("Failed to find table " . $node_table['name'] . " column " . $data_column_name . " for default value check");
+    }
+    $value_type = mysql5_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column);
+
+    // else if col is zero length, make it default, or DB NULL
+    if ( strlen($node_col) == 0 ) {
+      // is there a default defined for the column?
+      $dummy_data_column = new stdClass();
+      $column_default_value = xml_parser::column_default_value($node_table, $data_column_name, $dummy_data_column);
+      if ($column_default_value != NULL) {
+        // run default value through value_escape to allow data value conversions to happen
+        $value = mysql5::value_escape($value_type, $column_default_value);
+      }
+      // else put a NULL in the values list
+      else {
+        $value = 'NULL';
+      }
     }
     else {
-      $node_column = dbx::get_table_column($node_table, $data_column_name);
-      if ($node_column === NULL) {
-        throw new exception("Failed to find table " . $node_table['name'] . " column " . $data_column_name . " for default value check");
-      }
-      $value_type = mysql5_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
-
-      // else if col is zero length, make it default, or DB NULL
-      if (strlen($node_col) == 0) {
-        // is there a default defined for the column?
-        $dummy_data_column = new stdClass();
-        $column_default_value = xml_parser::column_default_value($node_table, $data_column_name, $dummy_data_column);
-        if ($column_default_value != NULL) {
-          // run default value through value_escape to allow data value conversions to happen
-          $value = mysql5::value_escape($value_type, $column_default_value);
-        }
-        // else put a NULL in the values list
-        else {
-          $value = 'NULL';
-        }
-      }
-      else {
-        $value = mysql5::value_escape($value_type, dbsteward::string_cast($node_col));
-      }
+      $value = mysql5::value_escape($value_type, dbsteward::string_cast($node_col));
     }
+    
     return $value;
   }
 
@@ -368,8 +360,7 @@ class mysql5 {
       }
 
       if (preg_match($PATTERN_QUOTED_TYPES, $type) > 0) {
-        //@TODO: is there a better way to do mssql string escaping?
-        $value = "'" . str_replace("'", "''", $value) . "'";
+        $value = static::quote_string_value($value);
       }
     }
     else {
@@ -385,6 +376,7 @@ class mysql5 {
     if (strlen($value) > 2 && substr($value, 0, 1) == "'" && substr($value, -1) == "'") {
       $value = substr($value, 1, -1);
       $value = str_replace("''", "'", $value);
+      $value = str_replace("\'", "'", $value);
     }
     return $value;
   }
@@ -445,6 +437,9 @@ class mysql5 {
   public static function get_fully_qualified_column_name($schema_name, $table_name, $column_name) {
     return static::get_fully_qualified_table_name($schema_name, $table_name) . '.' . static::get_quoted_column_name($column_name);
   }
-}
 
-?>
+  // @TODO: pull up and generalize
+  public static function quote_string_value($value) {
+    return "'" . str_replace("'", "\'", $value) . "'";
+  }
+}
