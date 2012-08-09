@@ -277,7 +277,7 @@ FOR EACH ROW SET NEW.`group_id` = COALESCE(NEW.`group_id`, nextval('__public_gro
 CREATE TRIGGER `a_trigger` BEFORE INSERT ON `user`
 FOR EACH ROW EXECUTE xyz;
 
-CREATE OR REPLACE DEFINER = deployment SECURITY DEFINER VIEW `a_view`
+CREATE OR REPLACE DEFINER = deployment SQL SECURITY DEFINER VIEW `a_view`
   AS SELECT * FROM user, group;
 SQL;
 

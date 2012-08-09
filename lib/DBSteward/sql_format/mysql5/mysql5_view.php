@@ -18,7 +18,7 @@ class mysql5_view extends sql99_view {
 
     $definer = (strlen($node_view['owner']) > 0) ? xml_parser::role_enum(dbsteward::$new_database,$node_view['owner']) : 'CURRENT_USER';
 
-    $ddl = "CREATE OR REPLACE DEFINER = $definer SECURITY DEFINER VIEW $view_name\n";
+    $ddl = "CREATE OR REPLACE DEFINER = $definer SQL SECURITY DEFINER VIEW $view_name\n";
     $ddl.= "  AS " . static::get_view_query($node_view) . ";";
 
     return $ddl;
