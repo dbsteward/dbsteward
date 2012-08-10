@@ -26,19 +26,30 @@ class mysql5_function extends sql99_function {
         if ( isset($param['direction']) ) {
           throw new exception("Parameter directions are not supported in MySQL functions");
         }
-        $params[] = mysql5::get_quoted_function_parameter($param['name']) . ' ' . $param['type'];
+
+        $type = $param['type'];
+        if ( $values = mysql5_type::get_enum_values($type) ) {
+          $type = mysql5_type::get_enum_type_declaration($values);
+        }
+
+        $params[] = mysql5::get_quoted_function_parameter($param['name']) . ' ' . $type;
       }
       $sql .= implode(', ', $params);
     }
 
-    $sql .= ")\nRETURNS " . $node_function['returns'] . "\nLANGUAGE SQL\n";
+    $returns = $node_function['returns'];
+    if ( $values = mysql5_type::get_enum_values($returns) ) {
+      $returns = mysql5_type::get_enum_type_declaration($values);
+    }
+
+    $sql .= ")\nRETURNS " . $returns . "\nLANGUAGE SQL\n";
 
     switch ( strtoupper($node_function['cachePolicy']) ) {
       case 'IMMUTABLE':
         $sql .= "NO SQL\nDETERMINISTIC\n";
         break;
       case 'STABLE':
-        $sql .= "READS SQL DATA\nDETERMINISTIC\n";
+        $sql .= "READS SQL DATA\nNOT DETERMINISTIC\n";
         break;
       case 'VOLATILE':
       default:
@@ -55,6 +66,11 @@ class mysql5_function extends sql99_function {
     }
 
     $sql .= trim(static::get_definition($node_function));
+
+    if (substr($sql, -1) != ';') {
+      $sql .= ';';
+    }
+
     return $sql;
   }
 

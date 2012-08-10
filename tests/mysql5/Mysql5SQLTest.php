@@ -79,7 +79,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
       <functionDefinition language="sql" sqlFormat="mysql5">
         BEGIN
           RETURN config_parameter;
-        END;
+        END
       </functionDefinition>
     </function>
 
