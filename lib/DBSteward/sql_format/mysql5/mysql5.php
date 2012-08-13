@@ -188,11 +188,10 @@ class mysql5 {
 
   public function build_data($db_doc, $ofs, $tables) {
     // use the dependency order to then write out the actual data inserts into the data sql file
-    $tables_count = count($tables);
     $limit_to_tables_count = count(dbsteward::$limit_to_tables);
-    for ($i = 0; $i < $tables_count; $i++) {
-      $schema = $tables[$i]['schema'];
-      $table = $tables[$i]['table'];
+    foreach ( $tables as $dep_table ) {
+      $schema = $dep_table['schema'];
+      $table = $dep_table['table'];
       if ( $table['name'] === dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME ) {
         // don't do anything with this table, it is a magic internal DBSteward value
         continue;
@@ -214,11 +213,37 @@ class mysql5 {
 
       $ofs->write(mysql5_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
 
+
+      $table_primary_keys = mysql5_table::primary_key_columns($table);
+      $table_column_names = dbx::to_array($table->column, 'name');
+      $node_rows =& dbx::get_table_rows($table); // the <rows> element
+      $data_column_names = preg_split("/,|\s/", $node_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
+
+      // set serial primary keys to the max value after inserts have been performed
+      // only if the PRIMARY KEY is not a multi column
+
+
+      if ( count($table_primary_keys) == 1 && in_array($table_primary_keys[0], $data_column_names) ) {
+        $pk_column_name = $table_primary_keys[0];
+        $node_pk_column = dbx::get_table_column($table, $pk_column_name);
+
+        if ( $node_pk_column == NULL ) {
+          throw new exception("Failed to find primary key column '" . $pk_column_name . "' for " . $schema['name'] . "." . $table['name']);
+        }
+
+        // only set the pkey to MAX() if the primary key column is also a serial/bigserial and if serialStart is not defined
+        if ( mysql5_column::is_serial($node_pk_column['type']) && !isset($node_pk_column['serialStart']) ) {
+          $fqtn =  mysql5::get_fully_qualified_table_name($schema['name'], $table['name']);
+          $qcol = mysql5::get_quoted_column_name($pk_column_name);
+          $setval = mysql5_sequence::get_setval_call(mysql5_column::get_serial_sequence_name($schema, $table, $node_pk_column), "MAX($qcol)", "TRUE");
+          $sql = "SELECT $setval FROM $fqtn;\n";
+          $ofs->write($sql);
+        }
+      }
+
       // unlike the pg class, we cannot just set identity column start values here with setval without inserting a row
       // check if primary key is a column of this table - FS#17481
-      $primary_keys_specified = format_table::primary_key_columns($table);
-      $column_names = dbx::to_array($table->column, 'name');
-      if (count(array_diff($primary_keys_specified, $column_names)) != 0) {
+      if (count(array_diff($table_primary_keys, $table_column_names)) != 0) {
         throw new exception('Primary key ' . $table['primaryKey'] . ' does not exist as a column in table ' . $table['name']);
       }
     }

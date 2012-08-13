@@ -103,6 +103,10 @@ VALUES
 SQL;
   }
 
+  public static function get_setval_call($seq, $value, $should_advance) {
+    return "setval('$seq',$value,$should_advance)";
+  }
+
   public static function get_shim_creation_sql() {
     $table_name = mysql5::get_quoted_table_name(self::TABLE_NAME);
     $seq_col = mysql5::get_quoted_column_name(self::SEQ_COL);

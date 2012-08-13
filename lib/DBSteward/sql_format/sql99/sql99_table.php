@@ -113,8 +113,10 @@ class sql99_table {
   }
 
   public static function primary_key_columns(&$node_table) {
-    $cols = preg_split("/[\,\s]+/", $node_table['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
-    return $cols;
+    if ( empty($node_table['primaryKey']) ) {
+      return array();
+    }
+    return preg_split("/[\,\s]+/", $node_table['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
   }
 
   /**

@@ -100,7 +100,8 @@ class mysql5_column extends sql99_column {
 
   public static function get_serial_start_setval_sql($schema, $table, $column) {
     $sequence_name = static::get_serial_sequence_name($schema, $table, $column);
-    return "SELECT setval('$sequence_name', {$column['serialStart']}, TRUE);";
+    $setval = mysql5_sequence::get_setval_call($sequence_name, $column['serialStart'], 'TRUE');
+    return "SELECT $setval;";
   }
 
 }
