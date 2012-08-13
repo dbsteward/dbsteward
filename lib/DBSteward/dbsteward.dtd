@@ -104,7 +104,7 @@
 <!ELEMENT index (indexDimension+)>
 <!ATTLIST index name CDATA #REQUIRED>
 <!ATTLIST index unique (true|false) #IMPLIED>
-<!ATTLIST index using (btree|gin|KEY) #REQUIRED>
+<!ATTLIST index using (hash|btree|gin|KEY) #REQUIRED>
 <!ELEMENT indexDimension (#PCDATA)>
 <!ATTLIST indexDimension name CDATA #REQUIRED>
 
