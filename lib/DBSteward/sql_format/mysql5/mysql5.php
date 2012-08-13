@@ -330,6 +330,7 @@ class mysql5 {
       $node_table['name'] = $db_table->table_name;
       $node_table['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
       $node_table['description'] = $db_table->table_comment;
+      $node_table['primaryKey'] = '';
 
       // @TODO: convert $db_table->auto_increment to startSerial?
 
@@ -403,17 +404,16 @@ class mysql5 {
             // not a compound index, define the FK inline in the column
             $column = $db_constraint->columns[0];
             $ref_column = $db_constraint->referenced_columns[0];
-            $node_column = $node_table->xpath("column[@name='$column']");
+            $node_column = dbx::get_table_column($node_table, $column);
             if ( ! $node_column ) {
               throw new Exception("Unexpected: Could not find column node $column for foreign key constraint {$db_constraint->constraint_name}");
-            }
-            else {
-              $node_column = $node_column[0];
             }
             $node_column['foreignSchema'] = 'public';
             $node_column['foreignTable'] = $db_constraint->referenced_table_name;
             $node_column['foreignColumn'] = $ref_column;
             $node_column['type'] = null; // inferred from referenced column
+            $node_column['foreignKeyName'] = $db_constraint->constraint_name;
+            $node_column['foreignIndexName'] = $db_constraint->index_name;
 
             // @TODO: referential constraints
           }
@@ -425,8 +425,9 @@ class mysql5 {
             $node_constraint['type'] = 'FOREIGN KEY';
             $node_constraint['foreignSchema'] = 'public';
             $node_constraint['foreignTable'] = $db_constraint->referenced_table_name;
-
-            $def = '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns));
+            
+            $def = mysql5::get_quoted_object_name($db_constraint->index_name) . ' ';
+            $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns));
             $def.= ') REFERENCES ' . mysql5::get_quoted_table_name($db_constraint->referenced_table_name);
             $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns));
             $def.= ')';

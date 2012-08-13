@@ -198,7 +198,7 @@ SQL;
     $expected = <<<SQL
 ALTER TABLE `test` DROP PRIMARY KEY;
 ALTER TABLE `test` ADD PRIMARY KEY (`pkb`);
-ALTER TABLE `test` ADD FOREIGN KEY `test_cfke_fk` (`cfke`) REFERENCES `other` (`pka`);
+ALTER TABLE `test` ADD CONSTRAINT `test_cfke_fk` FOREIGN KEY `test_cfke_fk` (`cfke`) REFERENCES `other` (`pka`);
 SQL;
     $this->common($this->xml_pka, $this->xml_pkb_cfke, $expected);
   }
@@ -207,7 +207,7 @@ SQL;
     $expected = <<<SQL
 ALTER TABLE `test` DROP PRIMARY KEY;
 ALTER TABLE `test` DROP INDEX `test_uqc_idx`;
-ALTER TABLE `test` DROP FOREIGN KEY `test_ifkd_fk`;
+ALTER TABLE `test` DROP FOREIGN KEY `test_ifkd_fk`, DROP INDEX `test_ifkd_fk`;
 ALTER TABLE `test` ADD PRIMARY KEY (`pkb`);
 SQL;
     $this->common($this->xml_pka_uqc_ifkd_cfke, $this->xml_pkb_cfke, $expected);
@@ -226,7 +226,7 @@ SQL;
     mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'all', true);
     mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'all', false);
     $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-    $this->assertEquals($expected, $actual);
+    $this->assertEquals($expected, $actual, "all constraints diff");
     $ofs->_clear_output();
 
     // primary keys
@@ -249,7 +249,7 @@ SQL;
     mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'foreignKey', true);
     mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'foreignKey', false);
     $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-    $fk_expected = trim(preg_replace("/.*(PRIMARY|INDEX).*\n?/",'',$expected));
+    $fk_expected = trim(preg_replace("/.*(PRIMARY|(?<!, DROP )INDEX).*\n?/",'',$expected));
     $this->assertEquals($fk_expected, $actual, "foreignKey diff");
     $ofs->_clear_output();
   }

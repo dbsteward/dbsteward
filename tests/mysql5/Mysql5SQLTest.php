@@ -268,7 +268,7 @@ ALTER TABLE `user` ADD PRIMARY KEY (`user_id`);
 ALTER TABLE `group` ADD PRIMARY KEY (`group_id`);
 ALTER TABLE `user` ADD UNIQUE INDEX `username_unq` (`username`);
 
-ALTER TABLE `user` ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY (`group_id`) REFERENCES `group` (`group_id`);
+ALTER TABLE `user` ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `group` (`group_id`);
 
 CREATE TRIGGER `__public_user_user_id_serial_trigger` BEFORE INSERT ON `user`
 FOR EACH ROW SET NEW.`user_id` = COALESCE(NEW.`user_id`, nextval('__public_user_user_id_serial_seq'));

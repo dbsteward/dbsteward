@@ -530,7 +530,7 @@ class dbx {
     foreach ($node_table->column AS $column) {
       if (isset($column['unique']) && strcasecmp($column['unique'], 'true') == 0) {
         $unique_index = new SimpleXMLElement('<index/>');
-        $unique_index['name'] = pgsql8::index_name($node_table['name'], $column['name'], 'key');
+        $unique_index['name'] = format_index::index_name($node_table['name'], $column['name'], 'key');
         $unique_index['unique'] = 'true';
         $unique_index['using'] = 'btree';
         $unique_index->addChild('indexDimension', $column['name']);

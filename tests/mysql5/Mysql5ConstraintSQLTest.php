@@ -183,6 +183,65 @@ XML;
     $this->assertEquals("ALTER TABLE `test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
   }
 
+  /** Because MySQL, that's why */
+  public function testInlineForeignKeyIndexName() {
+    $xml = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="test_id">
+    <column name="test_id" type="serial"/>
+    <column name="other_id"
+      foreignSchema="public"
+      foreignTable="other"
+      foreignColumn="other_id"
+      foreignKeyName="other_id_fk"
+      foreignIndexName="fk_idx"
+      foreignOnDelete="NO_ACTION"
+      foreignOnUpdate="cascade"/>
+  </table>
+  <table name="other" primaryKey="other_id">
+    <column name="other_id" type="serial"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+    $dbs = new SimpleXMLElement($xml);
+
+    $constraints = mysql5_constraint::get_table_constraints($dbs, $dbs->schema, $dbs->schema->table[0]);
+
+    // should contain primary key and foreign key
+    $this->assertEquals(2, count($constraints));
+    $this->assertEquals('PRIMARY KEY', $constraints[0]['type']);
+    $this->assertEquals('FOREIGN KEY', $constraints[1]['type']);
+
+    $fk = $constraints[1];
+
+    $expected = array(
+      'name' => 'other_id_fk',
+      'schema_name' => 'public',
+      'table_name' => 'test',
+      'type' => 'FOREIGN KEY',
+      'definition' => '(`other_id`) REFERENCES `other` (`other_id`)',
+      'foreign_key_data' => array(
+        'schema' => $dbs->schema,
+        'table' => $dbs->schema->table[1],
+        'column' => $dbs->schema->table[1]->column,
+        'references' => '`other` (`other_id`)',
+        'name' => 'other_id_fk'
+      ),
+      'foreignIndexName' => 'fk_idx',
+      'foreignOnDelete' => 'NO_ACTION',
+      'foreignOnUpdate' => 'CASCADE'
+    );
+    $this->assertEquals($expected, $fk);
+
+    $expected = "ALTER TABLE `test` ADD CONSTRAINT `other_id_fk` FOREIGN KEY `fk_idx` (`other_id`) REFERENCES `other` (`other_id`) ON DELETE NO ACTION ON UPDATE CASCADE;";
+    $actual = mysql5_constraint::get_constraint_sql($fk);
+    $this->assertEquals($expected, $actual);
+
+    $this->assertEquals("ALTER TABLE `test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `fk_idx`;", mysql5_constraint::get_constraint_drop_sql($fk));
+  }
+
   public function testCyclicForeignKeys() {
     $xml = <<<XML
 <dbsteward>

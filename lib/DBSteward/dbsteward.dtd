@@ -89,6 +89,7 @@
 <!ATTLIST column foreignTable CDATA #IMPLIED>
 <!ATTLIST column foreignColumn CDATA #IMPLIED>
 <!ATTLIST column foreignKeyName CDATA #IMPLIED>
+<!ATTLIST column foreignIndexName CDATA #IMPLIED>
 <!ATTLIST column foreignOnDelete (NO_ACTION|RESTRICT|CASCADE|SET_NULL|SET_DEFAULT) #IMPLIED>
 <!ATTLIST column foreignOnUpdate (NO_ACTION|RESTRICT|CASCADE|SET_NULL|SET_DEFAULT) #IMPLIED>
 <!ATTLIST column check CDATA #IMPLIED>
@@ -112,6 +113,7 @@
 <!ATTLIST constraint name CDATA #REQUIRED>
 <!ATTLIST constraint type CDATA #REQUIRED>
 <!ATTLIST constraint definition CDATA #REQUIRED>
+<!ATTLIST constraint foreignIndexName CDATA #IMPLIED>
 <!ATTLIST constraint foreignSchema CDATA #IMPLIED>
 <!ATTLIST constraint foreignTable CDATA #IMPLIED>
 

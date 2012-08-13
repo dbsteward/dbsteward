@@ -185,6 +185,10 @@ class sql99_constraint {
             'foreign_key_data' => $foreign
           );
 
+          if ( ! empty($column['foreignIndexName']) ) {
+            $column_fkey_constraint['foreignIndexName'] = (string)$column['foreignIndexName'];
+          }
+
           if ( ! empty($column['foreignOnDelete']) ) {
             $column_fkey_constraint['foreignOnDelete'] = strtoupper((string)$column['foreignOnDelete']);
           }

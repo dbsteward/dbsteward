@@ -42,8 +42,12 @@ class mysql5_constraint extends sql99_constraint {
         // MySQL considers foreign keys to be a constraint constraining an index
         // naming the FK index and not the constraint (... ADD FOREIGN KEY name ...) results in the named index and an implicitly named constraint being created
         // naming the constraint and not the index (... ADD CONSTRAINT name FOREIGN KEY ...) results in both the index and constraint having the same name
+
+        $constraint_name = mysql5::get_quoted_object_name($constraint['name']);
+        $index_name = !empty($constraint['foreignIndexName']) ? mysql5::get_quoted_object_name($constraint['foreignIndexName']) : $constraint_name;
+
         $sql = "ALTER TABLE " . mysql5::get_quoted_table_name($constraint['table_name']) . " ADD CONSTRAINT ";
-        $sql.= mysql5::get_quoted_object_name($constraint['name']) . " FOREIGN KEY {$constraint['definition']}";
+        $sql.= "$constraint_name FOREIGN KEY $index_name {$constraint['definition']}";
 
         // FOREIGN KEY ON DELETE / ON UPDATE handling
         if ( strcasecmp($constraint['type'], 'FOREIGN KEY') == 0 && !empty($constraint['foreignOnDelete']) ) {
@@ -95,9 +99,10 @@ class mysql5_constraint extends sql99_constraint {
         break;
       case 'FOREIGN KEY':
         // dropping a foreign key only drops the constraint
-        // we need to drop the index it created as well
-        $name =  mysql5::get_quoted_object_name($constraint['name']);
-        $drop = "FOREIGN KEY $name, DROP INDEX $name";
+        // we need to drop its index as well
+        $constraint_name = mysql5::get_quoted_object_name($constraint['name']);
+        $index_name = !empty($constraint['foreignIndexName']) ? mysql5::get_quoted_object_name($constraint['foreignIndexName']) : $constraint_name;
+        $drop = "FOREIGN KEY $constraint_name, DROP INDEX $index_name";
         break;
       default:
         // we shouldn't actually ever get here.
