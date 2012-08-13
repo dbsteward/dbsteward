@@ -39,8 +39,11 @@ class mysql5_constraint extends sql99_constraint {
         return "ALTER TABLE " . mysql5::get_quoted_table_name($constraint['table_name']) . " ADD PRIMARY KEY " . $constraint['definition'] . ';';
         break;
       case 'FOREIGN KEY':
-        $sql = "ALTER TABLE " . mysql5::get_quoted_table_name($constraint['table_name']) . " ADD FOREIGN KEY ";
-        $sql.= mysql5::get_quoted_object_name($constraint['name']) . " {$constraint['definition']}";
+        // MySQL considers foreign keys to be a constraint constraining an index
+        // naming the FK index and not the constraint (... ADD FOREIGN KEY name ...) results in the named index and an implicitly named constraint being created
+        // naming the constraint and not the index (... ADD CONSTRAINT name FOREIGN KEY ...) results in both the index and constraint having the same name
+        $sql = "ALTER TABLE " . mysql5::get_quoted_table_name($constraint['table_name']) . " ADD CONSTRAINT ";
+        $sql.= mysql5::get_quoted_object_name($constraint['name']) . " FOREIGN KEY {$constraint['definition']}";
 
         // FOREIGN KEY ON DELETE / ON UPDATE handling
         if ( strcasecmp($constraint['type'], 'FOREIGN KEY') == 0 && !empty($constraint['foreignOnDelete']) ) {
@@ -91,14 +94,17 @@ class mysql5_constraint extends sql99_constraint {
         $drop = "PRIMARY KEY";
         break;
       case 'FOREIGN KEY':
-        $drop = "FOREIGN KEY " . mysql5::get_quoted_object_name($constraint['name']);
+        // dropping a foreign key only drops the constraint
+        // we need to drop the index it created as well
+        $name =  mysql5::get_quoted_object_name($constraint['name']);
+        $drop = "FOREIGN KEY $name, DROP INDEX $name";
         break;
       default:
         // we shouldn't actually ever get here.
         throw new Exception("Unimplemented MySQL constraint {$constraint['type']}");
     }
 
-    $sql = "ALTER TABLE " . mysql5::get_quoted_table_name($constraint['table_name']) . " DROP $drop;";
+    $sql = "ALTER TABLE " . mysql5::get_fully_qualified_table_name($constraint['schema_name'], $constraint['table_name']) . " DROP $drop;";
     return $sql;
   }
 }
