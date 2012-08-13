@@ -183,7 +183,7 @@ XML;
     $this->build_db_mysql5();
 
     // 2) Extract database schema to definition B
-    $this->xml_content_b = mysql5::extract_schema($this->pgsql->get_dbhost(), $this->pgsql->get_dbport(), $this->pgsql->get_dbname(), $this->pgsql->get_dbuser(), $this->pgsql->get_dbpass());
+    $this->xml_content_b = mysql5::extract_schema($this->mysql->get_dbhost(), $this->mysql->get_dbport(), $this->mysql->get_dbname(), $this->mysql->get_dbuser(), $this->mysql->get_dbpass());
     
     $this->write_xml_definition_to_disk();
 

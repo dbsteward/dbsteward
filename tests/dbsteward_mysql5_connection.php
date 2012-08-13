@@ -27,7 +27,7 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
   }
 
   public function query($sql, $throw_on_error = TRUE) {
-    $rs = @mysqli_query($sql, $this->conn);
+    $rs = @mysqli_query($this->conn, $sql);
     if ( $throw_on_error && !is_resource($rs) ) {
       throw new exception("mysqli_query() failed:\n" . $sql . "\n\nError message: " . mysqli_error($this->conn));
     }
@@ -40,9 +40,9 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
    */
   public function create_db() {
     $this->conn = mysqli_connect($this->get_dbhost(), $this->get_dbuser(), $this->get_dbpass());
-    @mysqli_query('DROP DATABASE ' . $this->get_dbname(), $this->conn);
-    mysqli_query('CREATE DATABASE ' . $this->get_dbname(), $this->conn);
-    mysqli_select_db($this->get_dbname(), $this->conn);
+    @mysqli_query($this->conn, 'DROP DATABASE ' . $this->get_dbname());
+    mysqli_query($this->conn, 'CREATE DATABASE ' . $this->get_dbname());
+    mysqli_select_db($this->conn, $this->get_dbname());
   }
 
 }
