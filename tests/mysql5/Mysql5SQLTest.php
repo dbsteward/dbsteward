@@ -130,6 +130,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
 XML;
 
     $expected = <<<SQL
+DROP FUNCTION IF EXISTS `a_function`;
 CREATE DEFINER = deployment FUNCTION `a_function` (`config_parameter` text, `config_value` text)
 RETURNS text
 LANGUAGE SQL

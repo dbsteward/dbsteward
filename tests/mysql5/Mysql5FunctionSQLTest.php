@@ -77,6 +77,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
+DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL
@@ -107,6 +108,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
+DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL
@@ -123,6 +125,7 @@ SQL;
     $schema->function['cachePolicy'] = "STABLE";
 
     $expected = <<<SQL
+DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL
@@ -139,6 +142,7 @@ SQL;
     $schema->function['cachePolicy'] = "VOLATILE";
 
     $expected = <<<SQL
+DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL
@@ -166,6 +170,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
+DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = SOMEBODY FUNCTION `test_fn` ()
 RETURNS text
 LANGUAGE SQL
@@ -196,6 +201,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
+DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
 LANGUAGE SQL

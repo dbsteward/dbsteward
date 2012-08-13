@@ -46,4 +46,27 @@ class sql99_function {
     }
     return $definition;
   }
+
+  public function equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace) {
+    if ( strcasecmp($node_function_a['name'], $node_function_b['name']) != 0 ) {
+      return false;
+    }
+
+    $a_definition = static::get_definition($node_function_a);
+    $b_definition = static::get_definition($node_function_b);
+
+    if ($ignore_function_whitespace) {
+      $a_definition = preg_replace("/\\s+/", " ", $a_definition);
+      $b_definition = preg_replace("/\\s+/", " ", $b_definition);
+    }
+
+    $equals =
+      strcasecmp(static::get_declaration($node_schema_a, $node_function_a),
+                 static::get_declaration($node_schema_a, $node_function_b)) == 0
+      && strcasecmp($a_definition, $b_definition) == 0
+      && strcasecmp($node_function_a['owner'], $node_function_b['owner']) == 0
+      && strcasecmp($node_function_a['returns'], $node_function_b['returns']) == 0;
+
+    return $equals;
+  }
 }

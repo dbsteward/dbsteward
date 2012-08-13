@@ -14,11 +14,13 @@ class mysql5_function extends sql99_function {
   }
 
   public static function get_creation_sql($node_schema, $node_function) {
-    $name = mysql5::get_quoted_function_name($node_function['name']);
+    $name = static::get_declaration($node_schema, $node_function);
 
     $definer = (strlen($node_function['owner']) > 0) ? xml_parser::role_enum(dbsteward::$new_database,$node_function['owner']) : 'CURRENT_USER';
 
-    $sql = "CREATE DEFINER = $definer FUNCTION $name (";
+    // always drop the function first, just to be safe, and to be compatible with pgsql8's CREATE OR REPLACE
+    $sql = static::get_drop_sql($node_schema, $node_function) . "\n";
+    $sql .= "CREATE DEFINER = $definer FUNCTION $name (";
 
     if ( isset($node_function->functionParameter) ) {
       $params = array();
@@ -83,4 +85,24 @@ class mysql5_function extends sql99_function {
     return "DROP FUNCTION IF EXISTS " . mysql5::get_quoted_function_name($node_function['name']) . ";";
   }
 
+  public static function get_declaration($node_schema, $node_function) {
+    return mysql5::get_quoted_function_name($node_function['name']);
+  }
+
+  public function equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace) {
+    $everything_but_args_equal = parent::equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace);
+
+    if ( ! $everything_but_args_equal ) {
+      return false;
+    }
+
+    // if the args are different, consider it changed
+    $agg = function ($a, $param) {
+      return $a . $param['name'] . $param['type'];
+    };
+    $params_a = array_reduce($node_function_a->xpath('functionParameter'), $agg);
+    $params_b = array_reduce($node_function_b->xpath('functionParameter'), $agg);
+
+    return strcasecmp($params_a, $params_b) === 0;
+  }
 }
