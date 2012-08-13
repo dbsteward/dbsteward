@@ -41,7 +41,6 @@ class Mysql5BuildDataTest extends PHPUnit_Framework_TestCase {
     <table name="result_list" owner="ROLE_OWNER" primaryKey="result_list_id" slonyId="7">
       <column name="result_list_id" type="integer"/>
       <column name="result" type="character varying(50)"/>
-      <grant role="ROLE_APPLICATION" operation="SELECT"/>
       <rows columns="result_list_id, result">
         <row>
           <col>0</col>
@@ -126,6 +125,51 @@ SQL;
     $this->common($xml, $expected);
   }
 
+  public function testEmptiesNullsDefaults() {
+    $xml = <<<XML
+<dbsteward>
+  <database>
+    <host>db-host</host>
+    <name>dbsteward</name>
+    <role>
+      <application>dbsteward_phpunit_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+  </database>
+  <schema name="public" owner="ROLE_OWNER">
+    <table name="result_list" owner="ROLE_OWNER" primaryKey="result_list_id" slonyId="7">
+      <column name="result_list_id" type="integer"/>
+      <column name="result" type="character varying(50)" null="false" default="xyz"/>
+      <rows columns="result_list_id, result">
+        <row>
+          <col>0</col>
+          <col></col>
+        </row>
+        <row>
+          <col>1</col>
+          <col null="true"></col>
+        </row>
+        <row>
+          <col>2</col>
+          <col empty="true"></col>
+        </row>
+      </rows>
+    </table>
+  </schema>
+</dbsteward>
+XML;
+    
+    $expected = <<<SQL
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (0, 'xyz');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (1, NULL);
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (2, '');
+SQL;
+
+    $this->common($xml, $expected);
+  }
+
   private function common($xml, $expected) {
     $dbs = new SimpleXMLElement($xml);
     $ofs = new mock_output_file_segmenter();
@@ -137,10 +181,7 @@ SQL;
 
     $actual = $ofs->_get_output();
     
-    // get rid of comments
-    // $expected = preg_replace('/\s*-- .*(\n\s*)?/','',$expected);
-    // // get rid of extra whitespace
-    // $expected = trim(preg_replace("/\n\n/","\n",$expected));
+    // get rid of extra whitespace
     $expected = preg_replace("/^ +/m","",$expected);
     $expected = trim(preg_replace("/\n+/","\n",$expected));
 
@@ -149,7 +190,6 @@ SQL;
     // get rid of comments
     $actual = preg_replace("/\s*-- .*$/m",'',$actual);
     // get rid of extra whitespace
-    // $actual = trim(preg_replace("/\n\n+/","\n",$actual));
     $actual = preg_replace("/^ +/m","",$actual);
     $actual = trim(preg_replace("/\n+/","\n",$actual));
 

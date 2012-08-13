@@ -179,7 +179,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
             else {
               // do table data row diff, add rows to return by reference rows for both A and B
               $changed_columns = array();
-              pgsql8_diff_tables::table_data_row_diff($table_a_data_rows_columns, $table_a_data_row, $table_b_data_rows_columns, $table_b_data_row, $changed_columns);
+              static::table_data_row_diff($table_a_data_rows_columns, $table_a_data_row, $table_b_data_rows_columns, $table_b_data_row, $changed_columns);
               $a_rows[] = $table_a_data_row;
               $b_rows[] = $table_b_data_row;
               $changes[] = $changed_columns;
@@ -217,6 +217,53 @@ class mysql5_diff_tables extends sql99_diff_tables {
     }
   }
 
+  /**
+   * is there a difference between old_row and new_row?
+   *
+   * also returns columns with differences in $change_columns by reference
+   *
+   * @return boolean   there is a difference between old and new data rows
+   */
+  // @TODO: pull up
+  public function table_data_row_diff($old_cols, $old_row, $new_cols, $new_row, &$changed_columns) {
+    $difference = false;
+
+    // compare the columns between the old and new rows
+    // determining difference status
+    // storing the difference as we go
+    $difference = false;
+    $changed_columns = array();
+    $new_cols_count = count($new_cols);
+    for($i=0; $i < $new_cols_count; $i++) {
+      $old_col_index = array_search($new_cols[$i], $old_cols);
+
+      if ( $old_col_index === false ) {
+        // overlay col $i not found in $old_cols
+        $difference = true;
+
+        // record differences for caller to use
+        $changed_columns[] = array(
+          'name' => $new_cols[$i],
+          'new_col' => $new_row->col[$i]
+        );
+      }
+      else {
+        if ( strcmp($old_row->col[$old_col_index], $new_row->col[$i]) != 0 ) {
+          // base_row->col value does not match overlay_row->col value
+          $difference = true;
+
+          // record differences for caller to use
+          $changed_columns[] = array(
+            'name' => $new_cols[$i],
+            'old_col' => $old_row->col[$old_col_index],
+            'new_col' => $new_row->col[$i]
+          );
+        }
+      }
+    }
+    return $difference;
+  }
+
   // @TODO: pull up
   protected function table_data_row_deleted($row) {
     if ( isset($row['delete']) && strcasecmp($row['delete'], 'true') == 0 ) {
@@ -229,7 +276,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
   private static function get_data_row_delete($schema, $table, $data_row_columns, $data_row, &$sql) {
     $sql = sprintf(
       "DELETE FROM %s WHERE (%s);\n",
-      pgsql8::get_fully_qualified_table_name($schema['name'],$table['name']),
+      format::get_fully_qualified_table_name($schema['name'],$table['name']),
       dbx::primary_key_expression($schema, $table, $data_row_columns, $data_row)
     );
   }
@@ -250,12 +297,12 @@ class mysql5_diff_tables extends sql99_diff_tables {
         $old_columns[] = 'NOTDEFINED';
       }
       else {
-        $old_col_value = mysql5::column_value_default($node_schema, $node_table, $changed_column['name'], $changed_column['old_col']);
+        $old_col_value = format::column_value_default($node_schema, $node_table, $changed_column['name'], $changed_column['old_col']);
         $old_columns[] = $changed_column['name'] . ' = ' . $old_col_value;
       }
 
-      $update_col_name = mysql5::get_quoted_column_name($changed_column['name']);
-      $update_col_value = mysql5::column_value_default($node_schema, $node_table, $changed_column['name'], $changed_column['new_col']);
+      $update_col_name = format::get_quoted_column_name($changed_column['name']);
+      $update_col_value = format::column_value_default($node_schema, $node_table, $changed_column['name'], $changed_column['new_col']);
       $update_columns[] = $update_col_name . ' = ' . $update_col_value;
     }
 
@@ -271,7 +318,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
     // use multiline comments here, so when data has newlines they can be preserved, but upgrade scripts don't catch on fire
     $sql = sprintf(
       "UPDATE %s SET %s WHERE (%s); /* old values: %s */\n",
-      pgsql8::get_fully_qualified_table_name($node_schema['name'], $node_table['name']),
+      format::get_fully_qualified_table_name($node_schema['name'], $node_table['name']),
       $update_columns,
       dbx::primary_key_expression($node_schema, $node_table, $new_data_row_columns, $new_data_row),
       $old_columns

@@ -713,4 +713,14 @@ class mysql5 {
   public static function quote_string_value($value) {
     return "'" . str_replace("'", "\'", $value) . "'";
   }
+
+  public static function strip_string_quoting($value) {
+    // 'string' becomes string
+    if (strlen($value) > 2 && $value[0] == "'" && substr($value, -1) == "'") {
+      $value = substr($value, 1, -1);
+      $value = str_replace("''", "'", $value);
+      $value = str_replace("\\'","'", $value);
+    }
+    return $value;
+  }
 }
