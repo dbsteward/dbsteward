@@ -155,9 +155,18 @@ class mysql5 {
 
     // trigger definitions
     $triggers = array_merge($triggers, dbx::to_array($schema->trigger));
+    $unique_triggers = array();
     foreach ($triggers AS $trigger) {
       // only do triggers set to the current sql format
       if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
+        // check that this table/timing/event combo hasn't been defined, because MySQL only
+        // allows one trigger per table per BEFORE/AFTER per action
+        $unique_name = "{$trigger['table']}-{$trigger['when']}-{$trigger['event']}";
+        if ( array_key_exists($unique_name, $unique_triggers) ) {
+          throw new Exception("MySQL will not allow trigger {$trigger['name']} to be created because it happens on the same table/timing/event as trigger {$unique_triggers[$unique_name]}");
+        }
+        
+        $unique_triggers[$unique_name] = $trigger['name'];
         $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger)."\n");
       }
     }
