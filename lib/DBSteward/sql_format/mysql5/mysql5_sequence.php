@@ -285,9 +285,12 @@ SQL;
     $table_name = mysql5::get_quoted_table_name(self::TABLE_NAME);
     $seq_col = mysql5::get_quoted_column_name(self::SEQ_COL);
 
-    $sequence_names = "('" . implode("', '", array_map(function($n) { return $n['name']; }, dbx::to_array($node_sequences))) . "')";
+    $sequence_names = "('" . implode("', '", array_map(function($n) {
+      if ($n instanceof SimpleXMLElement) {
+        return $n['name'];
+      }
+      return $n;
+    }, dbx::to_array($node_sequences))) . "')";
     return "DELETE FROM $table_name WHERE $seq_col IN $sequence_names;";
   }
 }
-
-?>
