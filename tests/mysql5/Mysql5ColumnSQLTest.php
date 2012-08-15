@@ -55,12 +55,29 @@ XML;
 </schema>
 XML;
     $schema = new SimpleXMLElement($xml);
-
-    mysql5_type::get_creation_sql($schema, $schema->type);
-
     $expected = "`foo` ENUM('alpha','bravo','charlie')";
-
     $this->assertEquals($expected, mysql5_column::get_full_definition($schema, $schema, $schema->table, $schema->table->column, true));
+
+    $cross_schema_dbs = <<<XML
+<dbsteward>
+  <schema name="public" owner="NOBODY">
+    <table name="test" primaryKey="id" owner="NOBODY">
+      <column name="foo" type="other.test_enum"/>
+    </table>
+  </schema>
+  <schema name="other" owner="NOBODY">
+    <type type="enum" name="test_enum">
+      <enum name="alpha"/>
+      <enum name="bravo"/>
+      <enum name="charlie"/>
+    </type>
+  </schema>
+</dbsteward>
+XML;
+    
+    $dbs = new SimpleXMLElement($cross_schema_dbs);
+    $expected = "`foo` ENUM('alpha','bravo','charlie')";
+    $this->assertEquals($expected, mysql5_column::get_full_definition($dbs, $dbs->schema, $dbs->schema->table[0], $dbs->schema->table[0]->column, true));
   }
 
   public function testNullsAndDefaults() {
