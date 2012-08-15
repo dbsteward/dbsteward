@@ -88,15 +88,20 @@ class mysql5_db {
     static $stmt;
     if (!$stmt) {
       $stmt = $this->pdo->prepare("SELECT GROUP_CONCAT(column_name ORDER BY position_in_unique_constraint, seq_in_index) AS columns,
-                                          table_name, constraint_name, index_name, constraint_type, referenced_table_name,
-                                          GROUP_CONCAT(referenced_column_name ORDER BY position_in_unique_constraint) as referenced_columns
-                                   FROM statistics
+                                          statistics.table_name, table_constraints.constraint_name, index_name, constraint_type, key_column_usage.referenced_table_name,
+                                          GROUP_CONCAT(referenced_column_name ORDER BY position_in_unique_constraint) as referenced_columns,
+                                          update_rule, delete_rule
+                                    FROM statistics
                                      INNER JOIN key_column_usage USING (table_schema, table_name, column_name)
                                      INNER JOIN table_constraints USING (table_schema, table_name, constraint_name)
-                                   WHERE statistics.table_schema = ?
+                                     LEFT OUTER JOIN referential_constraints
+                                             ON referential_constraints.constraint_schema = statistics.table_schema
+                                            AND referential_constraints.constraint_name = table_constraints.constraint_name
+                                            AND referential_constraints.table_name = statistics.table_name
+                                    WHERE statistics.table_schema = ?
                                      AND statistics.table_name = ?
                                      AND (table_constraints.constraint_type != 'UNIQUE')
-                                   GROUP BY index_name;");
+                                    GROUP BY index_name;");
     }
 
     $stmt->execute(array($this->dbname, $db_table->table_name));
@@ -194,11 +199,9 @@ class mysql5_db {
 }
 
 // test driver
-// $db = mysql5_db::connect('localhost','1433','test','austin.hyde','');
+$db = mysql5_db::connect('localhost','1433','test','austin.hyde','');
 
-// foreach ($db->get_tables() as $table) {
-//   echo "constraints for $table->table_name\n";
-//   print_r($db->get_constraints($table));
-//   echo "indices for $table->table_name\n";
-//   print_r($db->get_indices($table));
-// }
+foreach ($db->get_tables() as $table) {
+  echo "constraints for $table->table_name\n";
+  print_r($db->get_constraints($table));
+}

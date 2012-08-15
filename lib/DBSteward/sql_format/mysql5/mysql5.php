@@ -415,6 +415,9 @@ class mysql5 {
             $node_column['foreignKeyName'] = $db_constraint->constraint_name;
             $node_column['foreignIndexName'] = $db_constraint->index_name;
 
+            $node_column['foreignOnDelete'] = $db_constraint->delete_rule;
+            $node_column['foreignOnUpdate'] = $db_constraint->update_rule;
+
             // @TODO: referential constraints
           }
           elseif ( count($db_constraint->referenced_columns) > 1
@@ -430,7 +433,7 @@ class mysql5 {
             $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns));
             $def.= ') REFERENCES ' . mysql5::get_quoted_table_name($db_constraint->referenced_table_name);
             $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns));
-            $def.= ')';
+            $def.= ') ON DELETE ' . $db_constraint->delete_rule . ' ON UPDATE ' . $db_constraint->update_rule;
             $node_constraint['definition'] = $def;
           }
           else {
