@@ -24,31 +24,31 @@ class mysql5_diff extends sql99_diff {
    * @return void
    */
   protected static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
-    if (mysql5_diff::$as_transaction) {
-      $stage1_ofs->append_header("START TRANSACTION;\n\n");
-      $stage1_ofs->append_footer("\nCOMMIT;\n");
-      if ( ! dbsteward::$single_stage_upgrade ) {
-        $stage2_ofs->append_header("START TRANSACTION;\n\n");
-        $stage3_ofs->append_header("START TRANSACTION;\n\n");
-        $stage4_ofs->append_header("START TRANSACTION;\n\n");
-        $stage2_ofs->append_footer("\nCOMMIT;\n");
-        $stage3_ofs->append_footer("\nCOMMIT;\n");
-        $stage4_ofs->append_footer("\nCOMMIT;\n");
-      }
-    }
+    // if (mysql5_diff::$as_transaction) {
+    //   $stage1_ofs->append_header("START TRANSACTION;\n\n");
+    //   $stage1_ofs->append_footer("\nCOMMIT;\n");
+    //   if ( ! dbsteward::$single_stage_upgrade ) {
+    //     $stage2_ofs->append_header("START TRANSACTION;\n\n");
+    //     $stage3_ofs->append_header("START TRANSACTION;\n\n");
+    //     $stage4_ofs->append_header("START TRANSACTION;\n\n");
+    //     $stage2_ofs->append_footer("\nCOMMIT;\n");
+    //     $stage3_ofs->append_footer("\nCOMMIT;\n");
+    //     $stage4_ofs->append_footer("\nCOMMIT;\n");
+    //   }
+    // }
 
     // start with pre-upgrade sql statements that prepare the database to take on its changes
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1BEFORE');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
-    dbsteward::console_line(1, "Drop Old Schemas");
-    mysql5_diff::drop_old_schemas($stage3_ofs);
-    dbsteward::console_line(1, "Create New Schemas");
-    mysql5_diff::create_new_schemas($stage1_ofs);
+    // dbsteward::console_line(1, "Drop Old Schemas");
+    // mysql5_diff::drop_old_schemas($stage3_ofs);
+    // dbsteward::console_line(1, "Create New Schemas");
+    // mysql5_diff::create_new_schemas($stage1_ofs);
     dbsteward::console_line(1, "Update Structure");
     mysql5_diff::update_structure($stage1_ofs, $stage3_ofs, mysql5_diff::$new_table_dependency);
-    dbsteward::console_line(1, "Update Permissions");
-    mysql5_diff::update_permissions($stage1_ofs, $stage3_ofs);
+    // @TODO: dbsteward::console_line(1, "Update Permissions");
+    // @TODO: mysql5_diff::update_permissions($stage1_ofs, $stage3_ofs);
 
     mysql5_diff::update_database_config_parameters($stage1_ofs);
 
@@ -93,7 +93,7 @@ class mysql5_diff extends sql99_diff {
    * @param $ofs1  stage1 output file segmenter
    * @param $ofs3  stage3 output file segmenter
    */
-  private static function update_structure($ofs1, $ofs3) {
+  public static function update_structure($ofs1, $ofs3) {
     $type_modified_columns = array();
     
     // drop all views in all schemas, regardless whether dependency order is known or not
@@ -110,24 +110,23 @@ class mysql5_diff extends sql99_diff {
       foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         //@NOTICE: @TODO: this does not honor oldName attributes, does it matter?
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-        mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
+        // @TODO: mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
         mysql5_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
         mysql5_diff_sequences::diff_sequences($ofs1, $old_schema, $new_schema);
         // remove old constraints before table contraints, so the SQL statements succeed
-        mysql5_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', TRUE);
-        mysql5_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', TRUE);
+        mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', TRUE);
+        mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', TRUE);
         mysql5_diff_tables::drop_tables($ofs3, $old_schema, $new_schema);
         mysql5_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema);
         mysql5_diff_indexes::diff_indexes($ofs1, $old_schema, $new_schema);
-        mysql5_diff_tables::diff_clusters($ofs1, $old_schema, $new_schema);
-        mysql5_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', FALSE);
+        mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', FALSE);
         mysql5_diff_triggers::diff_triggers($ofs1, $old_schema, $new_schema);
       }
       // non-primary key constraints may be inter-schema dependant, and dependant on other's primary keys
       // and therefore should be done after object creation sections
       foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-        mysql5_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', FALSE);
+        mysql5_diff_constraint::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', FALSE);
       }
     }
     else {
@@ -143,7 +142,7 @@ class mysql5_diff extends sql99_diff {
         // do all types and functions on their own before table creation
         // see next loop for other once per schema work
         if (!in_array(trim($new_schema['name']), $processed_schemas)) {
-          mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
+          // @TODO: mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
           mysql5_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
           $processed_schemas[] = trim($new_schema['name']);
         }
@@ -176,8 +175,8 @@ class mysql5_diff extends sql99_diff {
         // @NOTICE: when dropping constraints, dbx::renamed_table_check_pointer() is not called for $old_table
         // as mysql5_diff_tables::diff_constraints_table() will do rename checking when recreating constraints for renamed tables
 
-        mysql5_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', TRUE);
-        mysql5_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', TRUE);
+        mysql5_diff_constraints::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', TRUE);
+        mysql5_diff_constraints::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', TRUE);
       }
 
       $processed_schemas = array();
@@ -214,10 +213,9 @@ class mysql5_diff extends sql99_diff {
 
         mysql5_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema, $old_table, $new_table);
         mysql5_diff_indexes::diff_indexes_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
-        mysql5_diff_tables::diff_clusters_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
-        mysql5_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', FALSE);
+        mysql5_diff_constraints::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', FALSE);
         mysql5_diff_triggers::diff_triggers_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
-        mysql5_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', FALSE);
+        mysql5_diff_constraints::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'constraint', FALSE);
       }
 
       // drop old tables in reverse dependency order
@@ -256,76 +254,76 @@ class mysql5_diff extends sql99_diff {
     }
   }
 
-  protected static function update_permissions($ofs1, $ofs3) {
-    foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      foreach (dbx::get_permissions($new_schema) AS $new_permission) {
-        if ($old_schema == NULL || !mysql5_permission::has_permission($old_schema, $new_permission)) {
-          $ofs1->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_schema, $new_permission) . "\n");
-        }
-      }
+  // protected static function update_permissions($ofs1, $ofs3) {
+  //   foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
+  //     $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
+  //     foreach (dbx::get_permissions($new_schema) AS $new_permission) {
+  //       if ($old_schema == NULL || !mysql5_permission::has_permission($old_schema, $new_permission)) {
+  //         $ofs1->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_schema, $new_permission) . "\n");
+  //       }
+  //     }
 
-      foreach (dbx::get_tables($new_schema) AS $new_table) {
-        $old_table = NULL;
-        if ($old_schema != NULL) {
-          $old_table = dbx::get_table($old_schema, $new_table['name']);
-        }        
-        if ( !dbsteward::$ignore_oldname && mysql5_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
-          // oldName renamed table ? skip permission diffing on it, it is the same
-          continue;
-        }
-        foreach (dbx::get_permissions($new_table) AS $new_permission) {
-          if ($old_table == NULL || !mysql5_permission::has_permission($old_table, $new_permission)) {
-            $ofs1->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_table, $new_permission) . "\n");
-          }
-        }
-      }
+  //     foreach (dbx::get_tables($new_schema) AS $new_table) {
+  //       $old_table = NULL;
+  //       if ($old_schema != NULL) {
+  //         $old_table = dbx::get_table($old_schema, $new_table['name']);
+  //       }        
+  //       if ( !dbsteward::$ignore_oldname && mysql5_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
+  //         // oldName renamed table ? skip permission diffing on it, it is the same
+  //         continue;
+  //       }
+  //       foreach (dbx::get_permissions($new_table) AS $new_permission) {
+  //         if ($old_table == NULL || !mysql5_permission::has_permission($old_table, $new_permission)) {
+  //           $ofs1->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_table, $new_permission) . "\n");
+  //         }
+  //       }
+  //     }
 
-      foreach (dbx::get_sequences($new_schema) AS $new_sequence) {
-        $old_sequence = NULL;
-        if ($old_schema != NULL) {
-          $old_sequence = dbx::get_sequence($old_schema, $new_sequence['name']);
-        }
-        foreach (dbx::get_permissions($new_sequence) AS $new_permission) {
-          if ($old_sequence == NULL || !mysql5_permission::has_permission($old_sequence, $new_permission)) {
-            $ofs1->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_sequence, $new_permission) . "\n");
-          }
-        }
-      }
+  //     foreach (dbx::get_sequences($new_schema) AS $new_sequence) {
+  //       $old_sequence = NULL;
+  //       if ($old_schema != NULL) {
+  //         $old_sequence = dbx::get_sequence($old_schema, $new_sequence['name']);
+  //       }
+  //       foreach (dbx::get_permissions($new_sequence) AS $new_permission) {
+  //         if ($old_sequence == NULL || !mysql5_permission::has_permission($old_sequence, $new_permission)) {
+  //           $ofs1->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_sequence, $new_permission) . "\n");
+  //         }
+  //       }
+  //     }
 
-      foreach (dbx::get_functions($new_schema) AS $new_function) {
-        $old_function = NULL;
-        if ($old_schema != NULL) {
-          $old_function = dbx::get_function($old_schema, $new_function['name'], mysql5_function::get_declaration($new_schema, $new_function));
-        }
-        foreach (dbx::get_permissions($new_function) AS $new_permission) {
-          if ($old_function == NULL || !mysql5_permission::has_permission($old_function, $new_permission)) {
-            $ofs1->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_function, $new_permission) . "\n");
-          }
-        }
-      }
+  //     foreach (dbx::get_functions($new_schema) AS $new_function) {
+  //       $old_function = NULL;
+  //       if ($old_schema != NULL) {
+  //         $old_function = dbx::get_function($old_schema, $new_function['name'], mysql5_function::get_declaration($new_schema, $new_function));
+  //       }
+  //       foreach (dbx::get_permissions($new_function) AS $new_permission) {
+  //         if ($old_function == NULL || !mysql5_permission::has_permission($old_function, $new_permission)) {
+  //           $ofs1->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_function, $new_permission) . "\n");
+  //         }
+  //       }
+  //     }
 
-      foreach (dbx::get_views($new_schema) AS $new_view) {
-        $old_view = NULL;
-        if ($old_schema != NULL) {
-          $old_view = dbx::get_view($old_schema, $new_view['name']);
-        }
-        foreach (dbx::get_permissions($new_view) AS $new_permission) {
-          // if always_recreate_views flag is on, always grant all view permissions, as the view was recreated
-          if ( dbsteward::$always_recreate_views
-          // OR if the view did not exist before
-          || $old_view == NULL
-          // OR if the view did not have the permission before
-          || !mysql5_permission::has_permission($old_view, $new_permission)
-          // OR if the view has changed, as that means it has been recreated
-          || mysql5_diff_views::is_view_modified($old_view, $new_view) ) {
-            // view permissions are in schema stage 2 file because views are (re)created in that file for SELECT * expansion
-            $ofs3->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_view, $new_permission) . "\n");
-          }
-        }
-      }
-    }
-  }
+  //     foreach (dbx::get_views($new_schema) AS $new_view) {
+  //       $old_view = NULL;
+  //       if ($old_schema != NULL) {
+  //         $old_view = dbx::get_view($old_schema, $new_view['name']);
+  //       }
+  //       foreach (dbx::get_permissions($new_view) AS $new_permission) {
+  //         // if always_recreate_views flag is on, always grant all view permissions, as the view was recreated
+  //         if ( dbsteward::$always_recreate_views
+  //         // OR if the view did not exist before
+  //         || $old_view == NULL
+  //         // OR if the view did not have the permission before
+  //         || !mysql5_permission::has_permission($old_view, $new_permission)
+  //         // OR if the view has changed, as that means it has been recreated
+  //         || mysql5_diff_views::is_view_modified($old_view, $new_view) ) {
+  //           // view permissions are in schema stage 2 file because views are (re)created in that file for SELECT * expansion
+  //           $ofs3->write(mysql5_permission::get_sql(dbsteward::$new_database, $new_schema, $new_view, $new_permission) . "\n");
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
   /**
    * Updates objects in schemas.
@@ -374,6 +372,6 @@ class mysql5_diff extends sql99_diff {
       }
     }
   }
-}
 
-?>
+
+}
