@@ -465,6 +465,7 @@ class dbx {
 
   public static function &get_functions(&$node_schema) {
     $nodes = $node_schema->xpath("function");
+
     // filter out versions of functon in languages that are not relevant to the current format being processed
     $filtered_nodes = array();
     foreach ($nodes as $node) {
@@ -472,8 +473,7 @@ class dbx {
         $filtered_nodes[] = $node;
       }
     }
-    $nodes = $filtered_nodes;
-    return $nodes;
+    return $filtered_nodes;
   }
 
   public static function &get_function_parameter(&$node_function, $name, $create_if_not_exist = FALSE) {
