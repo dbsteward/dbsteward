@@ -107,7 +107,7 @@
 <!ATTLIST index unique (true|false) #IMPLIED>
 <!ATTLIST index using (hash|btree|gin|KEY) #REQUIRED>
 <!ELEMENT indexDimension (#PCDATA)>
-<!ATTLIST indexDimension name CDATA #REQUIRED>
+<!ATTLIST indexDimension name CDATA #IMPLIED>
 
 <!ELEMENT constraint EMPTY>
 <!ATTLIST constraint name CDATA #REQUIRED>
