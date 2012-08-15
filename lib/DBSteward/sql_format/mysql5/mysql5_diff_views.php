@@ -5,11 +5,9 @@
  * @package DBSteward
  * @subpackage mysql5
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
- * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
+ * @author Austin Hyde <austin109@gmail.com>
  */
 
-class mysql5_diff_views {
+class mysql5_diff_views extends sql99_diff_views {
 
 }
-
-?>
