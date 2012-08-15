@@ -175,6 +175,35 @@ XML;
     $this->common_diff($new, $old, "ALTER TABLE `table`\n\tALTER COLUMN `col` SET DEFAULT 'xyz';", '');
   }
 
+  public function testEnums() {
+    $old = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <type name="enum" type="enum">
+    <enum name="x"/>
+    <enum name="y"/>
+    <enum name="z"/>
+  </type>
+  <table name="table" primaryKey="id" owner="ROLE_OWNER">
+    <column name="id" type="int"/>
+    <column name="col" type="enum"/>
+  </table>
+</schema>
+XML;
+    $new = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <type name="enum" type="enum">
+    <enum name="x"/>
+    <enum name="y"/>
+    <enum name="z"/>
+  </type>
+  <table name="table" primaryKey="id" owner="ROLE_OWNER">
+    <column name="id" type="int"/>
+    <column name="col" type="enum"/>
+  </table>
+</schema>
+XML;
+  }
+
   public function testSerials() {
     $none = <<<XML
 <schema name="public" owner="ROLE_OWNER">

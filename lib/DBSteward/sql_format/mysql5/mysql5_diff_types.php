@@ -40,8 +40,6 @@ class mysql5_diff_types {
       if ( pgsql8_type::equals($old_schema, $old_type, $new_schema, $new_type) ) {
         continue;
       }
-      
-      $ofs->write("-- changing type " . $new_type['name'] . " - will propagate through data type injection\n");
     }
   }
 

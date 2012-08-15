@@ -9,6 +9,10 @@
  */
 
 class mysql5_type extends sql99_type {
+  public static function equals($schema_a, $type_a, $schema_b, $type_b) {
+    return strcasecmp(static::get_enum_type_declaration($type_a), static::get_enum_type_declaration($type_b)) === 0;
+  }
+
   public static function get_creation_sql($node_schema, $node_type) {
     if ( strcasecmp($node_type['type'], 'enum') != 0 ) {
       throw new exception("unknown type {$node_type['name']} type {$node_type['type']}");

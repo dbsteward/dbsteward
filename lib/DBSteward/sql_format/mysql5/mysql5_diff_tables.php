@@ -27,7 +27,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
       $new_table = $new_table_target;
 
       if ( $old_table && $new_table) {
-        static::update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table);
+        static::update_table_columns($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
       }
     }
     else {
@@ -46,7 +46,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
           continue;
         }
   
-        static::update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table);
+        static::update_table_columns($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
       }
     }
   }
@@ -92,12 +92,12 @@ class mysql5_diff_tables extends sql99_diff_tables {
    * @param $old_table  original table
    * @param $new_table  new table
    */
-  private static function update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table) {
+  private static function update_table_columns($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table) {
     $commands = array();
     $drop_defaults_columns = array();
     static::add_drop_table_columns($commands, $old_table, $new_table);
     static::add_create_table_columns($commands, $old_table, $new_schema, $new_table, $drop_defaults_columns);
-    static::add_modify_table_columns($commands, $old_table, $new_schema, $new_table, $drop_defaults_columns);
+    static::add_modify_table_columns($commands, $old_schema, $old_table, $new_schema, $new_table, $drop_defaults_columns);
 
     if (count($commands) > 0) {
       // do 'pre' 'entire' statements before aggregate table alterations
@@ -337,7 +337,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    * @param drop_defaults_columns list for storing columns for which default value should be dropped
    */
   // @TODO: pull up
-  private static function add_modify_table_columns(&$commands, $old_table, $new_schema, $new_table, &$drop_defaults_columns) {
+  private static function add_modify_table_columns(&$commands, $old_schema, $old_table, $new_schema, $new_table, &$drop_defaults_columns) {
     foreach(dbx::get_table_columns($new_table) as $new_column) {
       if (!mysql5_table::contains_column($old_table, $new_column['name'])) {
         continue;
@@ -352,25 +352,17 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 
       $old_column_type = null;
       if ( $old_column ) {
-        $old_column_type = mysql5_column::column_type(dbsteward::$old_database, $new_schema, $old_table, $old_column);
+        $old_column_type = mysql5_column::column_type(dbsteward::$old_database, $old_schema, $old_table, $old_column);
       }
       $new_column_type = mysql5_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $new_column);
 
       if ( strcmp($old_column_type, $new_column_type) != 0 ) {
-        // ALTER TYPE .. USING support by looking up the new type in the xml definition
-        $type_using = '';
-        $type_using_comment = '';
-        if ( isset($new_column['convertUsing']) ) {
-          $type_using = ' USING ' . $new_column['convertUsing'] . ' ';
-          $type_using_comment = '- found XML convertUsing: ' . $new_column['convertUsing'] . ' ';
-        }
+        // @TODO: Implement type conversion works-alike to pgsql's ALTER COLUMN ___ TYPE ___ USING ___
 
         $commands[] = array(
           'stage' => '1',
-          'command' => "\tALTER COLUMN " . $new_column_name
-            . " TYPE " . $new_column_type
-            . $type_using
-            . " /* TYPE change - table: " . $new_table['name'] . " original: " . $old_column_type . " new: " . $new_column_type . ' ' . $type_using_comment . '*/'
+          'command' => "  MODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, TRUE)
+            . " /* TYPE change - table: {$new_table['name']} original: {$old_column['type']} new: $new_column_type */"
         );
       }
 
