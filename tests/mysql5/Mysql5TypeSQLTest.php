@@ -19,8 +19,6 @@ class Mysql5TypeSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
-
-    mysql5_type::clear_registered_enums();
   }
 
   public function testInvalid() {
@@ -65,27 +63,17 @@ XML;
     <enum name="bravo"/>
     <enum name="charlie"/>
   </type>
-  <type type="enum" name="enum_b">
-    <enum name="apple"/>
-    <enum name="banana"/>
-    <enum name="carrot"/>
-  </type>
 </schema>
 XML;
     $schema = new SimpleXMLElement($xml);
-    $expected_sql = "-- found enum type enum_a. references to this type will be replaced with the MySQL-compliant ENUM expression\n-- found enum type enum_b. references to this type will be replaced with the MySQL-compliant ENUM expression\n";
-    $expected_array = array(
-      'enum_a' => array('alpha','bravo','charlie'),
-      'enum_b' => array('apple','banana','carrot')
-    );
 
-    $actual_sql = mysql5_type::get_creation_sql($schema, $schema->type[0]);
-    $actual_sql.= mysql5_type::get_creation_sql($schema, $schema->type[1]);
-
-    $actual_array = mysql5_type::get_enum_values();
-
+    $expected_sql = "-- found enum type enum_a. references to type enum_a will be replaced by ENUM('alpha','bravo','charlie')";
+    $actual_sql = mysql5_type::get_creation_sql($schema, $schema->type);
     $this->assertEquals($expected_sql, $actual_sql);
-    $this->assertEquals($expected_array, $actual_array);
+
+    $expected_sql = "-- dropping enum type enum_a. references to type enum_a will be replaced with the type 'text'";
+    $actual_sql = mysql5_type::get_drop_sql($schema, $schema->type);
+    $this->assertEquals($expected_sql, $actual_sql);
   }
 
 }

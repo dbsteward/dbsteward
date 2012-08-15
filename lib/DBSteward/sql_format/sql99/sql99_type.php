@@ -9,5 +9,9 @@
  */
 
 class sql99_type {
-  
+  public static function equals($schema_a, $type_a, $schema_b, $type_b) {
+    $a_create_sql = self::get_creation_sql($schema_a, $type_a, false);
+    $b_create_sql = self::get_creation_sql($schema_b, $type_b, false);
+    return strcasecmp($a_create_sql, $b_create_sql) == 0;
+  }
 }

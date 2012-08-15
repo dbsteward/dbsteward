@@ -76,9 +76,9 @@ class mysql5_column extends sql99_column {
       throw new Exception("column missing type -- " . $table['name'] . "." . $column['name']);
     }
 
-    // if the column type matches a registered enum type, inject the enum declaration here
-    if ( $values = mysql5_type::get_enum_values((string)$node_column['type']) ) {
-     return mysql5_type::get_enum_type_declaration($values);
+    // if the column type matches an enum type, inject the enum declaration here
+    if ( $node_type = mysql5_type::get_type_node($db_doc, $node_schema, $node_column['type']) ) {
+     return mysql5_type::get_enum_type_declaration($node_type);
     }
 
     // translate serials to their corresponding int types

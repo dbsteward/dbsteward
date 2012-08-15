@@ -30,8 +30,8 @@ class mysql5_function extends sql99_function {
         }
 
         $type = $param['type'];
-        if ( $values = mysql5_type::get_enum_values($type) ) {
-          $type = mysql5_type::get_enum_type_declaration($values);
+        if ( $node_type = mysql5_type::get_type_node(dbsteward::$new_database, $node_schema, $type) ) {
+          $type = mysql5_type::get_enum_type_declaration($node_type);
         }
 
         $params[] = mysql5::get_quoted_function_parameter($param['name']) . ' ' . $type;
@@ -40,8 +40,8 @@ class mysql5_function extends sql99_function {
     }
 
     $returns = $node_function['returns'];
-    if ( $values = mysql5_type::get_enum_values($returns) ) {
-      $returns = mysql5_type::get_enum_type_declaration($values);
+    if ( $node_type = mysql5_type::get_type_node(dbsteward::$new_database, $node_schema, $returns) ) {
+      $returns = mysql5_type::get_enum_type_declaration($node_type);
     }
 
     $sql .= ")\nRETURNS " . $returns . "\nLANGUAGE SQL\n";
