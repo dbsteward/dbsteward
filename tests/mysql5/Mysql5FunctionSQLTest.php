@@ -238,6 +238,45 @@ XML;
     $this->assertEquals($expected, $actual);
   }
 
+  public function testEnumTypes() {
+    $xml = <<<XML
+<schema name="test" owner="ROLE_OWNER">
+  <function name="test_fn" returns="enum1">
+    <functionParameter name="a" type="enum2"/>
+    <functionDefinition language="sql" sqlFormat="mysql5">
+      RETURN 'xyz';
+    </functionDefinition>
+  </function>
+  <type name="enum1" type="enum">
+    <enum name="a"/>
+    <enum name="b"/>
+    <enum name="c"/>
+  </type>
+  <type name="enum2" type="enum">
+    <enum name="x"/>
+    <enum name="y"/>
+    <enum name="z"/>
+  </type>
+</schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+
+    $expected = <<<SQL
+DROP FUNCTION IF EXISTS `test_fn`;
+CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` ENUM('x','y','z'))
+RETURNS ENUM('a','b','c')
+LANGUAGE SQL
+MODIFIES SQL DATA
+NOT DETERMINISTIC
+SQL SECURITY INVOKER
+RETURN 'xyz';
+SQL;
+    
+    $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
+
+    $this->assertEquals($expected, $actual);
+  }
+
   public function testOtherFormats() {
     $xml = <<<XML
 <schema name="test" owner="ROLE_OWNER">
