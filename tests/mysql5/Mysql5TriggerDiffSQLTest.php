@@ -164,7 +164,7 @@ SQL;
   public function testChangeOne() {
     $this->common($this->xml_1, $this->xml_1_timing, "$this->drop_a\n\n$this->create_a_timing", "change timing");
     $this->common($this->xml_1, $this->xml_1_event, "$this->drop_a\n\n$this->create_a_event", "change event");
-    // @TODO: $this->common($this->xml_1, $this->xml_1_table, "$this->drop_a\n\n$this->create_a_table", "change table");
+    $this->common($this->xml_1, $this->xml_1_table, "$this->drop_a\n\n$this->create_a_table", "change table");
     $this->common($this->xml_1, $this->xml_1_def, "$this->drop_a\n\n$this->create_a_def", "change definition");
   }
 
@@ -185,7 +185,7 @@ SQL;
     mysql5_diff_triggers::diff_triggers($ofs, $schema_a, $schema_b);
 
     $actual = trim($ofs->_get_output());
-
+    
     $this->assertEquals($expected, $actual, $message);
   }
 }
