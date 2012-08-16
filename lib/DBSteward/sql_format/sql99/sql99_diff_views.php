@@ -56,7 +56,7 @@ class sql99_diff_views {
     if ( dbsteward::$always_recreate_views ) {
       return TRUE;
     }
-    $different = strcasecmp(format_view::get_view_query($old_view), format_view::get_view_query($new_view)) != 0;
-    return $different;
+    return strcasecmp(format_view::get_view_query($old_view), format_view::get_view_query($new_view)) != 0
+        || strcasecmp($old_view['owner'], $new_view['owner']) != 0;
   }
 }
