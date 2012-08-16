@@ -246,13 +246,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
         // notice $include_null_definition is false
         // this is because ADD COLUMNs with NOT NULL will fail when there are existing rows
 
-
-/* @DIFFTOOL for FS#15997 - look for columns of a certain type being added
-if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
-  echo $new_schema . "." . $new_table['name'] . "." . $new_column['name'] . " TYPE " . $new_column['type'] . " " . $new_column['default'] . "\n";
-}
-/**/
-
         $commands[] = array(
           'stage' => '1',
           'command' => "\tADD COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mysql5_diff::$add_defaults, false)
@@ -390,7 +383,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             'stage' => '1',
             'command' => "\tALTER COLUMN " . $new_column_name . " DROP NOT NULL"
           );
-        } else {
+        }
+        else {
           if (mysql5_diff::$add_defaults) {
             $default_value = mysql5_column::get_default_value($new_column_type);
 

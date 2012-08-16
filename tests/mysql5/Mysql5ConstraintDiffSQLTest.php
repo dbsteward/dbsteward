@@ -213,6 +213,32 @@ SQL;
     $this->common($this->xml_pka_uqc_ifkd_cfke, $this->xml_pkb_cfke, $expected);
   }
 
+  public function testChangePrimaryKeyNameAndTable() {
+    $old = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="test" owner="NOBODY" primaryKey="pka">
+    <column name="pka" type="int"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+    $new = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="newtable" owner="NOBODY" primaryKey="pkb">
+    <column name="pkb" type="int" oldName="pka"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+    $expected = <<<SQL
+ALTER TABLE `newtable` DROP PRIMARY KEY;
+ALTER TABLE `newtable` ADD PRIMARY KEY (`pkb`);
+SQL;
+    $this->common($old, $new, $expected);
+  }
+
   public function common($a, $b, $expected) {
     $dbs_a = new SimpleXMLElement($a);
     $dbs_b = new SimpleXMLElement($b);

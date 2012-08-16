@@ -120,7 +120,7 @@ class sql99_diff_constraints {
           $old_constraint = format_constraint::get_table_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name']);
 
           if ( !format_table::contains_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name'])
-            || !format_table::constraint_equals($old_constraint, $constraint) ) {
+            || !format_constraint::equals($old_constraint, $constraint) ) {
             $list[] = $constraint;
           }
         }
