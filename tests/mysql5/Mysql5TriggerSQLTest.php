@@ -33,6 +33,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
+DROP TRIGGER IF EXISTS `trigger`;
 CREATE TRIGGER `trigger` BEFORE INSERT ON `table`
 FOR EACH ROW EXECUTE xyz;
 SQL;
@@ -55,6 +56,9 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
+DROP TRIGGER IF EXISTS `trigger_INSERT`;
+DROP TRIGGER IF EXISTS `trigger_UPDATE`;
+DROP TRIGGER IF EXISTS `trigger_DELETE`;
 CREATE TRIGGER `trigger_INSERT` BEFORE INSERT ON `table`
 FOR EACH ROW EXECUTE xyz;
 CREATE TRIGGER `trigger_UPDATE` BEFORE UPDATE ON `table`

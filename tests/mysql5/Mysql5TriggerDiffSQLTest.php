@@ -100,22 +100,27 @@ XML;
 XML;
 
   private $create_a = <<<SQL
+DROP TRIGGER IF EXISTS `trigger_a`;
 CREATE TRIGGER `trigger_a` BEFORE INSERT ON `table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $create_a_timing = <<<SQL
+DROP TRIGGER IF EXISTS `trigger_a`;
 CREATE TRIGGER `trigger_a` AFTER INSERT ON `table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $create_a_event = <<<SQL
+DROP TRIGGER IF EXISTS `trigger_a`;
 CREATE TRIGGER `trigger_a` BEFORE UPDATE ON `table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $create_a_table = <<<SQL
+DROP TRIGGER IF EXISTS `trigger_a`;
 CREATE TRIGGER `trigger_a` BEFORE INSERT ON `another`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $create_a_def = <<<SQL
+DROP TRIGGER IF EXISTS `trigger_a`;
 CREATE TRIGGER `trigger_a` BEFORE INSERT ON `table`
 FOR EACH ROW EXECUTE otherstuff;
 SQL;
@@ -123,6 +128,7 @@ SQL;
 DROP TRIGGER IF EXISTS `trigger_a`;
 SQL;
   private $create_b = <<<SQL
+DROP TRIGGER IF EXISTS `trigger_b`;
 CREATE TRIGGER `trigger_b` AFTER UPDATE ON `table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
@@ -130,6 +136,7 @@ SQL;
 DROP TRIGGER IF EXISTS `trigger_b`;
 SQL;
   private $create_c = <<<SQL
+DROP TRIGGER IF EXISTS `trigger_c`;
 CREATE TRIGGER `trigger_c` AFTER DELETE ON `table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
@@ -162,18 +169,19 @@ SQL;
   }
 
   public function testChangeOne() {
-    $this->common($this->xml_1, $this->xml_1_timing, "$this->drop_a\n\n$this->create_a_timing", "change timing");
-    $this->common($this->xml_1, $this->xml_1_event, "$this->drop_a\n\n$this->create_a_event", "change event");
-    $this->common($this->xml_1, $this->xml_1_table, "$this->drop_a\n\n$this->create_a_table", "change table");
-    $this->common($this->xml_1, $this->xml_1_def, "$this->drop_a\n\n$this->create_a_def", "change definition");
+    // changing a trigger will not cause a drop, because the drop is baked into the creation DDL
+    $this->common($this->xml_1, $this->xml_1_timing, "$this->create_a_timing", "change timing");
+    $this->common($this->xml_1, $this->xml_1_event, "$this->create_a_event", "change event");
+    $this->common($this->xml_1, $this->xml_1_table, "$this->create_a_table", "change table");
+    $this->common($this->xml_1, $this->xml_1_def, "$this->create_a_def", "change definition");
   }
 
   public function testAddSomeAndChange() {
-    $this->common($this->xml_1, $this->xml_3_alt, "$this->drop_a\n\n$this->create_a_timing\n\n$this->create_b\n\n$this->create_c");
+    $this->common($this->xml_1, $this->xml_3_alt, "$this->create_a_timing\n\n$this->create_b\n\n$this->create_c");
   }
 
   public function testDropSomeAndChange() {
-    $this->common($this->xml_3_alt, $this->xml_1, "$this->drop_a\n\n$this->drop_b\n\n$this->drop_c\n\n$this->create_a");
+    $this->common($this->xml_3_alt, $this->xml_1, "$this->drop_b\n\n$this->drop_c\n\n$this->create_a");
   }
 
   protected function common($xml_a, $xml_b, $expected, $message = NULL) {

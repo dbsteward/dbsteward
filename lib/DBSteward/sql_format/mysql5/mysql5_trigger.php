@@ -47,7 +47,8 @@ class mysql5_trigger extends sql99_trigger {
     }
     $table_name = mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']);
 
-    $ddl = "";
+    // always drop triggers before creating them
+    $ddl = static::get_drop_sql($node_schema, $node_trigger);
     $single = count($events) == 1;
     foreach ( $events as $event ) {
       if ( ! ($event = self::validate_event($event)) ) {
@@ -59,7 +60,6 @@ class mysql5_trigger extends sql99_trigger {
       if ( substr($trigger_fn, -1) != ';' ) {
         $trigger_fn .= ';';
       }
-
       $ddl .= <<<SQL
 CREATE TRIGGER $trigger_name $when $event ON $table_name
 FOR EACH ROW $trigger_fn

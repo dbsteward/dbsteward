@@ -271,10 +271,15 @@ ALTER TABLE `user` ADD UNIQUE INDEX `username_unq` (`username`);
 
 ALTER TABLE `user` ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `group` (`group_id`);
 
+DROP TRIGGER IF EXISTS `__public_user_user_id_serial_trigger`;
 CREATE TRIGGER `__public_user_user_id_serial_trigger` BEFORE INSERT ON `user`
 FOR EACH ROW SET NEW.`user_id` = COALESCE(NEW.`user_id`, nextval('__public_user_user_id_serial_seq'));
+
+DROP TRIGGER IF EXISTS `__public_group_group_id_serial_trigger`;
 CREATE TRIGGER `__public_group_group_id_serial_trigger` BEFORE INSERT ON `group`
 FOR EACH ROW SET NEW.`group_id` = COALESCE(NEW.`group_id`, nextval('__public_group_group_id_serial_seq'));
+
+DROP TRIGGER IF EXISTS `a_trigger`;
 CREATE TRIGGER `a_trigger` BEFORE INSERT ON `user`
 FOR EACH ROW EXECUTE xyz;
 
