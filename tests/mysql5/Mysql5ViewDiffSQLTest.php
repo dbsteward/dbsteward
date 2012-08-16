@@ -88,7 +88,7 @@ XML;
 XML;
 
     // owner changed, expect single drop
-    // @TODO: $this->common_drop($one, $alt_one, "DROP VIEW IF EXISTS `test_view`;", "different owner");
+    $this->common_drop($one, $alt_one, "DROP VIEW IF EXISTS `test_view`;", "different owner");
   }
 
   public function testCreate() {
@@ -138,7 +138,24 @@ XML;
 XML;
 
     // owner changed, expect single drop
-    // @TODO: $this->common_create($one, $alt_one, "CREATE OR REPLACE DEFINER = the_owner SQL SECURITY DEFINER VIEW `test_view`\n  AS SELECT * FROM bar;", "different owner");
+    $this->common_create($one, $alt_one, "CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `test_view`\n  AS SELECT * FROM foo;", "different owner");
+  }
+
+  public function testAlwaysRecreate() {
+    $view = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <view name="test_view" owner="ROLE_OWNER">
+    <viewQuery sqlFormat="mysql5">SELECT * FROM foo;</viewQuery>
+  </view>
+</schema>
+XML;
+    dbsteward::$always_recreate_views = FALSE;
+    $this->common_drop($view, $view, '');
+    $this->common_create($view, $view, '');
+
+    dbsteward::$always_recreate_views = TRUE;
+    $this->common_drop($view, $view, "DROP VIEW IF EXISTS `test_view`;");
+    $this->common_create($view, $view, "CREATE OR REPLACE DEFINER = the_owner SQL SECURITY DEFINER VIEW `test_view`\n  AS SELECT * FROM foo;");
   }
 
 
