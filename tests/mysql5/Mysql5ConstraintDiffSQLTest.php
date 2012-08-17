@@ -226,14 +226,16 @@ XML;
     $new = <<<XML
 <dbsteward>
 <schema name="public" owner="NOBODY">
-  <table name="newtable" owner="NOBODY" primaryKey="pkb">
+  <table name="newtable" owner="NOBODY" primaryKey="pkb" oldName="test">
     <column name="pkb" type="int" oldName="pka"/>
   </table>
 </schema>
 </dbsteward>
 XML;
+    // drop the PK on test *before* diffing the table
+    // add the renamed PK on the renamed table *after* diffing the table
     $expected = <<<SQL
-ALTER TABLE `newtable` DROP PRIMARY KEY;
+ALTER TABLE `test` DROP PRIMARY KEY;
 ALTER TABLE `newtable` ADD PRIMARY KEY (`pkb`);
 SQL;
     $this->common($old, $new, $expected);
@@ -252,6 +254,7 @@ SQL;
     mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'all', true);
     mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'all', false);
     $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
+    echo "\n$actual\n";
     $this->assertEquals($expected, $actual, "all constraints diff");
     $ofs->_clear_output();
 
