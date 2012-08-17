@@ -254,7 +254,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
         if ( ! pgsql8_column::null_allowed($new_table, $new_column) ) {
           $commands[] = array(
             'stage' => '3',
-            'command' => "\tALTER COLUMN " . mysql5::get_quoted_column_name($new_column['name']) . " SET NOT NULL"
+            'command' => "\tMODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mysql5_diff::$add_defaults)
           );
           // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 3
           if ( strlen($new_column['default']) > 0 ) {
@@ -354,7 +354,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
 
         $commands[] = array(
           'stage' => '1',
-          'command' => "  MODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, TRUE)
+          'command' => "  MODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mysql5_diff::$add_defaults)
             . " /* TYPE change - table: {$new_table['name']} original: {$old_column['type']} new: $new_column_type */"
         );
       }
@@ -364,34 +364,38 @@ class mysql5_diff_tables extends sql99_diff_tables {
 
       if (strcmp($old_default, $new_default) != 0) {
         if (strlen($new_default) == 0) {
+          // if the default value was gotten rid of
           $commands[] = array(
             'stage' => '1',
-            'command' => "\tALTER COLUMN " . $new_column_name . " DROP DEFAULT"
+            'command' => "\tALTER COLUMN $new_column_name DROP DEFAULT"
           );
-        } else {
-          $commands[] =
-          array(
+        }
+        else {
+          // if the default value changed
+          $commands[] = array(
             'stage' => '1',
-            'command' => "\tALTER COLUMN " . $new_column_name . " SET DEFAULT " . $new_default
+            'command' => "\tALTER COLUMN $new_column_name SET DEFAULT $new_default"
           );
         }
       }
 
       if ( strcasecmp($old_column['null'], $new_column['null']) != 0 ) {
         if (mysql5_column::null_allowed($new_table, $new_column)) {
+          // if the column is now allowed to be null, redefine it (because mysql won't let you just change NULL/NOT NULL)
           $commands[] = array(
             'stage' => '1',
-            'command' => "\tALTER COLUMN " . $new_column_name . " DROP NOT NULL"
+            'command' => "\tMODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, FALSE)
           );
         }
         else {
+          // the column is no longer allowed to be null
           if (mysql5_diff::$add_defaults) {
             $default_value = mysql5_column::get_default_value($new_column_type);
 
             if ($default_value != null) {
               $commands[] = array(
                 'stage' => '1',
-                'command' => "\tALTER COLUMN " . $new_column_name . " SET DEFAULT " . $default_value
+                'command' => "\tALTER COLUMN $new_column_name SET DEFAULT $default_value"
               );
               $drop_defaults_columns[] = $new_column;
             }
@@ -404,13 +408,14 @@ class mysql5_diff_tables extends sql99_diff_tables {
             $commands[] = array(
               'stage' => 'AFTER1',
               'command' => "UPDATE " . mysql5::get_fully_qualified_table_name($new_schema['name'], $new_table['name'])
-                . " SET " . $new_column_name . " = " . $new_column['default'] . " WHERE " . $new_column_name . " IS NULL; -- has_default_now: make modified column that is null the default value before NOT NULL hits"
+                . " SET $new_column_name = {$new_column['default']} WHERE $new_column_name IS NULL;"
+                . " -- has_default_now: make modified column that is null the default value before NOT NULL hits"
             );
           }
 
           $commands[] = array(
             'stage' => '3',
-            'command' => "\tALTER COLUMN " . $new_column_name . " SET NOT NULL"
+            'command' => "\tMODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mysql5_diff::$add_defaults)
           );
         }
       }

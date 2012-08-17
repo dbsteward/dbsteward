@@ -150,7 +150,9 @@ XML;
 
     // drop/add column
     $this->common_diff($new, $old, "ALTER TABLE `table`\n\tADD COLUMN `col` text;", "ALTER TABLE `table`\n\tDROP COLUMN `diff`;");
+  }
 
+  public function testNullAndDefaultColumnChanges() {
     $old = <<<XML
 <schema name="public" owner="ROLE_OWNER">
   <table name="table" primaryKey="id" owner="ROLE_OWNER">
@@ -173,6 +175,73 @@ XML;
 
     // add defaults
     $this->common_diff($new, $old, "ALTER TABLE `table`\n\tALTER COLUMN `col` SET DEFAULT 'xyz';", '');
+
+
+    $nullable = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table" primaryKey="id" owner="ROLE_OWNER">
+    <column name="id" type="int"/>
+    <column name="col" type="text" null="true"/>
+  </table>
+</schema>
+XML;
+    $notnullable = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table" primaryKey="id" owner="ROLE_OWNER">
+    <column name="id" type="int"/>
+    <column name="col" type="text" null="false"/>
+  </table>
+</schema>
+XML;
+    
+    // NULL -> NOT NULL
+    $this->common_diff($nullable, $notnullable, '', "ALTER TABLE `table`\n\tMODIFY COLUMN `col` text NOT NULL;");
+
+    // NOT NULL -> NULL
+    $this->common_diff($notnullable, $nullable, "ALTER TABLE `table`\n\tMODIFY COLUMN `col` text;", '');
+
+    $nullable_with_default = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table" primaryKey="id" owner="ROLE_OWNER">
+    <column name="id" type="int"/>
+    <column name="col" type="text" null="true" default="'xyz'"/>
+  </table>
+</schema>
+XML;
+    $notnullable_with_default = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table" primaryKey="id" owner="ROLE_OWNER">
+    <column name="id" type="int"/>
+    <column name="col" type="text" null="false" default="'xyz'"/>
+  </table>
+</schema>
+XML;
+    
+    // NULL -> NOT NULL
+    $this->common_diff($nullable_with_default, $notnullable_with_default,
+     "UPDATE `table` SET `col` = 'xyz' WHERE `col` IS NULL; -- has_default_now: make modified column that is null the default value before NOT NULL hits",
+     "ALTER TABLE `table`\n\tMODIFY COLUMN `col` text NOT NULL DEFAULT 'xyz';");
+
+    // NOT NULL -> NULL
+    $this->common_diff($notnullable_with_default, $nullable_with_default, "ALTER TABLE `table`\n\tMODIFY COLUMN `col` text DEFAULT 'xyz';", '');
+
+    $notnullable_without_default = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table" primaryKey="id" owner="ROLE_OWNER">
+    <column name="id" type="int"/>
+    <column name="col" type="text" null="false"/>
+  </table>
+</schema>
+XML;
+
+    $this->common_diff($nullable_with_default, $notnullable_without_default,
+      "ALTER TABLE `table`\n\tALTER COLUMN `col` DROP DEFAULT;",
+      "ALTER TABLE `table`\n\tMODIFY COLUMN `col` text NOT NULL;");
+
+    // extraneous ALTER COLUMN SET DEFAULT won't actually hurt anything
+    $this->common_diff($notnullable_without_default, $nullable_with_default,
+      "ALTER TABLE `table`\n\tALTER COLUMN `col` SET DEFAULT 'xyz' ,\n\tMODIFY COLUMN `col` text DEFAULT 'xyz';",
+      "");
   }
 
   public function testEnums() {
@@ -204,37 +273,37 @@ XML;
 XML;
   }
 
-  public function testSerials() {
-    $none = <<<XML
-<schema name="public" owner="ROLE_OWNER">
+//   public function testSerials() {
+//     $none = <<<XML
+// <schema name="public" owner="ROLE_OWNER">
   
-</schema>
-XML;
-    $one = <<<XML
-<schema name="public" owner="ROLE_OWNER">
-  <table name="table" primaryKey="id" owner="ROLE_OWNER">
-    <column name="id" type="serial"/>
-  </table>
-</schema>
-XML;
+// </schema>
+// XML;
+//     $one = <<<XML
+// <schema name="public" owner="ROLE_OWNER">
+//   <table name="table" primaryKey="id" owner="ROLE_OWNER">
+//     <column name="id" type="serial"/>
+//   </table>
+// </schema>
+// XML;
 
-    // add table with serial
-    $this->common_diff($none, $one, '', '');
+//     // add table with serial
+//     $this->common_diff($none, $one, '', '');
 
-    // drop table with serial
-    $this->common_diff($one, $none, '', '');
+//     // drop table with serial
+//     $this->common_diff($one, $none, '', '');
 
-    $one_renamed = <<<XML
-<schema name="public" owner="ROLE_OWNER">
-  <table name="table" primaryKey="new_id" owner="ROLE_OWNER">
-    <column name="new_id" type="serial" oldName="id"/>
-  </table>
-</schema>
-XML;
+//     $one_renamed = <<<XML
+// <schema name="public" owner="ROLE_OWNER">
+//   <table name="table" primaryKey="new_id" owner="ROLE_OWNER">
+//     <column name="new_id" type="serial" oldName="id"/>
+//   </table>
+// </schema>
+// XML;
 
-    // rename serial column
-    $this->common_diff($one, $one_renamed, '', '');
-  }
+//     // rename serial column
+//     $this->common_diff($one, $one_renamed, '', '');
+//   }
 
   private function common_diff($xml_a, $xml_b, $expected1, $expected3, $message='') {
     dbsteward::$old_database = new SimpleXMLElement($this->db_doc_xml . $xml_a . '</dbsteward>');
