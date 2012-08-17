@@ -110,6 +110,7 @@ class mysql5_diff extends sql99_diff {
       foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         //@NOTICE: @TODO: this does not honor oldName attributes, does it matter?
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
+        
         mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
         mysql5_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
         mysql5_diff_sequences::diff_sequences($ofs1, $old_schema, $new_schema);

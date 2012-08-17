@@ -184,6 +184,55 @@ SQL;
     $this->common($this->xml_3_alt, $this->xml_1, "$this->drop_b\n\n$this->drop_c\n\n$this->create_a");
   }
 
+  public function testSerials() {
+    $old = <<<XML
+<schema name="test0" owner="NOBODY">
+</schema>
+XML;
+    $new = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="id" type="serial"/>
+  </table>
+</schema>
+XML;
+
+    
+
+    // shouldn't create any extra triggers
+    $this->common($new, $new, '');
+
+    // should create a new trigger
+    $expected = <<<SQL
+DROP TRIGGER IF EXISTS `__test0_table_id_serial_trigger`;
+CREATE TRIGGER `__test0_table_id_serial_trigger` BEFORE INSERT ON `table`
+FOR EACH ROW SET NEW.`id` = COALESCE(NEW.`id`, nextval('__test0_table_id_serial_seq'));
+SQL;
+    $this->common($old, $new, $expected);
+
+    // dropping the table drops the trigger as well
+    $this->common($new, $old, '');
+
+    $renamed = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="newid" type="serial" oldName="id"/>
+  </table>
+</schema>
+XML;
+
+    // renaming should drop the old trigger, create the new
+    $expected = <<<SQL
+DROP TRIGGER IF EXISTS `__test0_table_id_serial_trigger`;
+
+DROP TRIGGER IF EXISTS `__test0_table_newid_serial_trigger`;
+CREATE TRIGGER `__test0_table_newid_serial_trigger` BEFORE INSERT ON `table`
+FOR EACH ROW SET NEW.`newid` = COALESCE(NEW.`newid`, nextval('__test0_table_newid_serial_seq'));
+SQL;
+    
+    $this->common($new, $renamed, $expected);
+  }
+
   protected function common($xml_a, $xml_b, $expected, $message = NULL) {
     $schema_a = new SimpleXMLElement($xml_a);
     $schema_b = new SimpleXMLElement($xml_b);

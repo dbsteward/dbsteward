@@ -9,11 +9,21 @@
  */
 
 class mysql5_diff_sequences extends sql99_diff_sequences {
+  private static function get_sequences($schema) {
+    $sequences = dbx::get_sequences($schema);
+
+    foreach ( dbx::get_tables($schema) as $table ) {
+      $sequences = array_merge($sequences, mysql5_table::get_sequences_needed($schema, $table));
+    }
+    
+    return $sequences;
+  }
+
   public static function diff_sequences($ofs, $old_schema, $new_schema) {
-    $new_sequences = dbx::get_sequences($new_schema);
+    $new_sequences = static::get_sequences($new_schema);
 
     if ( $old_schema != null ) {
-      $old_sequences = dbx::get_sequences($old_schema);
+      $old_sequences = static::get_sequences($old_schema);
     }
     else {
       $old_sequences = array();
@@ -41,14 +51,13 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
 
         // only drop sequences not in the new schema
         $to_drop = array();
-        foreach ( $old_sequences as $sequence ) {
-          if ( ! mysql5_schema::contains_sequence($new_schema, $sequence['name']) ) {
-            $to_drop[] = $sequence;
+        foreach ( $old_sequences as $old_seq ) {
+          if ( static::schema_contains_sequence($new_schema, $old_seq['name'], true) ) {
+            // if the sequence *is* in the new schema, then it might have changed
+            $common_sequences[(string)$old_seq['name']] = $old_seq;
           }
           else {
-            // if the sequence *is* in the new schema, then it might have changed
-            // note the .'' - SimpleXMLElement attributes are actually objects, so convert to string
-            $common_sequences[$sequence['name'].''] = $sequence;
+            $to_drop[] = $old_seq;
           }
         }
         if ( ! empty($to_drop) ) {
@@ -57,13 +66,19 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
 
         // only add sequences not in the old schema
         $to_insert = array();
-        foreach ( $new_sequences as $sequence ) {
-          if ( ! mysql5_schema::contains_sequence($old_schema, $sequence['name']) ) {
-            $to_insert[] = $sequence;
+        foreach ( $new_sequences as $new_seq ) {
+          if ( static::schema_contains_sequence($old_schema, $new_seq['name'])) {
+            // there used to be a sequence named $new_seq['name']
+            self::diff_single($ofs, $common_sequences[(string)$new_seq['name']], $new_seq);
+          }
+          elseif ( !dbsteward::$ignore_oldname
+            && !empty($new_seq['oldName'])
+            && static::schema_contains_sequence($old_schema, $new_seq['oldName']) ) {
+            // there used to be a sequence named $new_seq['oldName']
+            self::diff_single($ofs, $common_sequences[(string)$new_seq['oldName']], $new_seq);
           }
           else {
-            // note the .'' - SimpleXMLElement attributes are actually objects, so convert to string
-            self::diff_single($ofs, $common_sequences[$sequence['name'].''], $sequence);
+            $to_insert[] = $new_seq;
           }
         }
         if ( ! empty($to_insert) ) {
@@ -73,8 +88,33 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
     }
   }
 
+  private static function schema_contains_sequence($schema, $sequence_name, $include_oldnames=FALSE) {
+    if ( mysql5_schema::contains_sequence($schema, $sequence_name) ) {
+      return TRUE;
+    }
+
+    foreach ( dbx::get_tables($schema) as $table ) {
+      foreach ( mysql5_table::get_sequences_needed($schema, $table) as $sequence ) {
+        if ( strcasecmp($sequence['name'], $sequence_name) === 0 ) {
+          return TRUE;
+        }
+
+        if ( $include_oldnames && !dbsteward::$ignore_oldname && !empty($sequence['oldName'])
+          && strcasecmp($sequence['oldName'], $sequence_name) === 0 ) {
+          return TRUE;
+        }
+      }
+    }
+
+    return FALSE;
+  }
+
   private static function diff_single($ofs, $old_seq, $new_seq) {
     $sql = array();
+
+    if ( !dbsteward::$ignore_oldname && !empty($new_seq['oldName']) ) {
+      $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::SEQ_COL) . " = '{$new_seq['name']}'";
+    }
 
     if ( $new_seq['inc'] == null && $old_seq['inc'] != null ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::INC_COL) . ' = DEFAULT';

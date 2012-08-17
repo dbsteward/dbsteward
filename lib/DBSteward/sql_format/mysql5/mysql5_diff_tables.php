@@ -419,21 +419,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
           );
         }
       }
-
-      // drop sequence and default if converting from *serial to *int
-      if ( mysql5_column::is_serial($old_column['type']) &&
-           ($new_column['type'] == 'int' || $new_column['type'] == 'bigint') ) {
-
-          $commands[] = array(
-            'stage' => 'BEFORE3',
-            'command' => mysql5_sequence::get_drop_sql($new_schema, mysql5_column::get_serial_sequence_name($new_schema, $new_table, $new_column))
-          );
-
-          $commands[] = array(
-            'stage' => '1',
-            'command' => "\tALTER COLUMN " . $new_column_name . " DROP DEFAULT"
-          );
-      }
     }
   }
 

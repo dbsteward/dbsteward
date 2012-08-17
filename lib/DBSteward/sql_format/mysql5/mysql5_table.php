@@ -83,7 +83,16 @@ class mysql5_table extends sql99_table {
       // we need a sequence for each serial column
       if ( mysql5_column::is_serial($column['type']) ) {
         $sequence_name = mysql5_column::get_serial_sequence_name($schema, $table, $column);
-        $sequences[] = new SimpleXMLElement("<sequence name=\"$sequence_name\" owner=\"$owner\"/>");
+        $sequence = new SimpleXMLElement("<sequence name=\"$sequence_name\" owner=\"$owner\"/>");
+
+        if ( !empty($column['oldName']) && !dbsteward::$ignore_oldname ) {
+          $realname = (string)$column['name'];
+          $column['name'] = (string)$column['oldName'];
+          $sequence['oldName'] = mysql5_column::get_serial_sequence_name($schema, $table, $column);
+          $column['name'] = $realname;
+        }
+
+        $sequences[] = $sequence;
       }
     }
 

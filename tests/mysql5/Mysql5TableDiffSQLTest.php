@@ -273,37 +273,60 @@ XML;
 XML;
   }
 
-//   public function testSerials() {
-//     $none = <<<XML
-// <schema name="public" owner="ROLE_OWNER">
+  public function testSerials() {
+    $none = <<<XML
+<schema name="public" owner="ROLE_OWNER">
   
-// </schema>
-// XML;
-//     $one = <<<XML
-// <schema name="public" owner="ROLE_OWNER">
-//   <table name="table" primaryKey="id" owner="ROLE_OWNER">
-//     <column name="id" type="serial"/>
-//   </table>
-// </schema>
-// XML;
+</schema>
+XML;
+    $one = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table" primaryKey="id" owner="ROLE_OWNER">
+    <column name="id" type="serial"/>
+  </table>
+</schema>
+XML;
 
-//     // add table with serial
-//     $this->common_diff($none, $one, '', '');
+    // add table with serial
+    $this->common_diff($none, $one, 
+      "CREATE TABLE `table` (\n  `id` int NOT NULL\n);",
+      '');
+    
+    // drop table with serial
+    // nothing needs to happen at the table level
+    $this->common_diff($one, $none, '', '');
+    
 
-//     // drop table with serial
-//     $this->common_diff($one, $none, '', '');
+    $one_renamed = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table" primaryKey="new_id" owner="ROLE_OWNER">
+    <column name="new_id" type="serial" oldName="id"/>
+  </table>
+</schema>
+XML;
 
-//     $one_renamed = <<<XML
-// <schema name="public" owner="ROLE_OWNER">
-//   <table name="table" primaryKey="new_id" owner="ROLE_OWNER">
-//     <column name="new_id" type="serial" oldName="id"/>
-//   </table>
-// </schema>
-// XML;
+    // rename serial column
+    // 
+    $this->common_diff($one, $one_renamed,
+      "-- column rename from oldName specification\nALTER TABLE `table` CHANGE COLUMN `id` `new_id` int NOT NULL;",
+      "-- `table` DROP COLUMN `id` omitted: new column new_id indicates it is the replacement for `id`");
 
-//     // rename serial column
-//     $this->common_diff($one, $one_renamed, '', '');
-//   }
+    $one_int = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table" primaryKey="id" owner="ROLE_OWNER">
+    <column name="id" type="int"/>
+  </table>
+</schema>
+XML;
+    
+    // demote serial to int
+    // do nothing - serial types are already represented as ints
+    $this->common_diff($one, $one_int, '', '');
+
+    // promote int to serial
+    // do nothing - serial types are already represented as ints
+    $this->common_diff($one_int, $one, '', '');
+  }
 
   private function common_diff($xml_a, $xml_b, $expected1, $expected3, $message='') {
     dbsteward::$old_database = new SimpleXMLElement($this->db_doc_xml . $xml_a . '</dbsteward>');

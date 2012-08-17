@@ -22,6 +22,7 @@ class Mysql5DiffTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
+    dbsteward::$always_recreate_views = FALSE;
   }
 
   public function testUpdateStructure() {
@@ -62,7 +63,7 @@ class Mysql5DiffTest extends PHPUnit_Framework_TestCase {
       <enum name="proposal"/>
     </type>
 
-    <sequence name="odds" owner="ROLE_OWNER" increment="2" start="1" cycle="true"/>
+    <sequence name="odds" owner="ROLE_OWNER" inc="2" start="1" cycle="true"/>
 
     <view name="issues_with_projects" owner="ROLE_OWNER">
       <viewQuery sqlFormat="mysql5">SELECT * FROM `issue` INNER JOIN `projects` USING (`project_id`)</viewQuery>
@@ -133,7 +134,7 @@ XML;
       <enum name="request"/>
     </type>
 
-    <sequence name="odds" owner="ROLE_OWNER" increment="2" start="3" cycle="true"/>
+    <sequence name="odds" owner="ROLE_OWNER" inc="2" start="3" cycle="true"/>
 
     <view name="issues_with_projects" owner="ROLE_OWNER">
       <viewQuery sqlFormat="mysql5">SELECT * FROM `issue` INNER JOIN `issue_group` ON `issue`.`project_id` = `issue_group`.`issue_group_id`</viewQuery>
@@ -171,8 +172,6 @@ XML;
     echo "\n\n------------------------------New to Nothing------------------------------------\n\n";
 
     $this->common_structure($new, "<dbsteward/>");
-
-
   }
 
   private function common_structure($old, $new) {
@@ -186,7 +185,9 @@ XML;
 
     mysql5_diff::update_structure($ofs1, $ofs3);
 
+    echo "\n\nofs 1:\n\n";
     echo $ofs1->_get_output();
+    echo "\n\nofs 3:\n\n";
     echo $ofs3->_get_output();
   }
 }

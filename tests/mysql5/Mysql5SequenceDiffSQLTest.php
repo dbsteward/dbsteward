@@ -148,6 +148,56 @@ SQL;
     $this->common($this->xml_3, $this->xml_1a, $expected);
   }
 
+  public function testSerials() {
+    $old = <<<XML
+<schema name="test0" owner="NOBODY">
+</schema>
+XML;
+    $new = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="id" type="serial"/>
+  </table>
+</schema>
+XML;
+
+    $expected = $this->getExpectedSequenceShimDDL();
+  
+    // shouldn't create any serial sequences  
+    $this->common($new, $new, '');
+
+    // should create a serial sequence
+    $expected = $this->getExpectedSequenceShimDDL();
+    $expected.= <<<SQL
+\n\nINSERT INTO `__sequences`
+  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
+VALUES
+  ('__test0_table_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
+SQL;
+    $this->common($old, $new, $expected);
+
+    // should drop a serial sequence
+    $expected = <<<SQL
+DROP TABLE IF EXISTS `__sequences`;
+DROP FUNCTION IF EXISTS `nextval`;
+DROP FUNCTION IF EXISTS `setval`;
+DROP FUNCTION IF EXISTS `currval`;
+DROP FUNCTION IF EXISTS `lastval`;
+SQL;
+    $this->common($new, $old, $expected);
+
+    $renamed = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="newid" type="serial" oldName="id"/>
+  </table>
+</schema>
+XML;
+    
+    // should UPDATE for name
+    $this->common($new, $renamed, "UPDATE `__sequences`\nSET `name` = '__test0_table_newid_serial_seq'\nWHERE `name` = '__test0_table_id_serial_seq';");
+  }
+
   protected function common($xml_a, $xml_b, $expected) {
     $schema_a = new SimpleXMLElement($xml_a);
     $schema_b = new SimpleXMLElement($xml_b);

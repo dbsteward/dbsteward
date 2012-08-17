@@ -20,7 +20,8 @@ class sql99_diff_triggers {
     foreach(dbx::get_tables($new_schema) as $new_table) {
       if ($old_schema == null) {
         $old_table = null;
-      } else {
+      }
+      else {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
       static::diff_triggers_table($ofs, $old_schema, $old_table, $new_schema, $new_table);
@@ -53,13 +54,13 @@ class sql99_diff_triggers {
    *
    * @return list of triggers that should be dropped
    */
-  private static function get_drop_triggers($old_schema, $old_table, $new_schema, $new_table) {
+  protected static function get_drop_triggers($old_schema, $old_table, $new_schema, $new_table) {
     $list = array();
 
     if (($new_table != null) && ($old_table != null)) {
-      foreach(dbx::get_table_triggers($old_schema, $old_table) as $old_trigger) {
+      foreach(static::get_table_triggers($old_schema, $old_table) as $old_trigger) {
         // if this trigger doesn't exist by name in the new schema, drop it
-        if ( count($new_schema->xpath("trigger[@name='{$old_trigger['name']}']")) == 0 ) {
+        if ( ! static::schema_contains_trigger($new_schema, $old_trigger) ) {
           $list[] = $old_trigger;
         }
       }
@@ -76,18 +77,18 @@ class sql99_diff_triggers {
    *
    * @return list of triggers that should be added
    */
-  private static function get_new_triggers($old_schema, $old_table, $new_schema, $new_table) {
+  protected static function get_new_triggers($old_schema, $old_table, $new_schema, $new_table) {
     $list = array();
 
     if ($new_table != null) {
       if ($old_table == null) {
-        $list = dbx::get_table_triggers($new_schema, $new_table);
+        $list = static::get_table_triggers($new_schema, $new_table);
       } else {
         // if there isn't a trigger in the old schema which is the same as the new one,
         // recreate it
-        foreach(dbx::get_table_triggers($new_schema, $new_table) as $new_trigger) {
+        foreach(static::get_table_triggers($new_schema, $new_table) as $new_trigger) {
           $old_contains_new = false;
-          $old_triggers = dbx::get_table_triggers($old_schema, $old_table);
+          $old_triggers = static::get_table_triggers($old_schema, $old_table);
           foreach($old_triggers AS $old_trigger) {
             if ( format_trigger::equals($old_trigger, $new_trigger) ) {
               $old_contains_new = true;
@@ -103,5 +104,13 @@ class sql99_diff_triggers {
     }
 
     return $list;
+  }
+
+  protected static function get_table_triggers($schema, $table) {
+    return dbx::get_table_triggers($schema, $table);
+  }
+
+  protected static function schema_contains_trigger($schema, $trigger) {
+    return count($schema->xpath("trigger[@name='{$trigger['name']}']")) != 0;
   }
 }
