@@ -80,12 +80,12 @@ class mysql5 {
       throw new exception("No public schema was found. MySQL must have a public schema");
     }
 
-    // schema grants @TODO: come back to this
-    // foreach ( $schema->grant AS $grant ) {
-    //   $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
-    // }
+    // database grants
+    foreach ( $schema->grant AS $grant ) {
+      $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $schema, $grant) . "\n");
+    }
     
-    // types: enumerated list, etc
+    // enums
     foreach ( $schema->type AS $type ) {
       $ofs->write(mysql5_type::get_creation_sql($schema, $type) . "\n");
     }
@@ -94,6 +94,10 @@ class mysql5 {
     foreach ($schema->function AS $function) {
       if (mysql5_function::has_definition($function)) {
         $ofs->write(mysql5_function::get_creation_sql($schema, $function)."\n\n");
+      }
+      // function grants
+      foreach ( $function->grant AS $grant ) {
+        $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $function, $grant) . "\n");
       }
     }
 
@@ -113,21 +117,29 @@ class mysql5 {
       // table indexes
       mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
 
-      // table grants @TODO: come back to this
-      // if (isset($table->grant)) {
-      //   foreach ($table->grant AS $grant) {
-      //     $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
-      //   }
-      // }
+      // table grants
+      if (isset($table->grant)) {
+        foreach ($table->grant AS $grant) {
+          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $table, $grant) . "\n");
+        }
+      }
 
       $ofs->write("\n");
     }
 
-    // sequences contained in the schema
+    // sequences contained in the schema + sequences used by serials
     $sequences = array_merge($sequences, dbx::to_array($schema->sequence));
     if ( count($sequences) > 0 ) {
       $ofs->write(mysql5_sequence::get_shim_creation_sql()."\n\n");
       $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequences)."\n\n");
+
+      // sequence grants
+      foreach ( $sequences as $sequence ) {
+        foreach ( $sequence->grant AS $grant ) {
+          $ofs->write("-- grant for the {$sequence['name']} sequence applies to ALL sequences\n");
+          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $sequence, $grant) . "\n");
+        }
+      }
     }
 
     // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
@@ -153,7 +165,7 @@ class mysql5 {
     }
     $ofs->write("\n");
 
-    // trigger definitions
+    // trigger definitions + triggers used by serials
     $triggers = array_merge($triggers, dbx::to_array($schema->trigger));
     $unique_triggers = array();
     foreach ($triggers AS $trigger) {
@@ -175,12 +187,12 @@ class mysql5 {
     foreach ($schema->view AS $view) {
       $ofs->write(mysql5_view::get_creation_sql($schema, $view)."\n");
 
-      // view permission grants @TODO: come back to this
-      // if (isset($view->grant)) {
-      //   foreach ($view->grant AS $grant) {
-      //     $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
-      //   }
-      // }
+      // view permission grants
+      if (isset($view->grant)) {
+        foreach ($view->grant AS $grant) {
+          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $view, $grant) . "\n");
+        }
+      }
     }
 
     // @TODO: database configurationParameter support needed ?

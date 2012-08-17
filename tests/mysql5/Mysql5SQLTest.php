@@ -51,6 +51,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
   <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
 
   <schema name="public" owner="ROLE_OWNER">
+    <grant operation="SELECT,UPDATE,DELETE" role="ROLE_OWNER"/>
 
     <type type="enum" name="permission_level">
       <enum name="guest"/>
@@ -81,6 +82,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
           RETURN config_parameter;
         END
       </functionDefinition>
+      <grant operation="EXECUTE" role="ROLE_APPLICATION"/>
     </function>
 
     <table name="user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="1">
@@ -89,6 +91,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
       <column name="username" type="varchar(80)"/>
       <column name="user_age" type="numeric"/>
       <constraint name="username_unq" type="Unique" definition="(`username`)"/>
+      <grant operation="SELECT,UPDATE,DELETE" role="ROLE_APPLICATION"/>
     </table>
 
     <table name="group" owner="ROLE_OWNER" primaryKey="group_id" slonyId="2">
@@ -96,9 +99,12 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
       <column name="permission_level" type="permission_level"/> <!-- enum type -->
       <column name="group_name" type="character varying(100)" unique="true"/>
       <column name="group_enabled" type="boolean" null="false" default="true"/>
+      <grant operation="SELECT,UPDATE,DELETE" role="ROLE_APPLICATION"/>
     </table>
 
-    <sequence name="a_sequence" owner="ROLE_OWNER"/>
+    <sequence name="a_sequence" owner="ROLE_OWNER">
+      <grant operation="SELECT,UPDATE,DELETE" role="ROLE_APPLICATION"/>
+    </sequence>
 
     <trigger name="a_trigger" sqlFormat="mysql5" table="user" when="before" event="insert" function="EXECUTE xyz"/>
 
@@ -109,6 +115,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
       <viewQuery sqlFormat="mysql5">SELECT * FROM user, group</viewQuery>
       <!-- should be ignored -->
       <viewQuery sqlFormat="pgsql8">SELECT * FROM pgsql8table</viewQuery>
+      <grant operation="SELECT,UPDATE,DELETE" role="ROLE_APPLICATION"/>
     </view>
   </schema>
 
@@ -130,6 +137,8 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
 XML;
 
     $expected = <<<SQL
+GRANT SELECT, UPDATE, DELETE ON * TO deployment;
+
 DROP FUNCTION IF EXISTS `a_function`;
 CREATE DEFINER = deployment FUNCTION `a_function` (`config_parameter` text, `config_value` text)
 RETURNS text
@@ -141,12 +150,15 @@ BEGIN
   RETURN config_parameter;
 END;
 
+GRANT EXECUTE ON `a_function` TO dbsteward_phpunit_app;
+
 CREATE TABLE `user` (
   `user_id` int NOT NULL,
   `group_id` int NOT NULL,
   `username` varchar(80),
   `user_age` numeric
 );
+GRANT SELECT, UPDATE, DELETE ON `user` TO dbsteward_phpunit_app;
 
 CREATE TABLE `group` (
   `group_id` int NOT NULL,
@@ -156,6 +168,8 @@ CREATE TABLE `group` (
 );
 
 CREATE UNIQUE INDEX `group_group_name_key` ON `group` (`group_name`) USING BTREE;
+
+GRANT SELECT, UPDATE, DELETE ON `group` TO dbsteward_phpunit_app;
 
 CREATE TABLE IF NOT EXISTS `__sequences` (
   `name` VARCHAR(100) NOT NULL,
@@ -265,6 +279,8 @@ VALUES
   ('__public_group_group_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
   ('a_sequence', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
 
+GRANT SELECT, UPDATE, DELETE ON `__sequences` TO dbsteward_phpunit_app;
+
 ALTER TABLE `user` ADD PRIMARY KEY (`user_id`);
 ALTER TABLE `group` ADD PRIMARY KEY (`group_id`);
 ALTER TABLE `user` ADD UNIQUE INDEX `username_unq` (`username`);
@@ -285,7 +301,10 @@ FOR EACH ROW EXECUTE xyz;
 
 CREATE OR REPLACE DEFINER = deployment SQL SECURITY DEFINER VIEW `a_view`
   AS SELECT * FROM user, group;
+
+GRANT SELECT, UPDATE, DELETE ON `a_view` TO dbsteward_phpunit_app;
 SQL;
+
 
     $dbs = new SimpleXMLElement($xml);
     $ofs = new mock_output_file_segmenter();
@@ -314,12 +333,10 @@ SQL;
     $actual = trim(preg_replace("/\n+/","\n",$actual));
 
     $this->assertEquals($expected, $actual);
-
-
   }
 
   public function testExtraction() {
-    echo $xml=mysql5::extract_schema(MYSQL5_DBHOST, MYSQL5_DBPORT, MYSQL5_DBNAME, MYSQL5_DBUSER, MYSQL5_DBPASS);
+    echo $xml = mysql5::extract_schema(MYSQL5_DBHOST, MYSQL5_DBPORT, MYSQL5_DBNAME, 'austin', MYSQL5_DBPASS);
 
     $dbs = new SimpleXMLElement($xml);
     $ofs = new mock_output_file_segmenter();

@@ -197,11 +197,3 @@ class mysql5_db {
     }
   }
 }
-
-// test driver
-$db = mysql5_db::connect('localhost','1433','test','austin.hyde','');
-
-foreach ($db->get_tables() as $table) {
-  echo "constraints for $table->table_name\n";
-  print_r($db->get_constraints($table));
-}
