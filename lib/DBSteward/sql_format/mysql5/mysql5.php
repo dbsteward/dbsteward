@@ -320,6 +320,17 @@ class mysql5 {
     $node_schema['name'] = 'public';
     $node_schema['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
 
+    // extract global and schema permissions under the public schema
+    foreach ( $db->get_global_grants($user) as $db_grant ) {
+      $node_grant = $node_schema->addChild('grant');
+      $node_grant['operation'] = $db_grant->operations;
+      $node_grant['role'] = $user;
+
+      if ( $db_grant->is_grantable ) {
+        $node_grant['with'] = 'GRANT';
+      }
+    }
+
     $enum_types = array();
     $enum_type = function ($obj, $mem, $values) use (&$enum_types) {
       $values = array_map('strtolower',$values);
@@ -462,6 +473,16 @@ class mysql5 {
           throw new exception("unknown constraint_type {$db_constraint->constraint_type}");
         }
       }
+
+      foreach ( $db->get_table_grants($db_table, $user) as $db_grant ) {
+        $node_grant = $node_table->addChild('grant');
+        $node_grant['operation'] = $db_grant->operations;
+        $node_grant['role'] = $user;
+
+        if ( $db_grant->is_grantable ) {
+          $node_grant['with'] = 'GRANT';
+        }
+      }
     }
 
     foreach ( $db->get_functions() as $db_function ) {
@@ -526,8 +547,6 @@ class mysql5 {
         $node_type->addChild('enum')->addAttribute('name', $v);
       }
     }
-
-    // @TODO: grants
 
     xml_parser::validate_xml($doc->asXML());
     return xml_parser::format_xml($doc->saveXML());

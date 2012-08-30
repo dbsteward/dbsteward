@@ -119,6 +119,35 @@ class mysql5_db {
     return $constraints;
   }
 
+  public function get_table_grants($db_table, $username) {
+    static $stmt;
+    if (!$stmt) {
+      $stmt = $this->pdo->prepare("SELECT grantee, GROUP_CONCAT(privilege_type) as operations, is_grantable = 'YES' as is_grantable
+                                   FROM table_privileges
+                                   WHERE table_schema = ?
+                                     AND table_name = ?
+                                     AND grantee LIKE ?
+                                   GROUP BY is_grantable");
+    }
+
+    $stmt->execute(array($this->dbname, $db_table->table_name, "'$username'@%"));
+    return $stmt->fetchAll(PDO::FETCH_OBJ);
+  }
+
+  public function get_global_grants($username) {
+    static $stmt;
+    if (!$stmt) {
+      $stmt = $this->pdo->prepare("SELECT grantee, GROUP_CONCAT(privilege_type) AS operations, is_grantable='YES' as is_grantable FROM (
+                                    SELECT grantee, privilege_type, is_grantable FROM schema_privileges WHERE grantee LIKE :grantee AND table_schema = :schema
+                                    UNION
+                                    SELECT grantee, privilege_type, is_grantable FROM user_privileges WHERE grantee LIKE :grantee
+                                  ) AS tbl
+                                  GROUP BY is_grantable;");
+    }
+    $stmt->execute(array('schema'=>$this->dbname, 'grantee'=>"'$username'@%"));
+    return $stmt->fetchAll(PDO::FETCH_OBJ);
+  }
+
   public function get_functions() {
     static $fn_stmt, $param_stmt;
     if (!$fn_stmt) {
