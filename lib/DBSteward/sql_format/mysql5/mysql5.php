@@ -324,7 +324,7 @@ class mysql5 {
     foreach ( $db->get_global_grants($user) as $db_grant ) {
       $node_grant = $node_schema->addChild('grant');
       $node_grant['operation'] = $db_grant->operations;
-      $node_grant['role'] = $user;
+      $node_grant['role'] = self::translate_role_name($doc, $user);
 
       if ( $db_grant->is_grantable ) {
         $node_grant['with'] = 'GRANT';
@@ -477,7 +477,7 @@ class mysql5 {
       foreach ( $db->get_table_grants($db_table, $user) as $db_grant ) {
         $node_grant = $node_table->addChild('grant');
         $node_grant['operation'] = $db_grant->operations;
-        $node_grant['role'] = $user;
+        $node_grant['role'] = self::translate_role_name($doc, $user);
 
         if ( $db_grant->is_grantable ) {
           $node_grant['with'] = 'GRANT';
@@ -550,6 +550,36 @@ class mysql5 {
 
     xml_parser::validate_xml($doc->asXML());
     return xml_parser::format_xml($doc->saveXML());
+  }
+
+  public static function translate_role_name($doc, $name) {
+    $node_role = $doc->database->role;
+
+    if ( strcasecmp($name, $node_role->application) == 0 ) {
+      return 'ROLE_APPLICATION';
+    }
+
+    if ( strcasecmp($name, $node_role->owner) == 0 ) {
+      return 'ROLE_OWNER';
+    }
+
+    if ( strcasecmp($name, $node_role->replication) == 0 ) {
+      return 'ROLE_REPLICATION';
+    }
+
+    if ( strcasecmp($name, $node_role->readonly) == 0 ) {
+      return 'ROLE_READONLY';
+    }
+
+    // @TODO: is this even necessary?
+    // $custom_roles = preg_split("/[\,\s]+/", strtolower($node_role->customRole), -1, PREG_SPLIT_NO_EMPTY);
+    // foreach ( $custom_roles as $cr ) {
+    //   if ( strcasecmp($name, $cr) == 0 ) {
+    //     return $name;
+    //   }
+    // }
+
+    return $name;
   }
 
   /**
