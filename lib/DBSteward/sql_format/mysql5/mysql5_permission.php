@@ -43,11 +43,12 @@ class mysql5_permission extends sql99_permission {
         $object_name = '*';
         break;
       case 'VIEW':
+        return "-- Ignoring permissions on view '{$node_object['name']}' because MySQL uses SQL SECURITY DEFINER semantics\n";
       case 'TABLE':
         $object_name = mysql5::get_fully_qualified_table_name($node_schema['name'],$node_object['name']);
         break;
       case 'FUNCTION':
-        $object_name = mysql5::get_quoted_function_name($node_object['name']);
+        $object_name = "ROUTINE " . mysql5::get_quoted_function_name($node_object['name']);
         break;
       case 'SEQUENCE':
         // sequences exist as rows in a table for mysql

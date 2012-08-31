@@ -150,7 +150,7 @@ BEGIN
   RETURN config_parameter;
 END;
 
-GRANT EXECUTE ON `a_function` TO dbsteward_phpunit_app;
+GRANT EXECUTE ON ROUTINE `a_function` TO dbsteward_phpunit_app;
 
 CREATE TABLE `user` (
   `user_id` int NOT NULL,
@@ -301,8 +301,6 @@ FOR EACH ROW EXECUTE xyz;
 
 CREATE OR REPLACE DEFINER = deployment SQL SECURITY DEFINER VIEW `a_view`
   AS SELECT * FROM user, group;
-
-GRANT SELECT, UPDATE, DELETE ON `a_view` TO dbsteward_phpunit_app;
 SQL;
 
 

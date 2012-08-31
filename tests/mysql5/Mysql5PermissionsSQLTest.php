@@ -79,7 +79,7 @@ XML;
   </view>
 </schema>
 XML;
-    $this->common($xml, 'view', "GRANT SELECT ON `view` TO deployment;");
+    $this->common($xml, 'view', "-- Ignoring permissions on view 'view' because MySQL uses SQL SECURITY DEFINER semantics");
   }
 
   public function testFunction() {
@@ -91,7 +91,7 @@ XML;
 </schema>
 XML;
     // note: alter => alter routine
-    $this->common($xml, 'function', "GRANT EXECUTE, ALTER ROUTINE ON `function` TO deployment;");
+    $this->common($xml, 'function', "GRANT EXECUTE, ALTER ROUTINE ON ROUTINE `function` TO deployment;");
   }
 
   public function testSequence() {
