@@ -21,7 +21,7 @@
 
 class mysql5_permission extends sql99_permission {
 
-  public static function get_permission_sql($db_doc, $node_schema, $node_object, $node_permission) {
+  public static function get_permission_sql($db_doc, $node_schema, $node_object, $node_permission, $action='grant') {
     if ( strcasecmp($node_permission->getName(), 'grant') != 0 && strcasecmp($node_permission->getName(), 'revoke') != 0 ) {
       throw new exception("Cannot extract permission rights from node that is not grant or revoke");
     }
@@ -58,7 +58,7 @@ class mysql5_permission extends sql99_permission {
         throw new exception("unknown object type encountered: " . $object_type);
     }
 
-    $sql = static::get_sql(strtoupper($node_permission->getName()), $object_name, $privileges, $roles, $with) . "\n";
+    $sql = static::get_sql(strtoupper($action), $object_name, $privileges, $roles, $with) . "\n";
     
     return $sql;
   }
@@ -72,7 +72,7 @@ class mysql5_permission extends sql99_permission {
    * @param array $roles
    * @param string $option_sql optional option sql
    */
-  private static function get_sql($action, $objects, $privileges, $roles, $option_sql) {
+  public static function get_sql($action, $objects, $privileges, $roles, $option_sql) {
     $keyword = strcasecmp($action, 'REVOKE') ? 'TO' : 'FROM';
     $sql = array();
     foreach ( (array)$objects as $object ) {
