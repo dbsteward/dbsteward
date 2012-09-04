@@ -530,6 +530,10 @@ class mysql5 {
     }
 
     foreach ( $db->get_views() as $db_view ) {
+      if ( !empty($db_view->view_name) && empty($db_view->view_query) ) {
+        throw new Exception("Found a view in the database with an empty query. User '$user' problaby doesn't have SELECT permissions on tables referenced by the view.");
+      }
+
       $node_view = $node_schema->addChild('view');
       $node_view['name'] = $db_view->view_name;
       $node_view['owner'] = 'ROLE_OWNER';
