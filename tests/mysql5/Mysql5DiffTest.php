@@ -31,10 +31,13 @@ class Mysql5DiffTest extends PHPUnit_Framework_TestCase {
   <database>
     <role>
       <owner>the_owner</owner>
+      <application>the_app</application>
       <customRole>SOMEBODY</customRole>
     </role>
   </database>
   <schema name="public" owner="ROLE_OWNER">
+    <grant operation="SELECT,UPDATE,DELETE" role="ROLE_OWNER"/>
+
     <table name="project" owner="ROLE_OWNER" primaryKey="project_id">
       <column name="project_id" type="serial"/>
       <column name="name" type="varchar(100)" null="false"/>
@@ -42,6 +45,7 @@ class Mysql5DiffTest extends PHPUnit_Framework_TestCase {
       <constraint name="unique_name_constraint" type="unique" definition="(`name`)" />
     </table>
     <table name="issue" owner="ROLE_OWNER" primaryKey="issue_id">
+      <grant operation="SELECT,UPDATE,DELETE" role="ROLE_APPLICATION"/>
       <column name="issue_id" type="serial"/>
       <column name="project_id"
         foreignSchema="public"
@@ -63,10 +67,13 @@ class Mysql5DiffTest extends PHPUnit_Framework_TestCase {
       <enum name="proposal"/>
     </type>
 
-    <sequence name="odds" owner="ROLE_OWNER" inc="2" start="1" cycle="true"/>
+    <sequence name="odds" owner="ROLE_OWNER" inc="2" start="1" cycle="true">
+      <grant operation="SELECT,UPDATE,DELETE" role="ROLE_APPLICATION"/>
+    </sequence>
 
     <view name="issues_with_projects" owner="ROLE_OWNER">
       <viewQuery sqlFormat="mysql5">SELECT * FROM `issue` INNER JOIN `projects` USING (`project_id`)</viewQuery>
+      <grant operation="SELECT,UPDATE,DELETE" role="ROLE_APPLICATION"/>
     </view>
 
     <trigger name="set_last_issue"
@@ -77,6 +84,7 @@ class Mysql5DiffTest extends PHPUnit_Framework_TestCase {
       function="SET @last_issue_id = NEW.`issue_id`"/>
 
     <function name="get_last_issue" owner="ROLE_OWNER" returns="int">
+      <grant operation="EXECUTE" role="ROLE_APPLICATION"/>
       <functionDefinition language="sql" sqlFormat="mysql5">
         RETURN @last_issue_id
       </functionDefinition>
@@ -89,10 +97,13 @@ XML;
   <database>
     <role>
       <owner>the_owner</owner>
+      <application>the_app</application>
       <customRole>SOMEBODY</customRole>
     </role>
   </database>
   <schema name="public" owner="ROLE_OWNER">
+    <!-- add insert -->
+    <grant operation="SELECT,INSERT,UPDATE,DELETE" role="ROLE_OWNER"/>
     <table name="issue_group" oldName="project" owner="ROLE_OWNER" primaryKey="issue_group_id">
       <column name="issue_group_id" oldName="project_id" type="serial"/>
       <column name="name" type="varchar(100)" null="false"/>
@@ -102,6 +113,7 @@ XML;
     </table>
 
     <table name="issue" owner="ROLE_OWNER" primaryKey="issue_id">
+      <grant operation="SELECT,UPDATE,DELETE" role="ROLE_APPLICATION"/>
       <column name="issue_id" type="serial"/>
       <column name="project_id"
         foreignSchema="public"
@@ -134,10 +146,15 @@ XML;
       <enum name="request"/>
     </type>
 
-    <sequence name="odds" owner="ROLE_OWNER" inc="2" start="3" cycle="true"/>
+    <sequence name="odds" owner="ROLE_OWNER" inc="2" start="3" cycle="true">
+      <!-- get rid of delete -->
+      <grant operation="SELECT,UPDATE" role="ROLE_APPLICATION"/>
+    </sequence>
 
     <view name="issues_with_projects" owner="ROLE_OWNER">
       <viewQuery sqlFormat="mysql5">SELECT * FROM `issue` INNER JOIN `issue_group` ON `issue`.`project_id` = `issue_group`.`issue_group_id`</viewQuery>
+      <!-- add ROLE_OWNER -->
+      <grant operation="SELECT,UPDATE,DELETE" role="ROLE_APPLICATION,ROLE_OWNER"/>
     </view>
 
     <trigger name="set_last_issue"
@@ -148,6 +165,7 @@ XML;
       function="SET @last_issue_id = NEW.`issue_id`"/>
 
     <function name="get_last_issue" owner="ROLE_OWNER" returns="int">
+      <grant operation="EXECUTE" role="ROLE_APPLICATION"/>
       <functionParameter name="issue_group_id" type="int"/>
       <functionDefinition language="sql" sqlFormat="mysql5">
         RETURN @last_issue_id
@@ -183,7 +201,9 @@ XML;
     $ofs1 = new mock_output_file_segmenter();
     $ofs3 = new mock_output_file_segmenter();
 
+    mysql5_diff::revoke_permissions($ofs1, $ofs3);
     mysql5_diff::update_structure($ofs1, $ofs3);
+    mysql5_diff::update_permissions($ofs1, $ofs3);
 
     echo "\n\nofs 1:\n\n";
     echo $ofs1->_get_output();
