@@ -28,14 +28,61 @@ class mysql5_db {
   }
 
   public function get_tables() {
-    // table_schema is database name. why? because mysql, that's why.
-    $stmt = $this->pdo->prepare("SELECT table_schema, table_name, engine,
-                                        table_rows, auto_increment, table_comment
-                                 FROM tables
-                                 WHERE table_type = 'base table'
-                                   AND table_schema = ?");
+    static $stmt;
+    if (!$stmt) {
+      $table_name = mysql5_sequence::TABLE_NAME;
+      // table_schema is database name. why? because mysql, that's why.
+      $stmt = $this->pdo->prepare("SELECT table_schema, table_name, engine,
+                                          table_rows, auto_increment, table_comment
+                                   FROM tables
+                                   WHERE table_type = 'base table'
+                                     AND table_name != '$table_name'
+                                     AND table_schema = ?");
+    }
 
     $stmt->execute(array($this->dbname));
+    return $stmt->fetchAll(PDO::FETCH_OBJ);
+  }
+
+  public function get_table($name) {
+    static $stmt;
+    if (!$stmt) {
+      $stmt = $this->pdo->prepare("SELECT table_schema, table_name, engine,
+                                          table_rows, auto_increment, table_comment
+                                   FROM tables
+                                   WHERE table_type = 'base table'
+                                     AND table_schema = ?
+                                     AND table_name = ?
+                                   LIMIT 1");
+    }
+
+    $stmt->execute(array($this->dbname, $name));
+    return $stmt->fetch(PDO::FETCH_OBJ);
+  }
+
+  public function uses_sequences() {
+    static $answer;
+    // cache the answer so we don't keep asking the DB stupid questions
+    if ($answer === null) {
+      $table_name = mysql5_sequence::TABLE_NAME;
+      $answer = $this->pdo->query("SELECT COUNT(*) FROM tables WHERE table_name = '$table_name'")->fetchColumn() != 0;
+    }
+    return $answer;
+  }
+
+  public function get_sequences() {
+    static $stmt;
+
+    if (!$this->uses_sequences()) {
+      return array();
+    }
+
+    if (!$stmt) {
+      $table_name = mysql5_sequence::TABLE_NAME;
+      $stmt = $this->pdo->prepare("SELECT * FROM `{$this->dbname}`.`$table_name`");
+    }
+
+    $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_OBJ);
   }
 
@@ -151,10 +198,16 @@ class mysql5_db {
   public function get_functions() {
     static $fn_stmt, $param_stmt;
     if (!$fn_stmt) {
+      if ($this->uses_sequences()) {
+        $not_shim_fns = "AND routine_name NOT IN ('nextval','setval','currval','lastval')";
+      }
+      else {
+        $not_shim_fns = "";
+      }
       $fn_stmt = $this->pdo->prepare("SELECT routine_name, data_type, character_maximum_length, numeric_precision,
                                           numeric_scale, routine_definition, is_deterministic, security_type, definer, sql_data_access, dtd_identifier
                                    FROM routines
-                                   WHERE routine_type = 'FUNCTION'
+                                   WHERE routine_type = 'FUNCTION' $not_shim_fns
                                      AND routine_schema = ?");
       $param_stmt = $this->pdo->prepare("SELECT parameter_mode, parameter_name, data_type, character_maximum_length,
                                                 numeric_precision, numeric_scale, dtd_identifier

@@ -485,6 +485,29 @@ class mysql5 {
       }
     }
 
+    foreach ( $db->get_sequences() as $db_seq ) {
+      $node_seq = $node_schema->addChild('sequence');
+      $node_seq['name'] = $db_seq->name;
+      $node_seq['owner'] = 'ROLE_OWNER';
+      $node_seq['start'] = $db_seq->cur_value; // @TODO: actual start value
+      $node_seq['min'] = $db_seq->min_value;
+      $node_seq['max'] = $db_seq->max_value;
+      $node_seq['inc'] = $db_seq->increment;
+      $node_seq['cycle'] = $db_seq->cycle ? 'true' : 'false';
+
+      // the sequences table is a special case, since it's not picked up in the tables loop
+      $seq_table = $db->get_table(mysql5_sequence::TABLE_NAME);
+      foreach ( $db->get_table_grants($seq_table, $user) as $db_grant ) {
+        $node_grant = $node_seq->addChild('grant');
+        $node_grant['operation'] = $db_grant->operations;
+        $node_grant['role'] = self::translate_role_name($doc, $user);
+
+        if ( $db_grant->is_grantable ) {
+          $node_grant['with'] = 'GRANT';
+        }
+      }
+    }
+
     foreach ( $db->get_functions() as $db_function ) {
       $node_fn = $node_schema->addChild('function');
       $node_fn['name'] = $db_function->routine_name;
