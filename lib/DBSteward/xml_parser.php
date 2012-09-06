@@ -604,7 +604,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     if (file_put_contents($tmp_file, $xml) === FALSE) {
       throw new exception("Failed to write to temporary validation file: " . $tmp_file);
     }
-    dbsteward::cmd("/usr/local/bin/xmllint --noout --dtdvalid " . $dtd_file . " " . $tmp_file . " 2>&1");
+    dbsteward::cmd("xmllint --noout --dtdvalid " . $dtd_file . " " . $tmp_file . " 2>&1");
     if ($echo_status) {
       dbsteward::console_line(1, "XML Validates (size = " . strlen($xml) . ") against $dtd_file OK");
     }
