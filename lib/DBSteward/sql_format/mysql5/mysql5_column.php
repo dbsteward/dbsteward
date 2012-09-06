@@ -28,13 +28,22 @@ class mysql5_column extends sql99_column {
    *
    * @return full definition of the column
    */
-  public static function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true) {
+  public static function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true, $include_auto_increment = false) {
+    // ignore AUTO_INCREMENT flags for now
+    $is_auto_increment = static::is_auto_increment($node_column['type']);
+    $orig_type = (string)$node_column['type'];
+    $node_column['type'] = static::un_auto_increment($node_column['type']);
+
     $column_type = static::column_type($db_doc, $node_schema, $node_table, $node_column);
 
     $definition = mysql5::get_quoted_column_name($node_column['name']) . ' ' . $column_type;
 
     if ($include_null_definition && !static::null_allowed($node_table, $node_column) ) {
       $definition .= " NOT NULL";
+    }
+
+    if ( $include_auto_increment && $is_auto_increment ) {
+      $definition .=  " AUTO_INCREMENT";
     }
 
     if ( strlen($node_column['default']) > 0 ) {
@@ -57,11 +66,26 @@ class mysql5_column extends sql99_column {
       $definition .= " COMMENT '" . str_replace("'","\'",$node_column['description']) . "'";
     }
 
+    // restore the original type of the column
+    $node_column['type'] = $orig_type;
+
     return $definition;
   }
 
+  /** Check to see if the given type is marked AUTO_INCREMENT */
+  public static function is_auto_increment($type) {
+    return stripos($type,'auto_increment') !== FALSE;
+  }
+
+  /** Remove any AUTO_INCREMENT flag in the given type */
+  public static function un_auto_increment($type) {
+    return preg_replace('/\s*auto_increment\s*/i','',$type);
+  }
+
   public static function column_type($db_doc, $node_schema, $node_table, $node_column) {
+
     // if the column is a foreign key, solve for the foreignKey type
+    // not going to worry about auto-increment here for a now - why would an auto-increment field be a foreign key?
     if ( isset($node_column['foreignTable']) ) {
       $foreign = format_constraint::foreign_key_lookup($db_doc, $node_schema, $node_table, $node_column);
       $foreign_type = $foreign['column']['type'];
@@ -76,18 +100,21 @@ class mysql5_column extends sql99_column {
       throw new Exception("column missing type -- " . $table['name'] . "." . $column['name']);
     }
 
+    // get the type of the column, ignoring any possible auto-increment flag
+    $type = static::un_auto_increment($node_column['type']);
+
     // if the column type matches an enum type, inject the enum declaration here
-    if ( $node_type = mysql5_type::get_type_node($db_doc, $node_schema, $node_column['type']) ) {
+    if ( $node_type = mysql5_type::get_type_node($db_doc, $node_schema, $type) ) {
      return mysql5_type::get_enum_type_declaration($node_type);
     }
 
     // translate serials to their corresponding int types
-    if ( static::is_serial($node_column['type']) ) {
-      return static::convert_serial($node_column['type']);
+    if ( static::is_serial($type) ) {
+      return static::convert_serial($type);
     }
 
     // nothing special about this type
-    return (string)$node_column['type'];
+    return $type;
   }
 
   public static function get_serial_sequence_name($schema, $table, $column) {

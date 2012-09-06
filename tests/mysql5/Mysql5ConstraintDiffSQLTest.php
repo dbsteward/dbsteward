@@ -241,7 +241,41 @@ SQL;
     $this->common($old, $new, $expected);
   }
 
-  public function common($a, $b, $expected) {
+  public function testAutoIncrement() {
+    $auto = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="test" owner="NOBODY" primaryKey="pka">
+    <column name="pka" type="int auto_increment"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+    $notauto = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="test" owner="NOBODY" primaryKey="pka">
+    <column name="pka" type="int" />
+  </table>
+</schema>
+</dbsteward>
+XML;
+
+    $this->common($auto, $auto, "");
+
+    $this->common($auto, $notauto, "");
+
+    $this->common_type($notauto, $auto, "ALTER TABLE `test` MODIFY COLUMN `pka` int AUTO_INCREMENT;", 'primaryKey');
+  }
+
+  private function common($a, $b, $expected) {
+    $this->common_type($a, $b, $expected, 'all');
+    $this->common_type($a, $b, $expected, 'primaryKey');
+    $this->common_type($a, $b, $expected, 'constraint');
+    $this->common_type($a, $b, $expected, 'foreignKey');
+  }
+
+  private function common_type($a, $b, $expected, $type) {
     $dbs_a = new SimpleXMLElement($a);
     $dbs_b = new SimpleXMLElement($b);
 
@@ -250,36 +284,31 @@ SQL;
     dbsteward::$old_database = $dbs_a;
     dbsteward::$new_database = $dbs_b;
 
-    // all constraints
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'all', true);
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'all', false);
-    $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-    echo "\n$actual\n";
-    $this->assertEquals($expected, $actual, "all constraints diff");
-    $ofs->_clear_output();
+    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, $type, true);
+    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, $type, false);
 
-    // primary keys
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'primaryKey', true);
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'primaryKey', false);
-    $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-    $pk_expected = trim(preg_replace("/.*(INDEX|FOREIGN).*\n?/",'',$expected));
-    $this->assertEquals($pk_expected, $actual, "primaryKey diff");
-    $ofs->_clear_output();
-
-    // constraints with drops
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'constraint', true);
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'constraint', false);
-    $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-    $constraint_expected = trim(preg_replace("/.*(PRIMARY).*\n?/",'',$expected));
-    $this->assertEquals($constraint_expected, $actual, "constraint-only diff");
-    $ofs->_clear_output();
-
-    // foreign keys with drops
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'foreignKey', true);
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'foreignKey', false);
-    $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-    $fk_expected = trim(preg_replace("/.*(PRIMARY|(?<!, DROP )INDEX).*\n?/",'',$expected));
-    $this->assertEquals($fk_expected, $actual, "foreignKey diff");
-    $ofs->_clear_output();
+    switch ($type) {
+      case 'all':
+        $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
+        $this->assertEquals($expected, $actual, "all constraints diff");
+        break;
+      case 'primaryKey':
+        $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
+        $pk_expected = trim(preg_replace("/.*(INDEX|FOREIGN).*\n?/",'',$expected));
+        $this->assertEquals($pk_expected, $actual, "primaryKey diff");
+        break;
+      case 'constraint':
+        $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
+        $constraint_expected = trim(preg_replace("/.*(PRIMARY).*\n?/",'',$expected));
+        $this->assertEquals($constraint_expected, $actual, "constraint-only diff");
+        break;
+      case 'foreignKey':
+        $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
+        $fk_expected = trim(preg_replace("/.*(PRIMARY|(?<!, DROP )INDEX).*\n?/",'',$expected));
+        $this->assertEquals($fk_expected, $actual, "foreignKey diff");
+        break;
+      default:
+        $this->fail("Unknown type");
+    }
   }
 }

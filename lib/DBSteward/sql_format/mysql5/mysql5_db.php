@@ -91,7 +91,8 @@ class mysql5_db {
     if (!$stmt) {
       $stmt = $this->pdo->prepare("SELECT table_name, column_name, column_default,
                                           is_nullable, data_type, character_maximum_length, numeric_precision,
-                                          numeric_scale, column_type, column_key, extra, privileges
+                                          numeric_scale, column_type, column_key, extra, privileges,
+                                          extra = 'auto_increment' AS is_auto_increment
                                    FROM columns
                                    WHERE table_name = ?
                                      AND table_schema = ?
@@ -264,6 +265,11 @@ class mysql5_db {
     }
     elseif ( $db_object->numeric_scale !== NULL ) {
       $type .= '(' . $db_object->numeric_scale . ',' . $db_object->numeric_precision . ')';
+    }
+
+    // this really only applies if $db_object represents a column
+    if ( isset($db_object->is_auto_increment) && $db_object->is_auto_increment ) {
+      $type .= ' AUTO_INCREMENT';
     }
 
     return $type;

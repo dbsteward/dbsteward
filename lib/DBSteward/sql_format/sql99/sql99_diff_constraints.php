@@ -26,14 +26,14 @@ class sql99_diff_constraints {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
 
-      self::diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints);
+      static::diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints);
     }
   }
 
   public static function diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints = false) {
     if ( $drop_constraints ) {
       // drop constraints that no longer exist or are modified
-      foreach( self::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint ) {
+      foreach( static::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint ) {
         $ofs->write(format_constraint::get_constraint_drop_sql($constraint) . "\n");
       }
     }
@@ -42,7 +42,7 @@ class sql99_diff_constraints {
         $new_constraints = format_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type);
       }
       else {
-        $new_constraints = self::get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type);
+        $new_constraints = static::get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type);
       }
 
       // add new constraints

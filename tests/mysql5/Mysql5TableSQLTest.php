@@ -80,4 +80,17 @@ XML;
     
     $this->assertEquals("-- Skipping table 'test' because MySQL does not support table inheritance", mysql5_table::get_creation_sql($schema, $schema->table));
   }
+
+  public function testAutoIncrement() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="id" owner="NOBODY">
+    <column name="id" type="int auto_increment"/>
+  </table>
+</schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+
+    $this->assertEquals("CREATE TABLE `test` (\n  `id` int\n);", mysql5_table::get_creation_sql($schema, $schema->table));
+  }
 }

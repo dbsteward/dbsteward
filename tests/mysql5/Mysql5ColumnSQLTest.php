@@ -229,4 +229,27 @@ XML;
     $expected = "`other_id` int";
     $this->assertEquals($expected, mysql5_column::get_full_definition($dbs, $dbs->schema, $dbs->schema->table, $dbs->schema->table->column[1], true));
   }
+
+  public function testAutoIncrement() {
+     $xml = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="id" owner="NOBODY">
+    <column name="s1" type="int auto_increment"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+    
+    $dbs = new SimpleXMLElement($xml);
+    $col = $dbs->schema->table->column;
+
+    $this->assertTrue(mysql5_column::is_auto_increment($col['type']));
+    $this->assertEquals("int", mysql5_column::un_auto_increment($col['type']));
+
+    $this->assertEquals("int", mysql5_column::column_type($dbs, $dbs->schema, $dbs->schema->table, $col));
+
+    $this->assertEquals("`s1` int AUTO_INCREMENT", mysql5_column::get_full_definition($dbs, $dbs->schema, $dbs->schema->table, $col, true, true, true));
+    $this->assertEquals("`s1` int", mysql5_column::get_full_definition($dbs, $dbs->schema, $dbs->schema->table, $col, true, true, false));
+  }
 }
