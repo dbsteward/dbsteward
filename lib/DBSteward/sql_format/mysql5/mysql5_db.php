@@ -264,7 +264,11 @@ class mysql5_db {
       }
     }
     elseif ( $db_object->numeric_scale !== NULL ) {
-      $type .= '(' . $db_object->numeric_scale . ',' . $db_object->numeric_precision . ')';
+      $type .= '(';
+      if ( stripos($db_object->data_type, 'int') === FALSE ) {
+        $type .= $db_object->numeric_scale . ',';
+      }
+      $type .= $db_object->numeric_precision . ')';
     }
 
     // this really only applies if $db_object represents a column
