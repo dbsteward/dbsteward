@@ -489,7 +489,7 @@ class mysql5 {
       $node_seq = $node_schema->addChild('sequence');
       $node_seq['name'] = $db_seq->name;
       $node_seq['owner'] = 'ROLE_OWNER';
-      $node_seq['start'] = $db_seq->cur_value; // @TODO: actual start value
+      $node_seq['start'] = $db_seq->start_value;
       $node_seq['min'] = $db_seq->min_value;
       $node_seq['max'] = $db_seq->max_value;
       $node_seq['inc'] = $db_seq->increment;

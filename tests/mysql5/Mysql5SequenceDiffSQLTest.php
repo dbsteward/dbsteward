@@ -67,11 +67,11 @@ XML;
 
 
 INSERT INTO `__sequences`
-  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
+  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `start_value`, `cycle`)
 VALUES
-  ('seq0', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
-  ('seq1', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
-  ('seq2', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
+  ('seq0', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
+  ('seq1', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
+  ('seq2', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
 SQL;
     
     $this->common($this->xml_0, $this->xml_3, $expected);
@@ -80,10 +80,10 @@ SQL;
   public function testAddSome() {
     $expected = <<<SQL
 INSERT INTO `__sequences`
-  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
+  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `start_value`, `cycle`)
 VALUES
-  ('seq1', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
-  ('seq2', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
+  ('seq1', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
+  ('seq2', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
 SQL;
     
     $this->common($this->xml_1, $this->xml_3, $expected);
@@ -125,10 +125,10 @@ SET `increment` = DEFAULT,
     `cycle` = DEFAULT
 WHERE `name` = 'seq0';
 INSERT INTO `__sequences`
-  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
+  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `start_value`, `cycle`)
 VALUES
-  ('seq1', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
-  ('seq2', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
+  ('seq1', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
+  ('seq2', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
 SQL;
     $this->common($this->xml_1a, $this->xml_3, $expected);
   }
@@ -170,9 +170,9 @@ XML;
     $expected = $this->getExpectedSequenceShimDDL();
     $expected.= <<<SQL
 \n\nINSERT INTO `__sequences`
-  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
+  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `start_value`, `cycle`)
 VALUES
-  ('__test0_table_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
+  ('__test0_table_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
 SQL;
     $this->common($old, $new, $expected);
 
@@ -219,6 +219,7 @@ CREATE TABLE IF NOT EXISTS `__sequences` (
   `min_value` INT(11) unsigned NOT NULL DEFAULT 1,
   `max_value` BIGINT(20) unsigned NOT NULL DEFAULT 18446744073709551615,
   `cur_value` BIGINT(20) unsigned DEFAULT 1,
+  `start_value` BIGINT(20) unsigned DEFAULT 1,
   `cycle` BOOLEAN NOT NULL DEFAULT FALSE,
   `should_advance` BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (`name`)

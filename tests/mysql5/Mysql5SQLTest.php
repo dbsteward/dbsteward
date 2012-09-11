@@ -177,6 +177,7 @@ CREATE TABLE IF NOT EXISTS `__sequences` (
   `min_value` INT(11) unsigned NOT NULL DEFAULT 1,
   `max_value` BIGINT(20) unsigned NOT NULL DEFAULT 18446744073709551615,
   `cur_value` BIGINT(20) unsigned DEFAULT 1,
+  `start_value` BIGINT(20) unsigned DEFAULT 1,
   `cycle` BOOLEAN NOT NULL DEFAULT FALSE,
   `should_advance` BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (`name`)
@@ -273,11 +274,11 @@ BEGIN
 END;
 
 INSERT INTO `__sequences`
-  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
+  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `start_value`, `cycle`)
 VALUES
-  ('__public_user_user_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
-  ('__public_group_group_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
-  ('a_sequence', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
+  ('__public_user_user_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
+  ('__public_group_group_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
+  ('a_sequence', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
 
 GRANT SELECT, UPDATE, DELETE ON `__sequences` TO dbsteward_phpunit_app;
 

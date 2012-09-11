@@ -16,6 +16,7 @@ class mysql5_sequence {
   const MIN_COL = 'min_value';
   const MAX_COL = 'max_value';
   const CUR_COL = 'cur_value';
+  const START_COL = 'start_value';
   const CYC_COL = 'cycle';
   const ADV_COL = 'should_advance';
 
@@ -81,7 +82,7 @@ class mysql5_sequence {
 
       $name = $node_sequence['name'];
 
-      $values[] = "('$name', $increment, $min, $max, $start, $cycle)";
+      $values[] = "('$name', $increment, $min, $max, $start, $start, $cycle)";
     }
 
     $table_name = mysql5::get_quoted_table_name(self::TABLE_NAME);
@@ -90,6 +91,7 @@ class mysql5_sequence {
     $min_col = mysql5::get_quoted_column_name(self::MIN_COL);
     $max_col = mysql5::get_quoted_column_name(self::MAX_COL);
     $cur_col = mysql5::get_quoted_column_name(self::CUR_COL);
+    $start_col = mysql5::get_quoted_column_name(self::START_COL);
     $cyc_col = mysql5::get_quoted_column_name(self::CYC_COL);
 
     $values = implode(",\n  ", $values);
@@ -97,7 +99,7 @@ class mysql5_sequence {
     return <<<SQL
 -- see http://www.microshell.com/database/mysql/emulating-nextval-function-to-get-sequence-in-mysql/
 INSERT INTO $table_name
-  ($seq_col, $inc_col, $min_col, $max_col, $cur_col, $cyc_col)
+  ($seq_col, $inc_col, $min_col, $max_col, $cur_col, $start_col, $cyc_col)
 VALUES
   $values;
 SQL;
@@ -115,6 +117,7 @@ SQL;
     $max_col = mysql5::get_quoted_column_name(self::MAX_COL);
     $cur_col = mysql5::get_quoted_column_name(self::CUR_COL);
     $cyc_col = mysql5::get_quoted_column_name(self::CYC_COL);
+    $start_col = mysql5::get_quoted_column_name(self::START_COL);
     $adv_col = mysql5::get_quoted_column_name(self::ADV_COL);
 
     return <<<SQL
@@ -128,6 +131,7 @@ CREATE TABLE IF NOT EXISTS $table_name (
   $min_col INT(11) unsigned NOT NULL DEFAULT 1,
   $max_col BIGINT(20) unsigned NOT NULL DEFAULT 18446744073709551615,
   $cur_col BIGINT(20) unsigned DEFAULT 1,
+  $start_col BIGINT(20) unsigned DEFAULT 1,
   $cyc_col BOOLEAN NOT NULL DEFAULT FALSE,
   $adv_col BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY ($seq_col)

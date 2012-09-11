@@ -127,6 +127,7 @@ XML;
         'min_value'=>"$min",
         'max_value'=>"$max",
         'cur_value'=>"$start",
+        'start_value'=>"$start",
         'cycle'=>$cyc_n,
         'should_advance'=>true
       ),

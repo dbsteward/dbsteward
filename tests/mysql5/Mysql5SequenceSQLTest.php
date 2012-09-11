@@ -146,11 +146,11 @@ XML;
 
     $expected = <<<SQL
 INSERT INTO `__sequences`
-  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
+  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `start_value`, `cycle`)
 VALUES
-  ('seq0', 3, DEFAULT, 10, 2, TRUE),
-  ('seq1', 3, DEFAULT, 10, 2, TRUE),
-  ('seq2', 3, DEFAULT, 10, 2, TRUE);
+  ('seq0', 3, DEFAULT, 10, 2, 2, TRUE),
+  ('seq1', 3, DEFAULT, 10, 2, 2, TRUE),
+  ('seq2', 3, DEFAULT, 10, 2, 2, TRUE);
 SQL;
 
     $actual = trim(preg_replace('/--.*/','',mysql5_sequence::get_creation_sql($schema, $schema->sequence)));
@@ -166,9 +166,9 @@ SQL;
   protected function getExpectedSequenceDDL($name, $inc, $min, $max, $start, $cycle) {
     return <<<SQL
 INSERT INTO `__sequences`
-  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `cycle`)
+  (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `start_value`, `cycle`)
 VALUES
-  ('$name', $inc, $min, $max, $start, $cycle);
+  ('$name', $inc, $min, $max, $start, $start, $cycle);
 SQL;
   }
 }
