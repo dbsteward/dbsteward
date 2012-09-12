@@ -379,7 +379,8 @@ class mysql5_diff_tables extends sql99_diff_tables {
         }
       }
 
-      if ( strcasecmp($old_column['null'], $new_column['null']) != 0 ) {
+      // note that no null attribute is a true null attribute
+      if ( strcasecmp($old_column['null'] ?: 'true', $new_column['null'] ?: 'true') != 0 ) {
         if (mysql5_column::null_allowed($new_table, $new_column)) {
           // if the column is now allowed to be null, redefine it (because mysql won't let you just change NULL/NOT NULL)
           $commands[] = array(
