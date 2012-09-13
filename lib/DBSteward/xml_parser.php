@@ -1276,8 +1276,99 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         }
       }
     }
+    // mysql5 format conversions
+    elseif (strcasecmp(dbsteward::get_sql_format(), 'mysql5') == 0) {
+      foreach ($doc->schema as $schema) {
+        foreach ($schema->table as $table) {
+          foreach ($table->column as $column) {
+            if (isset($column['type'])) {
+              self::mysql5_type_convert($column);
+            }
+          }
+        }
+      }
+    }
 
     return $doc;
+  }
+
+  /** Convert from arbitrary type notations to mysql5 specific type representations */
+  protected static function mysql5_type_convert($column) {
+    if ($is_ai = mysql5_column::is_auto_increment($column['type'])) {
+      $column['type'] = mysql5_column::un_auto_increment($column['type']);
+    }
+
+    if (substr($column['type'], -2) == '[]') {
+      $column['type'] = 'varchar(65535)';
+    }
+
+    switch (strtolower($column['type'])) {
+      case 'bool':
+      case 'boolean':
+        // $column['type'] = 'tinyint';
+        if (isset($column['default'])) {
+          switch (strtolower($column['default'])) {
+            case "'t'":
+            case 'true':
+            case '1':
+              $column['default'] = '1';
+              break;
+            case "'f'":
+            case 'false':
+            case '0':
+              $column['default'] = '0';
+              break;
+            default:
+              throw new Exception("Unknown column type boolean default {$column['default']}");
+              break;
+          }
+        }
+        break; // boolean
+      case 'inet':
+        $column['type'] = 'varchar(16)';
+        break;
+      case 'interval':
+        // @TODO: Perhaps just varchar(65535)
+        $column['type'] = 'text';
+        break;
+      case 'character varying':
+      case 'varchar':
+        $column['type'] = 'varchar(65535)';
+        break;
+
+      // mysql's timezone support is attrocious.
+      // see: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
+      case 'timestamp without timezone':
+      case 'timestamp with timezone':
+        $column['type'] = 'timestamp';
+        break;
+      case 'time with timezone':
+        $column['type'] = 'time';
+        break;
+      case 'serial':
+      case 'bigserial':
+        // emulated with triggers and sequences later on in the process
+        // mysql5 interprets the 'serial' type as "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE"
+        // which is dumb compared to the emulation with triggers/sequences to act more like pgsql's
+        break;
+      case 'uuid':
+        // 8 digits, 3 x 4 digits, 12 digits = 32 digits + 4 hyphens = 36 chars
+        $column['type'] = 'varchar(40)';
+        break;
+    }
+
+    // character varying(N) => varchar(N)
+    // $column['type'] = preg_replace('/character varying\((.+)\)/i','varchar($1)',$column['type']);
+
+    // mysql doesn't understand epoch
+    if (isset($column['default']) && strcasecmp($column['default'], "'epoch'") == 0) {
+      // 00:00:00 is reserved for the "zero" value of a timestamp field. 01 is the closest we can get.
+      $column['default'] = "'1970-01-01 00:00:01'";
+    }
+
+    if ($is_ai) {
+      $column['type'] = (string)$column['type'] . " AUTO_INCREMENT";
+    }
   }
 
   protected static function mssql10_type_convert(&$column) {
