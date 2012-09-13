@@ -355,23 +355,23 @@ class mysql5 {
       $node_table['description'] = $db_table->table_comment;
       $node_table['primaryKey'] = '';
 
-      // @TODO: convert $db_table->auto_increment to startSerial?
-
       foreach ( $db->get_columns($db_table) as $db_column ) {
         $node_column = $node_table->addChild('column');
         $node_column['name'] = $db_column->column_name;
-        $type = $db->get_type_string($db_column);
+        $type = $db_column->column_type;
 
         if ( strcasecmp($type, 'enum') === 0 ) {
           $values = $db->parse_enum_values($db_column->column_type);
           $type = $enum_type($db_table->table_name, $db_column->column_name, $values);
         }
+
+        if ( $db_column->is_auto_increment ) {
+          $type .= 'AUTO_INCREMENT';
+        }
+
         $node_column['type'] = $type;
 
-        // @TODO: convert auto_increment columns to serials with startSerial?
         // @TODO: if there are serial sequences/triggers for the column then convert to serial
-        // @TODO: convert enum types
-
 
         if ( !empty($db_column->column_default) ) {
           $node_column['default'] = $db_column->column_default;
@@ -512,7 +512,7 @@ class mysql5 {
       $node_fn = $node_schema->addChild('function');
       $node_fn['name'] = $db_function->routine_name;
       $node_fn['owner'] = 'ROLE_OWNER';
-      $node_fn['returns'] = $type = $db->get_type_string($db_function);
+      $node_fn['returns'] = $type = $db_function->dtd_identifier;
       if ( strcasecmp($type, 'enum') === 0 ) {
         $node_fn['returns'] = $enum_type($db_function->routine_name,
                                          'returns',
@@ -531,7 +531,7 @@ class mysql5 {
         // not supported in mysql functions, even though it's provided?
         // $node_param['direction'] = strtoupper($param->parameter_mode);
         $node_param['name'] = $param->parameter_name;
-        $node_param['type'] = $type = $db->get_type_string($param);
+        $node_param['type'] = $type = $param->dtd_identifier;
         if ( strcasecmp($type, 'enum') === 0 ) {
           $node_param['type'] = $enum_type($db_function->routine_name,
                                            $param->parameter_name,

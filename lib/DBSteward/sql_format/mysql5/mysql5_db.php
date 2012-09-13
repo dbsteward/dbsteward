@@ -255,30 +255,6 @@ class mysql5_db {
     return $stmt->fetchAll(PDO::FETCH_OBJ);
   }
 
-  public function get_type_string($db_object) {
-    $type = $db_object->data_type;
-
-    if ( $db_object->character_maximum_length ) {
-      if ( stripos($db_object->data_type, 'text') === FALSE && stripos($db_object->data_type, 'enum') === FALSE ) {
-        $type .= '(' . $db_object->character_maximum_length . ')';
-      }
-    }
-    elseif ( $db_object->numeric_precision !== NULL ) {
-      $type .= '(' . $db_object->numeric_precision;
-      if ( stripos($db_object->data_type, 'int') === FALSE ) {
-        $type .= ',' . $db_object->numeric_scale;
-      }
-      $type .= ')';
-    }
-
-    // this really only applies if $db_object represents a column
-    if ( isset($db_object->is_auto_increment) && $db_object->is_auto_increment ) {
-      $type .= ' AUTO_INCREMENT';
-    }
-
-    return $type;
-  }
-
   public function parse_enum_values($enum) {
     // test to match enum('word'[, ...])
     if ( preg_match('/enum\((\'\w+\'(?:,\'\w+\')*)\)/i', $enum, $matches) == 1 ) {
