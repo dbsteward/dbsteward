@@ -434,14 +434,17 @@ class mysql5 {
             $node_column['foreignSchema'] = 'public';
             $node_column['foreignTable'] = $db_constraint->referenced_table_name;
             $node_column['foreignColumn'] = $ref_column;
-            $node_column['type'] = null; // inferred from referenced column
+            unset($node_column['type']); // inferred from referenced column
             $node_column['foreignKeyName'] = $db_constraint->constraint_name;
             $node_column['foreignIndexName'] = $db_constraint->index_name;
 
-            $node_column['foreignOnDelete'] = $db_constraint->delete_rule;
-            $node_column['foreignOnUpdate'] = $db_constraint->update_rule;
-
-            // @TODO: referential constraints
+            // RESTRICT is the default, leave it implicit if possible
+            if ( strcasecmp($db_constraint->delete_rule, 'restrict') !== 0 ) {
+              $node_column['foreignOnDelete'] = $db_constraint->delete_rule;
+            }
+            if ( strcasecmp($db_constraint->update_rule, 'restrict') !== 0 ) {
+              $node_column['foreignOnUpdate'] = $db_constraint->update_rule;
+            }
           }
           elseif ( count($db_constraint->referenced_columns) > 1
                 && count($db_constraint->referenced_columns) == count($db_constraint->columns) ) {
