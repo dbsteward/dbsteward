@@ -1298,8 +1298,12 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
       $column['type'] = mysql5_column::un_auto_increment($column['type']);
     }
 
+    // when used in an index, varchars can only have a max of 3500 bytes
+    // so when converting types, we don't know if it might be in an index,
+    // so we play it safe
+
     if (substr($column['type'], -2) == '[]') {
-      $column['type'] = 'varchar(65535)';
+      $column['type'] = 'varchar(3500)';
     }
 
     switch (strtolower($column['type'])) {
@@ -1328,12 +1332,11 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         $column['type'] = 'varchar(16)';
         break;
       case 'interval':
-        // @TODO: Perhaps just varchar(65535)
-        $column['type'] = 'text';
+        $column['type'] = 'varchar(3500)';
         break;
       case 'character varying':
       case 'varchar':
-        $column['type'] = 'varchar(65535)';
+        $column['type'] = 'varchar(3500)';
         break;
 
       // mysql's timezone support is attrocious.
