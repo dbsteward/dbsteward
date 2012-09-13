@@ -263,12 +263,12 @@ class mysql5_db {
         $type .= '(' . $db_object->character_maximum_length . ')';
       }
     }
-    elseif ( $db_object->numeric_scale !== NULL ) {
-      $type .= '(';
+    elseif ( $db_object->numeric_precision !== NULL ) {
+      $type .= '(' . $db_object->numeric_precision;
       if ( stripos($db_object->data_type, 'int') === FALSE ) {
-        $type .= $db_object->numeric_scale . ',';
+        $type .= ',' . $db_object->numeric_scale;
       }
-      $type .= $db_object->numeric_precision . ')';
+      $type .= ')';
     }
 
     // this really only applies if $db_object represents a column
