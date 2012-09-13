@@ -56,9 +56,12 @@ class sql99_function {
     $b_definition = static::get_definition($node_function_b);
 
     if ($ignore_function_whitespace) {
-      $a_definition = preg_replace("/\\s+/", " ", $a_definition);
-      $b_definition = preg_replace("/\\s+/", " ", $b_definition);
+      $a_definition = trim(preg_replace("/\\s+/", " ", $a_definition));
+      $b_definition = trim(preg_replace("/\\s+/", " ", $b_definition));
     }
+
+    $a_definition = rtrim($a_definition, ';');
+    $b_definition = rtrim($b_definition, ';');
 
     $equals =
       strcasecmp(static::get_declaration($node_schema_a, $node_function_a),

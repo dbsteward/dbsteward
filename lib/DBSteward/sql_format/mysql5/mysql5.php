@@ -521,13 +521,17 @@ class mysql5 {
                                          'returns',
                                          $db->parse_enum_values($db_function->dtd_identifier));
       }
-      // @TODO: $node_fn['description']
+      $node_fn['description'] = $db_function->routine_comment;
+
       // $node_fn['procedure'] = 'false';
 
       // I just don't trust mysql enough to make guarantees about data safety
       $node_fn['cachePolicy'] = 'VOLATILE';
 
-      $node_fn['securityDefiner'] = $db_function->security_type == 'DEFINER' ? 'true' : 'false';
+      // INVOKER is the default, leave it implicit when possible
+      if ( strcasecmp($db_function->security_type, 'definer') === 0 ) {
+        $node_fn['securityDefiner'] = 'true';
+      }
 
       foreach ( $db_function->parameters as $param ) {
         $node_param = $node_fn->addChild('functionParameter');
@@ -540,7 +544,6 @@ class mysql5 {
                                            $param->parameter_name,
                                            $db->parse_enum_values($param->dtd_identifier));
         }
-        // @TODO: character_maximum_length, etc
       }
 
       $node_def = $node_fn->addChild('functionDefinition', $db_function->routine_definition);

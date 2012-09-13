@@ -67,6 +67,10 @@ class mysql5_function extends sql99_function {
       $sql .= "SQL SECURITY DEFINER\n";
     }
 
+    if ( !empty($node_function['description']) ) {
+      $sql .= "COMMENT " . mysql5::quote_string_value($node_function['description']) . "\n";
+    }
+
     $sql .= trim(static::get_definition($node_function));
 
     if (substr($sql, -1) != ';') {

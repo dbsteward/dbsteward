@@ -205,7 +205,7 @@ class mysql5_db {
       else {
         $not_shim_fns = "";
       }
-      $fn_stmt = $this->pdo->prepare("SELECT routine_name, data_type, character_maximum_length, numeric_precision,
+      $fn_stmt = $this->pdo->prepare("SELECT routine_name, data_type, character_maximum_length, numeric_precision, routine_comment,
                                           numeric_scale, routine_definition, is_deterministic, security_type, definer, sql_data_access, dtd_identifier
                                    FROM routines
                                    WHERE routine_type = 'FUNCTION' $not_shim_fns
