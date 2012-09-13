@@ -28,7 +28,7 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
 
   public function query($sql, $throw_on_error = TRUE) {
     $rs = @mysqli_query($this->conn, $sql);
-    if ( $throw_on_error && !is_resource($rs) ) {
+    if ( $throw_on_error && $rs === FALSE ) {
       throw new exception("mysqli_query() failed:\n" . $sql . "\n\nError message: " . mysqli_error($this->conn));
     }
     return $rs;
