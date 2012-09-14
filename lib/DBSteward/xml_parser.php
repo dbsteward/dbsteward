@@ -1253,6 +1253,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     }
 
     // mssql10 sql format conversions
+    // @TODO: apply mssql10_type_convert to function parameters/returns as well. see below mysql5 impl
     if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
       foreach ($doc->schema AS $schema) {
         // if objects are being placed in the public schema, move the schema definition to dbo
@@ -1282,8 +1283,16 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         foreach ($schema->table as $table) {
           foreach ($table->column as $column) {
             if (isset($column['type'])) {
-              self::mysql5_type_convert($column);
+              list($column['type'], $column['default']) = self::mysql5_type_convert($column['type'], $column['default']);
             }
+          }
+        }
+
+        foreach ($schema->function as $function) {
+          list($function['returns'], $_) = self::mysql5_type_convert($function['returns']);
+
+          foreach ($function->functionParameter as $param) {
+            list($param['type'], $_) = self::mysql5_type_convert($param['type']);
           }
         }
       }
@@ -1293,60 +1302,60 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
   }
 
   /** Convert from arbitrary type notations to mysql5 specific type representations */
-  protected static function mysql5_type_convert($column) {
-    if ($is_ai = mysql5_column::is_auto_increment($column['type'])) {
-      $column['type'] = mysql5_column::un_auto_increment($column['type']);
+  protected static function mysql5_type_convert($type, $value = null) {
+    if ($is_ai = mysql5_column::is_auto_increment($type)) {
+      $type = mysql5_column::un_auto_increment($type);
     }
 
     // when used in an index, varchars can only have a max of 3500 bytes
     // so when converting types, we don't know if it might be in an index,
     // so we play it safe
 
-    if (substr($column['type'], -2) == '[]') {
-      $column['type'] = 'varchar(3500)';
+    if (substr($type, -2) == '[]') {
+      $type = 'varchar(3500)';
     }
 
-    switch (strtolower($column['type'])) {
+    switch (strtolower($type)) {
       case 'bool':
       case 'boolean':
-        // $column['type'] = 'tinyint';
-        if (isset($column['default'])) {
-          switch (strtolower($column['default'])) {
+        // $type = 'tinyint';
+        if ($value) {
+          switch (strtolower($value)) {
             case "'t'":
             case 'true':
             case '1':
-              $column['default'] = '1';
+              $value = '1';
               break;
             case "'f'":
             case 'false':
             case '0':
-              $column['default'] = '0';
+              $value = '0';
               break;
             default:
-              throw new Exception("Unknown column type boolean default {$column['default']}");
+              throw new Exception("Unknown column type boolean default {$value}");
               break;
           }
         }
         break; // boolean
       case 'inet':
-        $column['type'] = 'varchar(16)';
+        $type = 'varchar(16)';
         break;
       case 'interval':
-        $column['type'] = 'varchar(3500)';
+        $type = 'varchar(3500)';
         break;
       case 'character varying':
       case 'varchar':
-        $column['type'] = 'varchar(3500)';
+        $type = 'varchar(3500)';
         break;
 
       // mysql's timezone support is attrocious.
       // see: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
       case 'timestamp without timezone':
       case 'timestamp with timezone':
-        $column['type'] = 'timestamp';
+        $type = 'timestamp';
         break;
       case 'time with timezone':
-        $column['type'] = 'time';
+        $type = 'time';
         break;
       case 'serial':
       case 'bigserial':
@@ -1356,22 +1365,24 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         break;
       case 'uuid':
         // 8 digits, 3 x 4 digits, 12 digits = 32 digits + 4 hyphens = 36 chars
-        $column['type'] = 'varchar(40)';
+        $type = 'varchar(40)';
         break;
     }
 
     // character varying(N) => varchar(N)
-    // $column['type'] = preg_replace('/character varying\((.+)\)/i','varchar($1)',$column['type']);
+    // $type = preg_replace('/character varying\((.+)\)/i','varchar($1)',$type);
 
     // mysql doesn't understand epoch
-    if (isset($column['default']) && strcasecmp($column['default'], "'epoch'") == 0) {
+    if (isset($value) && strcasecmp($value, "'epoch'") == 0) {
       // 00:00:00 is reserved for the "zero" value of a timestamp field. 01 is the closest we can get.
-      $column['default'] = "'1970-01-01 00:00:01'";
+      $value = "'1970-01-01 00:00:01'";
     }
 
     if ($is_ai) {
-      $column['type'] = (string)$column['type'] . " AUTO_INCREMENT";
+      $type = (string)$type . " AUTO_INCREMENT";
     }
+
+    return array($type, $value);
   }
 
   protected static function mssql10_type_convert(&$column) {
