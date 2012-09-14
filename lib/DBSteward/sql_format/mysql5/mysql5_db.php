@@ -185,7 +185,7 @@ class mysql5_db {
   public function get_global_grants($username) {
     static $stmt;
     if (!$stmt) {
-      $stmt = $this->pdo->prepare("SELECT grantee, GROUP_CONCAT(privilege_type) AS operations, is_grantable='YES' as is_grantable FROM (
+      $stmt = $this->pdo->prepare("SELECT grantee, GROUP_CONCAT(DISTINCT privilege_type ORDER BY privilege_type ASC) AS operations, COUNT(DISTINCT privilege_type) AS num_ops, is_grantable='YES' as is_grantable FROM (
                                     SELECT grantee, privilege_type, is_grantable FROM schema_privileges WHERE grantee LIKE :grantee AND table_schema = :schema
                                     UNION
                                     SELECT grantee, privilege_type, is_grantable FROM user_privileges WHERE grantee LIKE :grantee

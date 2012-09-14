@@ -323,7 +323,8 @@ class mysql5 {
     // extract global and schema permissions under the public schema
     foreach ( $db->get_global_grants($user) as $db_grant ) {
       $node_grant = $node_schema->addChild('grant');
-      $node_grant['operation'] = $db_grant->operations;
+      // There are 28 permissions encompassed by the GRANT ALL statement
+      $node_grant['operation'] = $db_grant->num_ops == 28 ? 'ALL' : $db_grant->operations;
       $node_grant['role'] = self::translate_role_name($doc, $user);
 
       if ( $db_grant->is_grantable ) {
