@@ -9,6 +9,8 @@
  */
 
 class pgsql8_table extends sql99_table {
+  
+  public static $include_column_default_nextval_in_create_sql = TRUE;
 
   /**
    * Creates and returns SQL for creation of the table.
@@ -30,7 +32,7 @@ class pgsql8_table extends sql99_table {
 
     foreach(dbx::get_table_columns($node_table) as $column) {
       $sql .= "\t"
-        . pgsql8_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, false)
+        . pgsql8_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, FALSE, TRUE, static::$include_column_default_nextval_in_create_sql)
         . ",\n";
     }
 
@@ -160,6 +162,33 @@ class pgsql8_table extends sql99_table {
       . pgsql8_diff::get_quoted_name($constraint['table_name'], dbsteward::$quote_table_names) . "\n"
       . static::get_constraint_drop_sql_change_statement($constraint)
       . ';';
+    return $sql;
+  }
+  
+  public function has_default_nextval($node_table) {
+    foreach(dbx::get_table_columns($node_table) as $column) {
+      if ( pgsql8_column::has_default_nextval($node_table, $column) ) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+  
+  public function get_default_nextval_sql($node_schema, $node_table) {
+    $sql = '';
+    foreach(dbx::get_table_columns($node_table) as $column) {
+      if ( pgsql8_column::has_default_nextval($node_table, $column) ) {
+        if ( strlen($sql) > 0 ) {
+          $sql .= "\n";
+        }
+        dbsteward::console_line(5, "Specifying skipped " . $column['name'] . " default expression \"" . $column['default'] . "\"");
+        $sql .= "ALTER TABLE " .
+          pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' .
+          pgsql8_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names) .
+          " ALTER COLUMN " . pgsql8_diff::get_quoted_name($column['name'], dbsteward::$quote_column_names) . 
+          " DEFAULT " . $column['default'] . "; -- column default nextval expression being added post table creation";
+      }
+    }
     return $sql;
   }
 

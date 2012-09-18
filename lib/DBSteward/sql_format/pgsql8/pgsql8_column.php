@@ -29,6 +29,8 @@ class pgsql8_column extends sql99_column {
   const PATTERN_DEFAULT = "/^(.+)[\\s]+DEFAULT[\\s]+(.+)$/i";
 
   const PATTERN_DEFAULT_NOW = '/^(NOW\(\)|CURRENT_TIMESTAMP|cfxn\.current_ts\(\))$/i';
+  
+  const PATTERN_NEXTVAL = "/^nextval\((.+)\)$/i";
 
   /**
    * Returns full definition of the column.
@@ -38,12 +40,20 @@ class pgsql8_column extends sql99_column {
    *
    * @return full definition of the column
    */
-  public function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true) {
+  public function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true, $include_default_nextval = TRUE) {
     $column_type = pgsql8_column::column_type($db_doc, $node_schema, $node_table, $node_column, $foreign);
     $definition = pgsql8_diff::get_quoted_name($node_column['name'], dbsteward::$quote_column_names) . ' ' . $column_type;
 
     if (strlen($node_column['default']) > 0) {
-      $definition .= " DEFAULT " . $node_column['default'];
+      if (! $include_default_nextval && static::has_default_nextval($node_table, $node_column)) {
+        // if the default is a nextval expression, don't specify it in the regular full definition
+        // because if the sequence has not been defined yet,
+        // the nextval expression will be evaluated inline and fail
+        dbsteward::console_line(5, "Skipping " . $node_column['name'] . " default expression \"" . $node_column['default'] . "\" - this default expression will be applied after all sequences have been created");
+      }
+      else {
+        $definition .= " DEFAULT " . $node_column['default'];
+      }
     } else if ( !pgsql8_column::null_allowed($node_table, $node_column) && $add_defaults) {
       $default_col_value = pgsql8_column::get_default_value($node_column['type']);
       if ($default_col_value != null) {
@@ -201,6 +211,22 @@ class pgsql8_column extends sql99_column {
       }
     }
     return $sql;
+  }
+  
+  public static function has_default_nextval($node_table, $node_column) {
+    if ( !is_object($node_column) ) {
+      var_dump($node_column);
+      throw new exception("node_column passed is not an object");
+    }
+
+    $default_nextval = false;
+    if ( isset($node_column['default']) ) {
+      if ( preg_match(self::PATTERN_NEXTVAL, $node_column['default'], $matches) > 0 ) {
+        $default_nextval = true;
+      }
+    }
+
+    return $default_nextval;
   }
 
 }

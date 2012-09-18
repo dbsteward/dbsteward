@@ -379,6 +379,7 @@ class pgsql8 extends sql99 {
     foreach ($db_doc->schema AS $schema) {
 
       // create defined tables
+      pgsql8_table::$include_column_default_nextval_in_create_sql = FALSE;
       foreach ($schema->table AS $table) {
         // table definition
         $ofs->write(pgsql8_table::get_creation_sql($schema, $table) . "\n");
@@ -395,6 +396,7 @@ class pgsql8 extends sql99 {
 
         $ofs->write("\n");
       }
+      pgsql8_table::$include_column_default_nextval_in_create_sql = TRUE;
 
       // sequences contained in the schema
       if (isset($schema->sequence)) {
@@ -407,6 +409,13 @@ class pgsql8 extends sql99 {
               $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
             }
           }
+        }
+      }
+      
+      // add table nextvals that were omitted
+      foreach ($schema->table AS $table) {
+        if ( pgsql8_table::has_default_nextval($table) ) {
+          $ofs->write(pgsql8_table::get_default_nextval_sql($schema, $table) . "\n");
         }
       }
     }
