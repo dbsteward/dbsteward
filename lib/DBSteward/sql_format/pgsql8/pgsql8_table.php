@@ -186,7 +186,7 @@ class pgsql8_table extends sql99_table {
           pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' .
           pgsql8_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names) .
           " ALTER COLUMN " . pgsql8_diff::get_quoted_name($column['name'], dbsteward::$quote_column_names) . 
-          " DEFAULT " . $column['default'] . "; -- column default nextval expression being added post table creation";
+          " SET DEFAULT " . $column['default'] . "; -- column default nextval expression being added post table creation";
       }
     }
     return $sql;
