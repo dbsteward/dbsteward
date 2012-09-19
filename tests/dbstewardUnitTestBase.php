@@ -49,9 +49,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected function tearDown() {
     // make sure connection is closed to DB can be dropped
     // when running multiple tests
-    $this->pgsql->close_connection();
     $this->mssql->close_connection();
-    $this->mysql->close_connection();
   }
   
   protected function apply_options_pgsql8() {
