@@ -63,7 +63,7 @@ class mysql5_column extends sql99_column {
     }
 
     if ( strlen($node_column['description']) > 0 ) {
-      $definition .= " COMMENT '" . str_replace("'","\'",$node_column['description']) . "'";
+      $definition .= " COMMENT " . mysql5::quote_string_value($node_column['description']);
     }
 
     // restore the original type of the column

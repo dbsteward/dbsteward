@@ -42,7 +42,7 @@ class mysql5_table extends sql99_table {
     $sql .= "  " . implode(",\n  ", $cols) . "\n)";
 
     if ( strlen($node_table['description']) > 0 ) {
-      $sql .= "\nCOMMENT '" . str_replace("'","\'",$node_table['description']) . "'";
+      $sql .= "\nCOMMENT " . mysql5::quote_string_value($node_table['description']);
     }
 
     $sql .= ";";

@@ -370,6 +370,7 @@ class mysql5 {
       foreach ( $db->get_columns($db_table) as $db_column ) {
         $node_column = $node_table->addChild('column');
         $node_column['name'] = $db_column->column_name;
+        $node_column['description'] = $db_column->column_comment;
 
 
         $type = $db->is_serial_column($db_table, $db_column);

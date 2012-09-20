@@ -68,7 +68,7 @@ class mysql5_db {
     return $this->query("SELECT table_name, column_name, column_default,
                                 is_nullable, data_type, character_maximum_length, numeric_precision,
                                 numeric_scale, column_type, column_key, extra, privileges,
-                                extra = 'auto_increment' AS is_auto_increment
+                                extra = 'auto_increment' AS is_auto_increment, column_comment
                          FROM columns
                          WHERE table_name = ?
                            AND table_schema = ?
