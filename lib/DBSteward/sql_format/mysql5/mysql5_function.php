@@ -9,6 +9,9 @@
  */
 
 class mysql5_function extends sql99_function {
+
+  const ALT_DELIMITER = '$_$';
+
   public static function supported_language($language) {
     return strcasecmp($language, 'sql') == 0;
   }
@@ -20,6 +23,11 @@ class mysql5_function extends sql99_function {
 
     // always drop the function first, just to be safe, and to be compatible with pgsql8's CREATE OR REPLACE
     $sql = static::get_drop_sql($node_schema, $node_function) . "\n";
+
+    if ( mysql5::$swap_function_delimiters ) {
+      $sql .= 'DELIMITER ' . static::ALT_DELIMITER . "\n";
+    }
+
     $sql .= "CREATE DEFINER = $definer FUNCTION $name (";
 
     if ( isset($node_function->functionParameter) ) {
@@ -73,7 +81,12 @@ class mysql5_function extends sql99_function {
 
     $sql .= trim(static::get_definition($node_function));
 
-    if (substr($sql, -1) != ';') {
+    $sql = rtrim($sql, ';');
+
+    if ( mysql5::$swap_function_delimiters ) {
+      $sql .= static::ALT_DELIMITER . "\nDELIMITER ;";
+    }
+    else {
       $sql .= ';';
     }
 

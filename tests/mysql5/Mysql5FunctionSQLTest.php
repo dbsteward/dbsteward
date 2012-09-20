@@ -21,6 +21,8 @@ class Mysql5FunctionSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
 
+    mysql5::$swap_function_delimiters = FALSE;
+
     $db_doc_xml = <<<XML
 <dbsteward>
   <database>
@@ -333,5 +335,78 @@ XML;
       $this->fail('Expected exception for duplicate function definitions');
     }
     $this->fail('Expected exception for no function definitions');
+  }
+
+  public function testDelimiters() {
+    $xml = <<<XML
+<schema name="test" owner="ROLE_OWNER">
+  <function name="test_fn" returns="text">
+    <functionParameter name="a" type="text"/>
+    <functionParameter name="b" type="int"/>
+    <functionParameter name="c" type="date"/>
+    <functionDefinition language="sql" sqlFormat="mysql5">
+BEGIN
+  DECLARE val BIGINT(20);
+  IF @__sequences_lastval IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'nextval() has not been called yet this session';
+  ELSE
+    SELECT `currval` INTO val FROM  `__sequences_currvals` WHERE `name` = seq_name;
+    RETURN val;
+  END IF;
+END;
+    </functionDefinition>
+  </function>
+</schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+
+    $expected = <<<SQL
+DROP FUNCTION IF EXISTS `test_fn`;
+CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
+RETURNS text
+LANGUAGE SQL
+MODIFIES SQL DATA
+NOT DETERMINISTIC
+SQL SECURITY INVOKER
+BEGIN
+  DECLARE val BIGINT(20);
+  IF @__sequences_lastval IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'nextval() has not been called yet this session';
+  ELSE
+    SELECT `currval` INTO val FROM  `__sequences_currvals` WHERE `name` = seq_name;
+    RETURN val;
+  END IF;
+END;
+SQL;
+    
+    $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
+
+    $this->assertEquals($expected, $actual);
+
+    mysql5::$swap_function_delimiters = TRUE;
+
+    $expected = <<<SQL
+DROP FUNCTION IF EXISTS `test_fn`;
+DELIMITER \$_$
+CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
+RETURNS text
+LANGUAGE SQL
+MODIFIES SQL DATA
+NOT DETERMINISTIC
+SQL SECURITY INVOKER
+BEGIN
+  DECLARE val BIGINT(20);
+  IF @__sequences_lastval IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'nextval() has not been called yet this session';
+  ELSE
+    SELECT `currval` INTO val FROM  `__sequences_currvals` WHERE `name` = seq_name;
+    RETURN val;
+  END IF;
+END\$_$
+DELIMITER ;
+SQL;
+    $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
+
+    $this->assertEquals($expected, $actual);
   }
 }

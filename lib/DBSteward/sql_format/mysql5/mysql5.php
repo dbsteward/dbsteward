@@ -14,6 +14,17 @@ class mysql5 {
 
   public static $quote_function_parameters = TRUE;
 
+  /**
+   * Because mysql5 functions use a semicolon as a delimiter inside the definition,
+   * line-by-line attempts to load DDL into the database, like through the mysql 
+   * command-line client, get confused and interpret that semicolon as the end of the
+   * function statement. The solution is to change the end-of-statement delimiter to
+   * something else while defining the function, so semicolons are interpreted literally.
+   * @see mysql5_function::get_creation_sql()
+   * @todo add command-line flag to toggle this
+   */
+  public static $swap_function_delimiters = TRUE;
+
   public static function build($files) {
 
     if (!is_array($files)) {
@@ -359,17 +370,24 @@ class mysql5 {
       foreach ( $db->get_columns($db_table) as $db_column ) {
         $node_column = $node_table->addChild('column');
         $node_column['name'] = $db_column->column_name;
-        $type = $db_column->column_type;
 
-        if ( strcasecmp($type, 'enum') === 0 ) {
-          $values = $db->parse_enum_values($db_column->column_type);
-          $type = $enum_type($db_table->table_name, $db_column->column_name, $values);
+
+
+        if ($type = $db->is_serial_column($db_table, $db_column)) {
+          //^^^^^^^
         }
+        else {
+          $type = $db_column->column_type;
 
-        if ( $db_column->is_auto_increment ) {
-          $type .= 'AUTO_INCREMENT';
+          if ( strcasecmp($type, 'enum') === 0 ) {
+            $values = $db->parse_enum_values($db_column->column_type);
+            $type = $enum_type($db_table->table_name, $db_column->column_name, $values);
+          }
+
+          if ( $db_column->is_auto_increment ) {
+            $type .= 'AUTO_INCREMENT';
+          }
         }
-
         $node_column['type'] = $type;
 
         // @TODO: if there are serial sequences/triggers for the column then convert to serial
