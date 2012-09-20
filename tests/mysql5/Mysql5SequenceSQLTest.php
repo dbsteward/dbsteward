@@ -18,6 +18,7 @@ class Mysql5SequenceSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
+    mysql5::$swap_function_delimiters = FALSE;
   }
 
   public function testCreationDefaults() {
@@ -161,6 +162,227 @@ SQL;
     $actual_drop = trim(preg_replace('/--.*/','',mysql5_sequence::get_drop_sql($schema, $schema->sequence)));
 
     $this->assertEquals($expected_drop, $actual_drop);
+  }
+
+  public function testShim() {
+    $actual = mysql5_sequence::get_shim_creation_sql();
+    $actual = trim(preg_replace('/--.*(\n\s*)?/','',$actual));
+    $expected = <<<SQL
+CREATE TABLE IF NOT EXISTS `__sequences` (
+  `name` VARCHAR(100) NOT NULL,
+  `increment` INT(11) unsigned NOT NULL DEFAULT 1,
+  `min_value` INT(11) unsigned NOT NULL DEFAULT 1,
+  `max_value` BIGINT(20) unsigned NOT NULL DEFAULT 18446744073709551615,
+  `cur_value` BIGINT(20) unsigned DEFAULT 1,
+  `start_value` BIGINT(20) unsigned DEFAULT 1,
+  `cycle` BOOLEAN NOT NULL DEFAULT FALSE,
+  `should_advance` BOOLEAN NOT NULL DEFAULT TRUE,
+  PRIMARY KEY (`name`)
+) ENGINE = MyISAM;
+
+DROP FUNCTION IF EXISTS `currval`;
+CREATE FUNCTION `currval` (`seq_name` varchar(100))
+RETURNS BIGINT(20) NOT DETERMINISTIC
+BEGIN
+  DECLARE val BIGINT(20);
+  IF @__sequences_lastval IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'nextval() has not been called yet this session';
+  ELSE
+    SELECT `currval` INTO val FROM  `__sequences_currvals` WHERE `name` = seq_name;
+    RETURN val;
+  END IF;
+END;
+
+DROP FUNCTION IF EXISTS `lastval`;
+CREATE FUNCTION `lastval` ()
+RETURNS BIGINT(20) NOT DETERMINISTIC
+BEGIN
+  IF @__sequences_lastval IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'nextval() has not been called yet this session';
+  ELSE
+    RETURN @__sequences_lastval;
+  END IF;
+END;
+
+DROP FUNCTION IF EXISTS `nextval`;
+CREATE FUNCTION `nextval` (`seq_name` varchar(100))
+RETURNS BIGINT(20) NOT DETERMINISTIC
+BEGIN
+  DECLARE advance BOOLEAN;
+
+  CREATE TEMPORARY TABLE IF NOT EXISTS `__sequences_currvals` (
+    `name` VARCHAR(100) NOT NULL,
+    `currval` BIGINT(20),
+    PRIMARY KEY (`name`)
+  );
+
+  SELECT `cur_value` INTO @__sequences_lastval FROM `__sequences` WHERE `name` = seq_name;
+  SELECT `should_advance` INTO advance FROM `__sequences` WHERE `name` = seq_name;
+  
+  IF @__sequences_lastval IS NOT NULL THEN
+
+    IF advance = TRUE THEN
+      UPDATE `__sequences`
+      SET `cur_value` = IF (
+        (`cur_value` + `increment`) > `max_value`,
+        IF (`cycle` = TRUE, `min_value`, NULL),
+        `cur_value` + `increment`
+      )
+      WHERE `name` = seq_name;
+
+      SELECT `cur_value` INTO @__sequences_lastval FROM `__sequences` WHERE `name` = seq_name;
+
+    ELSE
+      UPDATE `__sequences`
+      SET `should_advance` = TRUE
+      WHERE `name` = seq_name;
+    END IF;
+
+    REPLACE INTO `__sequences_currvals` (`name`, `currval`)
+    VALUE (seq_name, @__sequences_lastval);
+  END IF;
+
+  RETURN @__sequences_lastval;
+END;
+
+DROP FUNCTION IF EXISTS `setval`;
+CREATE FUNCTION `setval` (`seq_name` varchar(100), `value` bigint(20), `advance` BOOLEAN)
+RETURNS bigint(20) NOT DETERMINISTIC
+BEGIN
+
+  UPDATE `__sequences`
+  SET `cur_value` = value,
+      `should_advance` = advance
+  WHERE `name` = seq_name;
+
+  IF advance = FALSE THEN
+    CREATE TEMPORARY TABLE IF NOT EXISTS `__sequences_currvals` (
+      `name` VARCHAR(100) NOT NULL,
+      `currval` BIGINT(20),
+      PRIMARY KEY (`name`)
+    );
+
+    REPLACE INTO `__sequences_currvals` (`name`, `currval`)
+    VALUE (seq_name, value);
+    SET @__sequences_lastval = value;
+  END IF;
+
+  RETURN value;
+END;
+SQL;
+    $this->assertEquals($expected, $actual);
+  }
+
+  public function testDelimiters() {
+    mysql5::$swap_function_delimiters = TRUE;
+    $actual = mysql5_sequence::get_shim_creation_sql();
+    $actual = trim(preg_replace('/--.*(\n\s*)?/','',$actual));
+    $expected = <<<SQL
+CREATE TABLE IF NOT EXISTS `__sequences` (
+  `name` VARCHAR(100) NOT NULL,
+  `increment` INT(11) unsigned NOT NULL DEFAULT 1,
+  `min_value` INT(11) unsigned NOT NULL DEFAULT 1,
+  `max_value` BIGINT(20) unsigned NOT NULL DEFAULT 18446744073709551615,
+  `cur_value` BIGINT(20) unsigned DEFAULT 1,
+  `start_value` BIGINT(20) unsigned DEFAULT 1,
+  `cycle` BOOLEAN NOT NULL DEFAULT FALSE,
+  `should_advance` BOOLEAN NOT NULL DEFAULT TRUE,
+  PRIMARY KEY (`name`)
+) ENGINE = MyISAM;
+
+DELIMITER \$_$
+DROP FUNCTION IF EXISTS `currval`\$_$
+CREATE FUNCTION `currval` (`seq_name` varchar(100))
+RETURNS BIGINT(20) NOT DETERMINISTIC
+BEGIN
+  DECLARE val BIGINT(20);
+  IF @__sequences_lastval IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'nextval() has not been called yet this session';
+  ELSE
+    SELECT `currval` INTO val FROM  `__sequences_currvals` WHERE `name` = seq_name;
+    RETURN val;
+  END IF;
+END\$_$
+
+DROP FUNCTION IF EXISTS `lastval`\$_$
+CREATE FUNCTION `lastval` ()
+RETURNS BIGINT(20) NOT DETERMINISTIC
+BEGIN
+  IF @__sequences_lastval IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'nextval() has not been called yet this session';
+  ELSE
+    RETURN @__sequences_lastval;
+  END IF;
+END\$_$
+
+DROP FUNCTION IF EXISTS `nextval`\$_$
+CREATE FUNCTION `nextval` (`seq_name` varchar(100))
+RETURNS BIGINT(20) NOT DETERMINISTIC
+BEGIN
+  DECLARE advance BOOLEAN;
+
+  CREATE TEMPORARY TABLE IF NOT EXISTS `__sequences_currvals` (
+    `name` VARCHAR(100) NOT NULL,
+    `currval` BIGINT(20),
+    PRIMARY KEY (`name`)
+  );
+
+  SELECT `cur_value` INTO @__sequences_lastval FROM `__sequences` WHERE `name` = seq_name;
+  SELECT `should_advance` INTO advance FROM `__sequences` WHERE `name` = seq_name;
+  
+  IF @__sequences_lastval IS NOT NULL THEN
+
+    IF advance = TRUE THEN
+      UPDATE `__sequences`
+      SET `cur_value` = IF (
+        (`cur_value` + `increment`) > `max_value`,
+        IF (`cycle` = TRUE, `min_value`, NULL),
+        `cur_value` + `increment`
+      )
+      WHERE `name` = seq_name;
+
+      SELECT `cur_value` INTO @__sequences_lastval FROM `__sequences` WHERE `name` = seq_name;
+
+    ELSE
+      UPDATE `__sequences`
+      SET `should_advance` = TRUE
+      WHERE `name` = seq_name;
+    END IF;
+
+    REPLACE INTO `__sequences_currvals` (`name`, `currval`)
+    VALUE (seq_name, @__sequences_lastval);
+  END IF;
+
+  RETURN @__sequences_lastval;
+END\$_$
+
+DROP FUNCTION IF EXISTS `setval`\$_$
+CREATE FUNCTION `setval` (`seq_name` varchar(100), `value` bigint(20), `advance` BOOLEAN)
+RETURNS bigint(20) NOT DETERMINISTIC
+BEGIN
+
+  UPDATE `__sequences`
+  SET `cur_value` = value,
+      `should_advance` = advance
+  WHERE `name` = seq_name;
+
+  IF advance = FALSE THEN
+    CREATE TEMPORARY TABLE IF NOT EXISTS `__sequences_currvals` (
+      `name` VARCHAR(100) NOT NULL,
+      `currval` BIGINT(20),
+      PRIMARY KEY (`name`)
+    );
+
+    REPLACE INTO `__sequences_currvals` (`name`, `currval`)
+    VALUE (seq_name, value);
+    SET @__sequences_lastval = value;
+  END IF;
+
+  RETURN value;
+END\$_$
+DELIMITER ;
+SQL;
+    $this->assertEquals($expected, $actual);
   }
 
   protected function getExpectedSequenceDDL($name, $inc, $min, $max, $start, $cycle) {

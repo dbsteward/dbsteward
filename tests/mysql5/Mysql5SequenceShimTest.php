@@ -20,6 +20,7 @@ class Mysql5SequenceShimTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
+    mysql5::$swap_function_delimiters = FALSE;
 
     $this->connect();
     $this->setup_shim();

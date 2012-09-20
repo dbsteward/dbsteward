@@ -120,6 +120,10 @@ SQL;
     $start_col = mysql5::get_quoted_column_name(self::START_COL);
     $adv_col = mysql5::get_quoted_column_name(self::ADV_COL);
 
+    $delimiter_begin = mysql5::$swap_function_delimiters ? ("DELIMITER ".mysql5_function::ALT_DELIMITER."\n") : '';
+    $delimiter_end = mysql5::$swap_function_delimiters ? "\nDELIMITER ;" : '';
+    $delimiter = mysql5::$swap_function_delimiters ? mysql5_function::ALT_DELIMITER : ';';
+
     return <<<SQL
 -- pgsql sequence equivalent implementation
 -- this creates a table called __sequences which contains each sequence's data
@@ -137,7 +141,7 @@ CREATE TABLE IF NOT EXISTS $table_name (
   PRIMARY KEY ($seq_col)
 ) ENGINE = MyISAM;
 
--- emulation of http://www.postgresql.org/docs/8.4/static/functions-sequence.html
+$delimiter_begin-- emulation of http://www.postgresql.org/docs/8.4/static/functions-sequence.html
 -- note, these function ARE NOT ATOMIC. according to the MySQL 5.5 manual:
 -- "MySQL also permits stored procedures (but not stored functions) to contain SQL transaction statements such as COMMIT"
 -- and "LOCK TABLES is not transaction-safe and implicitly commits any active transaction before attempting to lock the tables."
@@ -148,7 +152,7 @@ CREATE TABLE IF NOT EXISTS $table_name (
 -- (An error is reported if nextval has never been called for this sequence in this session.)
 -- Because this is returning a session-local value, it gives a predictable answer whether
 -- or not other sessions have executed nextval since the current session did.
-DROP FUNCTION IF EXISTS `currval`;
+DROP FUNCTION IF EXISTS `currval`$delimiter
 CREATE FUNCTION `currval` (`seq_name` varchar(100))
 RETURNS BIGINT(20) NOT DETERMINISTIC
 BEGIN
@@ -159,14 +163,14 @@ BEGIN
     SELECT `currval` INTO val FROM  `__sequences_currvals` WHERE `name` = seq_name;
     RETURN val;
   END IF;
-END;
+END$delimiter
 
 -- From the PostgreSQL 8.4 manual:
 -- Return the value most recently returned by nextval in the current session. This function is
 -- identical to currval, except that instead of taking the sequence name as an argument it fetches
 -- the value of the last sequence used by nextval in the current session.
 -- It is an error to call lastval if nextval has not yet been called in the current session.
-DROP FUNCTION IF EXISTS `lastval`;
+DROP FUNCTION IF EXISTS `lastval`$delimiter
 CREATE FUNCTION `lastval` ()
 RETURNS BIGINT(20) NOT DETERMINISTIC
 BEGIN
@@ -175,13 +179,13 @@ BEGIN
   ELSE
     RETURN @__sequences_lastval;
   END IF;
-END;
+END$delimiter
 
 -- From the PostgreSQL 8.4 manual: 
 -- Advance the sequence object to its next value and return that value.
 -- This is done atomically: even if multiple sessions execute nextval concurrently,
 -- each will safely receive a distinct sequence value. [NOPE, BECAUSE MySQL]
-DROP FUNCTION IF EXISTS `nextval`;
+DROP FUNCTION IF EXISTS `nextval`$delimiter
 CREATE FUNCTION `nextval` (`seq_name` varchar(100))
 RETURNS BIGINT(20) NOT DETERMINISTIC
 BEGIN
@@ -226,7 +230,7 @@ BEGIN
   END IF;
 
   RETURN @__sequences_lastval;
-END;
+END$delimiter
 
 -- From the PostgreSQL 8.4 manual:
 -- Reset the sequence object's counter value. The two-parameter form sets the sequence's
@@ -239,7 +243,7 @@ END;
 -- (this is a change from pre-8.3 behavior).
 -- The result returned by setval is just the value of its second argument.
 -- We only allow the 3-parameter form, because MySQL doesn't support optional or default parameters
-DROP FUNCTION IF EXISTS `setval`;
+DROP FUNCTION IF EXISTS `setval`$delimiter
 CREATE FUNCTION `setval` (`seq_name` varchar(100), `value` bigint(20), `advance` BOOLEAN)
 RETURNS bigint(20) NOT DETERMINISTIC
 BEGIN
@@ -265,7 +269,7 @@ BEGIN
   END IF;
 
   RETURN value;
-END;
+END$delimiter$delimiter_end
 SQL;
   }
 
