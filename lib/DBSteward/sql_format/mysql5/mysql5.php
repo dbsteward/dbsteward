@@ -372,11 +372,8 @@ class mysql5 {
         $node_column['name'] = $db_column->column_name;
 
 
-
-        if ($type = $db->is_serial_column($db_table, $db_column)) {
-          //^^^^^^^
-        }
-        else {
+        $type = $db->is_serial_column($db_table, $db_column);
+        if ( !$type ) {
           $type = $db_column->column_type;
 
           if ( strcasecmp($type, 'enum') === 0 ) {

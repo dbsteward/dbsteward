@@ -101,7 +101,7 @@ XML;
       </functionDefinition>
     </function>
     <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
-      <column name="rate_id" type="int(11)" null="false"/>
+      <column name="rate_id" type="serial" null="false"/>
       <column name="rate_group_id" foreignSchema="public" foreignTable="rate_group" foreignColumn="rate_group_id" null="false"/>
       <column name="rate_name" type="varchar(120)"/>
       <column name="rate_value" type="decimal(10,0)"/>
