@@ -15,8 +15,7 @@ require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
 
 class duplicateFunctionTest extends dbstewardUnitTestBase {
 
-  protected function setUp() {
-    $this->xml_content_a = <<<XML
+  private $pgsql8_xml_a = <<<XML
 <dbsteward>
   <database>
     <host>db-host</host>
@@ -113,7 +112,8 @@ class duplicateFunctionTest extends dbstewardUnitTestBase {
   </schema>
 </dbsteward>
 XML;
-    $this->xml_content_b = <<<XML
+
+  private $pgsql8_xml_b = <<<XML
 <dbsteward>
   <database>
     <host>db-host</host>
@@ -219,49 +219,185 @@ XML;
 </dbsteward>
 XML;
 
+  private $mssql10_xml_a; // = $pgsql8_xml_a
+  private $mssql10_xml_b; // = $pgsql8_xml_b
+
+  private $mysql5_xml_a = <<<XML
+<dbsteward>
+  <database>
+    <host>db-host</host>
+    <name>dbsteward</name>
+    <role>
+      <application>dbsteward_pu_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+    <slony>
+      <masterNode id="1"/>
+      <replicaNode id="2" providerId="1"/>
+      <replicaNode id="3" providerId="2"/>
+      <replicationSet id="1"/>
+      <replicationUpgradeSet id="2"/>
+    </slony>
+  </database>
+  <schema name="public" owner="ROLE_OWNER">
+    <table name="othertable" owner="ROLE_OWNER" primaryKey="othertable_id" description="othertable for other data" slonyId="50">
+      <column name="othertable_id" type="int"/>
+      <column name="othertable_name" type="varchar(100)" null="false"/>
+      <column name="othertable_detail" type="text" null="false"/>
+      <grant role="ROLE_APPLICATION" operation="SELECT"/>
+    </table>
+    <function name="lpad" returns="text" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MySQL">
+      <functionParameter name="one" type="text"/>
+      <functionParameter name="two" type="int"/>
+      <functionParameter name="three" type="text"/>
+      <functionDefinition language="sql" sqlFormat="mysql5">
+        BEGIN
+          DECLARE val text;
+          SELECT LPAD($1, $2, $3) INTO val;
+          RETURN val;
+        END;
+      </functionDefinition>
+      <grant role="ROLE_APPLICATION" operation="EXECUTE"/>
+    </function>
+    <function name="lpad" returns="text" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MySQL">
+      <functionParameter name="one" type="text"/>
+      <functionParameter name="two" type="int"/>
+      <functionParameter name="three" type="text"/>
+      <functionDefinition language="sql" sqlFormat="mysql5">
+        BEGIN
+          DECLARE val text;
+          SELECT LPAD($1, $2, $3) INTO val;
+          RETURN val;
+        END;
+      </functionDefinition>
+      <grant role="ROLE_APPLICATION" operation="EXECUTE"/>
+    </function>
+  </schema>
+</dbsteward>
+XML;
+
+  private $mysql5_xml_b = <<<XML
+<dbsteward>
+  <database>
+    <host>db-host</host>
+    <name>dbsteward</name>
+    <role>
+      <application>dbsteward_pu_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+  </database>
+  <schema name="public" owner="ROLE_OWNER">
+    <table name="othertable" owner="ROLE_OWNER" primaryKey="othertable_id" description="othertable for other data" slonyId="50">
+      <column name="othertable_id" type="int"/>
+      <column name="othertable_name" type="varchar(100)" null="false"/>
+      <column name="othertable_detail" type="text" null="false"/>
+      <grant role="ROLE_APPLICATION" operation="SELECT"/>
+    </table>
+    <function name="lpad" returns="text" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MySQL">
+      <functionParameter name="one" type="text"/>
+      <functionParameter name="two" type="int"/>
+      <functionParameter name="three" type="text"/>
+      <functionDefinition language="sql" sqlFormat="mysql5">
+        BEGIN
+          DECLARE val text;
+          SELECT LPAD($1, $2, $3) INTO val;
+          RETURN val;
+        END;
+      </functionDefinition>
+      <grant role="ROLE_APPLICATION" operation="EXECUTE"/>
+    </function>
+    <function name="lpad" returns="text" owner="ROLE_OWNER" cachePolicy="IMMUTABLE" description="lpad unified implementation for MySQL -- whitespace altered to make function diff upgrade happen, only in section definition">
+      <functionParameter name="one" type="text"/>
+      <functionParameter name="two" type="int"/>
+      <functionParameter name="three" type="text"/>
+      <functionDefinition language="sql" sqlFormat="mysql5">
+        BEGIN
+          DECLARE val text;
+          SELECT LPAD(
+            $1,
+            $2,
+            $3
+          ) INTO val;
+          RETURN val;
+        END;
+      </functionDefinition>
+      <grant role="ROLE_APPLICATION" operation="EXECUTE"/>
+    </function>
+  </schema>
+</dbsteward>
+XML;
+
+  protected function setUp() {
+    $this->mssql10_xml_a = $this->pgsql8_xml_a;
+    $this->mssql10_xml_b = $this->pgsql8_xml_b;
+
     parent::setUp();
   }
   
+  /**
+   * @group pgsql8
+   */
   public function testDuplicationFunctionDefinitionAllowedPGSQL8() {
-    dbsteward::$allow_function_redefinition = true;
-    $this->build_db_pgsql8();
-    $this->upgrade_db_pgsql8();
+    $this->do_allowed('pgsql8');
   }
   
+  /**
+   * @group mssql10
+   */
   public function testDuplicationFunctionDefinitionAllowedMSSQL10() {
-    dbsteward::$allow_function_redefinition = true;
-    $this->build_db_mssql10();
-    $this->upgrade_db_mssql10();
+    $this->do_allowed('mssql10');
+  }
+
+  /**
+   * @group mysql5
+   */
+  public function testDuplicationFunctionDefinitionAllowedMYSQL5() {
+    $this->do_allowed('mysql5');
   }
   
+  /**
+   * @group pgsql8
+   */
   public function testDuplicationFunctionDefinitionNotAllowedPGSQL8() {
-    dbsteward::$allow_function_redefinition = false;
-    try {
-      $this->build_db_pgsql8();
-    }
-    catch(Exception $e) {
-      $this->assertEquals(
-        $e->getMessage(),
-        'function lpad with identical parameters is being redefined'
-      );
-    }
-    
-    // make sure differencing doesn't want to do it either
-    try {
-      $this->upgrade_db_pgsql8();
-    }
-    catch(Exception $e) {
-      $this->assertEquals(
-        $e->getMessage(),
-        'function lpad with identical parameters is being redefined'
-      );
-    }
+    $this->do_not_allowed('pgsql8');
   }
   
+  /**
+   * @group mssql10
+   */
   public function testDuplicationFunctionDefinitionNotAllowedMSSQL10() {
+    $this->do_not_allowed('mssql10');
+  }
+  
+  /**
+   * @group mysql5
+   */
+  public function testDuplicationFunctionDefinitionNotAllowedMYSQL5() {
+    $this->do_not_allowed('mysql5');
+  }
+
+  private function do_allowed($format) {
+    dbsteward::$allow_function_redefinition = true;
+
+    $this->set_xml_content_a($this->{$format.'_xml_a'});
+    $this->set_xml_content_b($this->{$format.'_xml_b'});
+
+    $this->build_db($format);
+    $this->upgrade_db($format);
+  }
+
+  private function do_not_allowed($format) {
     dbsteward::$allow_function_redefinition = false;
+    
+    $this->set_xml_content_a($this->{$format.'_xml_a'});
+    $this->set_xml_content_b($this->{$format.'_xml_b'});
+
     try {
-      $this->build_db_mssql10();
+      $this->build_db($format);
     }
     catch(Exception $e) {
       $this->assertEquals(
@@ -272,7 +408,7 @@ XML;
     
     // make sure differencing doesn't want to do it either
     try {
-      $this->upgrade_db_mssql10();
+      $this->upgrade_db($format);
     }
     catch(Exception $e) {
       $this->assertEquals(
@@ -281,7 +417,6 @@ XML;
       );
     }
   }
-  
 }
 
 ?>
