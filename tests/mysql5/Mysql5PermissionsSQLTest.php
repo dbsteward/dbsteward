@@ -91,7 +91,7 @@ XML;
 </schema>
 XML;
     // note: alter => alter routine
-    $this->common($xml, 'function', "GRANT EXECUTE, ALTER ROUTINE ON ROUTINE `function` TO deployment;");
+    $this->common($xml, 'function', "GRANT EXECUTE, ALTER ROUTINE ON FUNCTION `function` TO deployment;");
   }
 
   public function testSequence() {

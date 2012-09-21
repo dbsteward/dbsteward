@@ -36,6 +36,9 @@ class mysql5_function extends sql99_function {
         if ( isset($param['direction']) ) {
           throw new exception("Parameter directions are not supported in MySQL functions");
         }
+        if ( empty($param['name']) ) {
+          throw new exception("Function parameters must have names in MySQL. In function '{$node_function['name']}'");
+        }
 
         $type = $param['type'];
         if ( $node_type = mysql5_type::get_type_node(dbsteward::$new_database, $node_schema, $type) ) {

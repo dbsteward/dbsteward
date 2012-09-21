@@ -152,7 +152,7 @@ BEGIN
   RETURN config_parameter;
 END;
 
-GRANT EXECUTE ON ROUTINE `a_function` TO dbsteward_phpunit_app;
+GRANT EXECUTE ON FUNCTION `a_function` TO dbsteward_phpunit_app;
 
 CREATE TABLE `user` (
   `user_id` int NOT NULL,
