@@ -367,6 +367,7 @@ class pgsql8 extends sql99 {
     foreach ($db_doc->schema AS $schema) {
 
       // create defined tables
+      pgsql8_table::$include_column_default_nextval_in_create_sql = FALSE;
       foreach ($schema->table AS $table) {
         // table definition
         $ofs->write(pgsql8_table::get_creation_sql($schema, $table) . "\n");
@@ -383,6 +384,7 @@ class pgsql8 extends sql99 {
 
         $ofs->write("\n");
       }
+      pgsql8_table::$include_column_default_nextval_in_create_sql = TRUE;
 
       // sequences contained in the schema
       if (isset($schema->sequence)) {
@@ -395,6 +397,13 @@ class pgsql8 extends sql99 {
               $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
             }
           }
+        }
+      }
+      
+      // add table nextvals that were omitted
+      foreach ($schema->table AS $table) {
+        if ( pgsql8_table::has_default_nextval($table) ) {
+          $ofs->write(pgsql8_table::get_default_nextval_sql($schema, $table) . "\n");
         }
       }
     }
@@ -533,6 +542,7 @@ class pgsql8 extends sql99 {
       throw new exception("failed to open slonik file " . $slonik_file . ' for output');
     }
     $slonik_ofs = new output_file_segmenter($slonik_file, 1, $slonik_fp, $slonik_file);
+    $slonik_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
     $slonik_ofs->write("# dbsteward slony full configuration file generated " . date('r') . "\n\n");
     $slonik_ofs->write("ECHO 'dbsteward slony full configuration file generated " . date('r') . " starting';\n\n");
 
