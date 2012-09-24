@@ -1352,9 +1352,12 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
       // see: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
       case 'timestamp without timezone':
       case 'timestamp with timezone':
+      case 'timestamp without time zone':
+      case 'timestamp with time zone':
         $type = 'timestamp';
         break;
       case 'time with timezone':
+      case 'time with time zone':
         $type = 'time';
         break;
       case 'serial':
