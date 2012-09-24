@@ -203,7 +203,7 @@ XML;
 
     $ofs = new mock_output_file_segmenter();
 
-    mysql5_diff_sequences::diff_sequences($ofs, $schema_a, $schema_b);
+    mysql5_diff_sequences::diff_sequences($ofs, $ofs, $schema_a, $schema_b);
 
     $expected = trim(preg_replace('/--.*(\n\s*)?/','',$expected));
     $actual = trim(preg_replace('/--.*(\n\s*)?/','',$ofs->_get_output()));

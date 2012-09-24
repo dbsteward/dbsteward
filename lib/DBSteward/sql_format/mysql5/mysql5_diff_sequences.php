@@ -19,7 +19,11 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
     return $sequences;
   }
 
-  public static function diff_sequences($ofs, $old_schema, $new_schema) {
+  /**
+   * @todo should *all* sequences be dropped in stage3, rather than just the shim?
+   *       the only reason we don't is because pgsql8 drops in stage 1...
+   */
+  public static function diff_sequences($ofs1, $ofs3, $old_schema, $new_schema) {
     $new_sequences = static::get_sequences($new_schema);
 
     if ( $old_schema != null ) {
@@ -34,15 +38,15 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
       // there are no sequences in the new schema, so if there used to be sequences,
       // we can just drop the whole shim table
       if ( !empty($old_sequences) ) {
-        $ofs->write(mysql5_sequence::get_shim_drop_sql());
+        $ofs3->write(mysql5_sequence::get_shim_drop_sql());
       }
     }
     else {
       // there *are* sequences in the new schema, so if there didn't used to be,
       // we need to add the shim in before adding any sequences
       if ( empty($old_sequences) ) {
-        $ofs->write(mysql5_sequence::get_shim_creation_sql()."\n\n");
-        $ofs->write(mysql5_sequence::get_creation_sql($new_schema, $new_sequences)."\n");
+        $ofs1->write(mysql5_sequence::get_shim_creation_sql()."\n\n");
+        $ofs1->write(mysql5_sequence::get_creation_sql($new_schema, $new_sequences)."\n");
       }
       else {
         // there were schemas in the old schema
@@ -61,7 +65,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
           }
         }
         if ( ! empty($to_drop) ) {
-          $ofs->write(mysql5_sequence::get_drop_sql($old_schema, $to_drop)."\n\n");
+          $ofs1->write(mysql5_sequence::get_drop_sql($old_schema, $to_drop)."\n\n");
         }
 
         // only add sequences not in the old schema
@@ -69,20 +73,20 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
         foreach ( $new_sequences as $new_seq ) {
           if ( static::schema_contains_sequence($old_schema, $new_seq['name'])) {
             // there used to be a sequence named $new_seq['name']
-            self::diff_single($ofs, $common_sequences[(string)$new_seq['name']], $new_seq);
+            self::diff_single($ofs1, $common_sequences[(string)$new_seq['name']], $new_seq);
           }
           elseif ( !dbsteward::$ignore_oldname
             && !empty($new_seq['oldName'])
             && static::schema_contains_sequence($old_schema, $new_seq['oldName']) ) {
             // there used to be a sequence named $new_seq['oldName']
-            self::diff_single($ofs, $common_sequences[(string)$new_seq['oldName']], $new_seq);
+            self::diff_single($ofs1, $common_sequences[(string)$new_seq['oldName']], $new_seq);
           }
           else {
             $to_insert[] = $new_seq;
           }
         }
         if ( ! empty($to_insert) ) {
-          $ofs->write(mysql5_sequence::get_creation_sql($new_schema, $to_insert)."\n");
+          $ofs1->write(mysql5_sequence::get_creation_sql($new_schema, $to_insert)."\n");
         }
       }
     }

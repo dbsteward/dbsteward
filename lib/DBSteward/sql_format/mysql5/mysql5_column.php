@@ -82,8 +82,7 @@ class mysql5_column extends sql99_column {
     return preg_replace('/\s*auto_increment\s*/i','',$type);
   }
 
-  public static function column_type($db_doc, $node_schema, $node_table, $node_column) {
-
+  public static function column_type($db_doc, $node_schema, $node_table, $node_column, &$foreign=NULL) {
     // if the column is a foreign key, solve for the foreignKey type
     // not going to worry about auto-increment here for a now - why would an auto-increment field be a foreign key?
     if ( isset($node_column['foreignTable']) ) {

@@ -161,7 +161,7 @@ class mysql5_diff extends sql99_diff {
         
         mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
         mysql5_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
-        mysql5_diff_sequences::diff_sequences($ofs1, $old_schema, $new_schema);
+        mysql5_diff_sequences::diff_sequences($ofs1, $ofs3, $old_schema, $new_schema);
         // remove old constraints before table contraints, so the SQL statements succeed
         mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', TRUE);
         mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', TRUE);
@@ -244,7 +244,7 @@ class mysql5_diff extends sql99_diff {
         // see above for pre table creation stuff
         // see below for post table creation stuff
         if (!in_array($new_schema['name'], $processed_schemas)) {
-          mysql5_diff_sequences::diff_sequences($ofs1, $old_schema, $new_schema);
+          mysql5_diff_sequences::diff_sequences($ofs1, $ofs3, $old_schema, $new_schema);
           $processed_schemas[] = $new_schema['name'];
         }
 
