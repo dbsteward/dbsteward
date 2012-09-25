@@ -273,8 +273,11 @@ class pgsql8 extends sql99 {
     dbx::set_default_schema($db_doc, 'public');
     foreach($db_doc->schema AS $schema) {
       foreach($schema->function AS $function) {
-        if ( $function['language'] == 'sql' ) {
-          if ( preg_match('/\s+FROM ([\w.]+)\s+/i', $function->functionDefinition, $matches) > 0 ) {
+        if ( pgsql8_function::has_definition($function) ) {
+          $definition = pgsql8_function::get_definition($function);
+          if ( $definition['language'] == 'sql'
+            && $definition['sqlFormat'] == 'pgsql8'
+            && preg_match('/\s+FROM ([\w.]+)\s+/i', $definition, $matches) > 0 ) {
             $referenced_table_name = $matches[1];
             $table_schema_name = sql_parser::get_schema_name($referenced_table_name, $db_doc);
             $node_schema = dbx::get_schema($db_doc, $table_schema_name);
@@ -348,7 +351,7 @@ class pgsql8 extends sql99 {
     // function definitions
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->function AS $function) {
-        if (dbsteward::supported_function_language($function)) {
+        if (pgsql8_function::has_definition($function)) {
           $ofs->write(pgsql8_function::get_creation_sql($schema, $function));
           // when pg:build_schema() is doing its thing for straight builds, include function permissions
           // they are not included in pg_function::get_creation_sql()
@@ -1413,11 +1416,12 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
       $node_function['returns'] = $row_fxn['Result data type'];
       $node_function['cachePolicy'] = $row_fxn['Volatility'];
-      $node_function['language'] = $row_fxn['Language'];
       $node_function['owner'] = $row_fxn['Owner'];
       // @TODO: how is / figure out how to express securityDefiner attribute in the functions query
       $node_function['description'] = $row_fxn['Description'];
-      $node_function->addChild('functionDefinition', $row_fxn['Source code']);
+      $node_definition = $node_function->addChild('functionDefinition', $row_fxn['Source code']);
+      $node_definition['language'] = $row_fxn['Language'];
+      $node_definition['sqlFormat'] = 'pgsql8';
     }
 
 

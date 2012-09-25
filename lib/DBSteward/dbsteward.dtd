@@ -14,7 +14,7 @@
 <!ELEMENT inlineAssembly EMPTY>
 <!ATTLIST inlineAssembly name CDATA #REQUIRED>
 
-<!ELEMENT database (host, name, role, slony, configurationParameter*)>
+<!ELEMENT database (host, name, role, slony?, configurationParameter*)>
 <!ELEMENT host (#PCDATA)>
 <!ELEMENT name (#PCDATA)>
 
@@ -89,6 +89,7 @@
 <!ATTLIST column foreignTable CDATA #IMPLIED>
 <!ATTLIST column foreignColumn CDATA #IMPLIED>
 <!ATTLIST column foreignKeyName CDATA #IMPLIED>
+<!ATTLIST column foreignIndexName CDATA #IMPLIED>
 <!ATTLIST column foreignOnDelete (NO_ACTION|RESTRICT|CASCADE|SET_NULL|SET_DEFAULT) #IMPLIED>
 <!ATTLIST column foreignOnUpdate (NO_ACTION|RESTRICT|CASCADE|SET_NULL|SET_DEFAULT) #IMPLIED>
 <!ATTLIST column check CDATA #IMPLIED>
@@ -104,14 +105,15 @@
 <!ELEMENT index (indexDimension+)>
 <!ATTLIST index name CDATA #REQUIRED>
 <!ATTLIST index unique (true|false) #IMPLIED>
-<!ATTLIST index using (btree|gin|KEY) #REQUIRED>
+<!ATTLIST index using (hash|btree|gin|KEY) #REQUIRED>
 <!ELEMENT indexDimension (#PCDATA)>
-<!ATTLIST indexDimension name CDATA #REQUIRED>
+<!ATTLIST indexDimension name CDATA #IMPLIED>
 
 <!ELEMENT constraint EMPTY>
 <!ATTLIST constraint name CDATA #REQUIRED>
 <!ATTLIST constraint type CDATA #REQUIRED>
 <!ATTLIST constraint definition CDATA #REQUIRED>
+<!ATTLIST constraint foreignIndexName CDATA #IMPLIED>
 <!ATTLIST constraint foreignSchema CDATA #IMPLIED>
 <!ATTLIST constraint foreignTable CDATA #IMPLIED>
 
@@ -137,10 +139,9 @@
 <!ATTLIST sequence inc CDATA #IMPLIED>
 <!ATTLIST sequence cycle (true|false) #IMPLIED>
 
-<!ELEMENT function (functionParameter*, functionDefinition, grant*)>
+<!ELEMENT function (functionParameter*, functionDefinition+, grant*)>
 <!ATTLIST function name CDATA #REQUIRED>
 <!ATTLIST function owner CDATA #REQUIRED>
-<!ATTLIST function language CDATA #REQUIRED>
 <!ATTLIST function returns CDATA #REQUIRED>
 <!ATTLIST function description CDATA #IMPLIED>
 <!ATTLIST function procedure (true) #IMPLIED>
@@ -152,6 +153,8 @@
 <!ATTLIST functionParameter name CDATA #IMPLIED>
 <!ATTLIST functionParameter type CDATA #REQUIRED>
 <!ELEMENT functionDefinition (#PCDATA)>
+<!ATTLIST functionDefinition language CDATA #REQUIRED>
+<!ATTLIST functionDefinition sqlFormat CDATA #REQUIRED>
 
 <!ELEMENT sql (#PCDATA)>
 <!ATTLIST sql author CDATA #REQUIRED>

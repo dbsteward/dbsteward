@@ -16,41 +16,40 @@ class mysql5_table extends sql99_table {
    * @return created SQL command
    */
   public function get_creation_sql($node_schema, $node_table) {
-    if ($node_schema->getName() != 'schema') {
+    if ( $node_schema->getName() != 'schema' ) {
       throw new exception("node_schema object element name is not schema. check stack for offending caller");
     }
 
-    if ($node_table->getName() != 'table') {
+    if ( $node_table->getName() != 'table' ) {
       throw new exception("node_table object element name is not table. check stack for offending caller");
     }
 
-    $table_name = mysql5::get_quoted_schema_name($node_schema['name']) . '.' . mysql5::get_quoted_table_name($node_table['name']);
-
-    $sql = "CREATE TABLE " . $table_name . " (\n";
-
-    foreach (dbx::get_table_columns($node_table) as $column) {
-      $sql .= "\t" . mysql5_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, FALSE) . ",\n";
+    if ( strlen($node_table['inherits']) > 0 ) {
+      //@TODO: implement compatibility with pgsql table inheritance
+      dbsteward::console_line(1, "Skipping table '{$node_table['name']}' because MySQL does not support table inheritance");
+      return "-- Skipping table '{$node_table['name']}' because MySQL does not support table inheritance";
     }
 
-    $sql = substr($sql, 0, strlen($sql) - 2);
-    $sql .= "\n)";
-    if (isset($node_table['inherits']) && strlen($node_table['inherits']) > 0) {
-      //@TODO: this does not look like it is supported in mysql5
+    $table_name = mysql5::get_quoted_table_name($node_table['name']);
+
+    $sql = "CREATE TABLE $table_name (\n";
+
+    $cols = array();
+    foreach ( $node_table->column as $column ) {
+      $cols[] = mysql5_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, false);
+
     }
+    $sql .= "  " . implode(",\n  ", $cols) . "\n)";
+
+    if ( strlen($node_table['description']) > 0 ) {
+      $sql .= "\nCOMMENT " . mysql5::quote_string_value($node_table['description']);
+    }
+
     $sql .= ";";
 
-    // @IMPLEMENT: $table['description'] specifier ?
-    foreach (dbx::get_table_columns($node_table) as $column) {
-      if (isset($column['statistics'])) {
-        $sql .= "\nALTER TABLE ONLY " . $table_name . " ALTER COLUMN " . mysql5::get_quoted_column_name($column['name']) . " SET STATISTICS " . $column['statistics'] . ";\n";
-      }
+    // @TODO: implement column statistics
+    // @TODO: table ownership with $node_table['owner'] ?
 
-      // @IMPLEMENT: $column['description'] specifier ?
-      
-      // @TODO: should an equivalent to mssql10_column::enum_type_check() be implemented here?
-    }
-
-    // @IMPLMENT table ownership with $node_table['owner'] ?
     return $sql;
   }
 
@@ -73,48 +72,59 @@ class mysql5_table extends sql99_table {
       var_dump($node_table);
       throw new exception("node_table element type is not table. check stack for offending caller");
     }
-    return "DROP TABLE " . mysql5::get_quoted_schema_name($node_schema['name']) . '.' . mysql5::get_quoted_table_name($node_table['name']) . ";";
+    return "DROP TABLE " . mysql5::get_quoted_table_name($node_table['name']) . ";";
   }
 
-  /**
-   * create SQL To create the constraint passed in the $constraint array
-   *
-   * @return string
-   */
-  public function get_constraint_sql($constraint) {
-    if (!is_array($constraint)) {
-      throw new exception("constraint is not an array?");
-    }
-    if (strlen($constraint['table_name']) == 0) {
-      var_dump(array_keys($constraint));
-      throw new exception("table_name is blank");
-    }
-    $sql = "ALTER TABLE " . mysql5::get_quoted_schema_name($constraint['schema_name']) . '.' . mysql5::get_quoted_table_name($constraint['table_name']) . "\n" . "\tADD CONSTRAINT " . mysql5::get_quoted_object_name($constraint['name']) . ' ' . $constraint['type'] . ' ' . $constraint['definition'];
+  public static function get_sequences_needed($schema, $table) {
+    $sequences = array();
+    $owner = $table['owner'];
 
-    // FOREIGN KEY ON DELETE / ON UPDATE handling
-    if (isset($constraint['foreignOnDelete']) && strlen($constraint['foreignOnDelete'])) {
-      $sql .= " ON DELETE " . $constraint['foreignOnDelete'];
-    }
-    if (isset($constraint['foreignOnUpdate']) && strlen($constraint['foreignOnUpdate'])) {
-      $sql .= " ON UPDATE " . $constraint['foreignOnUpdate'];
+    foreach ( $table->column as $column ) {
+      // we need a sequence for each serial column
+      if ( mysql5_column::is_serial($column['type']) ) {
+        $sequence_name = mysql5_column::get_serial_sequence_name($schema, $table, $column);
+        $sequence = new SimpleXMLElement("<sequence name=\"$sequence_name\" owner=\"$owner\"/>");
+
+        if ( !empty($column['oldName']) && !dbsteward::$ignore_oldname ) {
+          $realname = (string)$column['name'];
+          $column['name'] = (string)$column['oldName'];
+          $sequence['oldName'] = mysql5_column::get_serial_sequence_name($schema, $table, $column);
+          $column['name'] = $realname;
+        }
+
+        $sequences[] = $sequence;
+      }
     }
 
-    $sql .= ';';
-    return $sql;
+    return $sequences;
   }
 
-  public function get_constraint_drop_sql($constraint) {
-    if (!is_array($constraint)) {
-      throw new exception("constraint is not an array?");
-    }
-    if (strlen($constraint['table_name']) == 0) {
-      var_dump(array_keys($constraint));
-      throw new exception("table_name is blank");
-    }
-    $sql = "ALTER TABLE " . mysql5::get_quoted_schema_name($constraint['schema_name']) . '.' . mysql5::get_quoted_table_name($constraint['table_name']) . "\n\tDROP CONSTRAINT " . mysql5::get_quoted_object_name($constraint['name']) . ';';
-    return $sql;
-  }
+  public static function get_triggers_needed($schema, $table) {
+    $triggers = array();
 
+    foreach ( $table->column as $column ) {
+      // we need a trigger for each serial column
+      if ( mysql5_column::is_serial($column['type']) ) {
+        $trigger_name = mysql5_column::get_serial_trigger_name($schema, $table, $column);
+        $sequence_name = mysql5_column::get_serial_sequence_name($schema, $table, $column);
+        $table_name = $table['name'];
+        $column_name = mysql5::get_quoted_column_name($column['name']);
+        $xml = <<<XML
+<trigger name="$trigger_name"
+         sqlFormat="mysql5"
+         when="BEFORE"
+         event="INSERT"
+         table="$table_name"
+         forEach="ROW"
+         function="SET NEW.$column_name = COALESCE(NEW.$column_name, nextval('$sequence_name'));"/>
+XML;
+        $triggers[] = new SimpleXMLElement($xml);
+      }
+
+      // @TODO: convert DEFAULT expressions (not constants) to triggers for pgsql compatibility
+    }
+
+    return $triggers;
+  }
 }
-
 ?>

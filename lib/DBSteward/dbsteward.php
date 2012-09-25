@@ -540,27 +540,6 @@ Database definition extraction utilities
     }
   }
 
-  public static function supported_function_language($function) {
-    $language = strtolower($function['language']);
-    switch ($language) {
-      case 'sql':
-      case 'plpgsql':
-        if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
-          return TRUE;
-        }
-      break;
-      case 'tsql':
-        if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
-          return TRUE;
-        }
-      break;
-      default:
-        throw new exception("Unknown function language encountered: " . $language);
-      break;
-    }
-    return FALSE;
-  }
-
   public function xml_data_insert($def_file, $data_file) {
     dbsteward::console_line(1, "Automatic insert data into " . $def_file . " from " . $data_file);
     $def_doc = simplexml_load_file($def_file);

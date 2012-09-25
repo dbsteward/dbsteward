@@ -90,7 +90,7 @@ class oracle10g {
     // function definitions
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->function AS $function) {
-        if (dbsteward::supported_function_language($function)) {
+        if (oracle10g_function::has_definition($function)) {
           $ofs->write(oracle10g_function::get_creation_sql($schema, $function));
         }
       }

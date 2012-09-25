@@ -12,7 +12,21 @@ class mysql5 {
 
   const QUOTE_CHAR = '`';
 
+  public static $quote_function_parameters = TRUE;
+
+  /**
+   * Because mysql5 functions use a semicolon as a delimiter inside the definition,
+   * line-by-line attempts to load DDL into the database, like through the mysql 
+   * command-line client, get confused and interpret that semicolon as the end of the
+   * function statement. The solution is to change the end-of-statement delimiter to
+   * something else while defining the function, so semicolons are interpreted literally.
+   * @see mysql5_function::get_creation_sql()
+   * @todo add command-line flag to toggle this
+   */
+  public static $swap_function_delimiters = TRUE;
+
   public static function build($files) {
+
     if (!is_array($files)) {
       $files = array($files);
     }
@@ -31,13 +45,13 @@ class mysql5 {
       $build_file_ofs->write("-- full database definition file generated " . date('r') . "\n");
     }
 
-    $build_file_ofs->write("BEGIN TRANSACTION;\n\n");
+    // $build_file_ofs->write("START TRANSACTION;\n\n");
 
     dbsteward::console_line(1, "Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
     // database-specific implementation refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
-    dbx::set_default_schema($db_doc, 'dbo');
+    dbx::set_default_schema($db_doc, 'public');
 
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
@@ -51,146 +65,156 @@ class mysql5 {
     }
     dbsteward::$new_database = NULL;
 
-    $build_file_ofs->write("COMMIT TRANSACTION;\n\n");
+    // $build_file_ofs->write("COMMIT TRANSACTION;\n\n");
 
     return $db_doc;
   }
 
   public function build_schema($db_doc, $ofs, $table_depends) {
-    // explicitly create the ROLE_APPLICATION
-    // webservers connect as a user granted this role
-    $ofs->write("CREATE ROLE " . $db_doc->database->role->application . ";\n");
-
     // language defintions
-    if (dbsteward::$create_languages) {
-      foreach ($db_doc->language AS $language) {
-        //@TODO: implement mysql5_language ? no relevant conversion exists see other TODO's stating this
-      }
+    if ( dbsteward::$create_languages ) {
+      dbsteward::console_line(1, "Ignoring language declarations because MySQL does not support languages other than 'sql'");
     }
 
     // schema creation
-    foreach ($db_doc->schema AS $schema) {
-      $ofs->write(mysql5_schema::get_creation_sql($schema));
-
-      // schema grants
-      if (isset($schema->grant)) {
-        foreach ($schema->grant AS $grant) {
-          $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $schema, $grant) . "\n");
-        }
+    $schema = NULL;
+    foreach ( $db_doc->schema AS $sch ) {
+      if ( strcasecmp($sch['name'], 'public') != 0 ) {
+        dbsteward::console_line(1, "Ignoring schema '{$sch['name']}' because the MySQL driver currently doesn't support schemas other than public");
+        continue;
       }
+
+      $schema = $sch;
+    }
+
+    if ( $schema === NULL ) {
+      throw new exception("No public schema was found. MySQL must have a public schema");
+    }
+
+    // database grants
+    foreach ( $schema->grant AS $grant ) {
+      $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $schema, $grant) . "\n");
     }
     
-    // types: enumerated list, etc
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->type AS $type) {
-        $ofs->write(mysql5_type::get_creation_sql($schema, $type) . "\n");
-      }
+    // enums
+    foreach ( $schema->type AS $type ) {
+      $ofs->write(mysql5_type::get_creation_sql($schema, $type) . "\n");
     }
 
     // function definitions
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->function AS $function) {
-        if (dbsteward::supported_function_language($function)) {
-          $ofs->write(mysql5_function::get_creation_sql($schema, $function));
+    foreach ($schema->function AS $function) {
+      if (mysql5_function::has_definition($function)) {
+        $ofs->write(mysql5_function::get_creation_sql($schema, $function)."\n\n");
+      }
+      // function grants
+      foreach ( $function->grant AS $grant ) {
+        $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $function, $grant) . "\n");
+      }
+    }
+
+    $sequences = array();
+    $triggers = array();
+
+    // create defined tables
+    foreach ( $schema->table AS $table ) {
+
+      // get sequences and triggers needed to make this table work
+      $sequences = array_merge($sequences, mysql5_table::get_sequences_needed($schema, $table));
+      $triggers = array_merge($triggers, mysql5_table::get_triggers_needed($schema, $table));
+
+      // table definition
+      $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n\n");
+
+      // table indexes
+      mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
+
+      // table grants
+      if (isset($table->grant)) {
+        foreach ($table->grant AS $grant) {
+          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $table, $grant) . "\n");
+        }
+      }
+
+      $ofs->write("\n");
+    }
+
+    // sequences contained in the schema + sequences used by serials
+    $sequences = array_merge($sequences, dbx::to_array($schema->sequence));
+    if ( count($sequences) > 0 ) {
+      $ofs->write(mysql5_sequence::get_shim_creation_sql()."\n\n");
+      $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequences)."\n\n");
+
+      // sequence grants
+      foreach ( $sequences as $sequence ) {
+        foreach ( $sequence->grant AS $grant ) {
+          $ofs->write("-- grant for the {$sequence['name']} sequence applies to ALL sequences\n");
+          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $sequence, $grant) . "\n");
         }
       }
     }
-    $ofs->write("\n");
-
-    // table structure creation
-    foreach ($db_doc->schema AS $schema) {
-
-      // create defined tables
-      foreach ($schema->table AS $table) {
-        // table definition
-        $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n");
-
-        // table indexes
-        mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
-
-        // table grants
-        if (isset($table->grant)) {
-          foreach ($table->grant AS $grant) {
-            $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $table, $grant) . "\n");
-          }
-        }
-
-        $ofs->write("\n");
-      }
-
-      // sequences contained in the schema
-      if (isset($schema->sequence)) {
-        foreach ($schema->sequence AS $sequence) {
-          $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequence));
-
-          // sequence permission grants
-          if (isset($sequence->grant)) {
-            foreach ($sequence->grant AS $grant) {
-              $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $sequence, $grant) . "\n");
-            }
-          }
-        }
-      }
-    }
-    $ofs->write("\n");
 
     // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->table AS $table) {
-        mysql5_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
-      }
+    foreach ($schema->table AS $table) {
+      mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
     }
+    
     $ofs->write("\n");
 
     // foreign key references
     // use the dependency order to specify foreign keys in an order that will satisfy nested foreign keys and etc
     for ($i = 0; $i < count($table_depends); $i++) {
-      $schema = $table_depends[$i]['schema'];
+      $dep_schema = $table_depends[$i]['schema'];
       $table = $table_depends[$i]['table'];
       if ( $table['name'] === dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME ) {
         // don't do anything with this table, it is a magic internal DBSteward value
         continue;
       }
-      mysql5_diff_tables::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'constraint', FALSE);
-    }
-    $ofs->write("\n");
-
-    // trigger definitions
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->trigger AS $trigger) {
-        // only do triggers set to the current sql format
-        if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
-          $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger));
-        }
+      if ( strcasecmp($dep_schema['name'],'public') == 0 ) {
+        // only process tables in the public schema
+        mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $dep_schema, $table, 'constraint', FALSE);
       }
     }
     $ofs->write("\n");
+
+    // trigger definitions + triggers used by serials
+    $triggers = array_merge($triggers, dbx::to_array($schema->trigger));
+    $unique_triggers = array();
+    foreach ($triggers AS $trigger) {
+      // only do triggers set to the current sql format
+      if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
+        // check that this table/timing/event combo hasn't been defined, because MySQL only
+        // allows one trigger per table per BEFORE/AFTER per action
+        $unique_name = "{$trigger['table']}-{$trigger['when']}-{$trigger['event']}";
+        if ( array_key_exists($unique_name, $unique_triggers) ) {
+          throw new Exception("MySQL will not allow trigger {$trigger['name']} to be created because it happens on the same table/timing/event as trigger {$unique_triggers[$unique_name]}");
+        }
+        
+        $unique_triggers[$unique_name] = $trigger['name'];
+        $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger)."\n");
+      }
+    }
 
     // view creation
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->view AS $view) {
-        $ofs->write(mysql5_view::get_creation_sql($schema, $view));
+    foreach ($schema->view AS $view) {
+      $ofs->write(mysql5_view::get_creation_sql($schema, $view)."\n");
 
-        // view permission grants
-        if (isset($view->grant)) {
-          foreach ($view->grant AS $grant) {
-            $ofs->write(mysql5_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
-          }
+      // view permission grants
+      if (isset($view->grant)) {
+        foreach ($view->grant AS $grant) {
+          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $view, $grant) . "\n");
         }
       }
     }
-    $ofs->write("\n");
 
-    // @TODO: database configurationParameter support needed ?
+    // @TODO: database configurationParameter support
   }
 
   public function build_data($db_doc, $ofs, $tables) {
     // use the dependency order to then write out the actual data inserts into the data sql file
-    $tables_count = count($tables);
     $limit_to_tables_count = count(dbsteward::$limit_to_tables);
-    for ($i = 0; $i < $tables_count; $i++) {
-      $schema = $tables[$i]['schema'];
-      $table = $tables[$i]['table'];
+    foreach ( $tables as $dep_table ) {
+      $schema = $dep_table['schema'];
+      $table = $dep_table['table'];
       if ( $table['name'] === dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME ) {
         // don't do anything with this table, it is a magic internal DBSteward value
         continue;
@@ -212,20 +236,37 @@ class mysql5 {
 
       $ofs->write(mysql5_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
 
-      // unlike the pg class, we cannot just set identity column start values here with setval without inserting a row
-      // see xml_parser::mysql5_type_convert() where the serialStart value is accounted for
-      // check if primary key is a column of this table - FS#17481
-      $primary_keys_exist = self::primary_key_split($table['primaryKey']);
-      foreach ($table->column AS $column) {
-        // while looping through columns, check to see if primary key is one of them
-        // if it is remove it from the primary keys array, at the end of loop array should be empty
-        $key = array_search($column['name'], $primary_keys_exist);
-        if (is_numeric($key)) {
-          unset($primary_keys_exist[$key]);
+
+      $table_primary_keys = mysql5_table::primary_key_columns($table);
+      $table_column_names = dbx::to_array($table->column, 'name');
+      $node_rows =& dbx::get_table_rows($table); // the <rows> element
+      $data_column_names = preg_split("/,|\s/", $node_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
+
+      // set serial primary keys to the max value after inserts have been performed
+      // only if the PRIMARY KEY is not a multi column
+
+
+      if ( count($table_primary_keys) == 1 && in_array($table_primary_keys[0], $data_column_names) ) {
+        $pk_column_name = $table_primary_keys[0];
+        $node_pk_column = dbx::get_table_column($table, $pk_column_name);
+
+        if ( $node_pk_column == NULL ) {
+          throw new exception("Failed to find primary key column '" . $pk_column_name . "' for " . $schema['name'] . "." . $table['name']);
+        }
+
+        // only set the pkey to MAX() if the primary key column is also a serial/bigserial and if serialStart is not defined
+        if ( mysql5_column::is_serial($node_pk_column['type']) && !isset($node_pk_column['serialStart']) ) {
+          $fqtn =  mysql5::get_fully_qualified_table_name($schema['name'], $table['name']);
+          $qcol = mysql5::get_quoted_column_name($pk_column_name);
+          $setval = mysql5_sequence::get_setval_call(mysql5_column::get_serial_sequence_name($schema, $table, $node_pk_column), "MAX($qcol)", "TRUE");
+          $sql = "SELECT $setval FROM $fqtn;\n";
+          $ofs->write($sql);
         }
       }
-      // throw an error if the table is using a primaryKey column that does not actually exist
-      if (!empty($primary_keys_exist)) {
+
+      // unlike the pg class, we cannot just set identity column start values here with setval without inserting a row
+      // check if primary key is a column of this table - FS#17481
+      if (count(array_diff($table_primary_keys, $table_column_names)) != 0) {
         throw new exception('Primary key ' . $table['primaryKey'] . ' does not exist as a column in table ' . $table['name']);
       }
     }
@@ -264,6 +305,325 @@ class mysql5 {
     return $new_db_doc;
   }
 
+  public function extract_schema($host, $port, $database, $user, $password) {
+    dbsteward::console_line(1, "Connecting to " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
+    // if not supplied, ask for the password
+    if ( $password === FALSE ) {
+      echo "Password: ";
+      $password = fgets(STDIN);
+    }
+
+    $db = mysql5_db::connect($host, $port, $database, $user, $password);
+
+    $doc = new SimpleXMLElement('<dbsteward></dbsteward>');
+    // set the document to contain the passed db host, name, etc to meet the DTD and for reference
+    $node_database = $doc->addChild('database');
+    $node_database->addChild('host', $host);
+    $node_database->addChild('name', $database);
+    $node_role = $node_database->addChild('role');
+    $node_role->addChild('application', $user);
+    $node_role->addChild('owner', $user);
+    $node_role->addChild('replication', $user);
+    $node_role->addChild('readonly', $user);
+
+    // create "public" schema
+    $node_schema = $doc->addChild('schema');
+    $node_schema['name'] = 'public';
+    $node_schema['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
+
+    // extract global and schema permissions under the public schema
+    foreach ( $db->get_global_grants($user) as $db_grant ) {
+      $node_grant = $node_schema->addChild('grant');
+      // There are 28 permissions encompassed by the GRANT ALL statement
+      $node_grant['operation'] = $db_grant->num_ops == 28 ? 'ALL' : $db_grant->operations;
+      $node_grant['role'] = self::translate_role_name($doc, $user);
+
+      if ( $db_grant->is_grantable ) {
+        $node_grant['with'] = 'GRANT';
+      }
+    }
+
+    $enum_types = array();
+    $enum_type = function ($obj, $mem, $values) use (&$enum_types) {
+      $values = array_map('strtolower',$values);
+
+      // if that set of values is defined by a previous enum, use that
+      foreach ( $enum_types as $name => $enum ) {
+        if ( $enum === $values ) {
+          return $name;
+        }
+      }
+
+      // otherwise, make a new one
+      $name = "enum_{$obj}_${mem}_" . implode('_',$values);
+      $enum_types[$name] = $values;
+
+      return $name;
+    };
+    foreach ( $db->get_tables() as $db_table ) {
+      $node_table = $node_schema->addChild('table');
+      $node_table['name'] = $db_table->table_name;
+      $node_table['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
+      $node_table['description'] = $db_table->table_comment;
+      $node_table['primaryKey'] = '';
+
+      foreach ( $db->get_columns($db_table) as $db_column ) {
+        $node_column = $node_table->addChild('column');
+        $node_column['name'] = $db_column->column_name;
+        $node_column['description'] = $db_column->column_comment;
+
+
+        $type = $db->is_serial_column($db_table, $db_column);
+        if ( !$type ) {
+          $type = $db_column->column_type;
+
+          if ( strcasecmp($type, 'enum') === 0 ) {
+            $values = $db->parse_enum_values($db_column->column_type);
+            $type = $enum_type($db_table->table_name, $db_column->column_name, $values);
+          }
+
+          if ( $db_column->is_auto_increment ) {
+            $type .= 'AUTO_INCREMENT';
+          }
+        }
+        $node_column['type'] = $type;
+
+        // @TODO: if there are serial sequences/triggers for the column then convert to serial
+
+        if ( !empty($db_column->column_default) ) {
+          $node_column['default'] = $db_column->column_default;
+        }
+
+        $node_column['null'] = strcasecmp($db_column->is_nullable, 'YES') == 0 ? 'true' : 'false';
+      }
+
+      // get all plain and unique indexes
+      foreach ( $db->get_indices($db_table) as $db_index ) {
+
+        // implement unique indexes as unique columns
+        if ( $db_index->unique ) {
+          foreach ( $db_index->columns as $column ) {
+            $node_column = $node_table->xpath("column[@name='$column']");
+            if ( ! $node_column ) {
+              throw new Exception("Unexpected: Could not find column node $column for unique index {$db_index->index_name}");
+            }
+            else {
+              $node_column = $node_column[0];
+            }
+
+            $node_column['unique'] = 'true';
+          }
+        }
+        else {
+          $node_index = $node_table->addChild('index');
+          $node_index['name'] = $db_index->index_name;
+          $node_index['using'] = strtolower($db_index->index_type);
+          $node_index['unique'] = $db_index->unique ? 'true' : 'false';
+
+          foreach ( $db_index->columns as $column_name ) {
+            $node_index->addChild('indexDimension', $column_name)
+              ->addAttribute('name','');
+          }
+        }
+      }
+
+      // get all primary/foreign keys
+      foreach ( $db->get_constraints($db_table) as $db_constraint ) {
+        if ( strcasecmp($db_constraint->constraint_type, 'primary key') === 0 ) {
+          $node_table['primaryKey'] = implode(',', $db_constraint->columns);
+        }
+        elseif ( strcasecmp($db_constraint->constraint_type, 'foreign key') === 0 ) {
+          // mysql sees foreign keys as indexes pointing at indexes.
+          // it's therefore possible for a compound index to point at a compound index
+
+          if ( ! $db_constraint->referenced_columns || ! $db_constraint->referenced_table_name ) {
+            throw new Exception("Unexpected: Foreign key constraint {$db_constraint->constraint_name} does not refer to any foreign columns");
+          }
+
+          if ( count($db_constraint->referenced_columns) == 1 && count($db_constraint->columns) == 1 ) {
+            // not a compound index, define the FK inline in the column
+            $column = $db_constraint->columns[0];
+            $ref_column = $db_constraint->referenced_columns[0];
+            $node_column = dbx::get_table_column($node_table, $column);
+            if ( ! $node_column ) {
+              throw new Exception("Unexpected: Could not find column node $column for foreign key constraint {$db_constraint->constraint_name}");
+            }
+            $node_column['foreignSchema'] = 'public';
+            $node_column['foreignTable'] = $db_constraint->referenced_table_name;
+            $node_column['foreignColumn'] = $ref_column;
+            unset($node_column['type']); // inferred from referenced column
+            $node_column['foreignKeyName'] = $db_constraint->constraint_name;
+            $node_column['foreignIndexName'] = $db_constraint->index_name;
+
+            // RESTRICT is the default, leave it implicit if possible
+            if ( strcasecmp($db_constraint->delete_rule, 'restrict') !== 0 ) {
+              $node_column['foreignOnDelete'] = $db_constraint->delete_rule;
+            }
+            if ( strcasecmp($db_constraint->update_rule, 'restrict') !== 0 ) {
+              $node_column['foreignOnUpdate'] = $db_constraint->update_rule;
+            }
+          }
+          elseif ( count($db_constraint->referenced_columns) > 1
+                && count($db_constraint->referenced_columns) == count($db_constraint->columns) ) {
+            // compound index, define the FK as a constraint node
+            $node_constraint = $node_table->addChild('constraint');
+            $node_constraint['name'] = $db_constraint->constraint_name;
+            $node_constraint['type'] = 'FOREIGN KEY';
+            $node_constraint['foreignSchema'] = 'public';
+            $node_constraint['foreignTable'] = $db_constraint->referenced_table_name;
+            
+            $def = mysql5::get_quoted_object_name($db_constraint->index_name) . ' ';
+            $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns));
+            $def.= ') REFERENCES ' . mysql5::get_quoted_table_name($db_constraint->referenced_table_name);
+            $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns));
+            $def.= ') ON DELETE ' . $db_constraint->delete_rule . ' ON UPDATE ' . $db_constraint->update_rule;
+            $node_constraint['definition'] = $def;
+          }
+          else {
+            throw new Exception("Unexpected: Foreign key constraint {$db_constraint->constraint_name} has mismatched columns");
+          }
+        }
+        elseif ( strcasecmp($db_constraint->constraint_type, 'unique') === 0 ) {
+          dbsteward::console_line(1, "Ignoring UNIQUE constraint '{$db_constraint->constraint_name}' because they are implemented as indices");
+        }
+        elseif ( strcasecmp($db_constraint->constraint_type, 'check') === 0 ) {
+          // @TODO: implement CHECK constraints
+        }
+        else {
+          throw new exception("unknown constraint_type {$db_constraint->constraint_type}");
+        }
+      }
+
+      foreach ( $db->get_table_grants($db_table, $user) as $db_grant ) {
+        $node_grant = $node_table->addChild('grant');
+        $node_grant['operation'] = $db_grant->operations;
+        $node_grant['role'] = self::translate_role_name($doc, $user);
+
+        if ( $db_grant->is_grantable ) {
+          $node_grant['with'] = 'GRANT';
+        }
+      }
+    }
+
+    foreach ( $db->get_sequences() as $db_seq ) {
+      $node_seq = $node_schema->addChild('sequence');
+      $node_seq['name'] = $db_seq->name;
+      $node_seq['owner'] = 'ROLE_OWNER';
+      $node_seq['start'] = $db_seq->start_value;
+      $node_seq['min'] = $db_seq->min_value;
+      $node_seq['max'] = $db_seq->max_value;
+      $node_seq['inc'] = $db_seq->increment;
+      $node_seq['cycle'] = $db_seq->cycle ? 'true' : 'false';
+
+      // the sequences table is a special case, since it's not picked up in the tables loop
+      $seq_table = $db->get_table(mysql5_sequence::TABLE_NAME);
+      foreach ( $db->get_table_grants($seq_table, $user) as $db_grant ) {
+        $node_grant = $node_seq->addChild('grant');
+        $node_grant['operation'] = $db_grant->operations;
+        $node_grant['role'] = self::translate_role_name($doc, $user);
+
+        if ( $db_grant->is_grantable ) {
+          $node_grant['with'] = 'GRANT';
+        }
+      }
+    }
+
+    foreach ( $db->get_functions() as $db_function ) {
+      $node_fn = $node_schema->addChild('function');
+      $node_fn['name'] = $db_function->routine_name;
+      $node_fn['owner'] = 'ROLE_OWNER';
+      $node_fn['returns'] = $type = $db_function->dtd_identifier;
+      if ( strcasecmp($type, 'enum') === 0 ) {
+        $node_fn['returns'] = $enum_type($db_function->routine_name,
+                                         'returns',
+                                         $db->parse_enum_values($db_function->dtd_identifier));
+      }
+      $node_fn['description'] = $db_function->routine_comment;
+
+      // $node_fn['procedure'] = 'false';
+
+      // I just don't trust mysql enough to make guarantees about data safety
+      $node_fn['cachePolicy'] = 'VOLATILE';
+
+      // INVOKER is the default, leave it implicit when possible
+      if ( strcasecmp($db_function->security_type, 'definer') === 0 ) {
+        $node_fn['securityDefiner'] = 'true';
+      }
+
+      foreach ( $db_function->parameters as $param ) {
+        $node_param = $node_fn->addChild('functionParameter');
+        // not supported in mysql functions, even though it's provided?
+        // $node_param['direction'] = strtoupper($param->parameter_mode);
+        $node_param['name'] = $param->parameter_name;
+        $node_param['type'] = $type = $param->dtd_identifier;
+        if ( strcasecmp($type, 'enum') === 0 ) {
+          $node_param['type'] = $enum_type($db_function->routine_name,
+                                           $param->parameter_name,
+                                           $db->parse_enum_values($param->dtd_identifier));
+        }
+      }
+
+      $node_def = $node_fn->addChild('functionDefinition', $db_function->routine_definition);
+      $node_def['language'] = 'sql';
+      $node_def['sqlFormat'] = 'mysql5';
+    }
+
+    foreach ( $db->get_triggers() as $db_trigger ) { 
+      $node_trigger = $node_schema->addChild('trigger');
+      foreach ( (array)$db_trigger as $k => $v ) {
+        $node_trigger->addAttribute($k, $v);
+      }
+    }
+
+    foreach ( $db->get_views() as $db_view ) {
+      if ( !empty($db_view->view_name) && empty($db_view->view_query) ) {
+        throw new Exception("Found a view in the database with an empty query. User '$user' problaby doesn't have SELECT permissions on tables referenced by the view.");
+      }
+
+      $node_view = $node_schema->addChild('view');
+      $node_view['name'] = $db_view->view_name;
+      $node_view['owner'] = 'ROLE_OWNER';
+      $node_view
+        ->addChild('viewQuery', $db_view->view_query)
+          ->addAttribute('sqlFormat', 'mysql5');
+    }
+
+    foreach ( $enum_types as $name => $values ) {
+      $node_type = $node_schema->addChild('type');
+      $node_type['type'] = 'enum';
+      $node_type['name'] = $name;
+
+      foreach ( $values as $v ) {
+        $node_type->addChild('enum')->addAttribute('name', $v);
+      }
+    }
+
+    xml_parser::validate_xml($doc->asXML());
+    return xml_parser::format_xml($doc->saveXML());
+  }
+
+  public static function translate_role_name($doc, $name) {
+    $node_role = $doc->database->role;
+
+    if ( strcasecmp($name, $node_role->application) == 0 ) {
+      return 'ROLE_APPLICATION';
+    }
+
+    if ( strcasecmp($name, $node_role->owner) == 0 ) {
+      return 'ROLE_OWNER';
+    }
+
+    if ( strcasecmp($name, $node_role->replication) == 0 ) {
+      return 'ROLE_REPLICATION';
+    }
+
+    if ( strcasecmp($name, $node_role->readonly) == 0 ) {
+      return 'ROLE_READONLY';
+    }
+
+    return $name;
+  }
+
   /**
    * escape a column's value, or return the default value if none specified
    *
@@ -274,44 +634,44 @@ class mysql5 {
    */
   public static function column_value_default($node_schema, $node_table, $data_column_name, $node_col) {
     // if marked, make it null or default, depending on column options
-    if (isset($node_col['null'])
-      && strcasecmp('true', $node_col['null']) == 0) {
-      $value = 'NULL';
+    if ( isset($node_col['null']) && strcasecmp('true', $node_col['null']) == 0 ) {
+      return 'NULL';
     }
+
     // columns that specify empty attribute are made empty strings
-    else if (isset($node_col['empty']) && strcasecmp('true', $node_col['empty']) == 0) {
-      // string escape prefix needed? -- see pgsql8::E_ESCAPE usage
-      $value = "''";
+    if ( isset($node_col['empty']) && strcasecmp('true', $node_col['empty']) == 0 ) {
+      return "''";
     }
+
     // don't esacape columns marked literal sql values
-    else if (isset($node_col['sql']) && strcasecmp($node_col['sql'], 'true') == 0) {
-      $value = '(' . $node_col . ')';
+    if ( isset($node_col['sql']) && strcasecmp($node_col['sql'], 'true') == 0 ) {
+      return '(' . $node_col . ')';
+    }
+
+    $node_column = dbx::get_table_column($node_table, $data_column_name);
+    if ( $node_column === NULL ) {
+      throw new exception("Failed to find table " . $node_table['name'] . " column " . $data_column_name . " for default value check");
+    }
+    $value_type = mysql5_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column);
+
+    // else if col is zero length, make it default, or DB NULL
+    if ( strlen($node_col) == 0 ) {
+      // is there a default defined for the column?
+      $dummy_data_column = new stdClass();
+      $column_default_value = xml_parser::column_default_value($node_table, $data_column_name, $dummy_data_column);
+      if ($column_default_value != NULL) {
+        // run default value through value_escape to allow data value conversions to happen
+        $value = mysql5::value_escape($value_type, $column_default_value);
+      }
+      // else put a NULL in the values list
+      else {
+        $value = 'NULL';
+      }
     }
     else {
-      $node_column = dbx::get_table_column($node_table, $data_column_name);
-      if ($node_column === NULL) {
-        throw new exception("Failed to find table " . $node_table['name'] . " column " . $data_column_name . " for default value check");
-      }
-      $value_type = mysql5_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
-
-      // else if col is zero length, make it default, or DB NULL
-      if (strlen($node_col) == 0) {
-        // is there a default defined for the column?
-        $dummy_data_column = new stdClass();
-        $column_default_value = xml_parser::column_default_value($node_table, $data_column_name, $dummy_data_column);
-        if ($column_default_value != NULL) {
-          // run default value through value_escape to allow data value conversions to happen
-          $value = mysql5::value_escape($value_type, $column_default_value);
-        }
-        // else put a NULL in the values list
-        else {
-          $value = 'NULL';
-        }
-      }
-      else {
-        $value = mysql5::value_escape($value_type, dbsteward::string_cast($node_col));
-      }
+      $value = mysql5::value_escape($value_type, dbsteward::string_cast($node_col));
     }
+    
     return $value;
   }
 
@@ -376,8 +736,7 @@ class mysql5 {
       }
 
       if (preg_match($PATTERN_QUOTED_TYPES, $type) > 0) {
-        //@TODO: is there a better way to do mssql string escaping?
-        $value = "'" . str_replace("'", "''", $value) . "'";
+        $value = static::quote_string_value($value);
       }
     }
     else {
@@ -393,6 +752,7 @@ class mysql5 {
     if (strlen($value) > 2 && substr($value, 0, 1) == "'" && substr($value, -1) == "'") {
       $value = substr($value, 1, -1);
       $value = str_replace("''", "'", $value);
+      $value = str_replace("\'", "'", $value);
     }
     return $value;
   }
@@ -422,6 +782,7 @@ class mysql5 {
     return preg_split("/[\,\s]+/", $primary_key_string, -1, PREG_SPLIT_NO_EMPTY);
   }
 
+  // @TODO: pull all of these up to sql99
   public static function get_quoted_schema_name($name) {
     return sql99::get_quoted_name($name, dbsteward::$quote_schema_names, self::QUOTE_CHAR);
   }
@@ -438,9 +799,35 @@ class mysql5 {
     return sql99::get_quoted_name($name, dbsteward::$quote_function_names, self::QUOTE_CHAR);
   }
 
+  public static function get_quoted_function_parameter($name) {
+    return sql99::get_quoted_name($name, self::$quote_function_parameters, self::QUOTE_CHAR);
+  }
+
   public static function get_quoted_object_name($name) {
     return sql99::get_quoted_name($name, dbsteward::$quote_object_names, self::QUOTE_CHAR);
   }
-}
 
+  public static function get_fully_qualified_table_name($schema_name, $table_name) {
+    return static::get_quoted_table_name($table_name);
+  }
+
+  public static function get_fully_qualified_column_name($schema_name, $table_name, $column_name) {
+    return static::get_fully_qualified_table_name($schema_name, $table_name) . '.' . static::get_quoted_column_name($column_name);
+  }
+
+  // @TODO: pull up and generalize
+  public static function quote_string_value($value) {
+    return "'" . str_replace("'", "\'", $value) . "'";
+  }
+
+  public static function strip_string_quoting($value) {
+    // 'string' becomes string
+    if (strlen($value) > 2 && $value[0] == "'" && substr($value, -1) == "'") {
+      $value = substr($value, 1, -1);
+      $value = str_replace("''", "'", $value);
+      $value = str_replace("\\'","'", $value);
+    }
+    return $value;
+  }
+}
 ?>

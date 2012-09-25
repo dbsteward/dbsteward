@@ -26,42 +26,28 @@ class sql99_diff_constraints {
         $old_table = dbx::get_table($old_schema, $new_table['name']);
       }
 
-      self::diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints);
+      static::diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints);
     }
   }
 
   public static function diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints = false) {
     if ( $drop_constraints ) {
       // drop constraints that no longer exist or are modified
-      foreach(self::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint) {
-        $ofs->write(static::get_constraint_drop_sql($constraint) . "\n");
+      foreach( static::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint ) {
+        $ofs->write(format_constraint::get_constraint_drop_sql($constraint) . "\n");
       }
     }
     else {
-      if ( !dbsteward::$ignore_oldname ) {
-        // if it is a renamed table, remove all constraints and recreate with new table name conventions
-        if ( sql99_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
-          $old_named_table = dbx::get_renamed_table_old_table($old_schema, $old_table, $new_schema, $new_table);
-          foreach(sql99_constraint::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
-            // rewrite the constraint definer to refer to the new table name
-            // so the constraint by the old name, but part of the new table
-            // will be referenced properly in the drop statement
-            $constraint['table_name'] = $new_table['name'];
-            $ofs->write(static::get_constraint_drop_sql($constraint) . "\n");
-          }
-          
-          // add all defined constraints back to the new table
-          foreach(sql99_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
-            $ofs->write(static::get_constraint_create_sql($constraint) . "\n");
-          }
-          return;
-        }
-        // END if it is a renamed table, remove all constraints and recreate with new table name conventions
+      if ( !dbsteward::$ignore_oldname && format_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
+        $new_constraints = format_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type);
+      }
+      else {
+        $new_constraints = static::get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type);
       }
 
       // add new constraints
-      foreach(self::get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint) {
-        $ofs->write(static::get_constraint_create_sql($constraint) . "\n");
+      foreach ( $new_constraints as $constraint ) {
+        $ofs->write(format_constraint::get_constraint_sql($constraint) . "\n");
       }
     }
   }
@@ -85,12 +71,12 @@ class sql99_diff_constraints {
       if ( $old_table->getName() != 'table' ) {
         throw new exception("Unexpected element type: " . $old_table->getName() . " panicing");
       }
-      foreach(sql99_constraint::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
-        $new_constraint = sql99_constraint::get_table_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name']);
+      foreach(format_constraint::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $old_constraint) {
+        $new_constraint = format_constraint::get_table_constraint(dbsteward::$new_database, $new_schema, $new_table, $old_constraint['name']);
 
-        if ( !sql99_table::contains_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name'])
-          || !sql99_table::constraint_equals($new_constraint, $constraint) ) {
-          $list[] = $constraint;
+        if ( !format_table::contains_constraint(dbsteward::$new_database, $new_schema, $new_table, $old_constraint['name'])
+          || !format_constraint::equals($new_constraint, $old_constraint) ) {
+          $list[] = $old_constraint;
         }
       }
     }
@@ -112,15 +98,15 @@ class sql99_diff_constraints {
 
     if ($new_table != null) {
       if ($old_table == null) {
-        foreach(sql99_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
+        foreach(format_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
           $list[] = $constraint;
         }
       } else {
-        foreach(sql99_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
-          $old_constraint = sql99_constraint::get_table_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name']);
+        foreach(format_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
+          $old_constraint = format_constraint::get_table_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name']);
 
-          if ( !sql99_table::contains_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name'])
-            || !sql99_table::constraint_equals($old_constraint, $constraint) ) {
+          if ( !format_table::contains_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name'])
+            || !format_constraint::equals($old_constraint, $constraint) ) {
             $list[] = $constraint;
           }
         }
@@ -129,12 +115,5 @@ class sql99_diff_constraints {
 
     return $list;
   }
-
-  protected static function get_constraint_drop_sql($constraint) {
-    throw new Exception('Must be overridden by specific sql_format driver');
-  }
-
-  protected static function get_constraint_create_sql($constraint) {
-    throw new Exception('Must be overridden by specific sql_format driver');
-  }
 }
+?>

@@ -9,6 +9,9 @@
  */
 
 class mssql10_function extends pgsql8_function {
+  public static function supported_language($language) {
+    return strcasecmp($language, 'tsql') == 0;
+  }
 
   /**
    * Returns SQL to create the function

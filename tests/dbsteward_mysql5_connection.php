@@ -8,30 +8,12 @@
  */
 
 class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
-  
-  function __construct() {
-    $this->sql_format = 'mysql5';
-  }
 
-  /**
-   * used by test tearDowns
-   * make sure connection is closed to DB can be dropped
-   * when running multiple tests
-   */
-  public function close_connection() {
-    // do is_resource() instead of error suppression
-    // because if $this->conn is valid and mysqli_close() fails, it should make the test fail
-    if ( is_resource($this->conn) ) {
-      mysqli_close($this->conn);
-    }
-  }
+  protected static $sql_format = 'mysql5';
 
   public function query($sql, $throw_on_error = TRUE) {
-    $rs = @mysqli_query($sql, $this->conn);
-    if ( $throw_on_error && !is_resource($rs) ) {
-      throw new exception("mysqli_query() failed:\n" . $sql . "\n\nError message: " . mysqli_error($this->conn));
-    }
-    return $rs;
+    dbsteward::cmd(sprintf("echo '%s' | mysql --host=%s --port=%s --user=%s --database=%s --password=%s",
+                          $sql, static::get_dbhost(), static::get_dbport(), static::get_dbname(), static::get_dbuser(), static::get_dbpass()));
   }
 
   /**
@@ -39,12 +21,15 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
    * @return void
    */
   public function create_db() {
-    $this->conn = mysqli_connect($this->get_dbhost(), $this->get_dbuser(), $this->get_dbpass());
-    @mysqli_query('DROP DATABASE ' . $this->get_dbname(), $this->conn);
-    mysqli_query('CREATE DATABASE ' . $this->get_dbname(), $this->conn);
-    mysqli_select_db($this->get_dbname(), $this->conn);
+    dbsteward::cmd(sprintf("echo '%s' | mysql --host=%s --port=%s --user=%s --database=%s --password=%s",
+                          'DROP DATABASE IF EXISTS '.static::get_dbname().'; CREATE DATABASE '.static::get_dbname().';',
+                          static::get_dbhost(), static::get_dbport(), static::get_dbuser_management(), static::get_dbname_management(), static::get_dbpass_management()));
   }
 
+  protected function pipe_file_to_client($file_name) {
+    dbsteward::cmd(sprintf("mysql --host=%s --port=%s --user=%s --database=%s --password=%s < '%s'",
+                           static::get_dbhost(), static::get_dbport(), static::get_dbuser(), static::get_dbname(), static::get_dbpass(), $file_name));
+  }
 }
 
 ?>
