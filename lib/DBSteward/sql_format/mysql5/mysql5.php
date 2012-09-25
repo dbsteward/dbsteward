@@ -206,7 +206,7 @@ class mysql5 {
       }
     }
 
-    // @TODO: database configurationParameter support needed ?
+    // @TODO: database configurationParameter support
   }
 
   public function build_data($db_doc, $ofs, $tables) {
@@ -621,14 +621,6 @@ class mysql5 {
       return 'ROLE_READONLY';
     }
 
-    // @TODO: is this even necessary?
-    // $custom_roles = preg_split("/[\,\s]+/", strtolower($node_role->customRole), -1, PREG_SPLIT_NO_EMPTY);
-    // foreach ( $custom_roles as $cr ) {
-    //   if ( strcasecmp($name, $cr) == 0 ) {
-    //     return $name;
-    //   }
-    // }
-
     return $name;
   }
 
@@ -786,7 +778,6 @@ class mysql5 {
    * @param string $primary_key_string The primary key string (e.g. "schema_name, table_name, column_name")
    * @return array The primary key(s) split into an array
    */
-  // @TODO: replace with sql99_table::primary_key_columns
   public static function primary_key_split($primary_key_string) {
     return preg_split("/[\,\s]+/", $primary_key_string, -1, PREG_SPLIT_NO_EMPTY);
   }
