@@ -24,28 +24,13 @@ class mysql5_diff extends sql99_diff {
    * @return void
    */
   protected static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
-    // if (mysql5_diff::$as_transaction) {
-    //   $stage1_ofs->append_header("START TRANSACTION;\n\n");
-    //   $stage1_ofs->append_footer("\nCOMMIT;\n");
-    //   if ( ! dbsteward::$single_stage_upgrade ) {
-    //     $stage2_ofs->append_header("START TRANSACTION;\n\n");
-    //     $stage3_ofs->append_header("START TRANSACTION;\n\n");
-    //     $stage4_ofs->append_header("START TRANSACTION;\n\n");
-    //     $stage2_ofs->append_footer("\nCOMMIT;\n");
-    //     $stage3_ofs->append_footer("\nCOMMIT;\n");
-    //     $stage4_ofs->append_footer("\nCOMMIT;\n");
-    //   }
-    // }
+    if (mysql5_diff::$as_transaction) {
+      dbsteward::console_line(1, "Most MySQL DDL implicitly commits transactions, so using them is pointless.");
+    }
 
     // start with pre-upgrade sql statements that prepare the database to take on its changes
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1BEFORE');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
-
-    // dbsteward::console_line(1, "Drop Old Schemas");
-    // mysql5_diff::drop_old_schemas($stage3_ofs);
-
-    // dbsteward::console_line(1, "Create New Schemas");
-    // mysql5_diff::create_new_schemas($stage1_ofs);
 
     dbsteward::console_line(1, "Revoke Permissions");
     self::revoke_permissions($stage1_ofs, $stage3_ofs);

@@ -335,19 +335,5 @@ SQL;
 
     $this->assertEquals($expected, $actual);
   }
-
-  public function testExtraction() {
-    echo $xml = mysql5::extract_schema(MYSQL5_DBHOST, MYSQL5_DBPORT, MYSQL5_DBNAME, 'austin', MYSQL5_DBPASS);
-
-    $dbs = new SimpleXMLElement($xml);
-    $ofs = new mock_output_file_segmenter();
-
-    dbsteward::$new_database = $dbs;
-    $table_dependency = xml_parser::table_dependency_order($dbs);
-
-    mysql5::build_schema($dbs, $ofs, $table_dependency);
-
-    echo $actual = $ofs->_get_output();
-  }
 }
 ?>

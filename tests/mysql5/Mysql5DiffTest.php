@@ -205,10 +205,11 @@ XML;
     mysql5_diff::update_structure($ofs1, $ofs3);
     mysql5_diff::update_permissions($ofs1, $ofs3);
 
-    echo "\n\nofs 1:\n\n";
-    echo $ofs1->_get_output();
-    echo "\n\nofs 3:\n\n";
-    echo $ofs3->_get_output();
+    // @TODO: assert expected = actual
+    // echo "\n\nofs 1:\n\n";
+    // echo $ofs1->_get_output();
+    // echo "\n\nofs 3:\n\n";
+    // echo $ofs3->_get_output();
   }
 }
 ?>
