@@ -56,7 +56,7 @@ class mysql5_diff extends sql99_diff {
     dbsteward::console_line(1, "Update Permissions");
     self::update_permissions($stage1_ofs, $stage3_ofs);
 
-    self::update_database_config_parameters($stage1_ofs);
+    // self::update_database_config_parameters($stage1_ofs);
 
     dbsteward::console_line(1, "Update Data");
     self::update_data($stage2_ofs, TRUE);
