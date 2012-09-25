@@ -78,3 +78,4 @@ class mysql5_diff_types {
     }
   }
 }
+?>

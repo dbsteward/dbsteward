@@ -19,3 +19,4 @@ class mock_output_file_segmenter {
     $this->output = "";
   }
 }
+?>

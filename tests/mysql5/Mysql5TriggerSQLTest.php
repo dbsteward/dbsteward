@@ -96,3 +96,4 @@ XML;
     $this->assertEquals($expected, $actual);
   }
 }
+?>

@@ -100,3 +100,4 @@ XML;
     $this->fail("Expected an exception because there was no mysql5 viewQuery");
   }
 }
+?>

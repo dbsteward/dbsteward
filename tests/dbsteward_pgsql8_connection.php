@@ -32,3 +32,5 @@ class dbsteward_pgsql8_connection extends dbsteward_sql99_connection {
   }
 
 }
+
+?>

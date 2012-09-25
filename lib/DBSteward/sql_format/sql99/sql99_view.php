@@ -40,3 +40,4 @@ class sql99_view {
     return $q;
   }
 }
+?>

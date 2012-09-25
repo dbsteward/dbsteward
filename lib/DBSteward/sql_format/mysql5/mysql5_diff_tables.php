@@ -779,3 +779,4 @@ class mysql5_diff_tables extends sql99_diff_tables {
     return $sql;
   }
 }
+?>

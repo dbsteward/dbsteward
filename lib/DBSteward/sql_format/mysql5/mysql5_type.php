@@ -72,3 +72,4 @@ class mysql5_type extends sql99_type {
     throw new Exception("Unrecognizable type name reference: '$name_ref'");
   }
 }
+?>

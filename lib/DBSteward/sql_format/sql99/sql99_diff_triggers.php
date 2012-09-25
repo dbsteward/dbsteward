@@ -114,3 +114,4 @@ class sql99_diff_triggers {
     return count($schema->xpath("trigger[@name='{$trigger['name']}']")) != 0;
   }
 }
+?>

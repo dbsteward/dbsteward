@@ -131,3 +131,4 @@ class mysql5_column extends sql99_column {
   }
 
 }
+?>

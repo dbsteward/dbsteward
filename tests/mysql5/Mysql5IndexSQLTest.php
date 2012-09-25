@@ -155,3 +155,4 @@ XML;
     $this->assertEquals("DROP INDEX `default_idx` ON `test`;", $actual);
   }
 }
+?>

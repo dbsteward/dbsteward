@@ -60,3 +60,4 @@ class sql99_diff_views {
         || strcasecmp($old_view['owner'], $new_view['owner']) != 0;
   }
 }
+?>

@@ -126,3 +126,4 @@ class mysql5_function extends sql99_function {
     return strcasecmp($params_a, $params_b) === 0;
   }
 }
+?>

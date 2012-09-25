@@ -116,3 +116,4 @@ class sql99_diff_constraints {
     return $list;
   }
 }
+?>

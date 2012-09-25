@@ -95,3 +95,4 @@ class sql99_column {
     return $sql;
   }
 }
+?>

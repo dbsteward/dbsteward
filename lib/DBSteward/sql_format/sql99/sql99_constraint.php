@@ -278,3 +278,4 @@ class sql99_constraint {
     return strtoupper($ref_opt);
   }
 }
+?>

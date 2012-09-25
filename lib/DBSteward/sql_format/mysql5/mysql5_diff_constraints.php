@@ -34,3 +34,4 @@ class mysql5_diff_constraints extends sql99_diff_constraints {
     }
   }
 }
+?>

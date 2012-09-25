@@ -11,3 +11,4 @@
 class sql99_diff_sequences {
   
 }
+?>

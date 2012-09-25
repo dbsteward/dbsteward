@@ -51,3 +51,4 @@ class mysql5_diff_functions extends sql99_diff_functions {
     }
   }
 }
+?>

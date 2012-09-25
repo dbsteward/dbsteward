@@ -94,3 +94,4 @@ XML;
     $this->assertEquals("CREATE TABLE `test` (\n  `id` int\n);", mysql5_table::get_creation_sql($schema, $schema->table));
   }
 }
+?>

@@ -253,3 +253,4 @@ XML;
     $this->assertEquals("`s1` int", mysql5_column::get_full_definition($dbs, $dbs->schema, $dbs->schema->table, $col, true, true, false));
   }
 }
+?>

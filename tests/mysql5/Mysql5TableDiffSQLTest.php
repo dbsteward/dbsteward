@@ -357,3 +357,4 @@ XML;
     $this->assertEquals($expected, $actual, $message);
   }
 }
+?>

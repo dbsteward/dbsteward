@@ -105,3 +105,4 @@ class mysql5_permission extends sql99_permission {
     }
   }
 }
+?>

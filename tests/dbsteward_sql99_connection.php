@@ -52,3 +52,5 @@ abstract class dbsteward_sql99_connection {
   protected abstract function query($sql, $throw_on_error = TRUE);
 
 }
+
+?>

@@ -28,3 +28,4 @@ class mysql5_diff_triggers extends sql99_diff_triggers {
     return FALSE;
   }
 }
+?>

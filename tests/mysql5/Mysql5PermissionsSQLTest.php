@@ -113,3 +113,4 @@ XML;
     $this->assertEquals($expected,trim($actual));
   }
 }
+?>

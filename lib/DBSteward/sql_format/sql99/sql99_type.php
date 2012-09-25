@@ -15,3 +15,4 @@ class sql99_type {
     return strcasecmp($a_create_sql, $b_create_sql) == 0;
   }
 }
+?>

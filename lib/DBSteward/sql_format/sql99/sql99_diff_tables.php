@@ -76,3 +76,4 @@ class sql99_diff_tables {
     return sql99_schema::table_name_by_old_name($node_schema, $table_name) !== false;
   }
 }
+?>

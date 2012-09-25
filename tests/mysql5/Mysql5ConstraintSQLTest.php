@@ -417,3 +417,4 @@ XML;
     $this->assertEquals($expected, mysql5_constraint::get_constraint_drop_sql($unique));
   }
 }
+?>

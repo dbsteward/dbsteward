@@ -332,3 +332,4 @@ SQL;
     $this->assertEquals($expected3, $actual3, "in stage 3: $message");
   }
 }
+?>

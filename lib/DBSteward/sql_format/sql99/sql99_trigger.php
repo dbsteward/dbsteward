@@ -32,3 +32,4 @@ class sql99_trigger {
     return $equals;
   }
 }
+?>

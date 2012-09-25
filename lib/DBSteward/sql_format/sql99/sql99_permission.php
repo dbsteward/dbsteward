@@ -79,3 +79,4 @@ class sql99_permission {
       }
   }
 }
+?>

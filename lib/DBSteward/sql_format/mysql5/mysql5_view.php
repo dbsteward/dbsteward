@@ -28,3 +28,4 @@ class mysql5_view extends sql99_view {
     return "DROP VIEW IF EXISTS " . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_view['name']) . ";";
   }
 }
+?>

@@ -79,3 +79,4 @@ class sql99_index {
     return $index_name;
   }
 }
+?>

@@ -302,3 +302,4 @@ SQL;
     return "DELETE FROM $table_name WHERE $seq_col IN $sequence_names;";
   }
 }
+?>

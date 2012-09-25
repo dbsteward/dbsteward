@@ -73,3 +73,4 @@ class sql99_function {
     return $equals;
   }
 }
+?>

@@ -246,3 +246,4 @@ SQL;
     $this->assertEquals($expected, $actual, $message);
   }
 }
+?>

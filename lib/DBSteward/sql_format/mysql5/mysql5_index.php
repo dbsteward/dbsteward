@@ -72,3 +72,4 @@ class mysql5_index extends sql99_index {
     }
   }
 }
+?>

@@ -13,3 +13,4 @@ require_once __DIR__ . '/mysql5_index.php';
 
 class mysql5_diff_indexes extends sql99_diff_indexes {
 }
+?>

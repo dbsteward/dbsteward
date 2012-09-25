@@ -350,3 +350,4 @@ SQL;
     echo $actual = $ofs->_get_output();
   }
 }
+?>

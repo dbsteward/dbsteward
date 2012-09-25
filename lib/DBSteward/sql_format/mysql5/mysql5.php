@@ -830,3 +830,4 @@ class mysql5 {
     return $value;
   }
 }
+?>

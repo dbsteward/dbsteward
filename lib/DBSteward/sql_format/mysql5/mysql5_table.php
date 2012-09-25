@@ -127,3 +127,4 @@ XML;
     return $triggers;
   }
 }
+?>

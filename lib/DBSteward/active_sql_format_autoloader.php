@@ -59,3 +59,4 @@ class active_sql_format_autoloader {
     }
   }
 }
+?>

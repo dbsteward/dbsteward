@@ -64,3 +64,4 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
     }
   }
 }
+?>

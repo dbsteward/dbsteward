@@ -11,3 +11,4 @@
 class mysql5_diff_views extends sql99_diff_views {
 
 }
+?>

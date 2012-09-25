@@ -353,3 +353,4 @@ class mysql5_diff extends sql99_diff {
 
 
 }
+?>

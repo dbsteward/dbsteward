@@ -31,3 +31,5 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
                            static::get_dbhost(), static::get_dbport(), static::get_dbuser(), static::get_dbname(), static::get_dbpass(), $file_name));
   }
 }
+
+?>

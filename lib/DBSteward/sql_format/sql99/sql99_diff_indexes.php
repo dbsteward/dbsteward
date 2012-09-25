@@ -110,3 +110,4 @@ class sql99_diff_indexes {
     return $list;
   }
 }
+?>
