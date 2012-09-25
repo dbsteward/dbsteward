@@ -9,6 +9,12 @@
  *  type dependant column is references in a view
  *  view definition does not change from A to B
  *
+ * MySQL5 tests for these items are located in:
+ *   mysql5/Mysql5TableDiffSQLTest.php ::testEnums()
+ *   mysql5/Mysql5TypeDiffSQLTest.php
+ *   mysql5/Mysql5TypeSQLTest.php
+ *   mysql5/Mysql5ViewDiffSQLTest.php
+ *
  * todo:
  *  type value insertion testing - remove <col sql="true" on enumerated type column entries
  *
@@ -21,8 +27,7 @@ require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
 
 class typeDiffTest extends dbstewardUnitTestBase {
 
-  protected function setUp() {
-    $this->xml_content_a = <<<XML
+  private $pgsql8_xml_a = <<<XML
 <dbsteward>
   <database>
     <host>db-host</host>
@@ -118,7 +123,7 @@ class typeDiffTest extends dbstewardUnitTestBase {
   </schema>
 </dbsteward>
 XML;
-    $this->xml_content_b = <<<XML
+  private $pgsql8_xml_b = <<<XML
 <dbsteward>
   <database>
     <host>db-host</host>
@@ -216,19 +221,28 @@ XML;
   </schema>
 </dbsteward>
 XML;
-
-    parent::setUp();
-  }
   
+  /**
+   * @group pgsql8
+   */
   public function testAddEnumMemberPGSQL8() {
+    $this->set_xml_content_a($this->pgsql8_xml_a);
+    $this->set_xml_content_b($this->pgsql8_xml_b);
+
     $this->build_db_pgsql8();
     $this->upgrade_db_pgsql8();
   }
   
+  /**
+   * @group mssql10
+   */
   public function testAddEnumMemberMSSQL10() {
+    $this->set_xml_content_a($this->pgsql8_xml_a);
+    $this->set_xml_content_b($this->pgsql8_xml_b);
+    
     $this->build_db_mssql10();
     $this->upgrade_db_mssql10();
-  }  
+  }
   
 }
 
