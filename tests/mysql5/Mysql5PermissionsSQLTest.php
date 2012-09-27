@@ -106,6 +106,16 @@ XML;
     $this->common($xml, 'sequence', "GRANT SELECT ON `__sequences` TO deployment;");
   }
 
+  public function testPublicMacroRole() {
+    $xml = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <grant operation="select" role="PUBLIC"/>
+</schema>
+XML;
+    
+    $this->common($xml, NULL, "GRANT SELECT ON * TO dbsteward_phpunit_app;");
+  }
+
   private function common($schema_xml, $obj=NULL, $expected) {
     $schema = new SimpleXMLElement($schema_xml);
     $node_obj = $obj? $schema->{$obj} : $schema;
