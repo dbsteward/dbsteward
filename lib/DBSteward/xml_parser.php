@@ -1145,7 +1145,15 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     switch ($role) {
       // PUBLIC is accepted as a special placeholder for public
       case 'PUBLIC':
-        $role = 'PUBLIC';
+        if (strcasecmp(dbsteward::get_sql_format(), 'mysql5') == 0) {
+          // MySQL doesn't have a "public" role, and will attempt to create the user "PUBLIC"
+          // instead, warn and alias to ROLE_APPLICATION
+          $role = dbsteward::string_cast($db_doc->database->role->application);
+          dbsteward::console_line(1, "Warning: MySQL doesn't support the PUBLIC role, using ROLE_APPLICATION ('$role') instead.");
+        }
+        else {
+          $role = 'PUBLIC';
+        }
       break;
       case 'ROLE_APPLICATION':
         $role = dbsteward::string_cast($db_doc->database->role->application);
