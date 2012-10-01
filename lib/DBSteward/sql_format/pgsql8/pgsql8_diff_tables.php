@@ -316,6 +316,10 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       }
       $new_column_type = pgsql8_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $new_column, $foreign);
 
+      if ( preg_match(pgsql8::PATTERN_TABLE_LINKED_TYPES, $new_column_type) > 0 && $old_column_type !== null && preg_match(pgsql8::PATTERN_TABLE_LINKED_TYPES, $old_column_type) == 0) {
+        throw new Exception("Column types cannot be altered to serial. If this column cannot be recreated as part of database change control, a user defined serial should be created, and corresponding nextval() defined as the default for the column.");
+      }
+
       if ( strcmp($old_column_type, $new_column_type) != 0 ) {
         // ALTER TYPE .. USING support by looking up the new type in the xml definition
         $type_using = '';
