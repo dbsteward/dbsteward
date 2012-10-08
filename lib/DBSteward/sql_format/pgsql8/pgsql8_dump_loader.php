@@ -8,26 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/pgsql8_parser_alter_function.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_alter_language.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_alter_schema.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_alter_sequence.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_alter_table.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_alter_view.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_config_parameter.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_create_function.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_create_index.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_create_language.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_create_schema.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_create_sequence.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_create_table.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_create_type.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_create_trigger.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_create_view.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_delete_from.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_grant_revoke.php';
-require_once dirname(__FILE__) . '/pgsql8_parser_insert_into.php';
-
 class pgsql8_dump_loader {
 
   /**

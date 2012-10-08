@@ -31,8 +31,6 @@ try {
     echo dbsteward::usage();
     exit(0);
   }
-  
-  dbsteward::load_sql_formats();
 
   $dbg = new dbsteward();
   $dbg->arg_parse();

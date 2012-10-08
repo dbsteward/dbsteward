@@ -8,24 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/mssql10_bit_table.php';
-require_once dirname(__FILE__) . '/mssql10_column.php';
-require_once dirname(__FILE__) . '/mssql10_function.php';
-require_once dirname(__FILE__) . '/mssql10_permission.php';
-require_once dirname(__FILE__) . '/mssql10_index.php';
-require_once dirname(__FILE__) . '/mssql10_schema.php';
-require_once dirname(__FILE__) . '/mssql10_table.php';
-require_once dirname(__FILE__) . '/mssql10_type.php';
-require_once dirname(__FILE__) . '/mssql10_trigger.php';
-require_once dirname(__FILE__) . '/mssql10_view.php';
-require_once dirname(__FILE__) . '/mssql10_diff_indexes.php';
-require_once dirname(__FILE__) . '/mssql10_diff_functions.php';
-require_once dirname(__FILE__) . '/mssql10_diff_sequences.php';
-require_once dirname(__FILE__) . '/mssql10_diff_tables.php';
-require_once dirname(__FILE__) . '/mssql10_diff_triggers.php';
-require_once dirname(__FILE__) . '/mssql10_diff_types.php';
-require_once dirname(__FILE__) . '/mssql10_diff_views.php';
-
 class mssql10_diff extends pgsql8_diff {
 
   /**

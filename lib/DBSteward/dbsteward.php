@@ -12,10 +12,13 @@
 
 error_reporting(E_ALL);
 
+define('SQLFORMAT_DIR', __DIR__ . '/sql_format');
+
 require_once dirname(__FILE__) . '/dbx.php';
 require_once dirname(__FILE__) . '/xml_parser.php';
 require_once dirname(__FILE__) . '/sql_parser.php';
 require_once dirname(__FILE__) . '/output_file_segmenter.php';
+require_once dirname(__FILE__) . '/active_sql_format_autoloader.php';
 
 class dbsteward {
 
@@ -36,6 +39,7 @@ class dbsteward {
    */
   public function set_sql_format($format) {
     if ( dbsteward::sql_format_exists($format) ) {
+      active_sql_format_autoloader::init($format);
       dbsteward::$sql_format= $format;
     }
     else {
@@ -100,7 +104,7 @@ class dbsteward {
   public static function usage() {
     $s = "DBSteward Usage:
 Global Switches and Flags
-  --sqlformat=<pgsql8|mssql10|mysql4|oracle10g>
+  --sqlformat=<pgsql8|mssql10|mysql5|oracle10g>
   --requireslonyid                  require tables and sequences to specify a valid slonyId
   --quoteschemanames                quote schema names in SQL output
   --quotetablenames                 quote table names in SQL output
@@ -244,7 +248,7 @@ Database definition extraction utilities
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;
     }
-    else if (strcasecmp(dbsteward::get_sql_format(), 'mysql4') == 0) {
+    else if (strcasecmp(dbsteward::get_sql_format(), 'mysql5') == 0) {
       dbsteward::$quote_schema_names = TRUE;
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;
@@ -368,33 +372,25 @@ Database definition extraction utilities
       dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
       exit(1);
     }
-    
-    
-    ///// determine sql_format before getting into SQL functional modes
-    $sql_format = dbsteward::get_sql_format();
-    if ( ! class_alias($sql_format, 'sql_format_class') ) {
-      throw new exception("Failed to alias $sql_format as sql_format_class");
-    }
-
 
 
     ///// --[new|old]xml option(s) specificity - generate database DDL DML DCL
     if ( isset($options['xml']) && count($options['xml']) > 0 ) {
       if (isset($options['pgdataxml'])) {
         $pgdataxml = $options['pgdataxml'];
-        sql_format_class::build($options['xml'], $pgdataxml);
+        format::build($options['xml'], $pgdataxml);
       }
       else {
-        sql_format_class::build($options['xml']);
+        format::build($options['xml']);
       }
     }
     else if ( isset($options['newxml']) && count($options['newxml']) > 0 ) {
       if (isset($options['pgdataxml'])) {
         $pgdataxml = $options['pgdataxml'];
-        sql_format_class::build_upgrade($options['oldxml'], $options['newxml'], $pgdataxml);
+        format::build_upgrade($options['oldxml'], $options['newxml'], $pgdataxml);
       }
       else {
-        sql_format_class::build_upgrade($options['oldxml'], $options['newxml']);
+        format::build_upgrade($options['oldxml'], $options['newxml']);
       }
     }
     
@@ -416,7 +412,7 @@ Database definition extraction utilities
         throw new exception("dbschemadump error: outputfile not specified");
       }
 
-      $output = sql_format_class::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
+      $output = format::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
       
       dbsteward::console_line(1, "Saving extracted database schema to " . $output_file);
       if (!file_put_contents($output_file, $output)) {
@@ -437,7 +433,7 @@ Database definition extraction utilities
         throw new exception("dbdatadiff error: dbuser not specified");
       }
 
-      $output = sql_format_class::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdatadiff']);
+      $output = format::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdatadiff']);
       if (!file_put_contents($output_file, $output)) {
         throw new exception("Failed to save extracted database schema to " . $output_file);
       }
@@ -451,7 +447,7 @@ Database definition extraction utilities
         dbsteward::console_line(0, "sql diff error: you must specify an outputfile for this mode");
         exit(1);
       }
-      sql_format_class::sql_diff($options["oldsql"], $options["newsql"], $output_file);
+      format::sql_diff($options["oldsql"], $options["newsql"], $output_file);
       exit(0);
     }
 
@@ -510,11 +506,8 @@ Database definition extraction utilities
   }
 
   public static function quote_column_name($column_name) {
-    $quoted_column_name = $column_name;
-    if (dbsteward::$quote_column_names) {
-      $quoted_column_name = '"' . $quoted_column_name . '"';
-    }
-    return $quoted_column_name;
+    $format = self::$sql_format;
+    return $format::get_quoted_column_name($column_name);
   }
 
   public function xml_sort($files) {
@@ -545,27 +538,6 @@ Database definition extraction utilities
       $converted_xml = str_replace('pgdbxml>', 'dbsteward>', $converted_xml);
       file_put_contents($converted_file_name, $converted_xml);
     }
-  }
-
-  public static function supported_function_language($function) {
-    $language = strtolower($function['language']);
-    switch ($language) {
-      case 'sql':
-      case 'plpgsql':
-        if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
-          return TRUE;
-        }
-      break;
-      case 'tsql':
-        if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
-          return TRUE;
-        }
-      break;
-      default:
-        throw new exception("Unknown function language encountered: " . $language);
-      break;
-    }
-    return FALSE;
   }
 
   public function xml_data_insert($def_file, $data_file) {
@@ -660,14 +632,6 @@ Database definition extraction utilities
   
   public static function sql_format_exists($format) {
     return in_array($format, dbsteward::get_sql_formats());
-  }
-  
-  public static function load_sql_formats() {
-    $sql_format_dir = dirname(__FILE__) . "/sql_format/";
-    $formats = dbsteward::get_sql_formats();
-    foreach($formats AS $format) {
-      require_once($sql_format_dir . "/" . $format . "/" . $format . ".php");
-    }
   }
 
 }
