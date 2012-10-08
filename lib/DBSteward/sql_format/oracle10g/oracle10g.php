@@ -8,22 +8,9 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/../sql99/sql99.php';
-require_once dirname(__FILE__) . '/../pgsql8/pgsql8.php';
-
-require_once dirname(__FILE__) . '/oracle10g_column.php';
-require_once dirname(__FILE__) . '/oracle10g_function.php';
-require_once dirname(__FILE__) . '/oracle10g_permission.php';
-require_once dirname(__FILE__) . '/oracle10g_index.php';
-require_once dirname(__FILE__) . '/oracle10g_schema.php';
-require_once dirname(__FILE__) . '/oracle10g_sequence.php';
-require_once dirname(__FILE__) . '/oracle10g_table.php';
-require_once dirname(__FILE__) . '/oracle10g_type.php';
-require_once dirname(__FILE__) . '/oracle10g_trigger.php';
-require_once dirname(__FILE__) . '/oracle10g_view.php';
-require_once dirname(__FILE__) . '/oracle10g_diff.php';
-
 class oracle10g {
+
+  const QUOTE_CHAR = '"';
 
   public static function build($files) {
     if (!is_array($files)) {
@@ -103,7 +90,7 @@ class oracle10g {
     // function definitions
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->function AS $function) {
-        if (dbsteward::supported_function_language($function)) {
+        if (oracle10g_function::has_definition($function)) {
           $ofs->write(oracle10g_function::get_creation_sql($schema, $function));
         }
       }
@@ -134,7 +121,7 @@ class oracle10g {
       // sequences contained in the schema
       if (isset($schema->sequence)) {
         foreach ($schema->sequence AS $sequence) {
-          $ofs->write(mysql4_sequence::get_creation_sql($schema, $sequence));
+          $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequence));
 
           // sequence permission grants
           if (isset($sequence->grant)) {
@@ -432,6 +419,26 @@ class oracle10g {
    */
   public static function primary_key_split($primary_key_string) {
     return preg_split("/[\,\s]+/", $primary_key_string, -1, PREG_SPLIT_NO_EMPTY);
+  }
+
+  public static function get_quoted_schema_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_schema_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_table_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_table_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_column_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_column_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_function_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_function_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_object_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_object_names, self::QUOTE_CHAR);
   }
 }
 

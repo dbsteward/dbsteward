@@ -8,8 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/sql99_diff_tables.php';
-
 class sql99_diff {
 
   public static $as_transaction = true;

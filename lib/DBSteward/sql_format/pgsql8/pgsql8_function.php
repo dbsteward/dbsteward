@@ -9,6 +9,9 @@
  */
 
 class pgsql8_function {
+  public static function supported_language($language) {
+    return strcasecmp($language, 'sql') == 0 || strcasecmp($language, 'plpgsql') == 0;
+  }
 
   /**
    * Returns SQL to create the function
@@ -16,10 +19,12 @@ class pgsql8_function {
    * @return string
    */
   public function get_creation_sql($node_schema, $node_function) {
-    $sql = "CREATE OR REPLACE FUNCTION " . pgsql8_function::get_declaration($node_schema, $node_function) . " RETURNS " . $node_function['returns'] . "\n"
-      . '  AS $_$' . "\n" . pgsql8_function::get_definition($node_function) . "\n\t" . '$_$' . "\n";
+    $definition = static::get_definition($node_function);
 
-    $sql .= "LANGUAGE " . $node_function['language'];
+    $sql = "CREATE OR REPLACE FUNCTION " . pgsql8_function::get_declaration($node_schema, $node_function) . " RETURNS " . $node_function['returns'] . "\n"
+      . '  AS $_$' . "\n" . $definition . "\n\t" . '$_$' . "\n";
+
+    $sql .= "LANGUAGE " . $definition['language'];
 
     if ( isset($node_function['cachePolicy']) && strlen($node_function['cachePolicy']) > 0 ) {
       $sql .= ' ' . $node_function['cachePolicy'];
@@ -100,7 +105,7 @@ class pgsql8_function {
    * @param $node_function
    */
   public static function get_declaration($node_schema, $node_function) {
-    $r = pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . $node_function['name'] . '(';
+    $r = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . $node_function['name'] . '(';
     $parameters = dbx::get_function_parameters($node_function);
     foreach($parameters AS $parameter) {
       $arg = '';
@@ -124,10 +129,39 @@ class pgsql8_function {
   public function set_definition(&$node_function, $definition) {
     $node_function->addChild('functionDefinition', $definition);
   }
+  public static function has_definition($node_function) {
+    foreach ( $node_function->functionDefinition as $def ) {
+      if ( empty($def['sqlFormat']) || empty($def['language']) ) {
+        throw new Exception("Attributes sqlFormat and language are required on functionDefinitions, in function '{$node_function['name']}'");
+      }
+      if ( $def['sqlFormat'] == dbsteward::get_sql_format() && static::supported_language($def['language']) ) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-  public function get_definition(&$node_function) {
-    $nodes = $node_function->xpath('functionDefinition');
-    return $nodes[0];
+  public static function get_definition($node_function) {
+    $definition = null;
+    foreach ( $node_function->functionDefinition as $def ) {
+      if ( empty($def['sqlFormat']) || empty($def['language']) ) {
+        throw new Exception("Attributes sqlFormat and language are required on functionDefinitions, in function '{$node_function['name']}'");
+      }
+      if ( $def['sqlFormat'] == dbsteward::get_sql_format() && static::supported_language($def['language']) ) {
+        if ( $definition !== null ) {
+          throw new Exception("duplicate function definition for {$def['sqlFormat']}/{$def['language']} in function '{$node_function['name']}'");
+        }
+        $definition = $def;
+      }
+    }
+    if ( $definition === null ) {
+      foreach( $node_function->functionDefinition AS $def) {
+        var_dump($def);
+      }
+      $format = dbsteward::get_sql_format();
+      throw new Exception("no function definitions in a known language for format $format in function '{$node_function['name']}'");
+    }
+    return $definition;
   }
 
   /**

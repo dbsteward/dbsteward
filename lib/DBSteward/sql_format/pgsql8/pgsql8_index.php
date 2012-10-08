@@ -23,10 +23,10 @@ class pgsql8_index {
     }
 
     $sql .= "INDEX "
-      . pgsql8_diff::get_quoted_name($node_index['name'], dbsteward::$quote_object_names)
+      . pgsql8::get_quoted_object_name($node_index['name'])
       . " ON "
-      . pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.'
-      . pgsql8_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names);
+      . pgsql8::get_quoted_schema_name($node_schema['name']) . '.'
+      . pgsql8::get_quoted_table_name($node_table['name']);
     if ( isset($node_index['using']) && strlen($node_index['using']) > 0 ) {
       $sql .= ' USING ' . $node_index['using'];
     }
@@ -41,7 +41,7 @@ class pgsql8_index {
   }
 
   public function get_drop_sql($node_schema, $node_table, $node_index) {
-    $ddl = "DROP INDEX " . pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . "." . pgsql8_diff::get_quoted_name($node_index['name'], dbsteward::$quote_object_names) . ";\n";
+    $ddl = "DROP INDEX " . pgsql8::get_quoted_schema_name($node_schema['name']) . "." . pgsql8::get_quoted_object_name($node_index['name']) . ";\n";
     return $ddl;
   }
 
@@ -74,6 +74,42 @@ class pgsql8_index {
     return $equal;
   }
 
+
+  public static function index_name($table, $column, $suffix) {
+    // figure out the name of the index from table and column names
+    // maxlen of pg identifiers is 63
+    // so the table and column are each limited to 29 chars, if they both longer
+    $table_maxlen = 29;
+    $column_maxlen = 29;
+    // but if one is shorter pg seems to bonus the longer with the remainder from the shorter:
+    // background_check_status_list_background_check_status_list_i_seq
+    // program_membership_status_lis_program_membership_status_lis_seq
+    // Shift/re calculate maxes based on one side being oversized:
+    if (strlen($table) > $table_maxlen
+      && strlen($column) < $column_maxlen) {
+      // table is longer than max, column is not
+      $table_maxlen += $column_maxlen - strlen($column);
+    }
+    else if (strlen($column) > $column_maxlen && strlen($table) < $table_maxlen) {
+      // column is longer than max, table is not
+      $column_maxlen += $table_maxlen - strlen($table);
+    }
+
+    if (strlen($table) > $table_maxlen) {
+      $table = substr($table, 0, $table_maxlen);
+    }
+
+    if (strlen($column) > $column_maxlen) {
+      $column = substr($column, 0, $column_maxlen);
+    }
+
+    $index_name = (string)$table;
+    if (strlen($column) > 0) {
+      $index_name .= '_' . $column;
+    }
+    $index_name .= '_' . $suffix;
+    return $index_name;
+  }
 }
 
 ?>

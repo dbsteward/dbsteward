@@ -1,6 +1,6 @@
 <?php
 /**
- * DBSteward database structure extraction tests
+ * DBSteward database structure extraction test base
  *
  * @package DBSteward
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
@@ -11,8 +11,11 @@ require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
 
 class structureExtractionTest extends dbstewardUnitTestBase {
 
-  protected function setUp() {
-    $this->xml_content_a = <<<XML
+  /**
+   * @group pgsql8
+   */
+  public function testBuildExtractCompare_pgsql8() {
+    $xml = <<<XML
 <dbsteward>
   <database>
     <host>db-host</host>
@@ -34,10 +37,10 @@ class structureExtractionTest extends dbstewardUnitTestBase {
   </database>
   <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
   <schema name="dbsteward" owner="ROLE_OWNER">
-    <function name="db_config_parameter" returns="text" language="plpgsql" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
+    <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
       <functionParameter name="config_parameter" type="text"/>
       <functionParameter name="config_value" type="text"/>
-      <functionDefinition>
+      <functionDefinition language="plpgsql" sqlFormat="pgsql8">
         DECLARE
           q text;
           name text;
@@ -69,32 +72,76 @@ class structureExtractionTest extends dbstewardUnitTestBase {
 </dbsteward>
 XML;
 
-    parent::setUp();
+    $this->do_structure_test('pgsql8', $xml);
+  }
+
+  /**
+   * @group mysql5
+   */
+  public function testBuildExtractCompare_mysql5() {
+    $xml = <<<XML
+<dbsteward>
+  <database>
+    <host>127.0.0.1</host>
+    <name>dbsteward_phpunit</name>
+    <role>
+      <application>dbsteward_phpunit_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+    <configurationParameter name="TIME ZONE" value="America/New_York"/>
+  </database>
+  <schema name="public" owner="ROLE_OWNER">
+    <function name="test_concat" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="a test function that concats strings">
+      <functionParameter name="param1" type="text"/>
+      <functionParameter name="param2" type="text"/>
+      <functionDefinition language="sql" sqlFormat="mysql5">
+        RETURN CONCAT(param1, param2);
+      </functionDefinition>
+    </function>
+    <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
+      <column name="rate_id" type="serial" null="false"/>
+      <column name="rate_group_id" foreignSchema="public" foreignTable="rate_group" foreignColumn="rate_group_id" null="false"/>
+      <column name="rate_name" type="varchar(120)"/>
+      <column name="rate_value" type="decimal(10,0)"/>
+    </table>
+    <table name="rate_group" owner="ROLE_OWNER" primaryKey="rate_group_id">
+      <column name="rate_group_id" type="int(11)" null="false"/>
+      <column name="rate_group_name" type="varchar(100)"/>
+      <column name="rate_group_enabled" type="tinyint(1)" null="false" default="1"/>
+    </table>
+  </schema>
+</dbsteward>
+XML;
+
+    $this->do_structure_test('mysql5', $xml);
   }
   
   /**
-   * Structure Extraction Testing - Postgresql 8
+   * Structure Extraction Testing
    *
    * 1) Build a database from definition A
    * 2) Extract database schema to definition B
    * 3) Compare and expect zero differences between A and B with DBSteward difference engine
    * 4) Check for and validate tables in resultant XML definiton
-   * 
-   * @param   void
-   * @return  void
    */
-  public function testBuildExtractCompare_pgsql8() {
+  public function do_structure_test($format, $xml) {
+
+    $this->set_xml_content_a($xml);
+
     // 1) Build a database from definition A
-    $this->build_db_pgsql8();
+    $this->build_db($format);
 
     // 2) Extract database schema to definition B
-    $this->xml_content_b = pgsql8::extract_schema($this->pgsql->get_dbhost(), $this->pgsql->get_dbport(), $this->pgsql->get_dbname(), $this->pgsql->get_dbuser(), $this->pgsql->get_dbpass());
+    $conn = $this->get_connection($format);
+    $this->xml_content_b = $format::extract_schema($conn->get_dbhost(), $conn->get_dbport(), $conn->get_dbname(), $conn->get_dbuser(), $conn->get_dbpass());
     
     $this->write_xml_definition_to_disk();
 
     // 3) Compare and expect zero differences between A and B
-    $this->apply_options_pgsql8();
-    pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    $this->apply_options($format);
+    $format::build_upgrade($this->xml_file_a, $this->xml_file_b);
     
     $upgrade_stage1_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
     $upgrade_stage2_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
@@ -165,65 +212,6 @@ XML;
         $this->assertEquals($table_a['name'], $table_b['name']);
       }
     }
-  }
-  
-  /**
-   * Structure Extraction Testing - Mysql 4
-   *
-   * 1) Build a database from definition A
-   * 2) Extract database schema to definition B
-   * 3) Compare and expect zero differences between A and B with DBSteward difference engine
-   * 4) Check for and validate tables in resultant XML definiton
-   * 
-   * @param   void
-   * @return  void
-   */
-  public function testBuildExtractCompare_mysql4() {
-    // 1) Build a database from definition A
-    $this->build_db_mysql4();
-
-    // 2) Extract database schema to definition B
-    $this->xml_content_b = mysql4::extract_schema($this->pgsql->get_dbhost(), $this->pgsql->get_dbport(), $this->pgsql->get_dbname(), $this->pgsql->get_dbuser(), $this->pgsql->get_dbpass());
-    
-    $this->write_xml_definition_to_disk();
-
-    // 3) Compare and expect zero differences between A and B
-    $this->apply_options_mysql4();
-    mysql4::build_upgrade($this->xml_file_a, $this->xml_file_b);
-    
-    $upgrade_stage1_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
-    $upgrade_stage2_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
-    $upgrade_stage3_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
-    $upgrade_stage4_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
-
-    // check for no differences as expressed in DDL / DML
-    $this->assertEquals(
-      0,
-      preg_match('/ALTER TABLE/i', $upgrade_stage1_schema1_sql),
-      "ALTER TABLE token found in upgrade_stage1_schema1_sql"
-    );
-
-    $this->assertEquals(
-      0,
-      preg_match('/INSERT INTO/i', $upgrade_stage2_data1_sql),
-      "INSERT INTO token found in upgrade_stage2_data1_sql"
-    );
-
-    $this->assertEquals(
-      0,
-      preg_match('/ALTER TABLE/i', $upgrade_stage3_schema1_sql),
-      "ALTER TABLE token found in upgrade_stage3_schema1_sql"
-    );
-    
-    $this->assertEquals(
-      0,
-      preg_match('/DELETE FROM/i', $upgrade_stage4_data1_sql),
-      "DELETE FROM token found in upgrade_stage4_data1_sql"
-    );
-    
-    
-    // 4) Check for and validate tables in resultant XML definiton
-    $this->compare_xml_definition();
   }
   
 }

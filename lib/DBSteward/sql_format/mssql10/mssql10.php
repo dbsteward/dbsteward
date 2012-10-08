@@ -8,12 +8,9 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/../sql99/sql99.php';
-require_once dirname(__FILE__) . '/../pgsql8/pgsql8.php';
-
-require_once dirname(__FILE__) . '/mssql10_diff.php';
-
 class mssql10 {
+
+  const QUOTE_CHAR = '"';
 
   public static function build($files) {
     if (!is_array($files)) {
@@ -116,7 +113,7 @@ class mssql10 {
     // function definitions
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->function AS $function) {
-        if (dbsteward::supported_function_language($function)) {
+        if (mssql10_function::has_definition($function)) {
           $ofs->write(mssql10_function::get_creation_sql($schema, $function));
         }
       }
@@ -445,6 +442,26 @@ class mssql10 {
    */
   public static function primary_key_split($primary_key_string) {
     return preg_split("/[\,\s]+/", $primary_key_string, -1, PREG_SPLIT_NO_EMPTY);
+  }
+
+  public static function get_quoted_schema_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_schema_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_table_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_table_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_column_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_column_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_function_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_function_names, self::QUOTE_CHAR);
+  }
+
+  public static function get_quoted_object_name($name) {
+    return sql99::get_quoted_name($name, dbsteward::$quote_object_names, self::QUOTE_CHAR);
   }
 }
 

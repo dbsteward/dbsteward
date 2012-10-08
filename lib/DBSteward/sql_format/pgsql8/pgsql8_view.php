@@ -20,7 +20,7 @@ class pgsql8_view {
       $ddl = "-- " . dbsteward::string_cast($node_view['description']) . "\n";
     }
 
-    $view_name = pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($node_view['name'], dbsteward::$quote_table_names);
+    $view_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_view['name']);
 
     $ddl = "CREATE OR REPLACE VIEW " . $view_name;
     $ddl .= "\n\tAS " . pgsql8_view::get_view_query($node_view) . ";\n";
@@ -39,7 +39,7 @@ class pgsql8_view {
    * @return string
    */
   public function get_drop_sql($node_schema, $node_view) {
-    $ddl = "DROP VIEW " . pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' . pgsql8_diff::get_quoted_name($node_view['name'], dbsteward::$quote_table_names) . ";\n";
+    $ddl = "DROP VIEW " . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_view['name']) . ";\n";
     return $ddl;
   }
 
