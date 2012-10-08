@@ -143,9 +143,9 @@ class xml_parser {
 
       $tag_name = $child->getName();
 
-      // functions are uniquely identified by their name and language parameters
       if (strcasecmp('function', $tag_name) == 0) {
-        $nodes = $base->xpath($tag_name . "[@name='" . $child['name'] . "' and @language='" . $child['language'] . "']");
+        $nodes = $base->xpath($tag_name . "[@name='" . $child['name'] . "']");
+
         // doesn't exist
         if (count($nodes) == 0) {
           $node = $base->addChild($tag_name, dbsteward::string_cast($child));
@@ -176,6 +176,16 @@ class xml_parser {
                 // continue 2 to go to next node in $nodes
                 continue 2;
               }
+            }
+
+            // check to make sure there aren't duplicate sqlFormats
+            $f = function ($n) { return strtolower($n['sqlFormat']); };
+            $base_formats = array_map($f, $base_node->xpath("functionDefinition"));
+            $overlay_formats = array_map($f, $child->xpath("functionDefinition"));
+
+            // if there isn't a functionDefinition with the same sqlFormat
+            if ( count(array_intersect($base_formats, $overlay_formats)) == 0 ) {
+              continue;
             }
 
             // made it through the whole parameter list without breaking out
@@ -605,7 +615,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     if (file_put_contents($tmp_file, $xml) === FALSE) {
       throw new exception("Failed to write to temporary validation file: " . $tmp_file);
     }
-    dbsteward::cmd("/usr/local/bin/xmllint --noout --dtdvalid " . $dtd_file . " " . $tmp_file . " 2>&1");
+    dbsteward::cmd("xmllint --noout --dtdvalid " . $dtd_file . " " . $tmp_file . " 2>&1");
     if ($echo_status) {
       dbsteward::console_line(1, "XML Validates (size = " . strlen($xml) . ") against $dtd_file OK");
     }
@@ -907,7 +917,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
       }
       else {
         ////dbsteward::console_line(7, 'column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default value ' . $column_node['default']);
-        $default_value = pgsql8::strip_string_quoting($default_value);
+        $default_value = format::strip_string_quoting($default_value);
       }
     }
 
@@ -1146,7 +1156,15 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     switch ($role) {
       // PUBLIC is accepted as a special placeholder for public
       case 'PUBLIC':
-        $role = 'PUBLIC';
+        if (strcasecmp(dbsteward::get_sql_format(), 'mysql5') == 0) {
+          // MySQL doesn't have a "public" role, and will attempt to create the user "PUBLIC"
+          // instead, warn and alias to ROLE_APPLICATION
+          $role = dbsteward::string_cast($db_doc->database->role->application);
+          dbsteward::console_line(1, "Warning: MySQL doesn't support the PUBLIC role, using ROLE_APPLICATION ('$role') instead.");
+        }
+        else {
+          $role = 'PUBLIC';
+        }
       break;
       case 'ROLE_APPLICATION':
         $role = dbsteward::string_cast($db_doc->database->role->application);
@@ -1256,6 +1274,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     }
 
     // mssql10 sql format conversions
+    // @TODO: apply mssql10_type_convert to function parameters/returns as well. see below mysql5 impl
     if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
       foreach ($doc->schema AS $schema) {
         // if objects are being placed in the public schema, move the schema definition to dbo
@@ -1279,8 +1298,115 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         }
       }
     }
+    // mysql5 format conversions
+    elseif (strcasecmp(dbsteward::get_sql_format(), 'mysql5') == 0) {
+      foreach ($doc->schema as $schema) {
+        foreach ($schema->table as $table) {
+          foreach ($table->column as $column) {
+            if (isset($column['type'])) {
+              list($column['type'], $column['default']) = self::mysql5_type_convert($column['type'], $column['default']);
+            }
+          }
+        }
+
+        foreach ($schema->function as $function) {
+          list($function['returns'], $_) = self::mysql5_type_convert($function['returns']);
+
+          foreach ($function->functionParameter as $param) {
+            list($param['type'], $_) = self::mysql5_type_convert($param['type']);
+          }
+        }
+      }
+    }
 
     return $doc;
+  }
+
+  /** Convert from arbitrary type notations to mysql5 specific type representations */
+  protected static function mysql5_type_convert($type, $value = null) {
+    if ($is_ai = mysql5_column::is_auto_increment($type)) {
+      $type = mysql5_column::un_auto_increment($type);
+    }
+
+    // when used in an index, varchars can only have a max of 3500 bytes
+    // so when converting types, we don't know if it might be in an index,
+    // so we play it safe
+
+    if (substr($type, -2) == '[]') {
+      $type = 'varchar(3500)';
+    }
+
+    switch (strtolower($type)) {
+      case 'bool':
+      case 'boolean':
+        // $type = 'tinyint';
+        if ($value) {
+          switch (strtolower($value)) {
+            case "'t'":
+            case 'true':
+            case '1':
+              $value = '1';
+              break;
+            case "'f'":
+            case 'false':
+            case '0':
+              $value = '0';
+              break;
+            default:
+              throw new Exception("Unknown column type boolean default {$value}");
+              break;
+          }
+        }
+        break; // boolean
+      case 'inet':
+        $type = 'varchar(16)';
+        break;
+      case 'interval':
+        $type = 'varchar(3500)';
+        break;
+      case 'character varying':
+      case 'varchar':
+        $type = 'varchar(3500)';
+        break;
+
+      // mysql's timezone support is attrocious.
+      // see: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
+      case 'timestamp without timezone':
+      case 'timestamp with timezone':
+      case 'timestamp without time zone':
+      case 'timestamp with time zone':
+        $type = 'timestamp';
+        break;
+      case 'time with timezone':
+      case 'time with time zone':
+        $type = 'time';
+        break;
+      case 'serial':
+      case 'bigserial':
+        // emulated with triggers and sequences later on in the process
+        // mysql5 interprets the 'serial' type as "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE"
+        // which is dumb compared to the emulation with triggers/sequences to act more like pgsql's
+        break;
+      case 'uuid':
+        // 8 digits, 3 x 4 digits, 12 digits = 32 digits + 4 hyphens = 36 chars
+        $type = 'varchar(40)';
+        break;
+    }
+
+    // character varying(N) => varchar(N)
+    // $type = preg_replace('/character varying\((.+)\)/i','varchar($1)',$type);
+
+    // mysql doesn't understand epoch
+    if (isset($value) && strcasecmp($value, "'epoch'") == 0) {
+      // 00:00:00 is reserved for the "zero" value of a timestamp field. 01 is the closest we can get.
+      $value = "'1970-01-01 00:00:01'";
+    }
+
+    if ($is_ai) {
+      $type = (string)$type . " AUTO_INCREMENT";
+    }
+
+    return array($type, $value);
   }
 
   protected static function mssql10_type_convert(&$column) {

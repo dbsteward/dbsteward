@@ -261,7 +261,7 @@ class dbx {
         $primary_key_columns = preg_split("/[\,\s]+/", $node_table['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
         $primary_key_list = '';
         foreach ($primary_key_columns AS $primary_key_column) {
-          $primary_key_list .= pgsql8_diff::get_quoted_name($primary_key_column, dbsteward::$quote_column_names) . ', ';
+          $primary_key_list .= pgsql8::get_quoted_column_name($primary_key_column) . ', ';
         }
         $primary_key_list = substr($primary_key_list, 0, -2);
 
@@ -425,7 +425,7 @@ class dbx {
     // filter out versions of functon in languages that are not relevant to the current format being processed
     $filtered_nodes = array();
     foreach ($nodes as $node) {
-      if (dbsteward::supported_function_language($node)) {
+      if (format_function::has_definition($node)) {
         $filtered_nodes[] = $node;
       }
     }
@@ -465,15 +465,15 @@ class dbx {
 
   public static function &get_functions(&$node_schema) {
     $nodes = $node_schema->xpath("function");
+
     // filter out versions of functon in languages that are not relevant to the current format being processed
     $filtered_nodes = array();
     foreach ($nodes as $node) {
-      if (dbsteward::supported_function_language($node)) {
+      if (format_function::has_definition($node)) {
         $filtered_nodes[] = $node;
       }
     }
-    $nodes = $filtered_nodes;
-    return $nodes;
+    return $filtered_nodes;
   }
 
   public static function &get_function_parameter(&$node_function, $name, $create_if_not_exist = FALSE) {
@@ -530,7 +530,7 @@ class dbx {
     foreach ($node_table->column AS $column) {
       if (isset($column['unique']) && strcasecmp($column['unique'], 'true') == 0) {
         $unique_index = new SimpleXMLElement('<index/>');
-        $unique_index['name'] = pgsql8::index_name($node_table['name'], $column['name'], 'key');
+        $unique_index['name'] = format_index::index_name($node_table['name'], $column['name'], 'key');
         $unique_index['unique'] = 'true';
         $unique_index['using'] = 'btree';
         $unique_index->addChild('indexDimension', $column['name']);
@@ -712,11 +712,11 @@ class dbx {
    * @return string
    */
   public static function primary_key_expression($node_schema, $node_table, $data_row_columns, $data_row) {
-    $primary_keys = pgsql8_table::primary_key_columns($node_table);
+    $primary_keys = format_table::primary_key_columns($node_table);
     $primary_key_index = xml_parser::data_row_overlay_primary_key_index($primary_keys, $data_row_columns, $data_row_columns);
 
     // figure out the primary key expression
-    $primary_key_expression = '';
+    $primary_key_expression = array();
     for ($i = 0; $i < count($primary_keys); $i++) {
       if (!isset($primary_key_index[$primary_keys[$i]])) {
         throw new exception("primar key column named " . $primary_keys[$i] . " not found in primary_key_index");
@@ -729,28 +729,15 @@ class dbx {
       // get the type of the column, chasing foreign keys if necessary
       $node_column = dbx::get_table_column($node_table, $primary_column_name);
 
-      if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
-        $value_type = pgsql8_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
-        $primary_key_expression .= pgsql8_diff::get_quoted_name($primary_column_name, dbsteward::$quote_column_names) . ' = ' . pgsql8::value_escape($value_type, $data_row->col[$column_index]);
-      }
-      else if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
-        $value_type = mssql10_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
-        $primary_key_expression .= mssql10_diff::get_quoted_name($primary_column_name, dbsteward::$quote_column_names) . ' = ' . mssql10::value_escape($value_type, $data_row->col[$column_index]);
-      }
-      else {
-        throw new exception("Unknown sql_format: " . dbsteward::get_sql_format());
-      }
-
-      if ($i < count($primary_keys) - 1) {
-        $primary_key_expression .= ' AND ';
-      }
+      $value_type = format_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
+      $primary_key_expression[] = format::get_quoted_column_name($primary_column_name) . ' = ' . format::value_escape($value_type, $data_row->col[$column_index]);
     }
 
-    if (strlen($primary_key_expression) == 0) {
+    if (count($primary_key_expression) == 0) {
       throw new exception($node_table['name'] . " primary_key_expression is empty, determinate loop failed");
     }
 
-    return $primary_key_expression;
+    return implode(' AND ', $primary_key_expression);
   }
 
   public static function build_staged_sql($db_doc, $ofs, $stage) {
@@ -793,6 +780,26 @@ class dbx {
   public static function get_renamed_table_old_table($old_schema, $old_table, $new_schema, $new_table) {
     $old_table = dbx::get_table($old_schema, $new_table['oldName']);
     return $old_table;
+  }
+
+  public static function to_array($thing, $key=false) {
+    if (!($thing instanceof SimpleXMLElement)) {
+      $thing = (array)$thing;
+    }
+
+    $arr = array();
+    if ($key === false) {
+      foreach ($thing as $child) {
+        $arr[] = $child;
+      }
+    }
+    else {
+      foreach ($thing as $child) {
+        $arr[] = $child[$key];
+      }
+    }
+
+    return $arr;
   }
   
 }

@@ -42,7 +42,7 @@ class pgsql8_column extends sql99_column {
    */
   public function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true, $include_default_nextval = TRUE) {
     $column_type = pgsql8_column::column_type($db_doc, $node_schema, $node_table, $node_column, $foreign);
-    $definition = pgsql8_diff::get_quoted_name($node_column['name'], dbsteward::$quote_column_names) . ' ' . $column_type;
+    $definition = pgsql8::get_quoted_column_name($node_column['name']) . ' ' . $column_type;
 
     if (strlen($node_column['default']) > 0) {
       if (! $include_default_nextval && static::has_default_nextval($node_table, $node_column)) {
@@ -184,35 +184,7 @@ class pgsql8_column extends sql99_column {
 
     return $default_is_now;
   }
-  
-  /**
-   * Return DML to set serial start value if defined
-   *
-   * @param  $schema
-   * @param  $table
-   * @param  $column
-   *
-   * @return string DML to set serial starts
-   */
-  public static function get_serial_start_dml($schema, $table, $column = NULL) {
-    $sql = NULL;
-    if ( $column === NULL ) {
-      foreach ($table->column AS $column) {
-        $sql .= pgsql8_column::get_serial_start_dml($schema, $table, $column);
-      }
-    }
-    else if (isset($column['serialStart'])) {
-      if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, $column['type']) > 0) {
-        $sql = "-- serialStart " . $column['serialStart'] . " specified for " . $schema['name'] . "." . $table['name'] . "." . $column['name'] . "\n";
-        $sql .= "SELECT setval(pg_get_serial_sequence('" . $schema['name'] . "." . $table['name'] . "', '" . $column['name'] . "'), " . $column['serialStart'] . ", TRUE);\n";
-      }
-      else {
-        throw new exception("Unknown column type " . $column['type'] . " for column " . $column['serialStart'] . " specified for " . $schema['name'] . "." . $table['name'] . "." . $column['name'] . " is specifying serialStart");
-      }
-    }
-    return $sql;
-  }
-  
+
   public static function has_default_nextval($node_table, $node_column) {
     if ( !is_object($node_column) ) {
       var_dump($node_column);
@@ -229,6 +201,9 @@ class pgsql8_column extends sql99_column {
     return $default_nextval;
   }
 
+  public static function get_serial_start_setval_sql($schema, $table, $column) {
+    return "SELECT setval(pg_get_serial_sequence('" . $schema['name'] . "." . $table['name'] . "', '" . $column['name'] . "'), " . $column['serialStart'] . ", TRUE);";
+  }
 }
 
 ?>

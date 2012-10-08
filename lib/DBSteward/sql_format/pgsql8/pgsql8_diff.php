@@ -8,16 +8,6 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/pgsql8_dump_loader.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_functions.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_indexes.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_languages.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_sequences.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_tables.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_types.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_triggers.php';
-require_once dirname(__FILE__) . '/pgsql8_diff_views.php';
-
 class pgsql8_diff extends sql99_diff{
 
   /**
@@ -454,22 +444,6 @@ class pgsql8_diff extends sql99_diff{
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
         pgsql8_diff_tables::diff_data($ofs, $old_schema, $new_schema);
       }
-    }
-  }
-
-  /**
-   * returns if quote_name is true then returns quoted name otherwise returns the original name
-   *
-   * @param name name
-   * @param quote_name whether the name should be quoted
-   *
-   * @return string
-   */
-  public static function get_quoted_name($name, $quote_name) {
-    if ( $quote_name ) {
-      return ("\"" . $name . "\"");
-    } else {
-      return $name;
     }
   }
 

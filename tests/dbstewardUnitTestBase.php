@@ -12,12 +12,10 @@ require_once 'PHPUnit/Framework/TestSuite.php';
 
 require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 
-dbsteward::load_sql_formats();
-
 require_once __DIR__ . '/dbsteward_sql99_connection.php';
 require_once __DIR__ . '/dbsteward_pgsql8_connection.php';
 require_once __DIR__ . '/dbsteward_mssql10_connection.php';
-require_once __DIR__ . '/dbsteward_mysql4_connection.php';
+require_once __DIR__ . '/dbsteward_mysql5_connection.php';
 
 class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
@@ -27,6 +25,10 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
   protected $xml_file_a;
   protected $xml_file_b;
+
+  protected $pgsql8;
+  protected $mssql10;
+  protected $mysql5;
 
   protected function setUp() {
     if ( !is_dir(__DIR__ . '/testdata') ) {
@@ -38,9 +40,9 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->xml_file_b = __DIR__ . '/testdata/unit_test_xml_b.xml';
     file_put_contents($this->xml_file_b, $this->xml_content_b);
     
-    $this->pgsql = new dbsteward_pgsql8_connection();
-    $this->mssql = new dbsteward_mssql10_connection();
-    $this->mysql = new dbsteward_mysql4_connection();
+    $this->pgsql8 = new dbsteward_pgsql8_connection();
+    $this->mssql10 = new dbsteward_mssql10_connection();
+    $this->mysql5 = new dbsteward_mysql5_connection();
     
     // be sure to reset dbsteward runtime tracking variables every time
     pgsql8::$table_slony_ids = array();
@@ -51,9 +53,32 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected function tearDown() {
     // make sure connection is closed to DB can be dropped
     // when running multiple tests
-    $this->pgsql->close_connection();
-    $this->mssql->close_connection();
-    $this->mysql->close_connection();
+    $this->mssql10->close_connection();
+  }
+
+  protected function set_xml_content_a($xml) {
+    $this->xml_content_a = $xml;
+    file_put_contents($this->xml_file_a, $xml);
+  }
+  protected function set_xml_content_b($xml) {
+    $this->xml_content_b = $xml;
+    file_put_contents($this->xml_file_b, $xml);
+  }
+
+  protected function build_db($format) {
+    return call_user_func(array($this, "build_db_$format"));
+  }
+
+  protected function apply_options($format) {
+    return call_user_func(array($this, "apply_options_$format"));
+  }
+
+  protected function upgrade_db($format) {
+    return call_user_func(array($this, "upgrade_db_$format"));
+  }
+
+  protected function get_connection($format) {
+    return $this->$format;
   }
   
   protected function apply_options_pgsql8() {
@@ -69,10 +94,10 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     // build the DDL first, incase dbsteward code wants to throw about something
     pgsql8::build($this->xml_file_a);
     
-    $this->pgsql->create_db();
+    $this->pgsql8->create_db();
 
     // build initial "A" database
-    $this->pgsql->run_file(__DIR__ . '/testdata/unit_test_xml_a_build.sql');
+    $this->pgsql8->run_file(__DIR__ . '/testdata/unit_test_xml_a_build.sql');
   }
 
   protected function upgrade_db_pgsql8() {
@@ -82,10 +107,10 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
 
     // upgrade database to "B" with each stage file
-    $this->pgsql->run_file(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
-    $this->pgsql->run_file(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
-    $this->pgsql->run_file(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
-    $this->pgsql->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
+    $this->pgsql8->run_file(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
+    $this->pgsql8->run_file(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
+    $this->pgsql8->run_file(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
+    $this->pgsql8->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
     
     //@TODO: confirm tables defined in B are present
   }
@@ -105,10 +130,10 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     // build the DDL first, incase dbsteward code wants to throw about something
     mssql10::build($this->xml_file_a);
     
-    $this->mssql->create_db();
+    $this->mssql10->create_db();
 
     // build initial "A" database
-    $this->mssql->run_file(__DIR__ . '/testdata/unit_test_xml_a_build.sql');
+    $this->mssql10->run_file(__DIR__ . '/testdata/unit_test_xml_a_build.sql');
   }
 
   protected function upgrade_db_mssql10() {
@@ -118,44 +143,44 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     mssql10::build_upgrade($this->xml_file_a, $this->xml_file_b);
     
     // upgrade database to "B" with each stage file
-    $this->mssql->run_file(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
-    $this->mssql->run_file(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
-    $this->mssql->run_file(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
-    $this->mssql->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
+    $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
+    $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
+    $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
+    $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
     
     //@TODO: confirm tables defined in B are present
   }
   
-  protected function apply_options_mysql4() {
-    dbsteward::set_sql_format('mysql4');
+  protected function apply_options_mysql5() {
+    dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
   }
   
-  protected function build_db_mysql4() {
-    $this->apply_options_mysql4();
+  protected function build_db_mysql5() {
+    $this->apply_options_mysql5();
     
     // build the DDL first, incase dbsteward code wants to throw about something
-    mysql4::build($this->xml_file_a);
+    mysql5::build($this->xml_file_a);
     
-    $this->mysql->create_db();
+    $this->mysql5->create_db();
 
     // build initial "A" database
-    $this->mysql->run_file(__DIR__ . '/testdata/unit_test_xml_a_build.sql');
+    $this->mysql5->run_file(__DIR__ . '/testdata/unit_test_xml_a_build.sql');
   }
 
-  protected function upgrade_db_mysql4() {
-    $this->apply_options_mysql4();
+  protected function upgrade_db_mysql5() {
+    $this->apply_options_mysql5();
     
     // build the upgrade DDL first, incase dbsteward code wants to throw about something
-    mysql4::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    mysql5::build_upgrade($this->xml_file_a, $this->xml_file_b);
     
     // upgrade database to "B" with each stage file
-    $this->mysql->run_file(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
-    $this->mysql->run_file(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
-    $this->mysql->run_file(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
-    $this->mysql->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
+    $this->mysql5->run_file(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
+    $this->mysql5->run_file(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
+    $this->mysql5->run_file(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
+    $this->mysql5->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
     
     //@TODO: confirm tables defined in B are present
   }
