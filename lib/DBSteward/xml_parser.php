@@ -350,6 +350,17 @@ class xml_parser {
       }
     }
 
+    // when compositing table definitions
+    // columns, constraints, grants, etc added after initial table definition will be out of order and therefore not DTD valid
+    // if the base was a table element, rebuild it's children in DTD-valid order
+    if (strcasecmp($base->getName(), 'table') == 0) {
+      static::file_sort_reappend_child($base, 'index');
+      static::file_sort_reappend_child($base, 'constraint');
+      static::file_sort_reappend_child($base, 'privilege_function');
+      static::file_sort_reappend_child($base, 'grant');
+      static::file_sort_reappend_child($base, 'rows');
+    }
+
     return TRUE;
   }
 
