@@ -1172,7 +1172,9 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
             // this is cleverville:
             // without having to modify the 450000 calls to role_enum
             // return role->owner when a role macro is not found and there is no custom role called $role
-            return $db_doc->database->role->owner;
+            $owner = $db_doc->database->role->owner;
+            dbsteward::console_line(1, "Warning: Ignoring custom roles. Role '$role' is being overridden by ROLE_OWNER ('$owner').");
+            return $owner;
           }
         }
         throw new exception("Unknown role enumeration: " . $role);

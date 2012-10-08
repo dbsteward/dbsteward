@@ -56,7 +56,7 @@ class dbsteward {
   public static $create_languages = FALSE;
   public static $require_slony_id = FALSE;
   public static $output_file_statement_limit = 900;
-  public static $ignore_custom_roles = TRUE;
+  public static $ignore_custom_roles = FALSE;
   // when true, custom roles not found will be turned in to database->role->owner
   public static $require_verbose_interval_notation = FALSE;
   public static $quote_schema_names = FALSE;
@@ -181,6 +181,7 @@ Database definition extraction utilities
       "singlestageupgrade::",
       "maxstatementsperfile::",
       "ignoreoldname::",
+      "ignorecustomroles::",
       "dbdatadiff::",
       "xmlsort::",
       "xmlconvert::"
@@ -226,6 +227,10 @@ Database definition extraction utilities
     
     if (isset($options["ignoreoldname"])) {
       dbsteward::$ignore_oldname = TRUE;
+    }
+
+    if (isset($options["ignorecustomrole"])) {
+      dbsteward::$ignore_custom_roles = TRUE;
     }
     
     if (isset($options["requireslonyid"])) {
