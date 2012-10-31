@@ -40,7 +40,7 @@ class dbsteward {
   public function set_sql_format($format) {
     if ( dbsteward::sql_format_exists($format) ) {
       active_sql_format_autoloader::init($format);
-      dbsteward::$sql_format= $format;
+      dbsteward::$sql_format = $format;
     }
     else {
       throw new exception("Unknown SQL format mode: " . $format);
@@ -202,6 +202,9 @@ Database definition extraction utilities
     ///// set the global SQL format
     if (isset($options["sqlformat"])) {
       dbsteward::set_sql_format($options["sqlformat"]);
+    } else {
+      // need to call set_sql_format for the magic autoloader to be initialized
+      dbsteward::set_sql_format(dbsteward::$sql_format);
     }
 
 
