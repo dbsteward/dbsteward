@@ -127,7 +127,7 @@ class mysql5_db {
   }
 
   public function get_constraints($db_table) {
-    $constraints = $this->query("SELECT GROUP_CONCAT(column_name ORDER BY position_in_unique_constraint, seq_in_index) AS columns,
+    $constraints = $this->query("SELECT GROUP_CONCAT(DISTINCT column_name ORDER BY position_in_unique_constraint, seq_in_index) AS columns,
                                         statistics.table_name, table_constraints.constraint_name, index_name, constraint_type, key_column_usage.referenced_table_name,
                                         GROUP_CONCAT(referenced_column_name ORDER BY position_in_unique_constraint) as referenced_columns,
                                         update_rule, delete_rule
