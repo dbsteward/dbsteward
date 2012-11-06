@@ -48,8 +48,7 @@ class mysql5_db {
   }
 
   public function uses_sequences() {
-    $table_name = mysql5_sequence::TABLE_NAME;
-    return $this->query("SELECT COUNT(*) FROM tables WHERE table_name = '$table_name'", array(), 'scalar') != 0;
+    return $this->query("SELECT COUNT(*) FROM tables WHERE table_schema = ? and table_name = ?", array($this->dbname, mysql5_sequence::TABLE_NAME), 'scalar') != 0;
   }
 
   public function get_sequences() {
