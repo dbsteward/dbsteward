@@ -1098,7 +1098,7 @@ class pgsql8 extends sql99 {
    * @return string pulled db schema from database, in dbsteward format
    */
   public function extract_schema($host, $port, $database, $user, $password) {
-    dbsteward::console_line(1, "Connecting to " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
+    dbsteward::console_line(1, "Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
       // @TODO: mask the password somehow without requiring a PHP extension
@@ -1133,6 +1133,7 @@ class pgsql8 extends sql99 {
       ORDER BY schemaname, tablename;";
     $rs = pgsql8_db::query($sql);
     while (($row = pg_fetch_assoc($rs)) !== FALSE) {
+      dbsteward::console_line(3, "Analyzing " . $row['schemaname'] . "." $row['tablename']);
       // schemaname     |        tablename        | tableowner | tablespace | hasindexes | hasrules | hastriggers
       // create the schema if it is missing
       $nodes = $doc->xpath("schema[@name='" . $row['schemaname'] . "']");
@@ -1557,7 +1558,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     if (!is_array($files)) {
       $files = array($files);
     }
-    dbsteward::console_line(1, "Connecting to " . $host . ':' . $database . ' as ' . $user);
+    dbsteward::console_line(1, "Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
       // @TODO: mask the password somehow without requiring a PHP extension

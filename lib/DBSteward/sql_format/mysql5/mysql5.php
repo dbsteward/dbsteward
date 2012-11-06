@@ -306,7 +306,7 @@ class mysql5 {
   }
 
   public function extract_schema($host, $port, $database, $user, $password) {
-    dbsteward::console_line(1, "Connecting to " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
+    dbsteward::console_line(1, "Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ( $password === FALSE ) {
       echo "Password: ";
@@ -361,6 +361,7 @@ class mysql5 {
       return $name;
     };
     foreach ( $db->get_tables() as $db_table ) {
+      dbsteward::console_line(3, "Analyzing " . $db_table->table_name);
       $node_table = $node_schema->addChild('table');
       $node_table['name'] = $db_table->table_name;
       $node_table['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
@@ -480,6 +481,7 @@ class mysql5 {
             $node_constraint['definition'] = $def;
           }
           else {
+            var_dump($db_constraint);
             throw new Exception("Unexpected: Foreign key constraint {$db_constraint->constraint_name} has mismatched columns");
           }
         }
