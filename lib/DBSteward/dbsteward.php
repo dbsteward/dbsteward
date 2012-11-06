@@ -246,20 +246,24 @@ Database definition extraction utilities
 
 
     ///// sql_format-specific default options
+    $dbport = FALSE;
     if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
       dbsteward::$quote_schema_names = FALSE;
       dbsteward::$quote_table_names = FALSE;
       dbsteward::$quote_column_names = FALSE;
+      $dbport = '5432';
     }
     else if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
       // needed for MSSQL keyword-named-columns like system_user
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;
+      $dbport = '1433';
     }
     else if (strcasecmp(dbsteward::get_sql_format(), 'mysql5') == 0) {
       dbsteward::$quote_schema_names = TRUE;
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;
+      $dbport = '3306';
     }
     else if (strcasecmp(dbsteward::get_sql_format(), 'oracle10g') == 0) {
       dbsteward::$quote_schema_names = TRUE;
@@ -320,7 +324,7 @@ Database definition extraction utilities
       && strlen($options["dbhost"]) > 0) {
       $dbhost = $options["dbhost"];
     }
-    $dbport = '5432';
+    // $dbport set in sql_format defaults section
     if (isset($options["dbport"])
       && strlen($options["dbport"]) > 0) {
       $dbport = $options["dbport"];

@@ -85,34 +85,35 @@ http://dbsteward.org/
       </description>
       
       <lead user="nkiraly" name="Nicholas Kiraly" email="kiraly.nicholas@gmail.com" />
+      <developer user="austinhyde" name="Austin Hyde" email="austin109@gmail.com" />
+
       <license>http://www.opensource.org/licenses/bsd-license.php Simplified BSD License</license>
       
       <version release="${package.version}" api="${package.api_version}" />
       <stability release="beta" api="beta" />
       
       <dependencies>
-        <php minimum_version="5.2.0" />
+        <php minimum_version="5.3.0" />
         <pear minimum_version="1.6.0" />
       </dependencies>
       
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
       
-      <changelog version="1.2.0" date="2012-07-03" license="Simplified BSD License">
-DBSteward 1.2 development version
+      <changelog version="1.2.0" date="2012-11-06" license="Simplified BSD License">
+DBSteward 1.2.0 Release
 
-*** In this release we drop support for MySQL 4 in favor of MySQL 5
-
-Supported Database Platform DDL generation:
+Supported Platform DDL Generation:
 * pgsql8    - PostgreSQL 8
 * mssql10   - Microsoft SQL Server 2008
 * mysql5    - MySQL 5
 
-Stubbed Database Platform DDL generation:
+Stubbed Platform DDL generation:
 * oracle10g - Oracle 10g
 
-Supported db structure dump into DBSteward XML:
-* pgsql8
-* mysqlx4
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
       </changelog>
       
       <changelog version="1.1.2" date="2012-05-03" license="Simplified BSD License">

@@ -19,7 +19,7 @@
     <const name="MSSQL10_DBPASS_MANAGEMENT" value="password1"/>
     
     <const name="MYSQL5_DBHOST" value="db-mysql5.dev"/>
-    <const name="MYSQL5_DBPORT" value="1433"/>
+    <const name="MYSQL5_DBPORT" value="3306"/>
     <const name="MYSQL5_DBNAME" value="dbsteward_phpunit"/>
     <const name="MYSQL5_DBUSER" value="deployment"/>
     <const name="MYSQL5_DBPASS" value="password1"/>
