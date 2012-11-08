@@ -70,7 +70,7 @@ class mysql5_constraint extends sql99_constraint {
   }
 
   public static function get_reference_option_sql($ref_opt) {
-    // @TODO: "ON UPDATE|DELETE SET DEFAULT" is not supported by mysql
+    // @TODO: "SET DEFAULT" is not supported by mysql
     return strtoupper(str_replace('_',' ',$ref_opt));
   }
 

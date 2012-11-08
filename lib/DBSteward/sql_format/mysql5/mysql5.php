@@ -457,10 +457,10 @@ class mysql5 {
 
             // RESTRICT is the default, leave it implicit if possible
             if ( strcasecmp($db_constraint->delete_rule, 'restrict') !== 0 ) {
-              $node_column['foreignOnDelete'] = $db_constraint->delete_rule;
+              $node_column['foreignOnDelete'] = str_replace(' ', '_', $db_constraint->delete_rule);
             }
             if ( strcasecmp($db_constraint->update_rule, 'restrict') !== 0 ) {
-              $node_column['foreignOnUpdate'] = $db_constraint->update_rule;
+              $node_column['foreignOnUpdate'] = str_replace(' ', '_', $db_constraint->update_rule);
             }
           }
           elseif ( count($db_constraint->referenced_columns) > 1
