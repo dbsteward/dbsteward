@@ -454,7 +454,6 @@ class mysql5 {
             $node_column['foreignColumn'] = $ref_column;
             unset($node_column['type']); // inferred from referenced column
             $node_column['foreignKeyName'] = $db_constraint->constraint_name;
-            $node_column['foreignIndexName'] = $db_constraint->index_name;
 
             // RESTRICT is the default, leave it implicit if possible
             if ( strcasecmp($db_constraint->delete_rule, 'restrict') !== 0 ) {
@@ -473,8 +472,7 @@ class mysql5 {
             $node_constraint['foreignSchema'] = 'public';
             $node_constraint['foreignTable'] = $db_constraint->referenced_table_name;
             
-            $def = mysql5::get_quoted_object_name($db_constraint->index_name) . ' ';
-            $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns));
+            $def = '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns));
             $def.= ') REFERENCES ' . mysql5::get_quoted_table_name($db_constraint->referenced_table_name);
             $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns));
             $def.= ') ON DELETE ' . $db_constraint->delete_rule . ' ON UPDATE ' . $db_constraint->update_rule;
