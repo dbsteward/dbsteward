@@ -48,8 +48,7 @@ class mysql5_db {
   }
 
   public function uses_sequences() {
-    $table_name = mysql5_sequence::TABLE_NAME;
-    return $this->query("SELECT COUNT(*) FROM tables WHERE table_name = '$table_name'", array(), 'scalar') != 0;
+    return $this->query("SELECT COUNT(*) FROM tables WHERE table_schema = ? and table_name = ?", array($this->dbname, mysql5_sequence::TABLE_NAME), 'scalar') != 0;
   }
 
   public function get_sequences() {
@@ -108,7 +107,7 @@ class mysql5_db {
   public function get_indices($db_table) {
     // only show those indexes which are not keys/constraints, unless it's a unique constraint
     $indices = $this->query("SELECT statistics.table_name,
-                                          GROUP_CONCAT(statistics.column_name ORDER BY seq_in_index) AS columns,
+                                          GROUP_CONCAT(DISTINCT statistics.column_name ORDER BY seq_in_index) AS columns,
                                           NOT statistics.non_unique AS 'unique', statistics.index_name,
                                           statistics.nullable, statistics.comment, statistics.index_type
                                    FROM statistics
@@ -128,21 +127,20 @@ class mysql5_db {
   }
 
   public function get_constraints($db_table) {
-    $constraints = $this->query("SELECT GROUP_CONCAT(column_name ORDER BY position_in_unique_constraint, seq_in_index) AS columns,
-                                        statistics.table_name, table_constraints.constraint_name, index_name, constraint_type, key_column_usage.referenced_table_name,
-                                        GROUP_CONCAT(referenced_column_name ORDER BY position_in_unique_constraint) as referenced_columns,
-                                        update_rule, delete_rule
-                                  FROM statistics
-                                   INNER JOIN key_column_usage USING (table_schema, table_name, column_name)
-                                   INNER JOIN table_constraints USING (table_schema, table_name, constraint_name)
-                                   LEFT OUTER JOIN referential_constraints
-                                           ON referential_constraints.constraint_schema = statistics.table_schema
-                                          AND referential_constraints.constraint_name = table_constraints.constraint_name
-                                          AND referential_constraints.table_name = statistics.table_name
-                                  WHERE statistics.table_schema = ?
-                                   AND statistics.table_name = ?
+    $constraints = $this->query("SELECT constraint_type, table_constraints.table_name, table_constraints.constraint_name,
+                                        GROUP_CONCAT(DISTINCT key_column_usage.column_name ORDER BY ordinal_position) as columns,
+                                        key_column_usage.referenced_table_name, update_rule, delete_rule,
+                                        GROUP_CONCAT(DISTINCT referenced_column_name ORDER BY ordinal_position) as referenced_columns
+                                 FROM table_constraints
+                                  INNER JOIN key_column_usage USING (table_schema, table_name, constraint_name)
+                                  LEFT OUTER JOIN referential_constraints
+                                                 ON referential_constraints.constraint_schema = table_constraints.table_schema
+                                                AND referential_constraints.constraint_name = table_constraints.constraint_name
+                                                AND referential_constraints.table_name = table_constraints.table_name
+                                 WHERE table_constraints.table_schema = ?
+                                   AND table_constraints.table_name = ?
                                    AND (table_constraints.constraint_type != 'UNIQUE')
-                                  GROUP BY index_name;", array($this->dbname, $db_table->table_name));
+                                 GROUP BY constraint_name;", array($this->dbname, $db_table->table_name));
 
     foreach ($constraints as &$constraint) {
       // massage the output
