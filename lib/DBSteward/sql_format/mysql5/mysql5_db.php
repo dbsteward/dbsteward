@@ -107,7 +107,7 @@ class mysql5_db {
   public function get_indices($db_table) {
     // only show those indexes which are not keys/constraints, unless it's a unique constraint
     $indices = $this->query("SELECT statistics.table_name,
-                                          GROUP_CONCAT(statistics.column_name ORDER BY seq_in_index) AS columns,
+                                          GROUP_CONCAT(DISTINCT statistics.column_name ORDER BY seq_in_index) AS columns,
                                           NOT statistics.non_unique AS 'unique', statistics.index_name,
                                           statistics.nullable, statistics.comment, statistics.index_type
                                    FROM statistics
