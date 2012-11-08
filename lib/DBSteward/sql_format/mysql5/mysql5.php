@@ -371,9 +371,12 @@ class mysql5 {
       foreach ( $db->get_columns($db_table) as $db_column ) {
         $node_column = $node_table->addChild('column');
         $node_column['name'] = $db_column->column_name;
-        $node_column['description'] = $db_column->column_comment;
 
+        if (!empty($db_column->column_comment)) {
+          $node_column['description'] = $db_column->column_comment;
+        }
 
+        // returns FALSE if not serial, int/bigint if it is
         $type = $db->is_serial_column($db_table, $db_column);
         if ( !$type ) {
           $type = $db_column->column_type;
