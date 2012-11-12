@@ -1133,7 +1133,7 @@ class pgsql8 extends sql99 {
       ORDER BY schemaname, tablename;";
     $rs = pgsql8_db::query($sql);
     while (($row = pg_fetch_assoc($rs)) !== FALSE) {
-      dbsteward::console_line(3, "Analyzing " . $row['schemaname'] . "." $row['tablename']);
+      dbsteward::console_line(3, "Analyzing " . $row['schemaname'] . "." . $row['tablename']);
       // schemaname     |        tablename        | tableowner | tablespace | hasindexes | hasrules | hastriggers
       // create the schema if it is missing
       $nodes = $doc->xpath("schema[@name='" . $row['schemaname'] . "']");
