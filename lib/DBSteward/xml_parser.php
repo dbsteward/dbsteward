@@ -642,6 +642,9 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
       for ($j = $i + 1; $j < $table_list_count; $j++) {
         // if i has a dependence on j, put i at the bottom of the list
         if (self::table_has_dependency($table_list[$i], $table_list[$j])) {
+          
+          //dbsteward::console_line(7, "table_dependency_order i = $i j = $j    i (" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . ") has dependency on j (" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . ")");
+          
           $table = $table_list[$i];
           // save the old entry outside the array
           unset($table_list[$i]);
