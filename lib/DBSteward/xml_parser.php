@@ -638,18 +638,20 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     //  version 1
     /**/
     $table_list_count = count($table_list);
+    $visited = array();
     for ($i = 0; $i < $table_list_count; $i++) {
       for ($j = $i + 1; $j < $table_list_count; $j++) {
-        // if i has a dependence on j, put i at the bottom of the list
-        if (self::table_has_dependency($table_list[$i], $table_list[$j])) {
-          
-          //dbsteward::console_line(7, "table_dependency_order i = $i j = $j    i (" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . ") has dependency on j (" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . ")");
-          
-          $table = $table_list[$i];
-          // save the old entry outside the array
-          unset($table_list[$i]);
-          // delete the old entry
-          $table_list = array_merge($table_list, array($table));
+        // if i has a dependence on j, and j has not been moved yet, move j before i
+        if (self::table_has_dependency($table_list[$i], $table_list[$j])
+          && !in_array($table_list[$j]['schema']['name'].$table_list[$j]['table']['name'], $visited)) {
+          // dbsteward::console_line(7, "table_dependency_order i = $i j = $j    i (" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . ") has dependency on j (" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . ")");
+
+          // remember i
+          $visited[] = $table_list[$i]['schema']['name'].$table_list[$i]['table']['name'];
+
+          // move b before a
+          $temp = array_splice($table_list, $i, $j-$i);
+          array_splice($table_list, $i+1, 0, $temp);
 
           // check the $i index again, the array has been reformed
           $i--;
