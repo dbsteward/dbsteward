@@ -183,9 +183,9 @@ class pgsql8_table extends sql99_table {
         }
         dbsteward::console_line(5, "Specifying skipped " . $column['name'] . " default expression \"" . $column['default'] . "\"");
         $sql .= "ALTER TABLE " .
-          pgsql8_diff::get_quoted_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' .
-          pgsql8_diff::get_quoted_name($node_table['name'], dbsteward::$quote_table_names) .
-          " ALTER COLUMN " . pgsql8_diff::get_quoted_name($column['name'], dbsteward::$quote_column_names) . 
+          pgsql8::get_quoted_schema_name($node_schema['name'], dbsteward::$quote_schema_names) . '.' .
+          pgsql8::get_quoted_table_name($node_table['name'], dbsteward::$quote_table_names) .
+          " ALTER COLUMN " . pgsql8::get_quoted_column_name($column['name'], dbsteward::$quote_column_names) . 
           " SET DEFAULT " . $column['default'] . "; -- column default nextval expression being added post table creation";
       }
     }
