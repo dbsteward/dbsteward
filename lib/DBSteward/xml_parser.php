@@ -635,37 +635,50 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
       }
     }
 
-    //  version 1
+    // table ordering version 1
+    // table dependency by demoting dependents to the bottom
+    // with a cap for 3x total number of tables
+    // if the dependency is solvable we should get it by the second pass
     /**/
     $table_list_count = count($table_list);
     $visited = array();
     for ($i = 0; $i < $table_list_count; $i++) {
       for ($j = $i + 1; $j < $table_list_count; $j++) {
-        // if i has a dependence on j, and j has not been moved yet, move j before i
-        if (self::table_has_dependency($table_list[$i], $table_list[$j])
-          && !in_array($table_list[$j]['schema']['name'].$table_list[$j]['table']['name'], $visited)) {
+        $visited_index = $table_list[$j]['schema']['name'].$table_list[$j]['table']['name'];
+        // if i has a dependence on j, move i to the bottom of the list
+        if ( self::table_has_dependency($table_list[$i], $table_list[$j]) ) {
+          // if the table has been visited more than 3 times the number of tables, stop trying
+          if ( isset($visited[$visited_index]) && $visited[$visited_index] > $table_list_count * 3 ) {
+            dbsteward::console_line(4, "table " . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " has been processed as a dependency more than 3 times as many total tables; skipping further reordering");
+            break 1;
+          }
+
           // dbsteward::console_line(7, "table_dependency_order i = $i j = $j    i (" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . ") has dependency on j (" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . ")");
 
-          // remember i
-          $visited[] = $table_list[$i]['schema']['name'].$table_list[$i]['table']['name'];
-
-          // move b before a
-          $temp = array_splice($table_list, $i, $j-$i);
-          array_splice($table_list, $i+1, 0, $temp);
+          // increment that i table dependency was visited
+          if ( !isset($visited[$visited_index]) ) {
+            $visited[$visited_index] = 0;
+          }
+          $visited[$visited_index] += 1;
+          
+          // pull i out
+          $table = $table_list[$i];
+          unset($table_list[$i]);
+          // append i to end
+          $table_list = array_merge($table_list, array($table));
 
           // check the $i index again, the array has been reformed
           $i--;
-          break;
+          break 1;
         }
       }
     }
     /**/
 
-    //  version 2
-    // nkiraly@: there is no evidence the much more CPU / time expensive recursive sort
-    // is necessary (yet) for data dependency ordering
-    // but I'm not going to throw it away yet either
-    //    self::table_dependency_sort($table_list);
+    // table ordering version 2
+    // table dependency by recursing to find dependents and then adding all dependents to the end each unwind
+    // nkiraly@: this method guarantees dependent order, but takes much longer to branch and unwind
+    //self::table_dependency_sort($table_list);
     
     
     // pgsql8_diff::update_structure() does some pre and post changes by schema
@@ -737,8 +750,8 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
 
   public static $table_dependency_sort_depth = 0;
   public static function table_dependency_sort(&$table_list, $recursion_index = FALSE) {
-    //dbsteward::console_line(6, "ENTER table_dependency_sort()");
-    //self::$table_dependency_sort_depth++;
+    dbsteward::console_line(6, "DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "ENTER table_dependency_sort()");
+    self::$table_dependency_sort_depth++;
     for ($i = 0; $i < floor(count($table_list) / 2); $i++) {
       $append_list = array();
 
@@ -748,7 +761,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         }
         // i depends on j ?
         if (self::table_has_dependency($table_list[$i], $table_list[$j])) {
-          //dbsteward::console_line(6, "DEPTH " . self::$table_dependency_sort_depth . "\t" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . " " . $i . "\tDEPENDS ON\t" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " " . $j);
+          dbsteward::console_line(6, "DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . " " . $i . "\tDEPENDS ON\t" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " " . $j);
           $append_list = array_merge($append_list, array($table_list[$i]));
           // discard the i entry in main array
           unset($table_list[$i]);
@@ -779,8 +792,8 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         $i--;
       }
     }
-    //dbsteward::console_line(6, "RETURN table_dependency_sort()");
-    //self::$table_dependency_sort_depth--;
+    self::$table_dependency_sort_depth--;
+    dbsteward::console_line(6, "DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "RETURN table_dependency_sort()");
   }
 
   /**
