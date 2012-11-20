@@ -99,6 +99,23 @@ http://dbsteward.org/
       
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
       
+      <changelog version="1.2.1" date="2012-11-20" license="Simplified BSD License">
+DBSteward 1.2.1 Release
+
+Supported Platform DDL Generation:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Stubbed Platform DDL generation:
+* oracle10g - Oracle 10g
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
+      
       <changelog version="1.2.0" date="2012-11-06" license="Simplified BSD License">
 DBSteward 1.2.0 Release
 
