@@ -82,6 +82,7 @@ Database upgrade DDL is generated from source
 XML, without connecting to the target database.
 
 http://dbsteward.org/
+
       </description>
       
       <lead user="nkiraly" name="Nicholas Kiraly" email="kiraly.nicholas@gmail.com" />
@@ -90,7 +91,7 @@ http://dbsteward.org/
       <license>http://www.opensource.org/licenses/bsd-license.php Simplified BSD License</license>
       
       <version release="${package.version}" api="${package.api_version}" />
-      <stability release="beta" api="beta" />
+      <stability release="stable" api="stable" />
       
       <dependencies>
         <php minimum_version="5.3.0" />
