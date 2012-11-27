@@ -80,8 +80,13 @@ class sql99 {
    * @return string
    */
   public static function get_quoted_name($name, $quoted, $quote_char) {
-    if ( ! preg_match('/^[a-zA-Z_]\w*$/', $name) ) {
-      throw new exception("Invalid identifier: '$name'");
+    if ( preg_match('/^[a-zA-Z_]\w*$/', $name) == 0 ) {
+      if ( $quoted && preg_match('/^\w*$/', $name) > 0 ) {
+        // if the identifier is to be quoted, it can start with a number
+      }
+      else {
+        throw new exception("Invalid identifier: '$name' - You will need to quote this schema/table/column/type identifier with --quotecolumnnames etc");
+      }
     }
 
     if ( $quoted ) {
