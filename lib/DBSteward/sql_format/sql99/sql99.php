@@ -80,6 +80,8 @@ class sql99 {
    * @return string
    */
   public static function get_quoted_name($name, $quoted, $quote_char) {
+    $quoted = $quoted || dbsteward::$quote_all_names;
+    
     if ( preg_match('/^[a-zA-Z_]\w*$/', $name) == 0 ) {
       if ( $quoted && preg_match('/^\w*$/', $name) > 0 ) {
         // if the identifier is to be quoted, it can start with a number
