@@ -183,7 +183,7 @@ XML;
         ob_end_clean();
       }
       catch (Exception $ex) {
-        ob_end_flush();
+        ob_end_clean();
         throw $ex;
       }
     }
@@ -194,7 +194,7 @@ XML;
         ob_end_clean();
       }
       catch (Exception $ex) {
-        ob_end_flush();
+        ob_end_clean();
         throw $ex;
       }
     }
