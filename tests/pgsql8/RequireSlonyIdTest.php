@@ -54,6 +54,7 @@ XML;
 XML;
   private $sequence_ignore = <<<XML
 <sequence name="seq" owner="ROLE_OWNER" slonyId="IGNORE_REQUIRED"/>
+
 XML;
   private $sequence_without = <<<XML
 <sequence name="seq" owner="ROLE_OWNER"/>
@@ -70,6 +71,7 @@ XML;
         for ($k=0; $k<3; $k++) {
           $xml = $this->{'table_'.$ids[$i]}.$this->{'column_'.$ids[$j]}.$this->{'sequence_'.$ids[$k]};
           $this->common($xml);
+          $this->common('',$xml);
         }
       }
     }
@@ -83,32 +85,44 @@ XML;
         for ($k=0; $k<3; $k++) {
           $xml = $this->{'table_'.$ids[$i]}.$this->{'column_'.$ids[$j]}.$this->{'sequence_'.$ids[$k]};
           if ($i == 2 || $j == 2 || $k == 2) {
+            $obj = $i==2 ? 'table' : ($j==2 ? 'column' : 'sequence');
             try {
               $this->common($xml);
-            } catch (Exception $ex) {
-              if (stripos($ex->getMessage(), 'missing slonyId and slonyIds are required') === FALSE) {
-                $this->fail("Expecting a missing slonyId exception, got: '{$ex->getMessage()}' for\n$xml");
-              }
-              continue;
             }
-            $this->fail("Expecting a missing slonyId exception, got nothing for\n$xml");
+            catch (Exception $ex) {
+              if (stripos($ex->getMessage(), 'missing slonyId and slonyIds are required') === FALSE) {
+                $this->fail("Expecting a missing slonyId exception for the $obj during build, got: '{$ex->getMessage()}' for\n$xml");
+              }
+              try {
+                $this->common('', $xml);
+              }
+              catch (Exception $ex) {
+                if (stripos($ex->getMessage(), 'missing slonyId and slonyIds are required') === FALSE) {
+                  $this->fail("Expecting a missing slonyId exception for the $obj during upgrade, got: '{$ex->getMessage()}' for\n$xml");
+                }
+                continue;
+              }
+              $this->fail("Expecting a missing slonyId exception for the $obj during upgrade, got nothing for\n$xml");
+            }
+            $this->fail("Expecting a missing slonyId exception for the $obj during build, got nothing for\n$xml");
           }
           else {
             $this->common($xml);
+            $this->common('',$xml);
           }
         }
       }
     }
   }
 
-  /** Generates DDL for a build and upgrade given dbxml fragments **/
-  private function common($frag) {
+  /** Generates DDL for a build or upgrade given dbxml fragments **/
+  private function common($old, $new=FALSE) {
 
     pgsql8::$table_slony_ids = array();
     pgsql8::$sequence_slony_ids = array();
     pgsql8::$known_pg_identifiers = array();
 
-    $new = <<<XML
+    $xml_a = <<<XML
 <dbsteward>
   <database>
     <host>db-host</host>
@@ -129,14 +143,14 @@ XML;
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
   <schema name="dbsteward" owner="ROLE_OWNER">
-    $frag
+    $old
   </schema>
 </dbsteward>
 XML;
-    $this->set_xml_content_b($new);
-    pgsql8::build($this->xml_file_b);
+    $this->set_xml_content_a($xml_a);
 
-    $old = <<<XML
+    if ($new) {
+      $xml_b = <<<XML
 <dbsteward>
   <database>
     <host>db-host</host>
@@ -157,11 +171,33 @@ XML;
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
   <schema name="dbsteward" owner="ROLE_OWNER">
+    $new
   </schema>
 </dbsteward>
 XML;
-    $this->set_xml_content_a($old);
-    pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
+      $this->set_xml_content_b($xml_b);
+
+      ob_start();
+      try {
+        pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
+        ob_end_clean();
+      }
+      catch (Exception $ex) {
+        ob_end_flush();
+        throw $ex;
+      }
+    }
+    else {
+      ob_start();
+      try {
+        pgsql8::build($this->xml_file_a);
+        ob_end_clean();
+      }
+      catch (Exception $ex) {
+        ob_end_flush();
+        throw $ex;
+      }
+    }
   }
 }
 ?>
