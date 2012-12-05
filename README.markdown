@@ -5,7 +5,7 @@ Intended users are application developers and database administrators who mainta
 
 Many developers maintain complete and upgrade script versions of their application databases. Upgrade headaches or data loss are reduced by only requiring a developer to maintain a complete definition file. Creating an upgrade from version A to B becomes a compile task, where you ask DBSteward to generate SQL  changes by feeding it A and B versions of your database in XML.
 
-## **Are you technical and tired of reading this FAQ already?** Try reading the [[Crash Course]] guide before continuing.
+## **Are you technical and tired of reading this FAQ already?** Try reading the Crash Course guide before continuing: https://github.com/nkiraly/DBSteward/wiki/Crash-course
 
 
 ***
