@@ -41,6 +41,11 @@ class mysql5_table extends sql99_table {
     }
     $sql .= "  " . implode(",\n  ", $cols) . "\n)";
 
+    $opt_sql = mysql5_table::get_table_options_sql($node_schema, $node_table);
+    if (!empty($opt_sql)) {
+      $sql .= "\n" . $opt_sql;
+    }
+
     if ( strlen($node_table['description']) > 0 ) {
       $sql .= "\nCOMMENT " . mysql5::quote_string_value($node_table['description']);
     }
