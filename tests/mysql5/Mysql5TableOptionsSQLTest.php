@@ -91,7 +91,7 @@ XML;
     <tableOption sqlFormat="mysql5" name="opt_a"/>
     <tableOption sqlFormat="mysql5" name="opt_b"/>
     <tableOption sqlFormat="pgsql8" name="opt_b"/>
-    <tableOption sqlFormat="mysql5" name="opt_a"/>
+    <tableOption sqlFormat="mysql5" name="OpT_A"/>
     <column name="a" type="int"/>
   </table>
 </schema>

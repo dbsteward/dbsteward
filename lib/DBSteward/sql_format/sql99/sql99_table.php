@@ -291,7 +291,7 @@ class sql99_table {
     foreach ($node_table->tableOption as $node) {
       if ($node['sqlFormat'] != $sql_format) continue;
 
-      $name = (string)($node['name']);
+      $name = strtolower((string)($node['name']));
       $value = (string)($node['value']);
       if (empty($name)) {
         throw new Exception("tableOption of table {$node_schema['name']}.{$node_table['name']} cannot have an empty name");
