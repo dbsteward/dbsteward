@@ -72,5 +72,17 @@ SQL;
     $this->assertEquals($expected, $actual);
   }
 
+  public function testNone() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="a" owner="NOBODY">
+    <column name="a" type="int"/>
+  </table>
+</schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+    $this->assertEquals('', mysql5_table::get_table_options_sql($schema, $schema->table));
+  }
+
 }
 ?>
