@@ -84,5 +84,30 @@ XML;
     $this->assertEquals('', mysql5_table::get_table_options_sql($schema, $schema->table));
   }
 
+  public function testDuplicates() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="a" owner="NOBODY">
+    <tableOption sqlFormat="mysql5" name="opt_a"/>
+    <tableOption sqlFormat="mysql5" name="opt_b"/>
+    <tableOption sqlFormat="pgsql8" name="opt_b"/>
+    <tableOption sqlFormat="mysql5" name="opt_a"/>
+    <column name="a" type="int"/>
+  </table>
+</schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+    
+    try {
+      mysql5_table::get_table_options_sql($schema, $schema->table);
+    }
+    catch (Exception $ex) {
+      if (strcasecmp($ex->getMessage(), "Duplicate tableOption 'opt_a' in table public.test is not allowed") !== 0) {
+        throw $ex;
+      }
+      return;
+    }
+    $this->fail("Was expecting duplicate tableOption exception, got nothing");
+  }
 }
 ?>

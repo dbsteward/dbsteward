@@ -296,8 +296,8 @@ class sql99_table {
       if (empty($name)) {
         throw new Exception("tableOption of table {$node_schema['name']}.{$node_table['name']} cannot have an empty name");
       }
-      if (empty($value)) {
-        dbsteward::console_line(1, "WARNING: tableOption $name of {$node_schema['name']}.{$node_table['name']} has an empty value");
+      if (array_key_exists($name, $opts)) {
+        throw new Exception("Duplicate tableOption '$name' in table {$node_schema['name']}.{$node_table['name']} is not allowed");
       }
       $opts[$name] = $value;
     }
