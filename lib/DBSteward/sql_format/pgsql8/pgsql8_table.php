@@ -32,14 +32,20 @@ class pgsql8_table extends sql99_table {
 
     foreach(dbx::get_table_columns($node_table) as $column) {
       $sql .= "\t"
-        . pgsql8_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, FALSE, TRUE, static::$include_column_default_nextval_in_create_sql)
+        . pgsql8_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, FALSE, TRUE, pgsql8_table::$include_column_default_nextval_in_create_sql)
         . ",\n";
     }
 
     $sql = substr($sql, 0, strlen($sql) - 2);
     $sql .= "\n)";
+    
+    $opt_sql = pgsql8_table::get_table_options_sql($node_schema, $node_table);
+    if (!empty($opt_sql)) {
+      $sql .= "\n" . $opt_sql;
+    }
+
     if (isset($node_table['inherits']) && strlen($node_table['inherits']) > 0) {
-      $sql .= " INHERITS " . $node_table['inherits'];
+      $sql .= "\nINHERITS " . $node_table['inherits'];
     }
     $sql .= ";";
 
