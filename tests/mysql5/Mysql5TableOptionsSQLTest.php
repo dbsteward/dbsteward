@@ -109,5 +109,28 @@ XML;
     }
     $this->fail("Was expecting duplicate tableOption exception, got nothing");
   }
+
+  public function testEmptyName() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="a" owner="NOBODY">
+    <tableOption sqlFormat="mysql5" name="" value="5"/>
+    <column name="a" type="int"/>
+  </table>
+</schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+    
+    try {
+      mysql5_table::get_table_options_sql($schema, $schema->table);
+    }
+    catch (Exception $ex) {
+      if (strcasecmp($ex->getMessage(), "tableOption of table public.test cannot have an empty name") !== 0) {
+        throw $ex;
+      }
+      return;
+    }
+    $this->fail("Was expecting empty tableOption name exception, got nothing");
+  }
 }
 ?>
