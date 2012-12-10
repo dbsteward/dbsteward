@@ -53,7 +53,7 @@
 <!ATTLIST schema owner CDATA #REQUIRED>
 <!ATTLIST schema description CDATA #IMPLIED>
 
-<!ELEMENT table (column+, index*, constraint*, privilege_function*, grant*, rows?, tableOption?)>
+<!ELEMENT table (tableOption*, column+, index*, constraint*, privilege_function*, grant*, rows?)>
 <!ATTLIST table name CDATA #REQUIRED>
 <!ATTLIST table primaryKey CDATA #REQUIRED>
 <!ATTLIST table primaryKeyName CDATA #IMPLIED>
