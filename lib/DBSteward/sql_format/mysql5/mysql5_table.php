@@ -30,7 +30,7 @@ class mysql5_table extends sql99_table {
       return "-- Skipping table '{$node_table['name']}' because MySQL does not support table inheritance";
     }
 
-    $table_name = mysql5::get_quoted_table_name($node_table['name']);
+    $table_name = mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']);
 
     $sql = "CREATE TABLE $table_name (\n";
 
@@ -130,6 +130,10 @@ XML;
     }
 
     return $triggers;
+  }
+
+  public static function format_table_option($name, $value) {
+    return strtoupper($name) . '=' . $value;
   }
 }
 ?>

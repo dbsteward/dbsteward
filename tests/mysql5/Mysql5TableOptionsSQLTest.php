@@ -36,8 +36,8 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-AUTO_INCREMENT 5
-ENGINE InnoDB
+AUTO_INCREMENT=5
+ENGINE=InnoDB
 SQL;
     
     $actual = mysql5_table::get_table_options_sql($schema, $schema->table);
@@ -64,8 +64,8 @@ CREATE TABLE `test` (
   `id` int,
   `foo` int
 )
-AUTO_INCREMENT 5
-ENGINE InnoDB
+AUTO_INCREMENT=5
+ENGINE=InnoDB
 COMMENT 'test description';
 SQL;
     $actual = mysql5_table::get_creation_sql($schema, $schema->table);
