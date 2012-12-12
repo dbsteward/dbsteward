@@ -30,6 +30,18 @@ class sql99_table {
     return $found;
   }
 
+  public function contains_table_option($node_table, $name) {
+    $format = dbsteward::get_sql_format();
+
+    foreach ($node_table->tableOption as $option) {
+      if (strcasecmp($option['sqlFormat'], $format) === 0 && strcasecmp($option['name'], $name) === 0) {
+        return $option;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Returns true if table contains given constraint $name
    *
