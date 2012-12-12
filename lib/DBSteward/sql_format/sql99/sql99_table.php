@@ -284,11 +284,17 @@ class sql99_table {
    * @param  SimpleXMLElement $node_table  The table
    * @return array            Option name => option value
    */
-  public static function get_table_options($node_schema, $node_table) {
+  public static function get_table_options($node_schema, $node_table=false) {
+    if (is_array($node_schema) && !$node_table) {
+      $nodes = $node_schema;
+    }
+    else {
+      $nodes = $node_table->tableOption;
+    }
     $sql_format = dbsteward::get_sql_format();
     $opts = array();
 
-    foreach ($node_table->tableOption as $node) {
+    foreach ($nodes as $node) {
       if ($node['sqlFormat'] != $sql_format) continue;
 
       $name = strtolower((string)($node['name']));
@@ -311,7 +317,7 @@ class sql99_table {
    * @param  SimpleXMLElement $node_table  The table
    * @return string           SQL
    */
-  public static function get_table_options_sql($node_schema, $node_table) {
+  public static function get_table_options_sql($node_schema, $node_table=false) {
     $opts = static::get_table_options($node_schema, $node_table);
     $opt_sqls = array();
     foreach ($opts as $name => $val) {
