@@ -69,6 +69,7 @@ class pgsql8_diff_tables extends sql99_diff_tables {
       $new_table = $new_table_target;
 
       if ( $old_table && $new_table) {
+        static::update_table_options($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
         self::update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table);
         self::check_inherits($ofs1, $old_table, $new_schema, $new_table);
         self::add_alter_statistics($ofs1, $old_table, $new_schema, $new_table);
@@ -90,6 +91,7 @@ class pgsql8_diff_tables extends sql99_diff_tables {
           continue;
         }
   
+        static::update_table_options($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
         self::update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table);
         self::check_inherits($ofs1, $old_table, $new_schema, $new_table);
         self::add_alter_statistics($ofs1, $old_table, $new_schema, $new_table);
@@ -1106,6 +1108,117 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     }
 
     return $list;
+  }
+
+  public static function apply_table_options_diff($ofs1, $ofs3, $schema, $table, $alter_options, $create_options, $drop_options) {
+    $schema_name = (string)$schema['name'];
+    $table_name = (string)$table['name'];
+    $fq_name = pgsql8::get_fully_qualified_table_name($schema_name, $table_name);
+
+    $actions = array();
+    $sql = "";
+
+    // create and alter have the same syntax:
+    $create_alter = array_merge($create_options, $alter_options);
+    foreach ($create_alter as $opt) {
+      switch (strtolower($opt['name'])) {
+        case 'with':
+          // ALTER TABLE ... SET (params) doesn't accept oids=true/false, unlike CREATE TABLE
+          // only WITH OIDS or WITHOUT OIDS
+          $params = pgsql8_table::parse_storage_params($opt['value']);
+          if (array_key_exists('oids',$params)) {
+            $oids = $params['oids'];
+            unset($params['oids']);
+            if (strcasecmp($oids, 'true') === 0) {
+              $actions[] = "SET WITH OIDS";
+            }
+            else {
+              $actions[] = "SET WITHOUT OIDS";
+            }
+          }
+          else {
+            // we might have gotten rid of the oids param
+            $actions[] = "SET WITHOUT OIDS";
+          }
+          // set the rest of the params normally
+          $params = pgsql8_table::compose_storage_params($params);
+          $actions[] = "SET $params";
+          break;
+        case 'tablespace':
+          $tbsp = (string)$opt['value'];
+          $actions[] = "SET TABLESPACE " . pgsql8::get_quoted_object_name($tbsp);
+          $sql .= <<<SQL
+CREATE FUNCTION __dbsteward_migrate_move_index_tablespace(TEXT,TEXT,TEXT) RETURNS void AS $$
+  DECLARE idx RECORD;
+BEGIN
+  -- need to move the tablespace of the indexes as well
+  FOR idx IN SELECT index_pgc.relname FROM pg_index
+               INNER JOIN pg_class index_pgc ON index_pgc.oid = pg_index.indexrelid
+               INNER JOIN pg_class table_pgc ON table_pgc.oid = pg_index.indrelid AND table_pgc.relname=$2
+               INNER JOIN pg_namespace ON pg_namespace.oid = table_pgc.relnamespace AND pg_namespace.nspname=$1 LOOP
+    EXECUTE 'ALTER INDEX ' || quote_ident($1) || '.' || quote_ident(idx.relname) || ' SET TABLESPACE ' || quote_ident($3) || ';';
+  END LOOP;
+END $$ LANGUAGE plpgsql;
+SELECT __dbsteward_migrate_move_index_tablespace('{$schema_name}','{$table_name}','{$tbsp}');
+DROP FUNCTION __dbsteward_migrate_move_index_tablespace(TEXT,TEXT,TEXT);
+
+SQL;
+          break;
+      }
+    }
+
+    foreach ($drop_options as $opt) {
+      switch (strtolower($opt['name'])) {
+        case 'with':
+          $params = pgsql8_table::parse_storage_params($opt['value']);
+
+          // handle oids separately, since pgsql doesn't recognise it as
+          // a storage parameter in an ALTER TABLE statement
+          if (array_key_exists('oids',$params)) {
+            $oids = $params['oids'];
+            unset($params['oids']);
+            $actions[] = "SET WITHOUT OIDS";
+          }
+
+          $names = '('.implode(',', array_keys($params)).')';
+          $actions[] = "RESET $names";
+          break;
+        case 'tablespace':
+          // the only way to switch table and index to an unknown-beforehand value
+          // is with a function that's immediately executed
+          $sql .= <<<SQL
+CREATE OR REPLACE FUNCTION __dbsteward_migrate_reset_tablespace(TEXT,TEXT) RETURNS void AS $$
+  DECLARE tbsp TEXT;
+  DECLARE idx RECORD;
+BEGIN
+  SELECT setting FROM pg_settings WHERE name='default_tablespace' INTO tbsp;
+
+  IF tbsp = '' THEN
+    tbsp := 'pg_default';
+  END IF;
+
+  EXECUTE 'ALTER TABLE ' || quote_ident($1) || '.' || quote_ident($2) || ' SET TABLESPACE ' || quote_ident(tbsp) || ';';
+
+  -- need to move the tablespace of the indexes as well
+  FOR idx IN SELECT index_pgc.relname FROM pg_index
+               INNER JOIN pg_class index_pgc ON index_pgc.oid = pg_index.indexrelid
+               INNER JOIN pg_class table_pgc ON table_pgc.oid = pg_index.indrelid AND table_pgc.relname=$2
+               INNER JOIN pg_namespace ON pg_namespace.oid = table_pgc.relnamespace AND pg_namespace.nspname=$1 LOOP
+    EXECUTE 'ALTER INDEX ' || quote_ident($1) || '.' || quote_ident(idx.relname) || ' SET TABLESPACE ' || quote_ident(tbsp) || ';';
+  END LOOP;
+END $$ LANGUAGE plpgsql;
+SELECT __dbsteward_migrate_reset_tablespace('{$schema_name}','{$table_name}');
+DROP FUNCTION __dbsteward_migrate_reset_tablespace(TEXT,TEXT);
+
+SQL;
+      }
+    }
+
+    if (!empty($actions)) {
+      $sql .= "\nALTER TABLE $fq_name\n  " . implode(",\n  ", $actions) . ";";
+    }
+
+    $ofs1->write($sql."\n");
   }
 
 }
