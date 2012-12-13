@@ -25,8 +25,8 @@ class TableOptionsSQLTest extends PHPUnit_Framework_TestCase {
     $xml = <<<XML
 <schema name="public" owner="NOBODY">
   <table name="test" primaryKey="id" description="test description">
-    <tableOption sqlFormat="pgsql8" name="on commit" value="PRESERVE ROWS"/>
     <tableOption sqlFormat="pgsql8" name="tablespace" value="schmableschpace"/>
+    <tableOption sqlFormat="pgsql8" name="with" value="(oids=true,fillfactor=70)"/>
     <tableOption sqlFormat="mysql5" name="auto_increment" value="5"/>
     <column name="id" type="int"/>
     <column name="foo" type="int"/>
@@ -42,7 +42,7 @@ CREATE TABLE "public"."test" (
 	"id" int,
 	"foo" int
 )
-ON COMMIT PRESERVE ROWS
+WITH (oids=true,fillfactor=70)
 TABLESPACE schmableschpace;
 COMMENT ON TABLE "public"."test" IS 'test description';
 SQL;

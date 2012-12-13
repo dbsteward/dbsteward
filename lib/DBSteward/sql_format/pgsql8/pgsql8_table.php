@@ -198,6 +198,24 @@ class pgsql8_table extends sql99_table {
     return $sql;
   }
 
+  public static function get_table_options($node_schema, $node_table=false) {
+    $opts = parent::get_table_options($node_schema, $node_table);
+
+    uksort($opts, function($a, $b) {
+      if (strcasecmp($a,'tablespace') === 0) {
+        return 1;
+      }
+      elseif (strcasecmp($b,'tablespace') === 0) {
+        return -1;
+      }
+      else {
+        return strcasecmp($a,$b);
+      }
+    });
+
+    return $opts;
+  }
+
   public static function parse_storage_params($param_string) {
     $params = array();
     foreach (explode(',',substr($param_string,1,-1)) as $param) {
