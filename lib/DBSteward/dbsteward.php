@@ -68,6 +68,7 @@ class dbsteward {
   public static $quote_table_names = FALSE;
   public static $quote_function_names = FALSE;
   public static $quote_column_names = FALSE;
+  public static $quote_all_names = FALSE;
   public static $only_schema_sql = FALSE;
   public static $only_data_sql = FALSE;
   public static $limit_to_tables = array();
@@ -109,6 +110,7 @@ Global Switches and Flags
   --quoteschemanames                quote schema names in SQL output
   --quotetablenames                 quote table names in SQL output
   --quotecolumnnames                quote column names in SQL output
+  --quoteallnames                   quote ALL identifiers in SQL output
 Generating SQL DDL / DML / DCL
   --xml=<database.xml> ...
   --pgdataxml=<pgdata.xml> ...      postgresql SELECT database_to_xml() result to overlay in composite definition
@@ -179,6 +181,7 @@ Database definition extraction utilities
       "quoteschemanames::",
       "quotetablenames::",
       "quotecolumnnames::",
+      "quoteallnames::",
       "onlyschemasql::",
       "onlydatasql::",
       "onlytable::",
@@ -280,6 +283,9 @@ Database definition extraction utilities
     }
     if (isset($options["quotecolumnnames"])) {
       dbsteward::$quote_column_names = TRUE;
+    }
+    if (isset($options["quoteallnames"])) {
+      dbsteward::$quote_all_names = TRUE;
     }
     
     if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') != 0) {
