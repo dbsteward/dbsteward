@@ -2,11 +2,11 @@
 <project name="DBSteward" basedir="." default="make">
 <!--
   DBSteward build definition
-  
+
   @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
   @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
 
-  
+
   Phing extension dependencies:
 
   1) domain51/Phing_d51PearPkg2Task
@@ -15,7 +15,7 @@
 
   2) PhpDocumentor
      # pear upgrade PhpDocumentor
-  
+
   3) PHPUnit
 
 -->
@@ -23,11 +23,11 @@
   <taskdef classname="phing.tasks.ext.d51PearPkg2Task" name="d51pearpkg2" />
 
   <property file=".config.properties" override="true" />
-  
+
   <property name="directory.build" value="${project.basedir}/build" />
   <property name="directory.package" value="${project.basedir}/package" />
   <property name="directory.apidocs" value="${project.basedir}/apidocs" />
-  
+
   <fileset dir="${directory.root}">
     <patternset id="files.package">
       <include name="LICENSE" />
@@ -36,7 +36,7 @@
       <include name="lib/**" />
     </patternset>
   </fileset>
-  
+
   <fileset dir="${directory.root}">
     <!-- this is a list of files that we absolutely don't want to include in our releases -->
     <patternset id="files.exclusion">
@@ -66,7 +66,7 @@
     <move file="${directory.build}/lib/DBSteward" todir="${directory.build}/"/>
     <delete dir="${directory.build}/lib/" />
   </target>
-    
+
   <target name="make_package" depends="build">
     <d51pearpkg2 dir="${directory.build}" baseinstalldir="/">
       <name>DBSteward</name>
@@ -84,22 +84,44 @@ XML, without connecting to the target database.
 http://dbsteward.org/
 
       </description>
-      
+
       <lead user="nkiraly" name="Nicholas Kiraly" email="kiraly.nicholas@gmail.com" />
       <developer user="austinhyde" name="Austin Hyde" email="austin109@gmail.com" />
 
       <license>http://www.opensource.org/licenses/bsd-license.php Simplified BSD License</license>
-      
+
       <version release="${package.version}" api="${package.api_version}" />
       <stability release="stable" api="stable" />
-      
+
       <dependencies>
         <php minimum_version="5.3.0" />
         <pear minimum_version="1.6.0" />
       </dependencies>
-      
+
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
-      
+
+      <changelog version="1.2.2" date="2012-12-17" license="Simplified BSD License">
+DBSteward 1.2.2 Release
+
+* Identifier Quoting flag
+* Table Options extraction and differencing
+* --requireslonyid enforcement during pgsql8 diffing
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Stubbed Platform DDL generation:
+* oracle10g - Oracle 10g
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
+
       <changelog version="1.2.1" date="2012-11-20" license="Simplified BSD License">
 DBSteward 1.2.1 Release
 
@@ -116,7 +138,7 @@ Supported Platform Structure Extraction into XML:
 * mysql5    - MySQL 5
 
       </changelog>
-      
+
       <changelog version="1.2.0" date="2012-11-06" license="Simplified BSD License">
 DBSteward 1.2.0 Release
 
@@ -133,7 +155,7 @@ Supported Platform Structure Extraction into XML:
 * mysql5    - MySQL 5
 
       </changelog>
-      
+
       <changelog version="1.1.2" date="2012-05-03" license="Simplified BSD License">
 --dbschemadump mode fixes for converting existing databases to DBSteward definitions
 
@@ -148,7 +170,7 @@ Stubbed Database Platform DDL generation:
 Supported db structure dump into DBSteward XML:
 * pgsql8    - PostgreSQL 8
       </changelog>
-      
+
       <changelog version="1.1.1" date="2012-04-05" license="Simplified BSD License">
 API 1.1 includes CLI and XML definition changes for stage management, based on user group feedback.
 
@@ -163,7 +185,7 @@ Stubbed Database Platform DDL generation:
 Supported db structure dump into DBSteward XML:
 * pgsql8    - PostgreSQL 8
       </changelog>
-      
+
       <changelog version="1.0.1" date="2012-02-13" license="Simplified BSD License">
 Maintenance release of DBSteward package
 
@@ -193,7 +215,7 @@ Stubbed Database Platform DDL generation:
 Supported db structure dump into DBSteward XML:
 * pgsql8    - PostgreSQL 8
       </changelog>
-        
+
       <dirroles key="bin">script</dirroles>
       <replacement path="bin/dbsteward" type="pear-config" from="@php_bin@" to="php_bin" />
       <replacement path="bin/dbsteward.php" type="pear-config" from="@php_bin@" to="php_bin" />
@@ -204,7 +226,7 @@ Supported db structure dump into DBSteward XML:
       </release>
       </d51pearpkg2>
   </target>
-  
+
   <target name="make" depends="make_package">
     <echo msg="Creating PEAR archive" />
     <delete file="${project.basedir}/DBSteward-${package.version}.tgz" />
@@ -253,12 +275,12 @@ Supported db structure dump into DBSteward XML:
     <delete dir="${directory.package}/**" />
     <delete dir="${directory.package}/" />
     <echo message="" />
-    
+
     <echo message="Removing apidocs directory..." />
     <delete dir="${directory.apidocs}/**" />
     <delete dir="${directory.apidocs}/" />
     <echo message="" />
-    
+
     <echo message="Removing testdata contents..." />
     <delete dir="${project.basedir}/tests/testdata/**" />
     <echo message="" />

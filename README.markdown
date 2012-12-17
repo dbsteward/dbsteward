@@ -62,4 +62,4 @@ It is runnable in source-checkout form, via php bin/dbsteward.php
 
 
 # How do I convert an existing database to DBSteward definition?
-An example of this process is documented in the wiki page [[Extracting Existing Database Structure]]
+An example of this process is documented in the wiki page https://github.com/nkiraly/DBSteward/wiki/Extracting-Existing-Database-Structure
