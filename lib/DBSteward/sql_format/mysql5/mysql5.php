@@ -368,6 +368,13 @@ class mysql5 {
       $node_table['description'] = $db_table->table_comment;
       $node_table['primaryKey'] = '';
 
+      foreach ( $db->get_table_options($db_table) as $name => $value ) {
+        $node_option = $node_table->addChild('tableOption');
+        $node_option['sqlFormat'] = 'mysql5';
+        $node_option['name'] = $name;
+        $node_option['value'] = $value;
+      }
+
       foreach ( $db->get_columns($db_table) as $db_column ) {
         $node_column = $node_table->addChild('column');
         $node_column['name'] = $db_column->column_name;

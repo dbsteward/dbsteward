@@ -1176,7 +1176,34 @@ class pgsql8 extends sql99 {
         $node_table = $node_schema->addChild('table');
         $node_table->addAttribute('name', $row['tablename']);
         $node_table->addAttribute('owner', self::translate_role_name($row['tableowner']));
-        // tablespace @TODO: necssary?
+
+        // extract tablespace as a tableOption
+        if (!empty($row['tablespace'])) {
+          $node_option = $node_table->addChild('tableOption');
+          $node_option->addAttribute('sqlFormat', 'pgsql8');
+          $node_option->addAttribute('name', 'tablespace');
+          $node_option->addAttribute('value', $row['tablespace']);
+        }
+
+        // extract storage parameters as a tableOption
+        $sql = "SELECT reloptions, relhasoids
+          FROM pg_catalog.pg_class
+          WHERE relname = '".$node_table['name']."' AND relnamespace = (
+            SELECT oid FROM pg_catalog.pg_namespace WHERE nspname = '".$node_schema['name']."')";
+        $params_rs = pgsql8_db::query($sql);
+        $params_row = pg_fetch_assoc($params_rs);
+        $params = array();
+        if (!empty($params_row['reloptions'])) {
+          // reloptions is formatted as {name=value,name=value}
+          $params = explode(',', substr($params_row['reloptions'],1,-1));
+        }
+        $params[] = "oids=" . (strcasecmp('t',$params_row['relhasoids']) === 0 ? 'true' : 'false');
+
+        $node_option = $node_table->addChild('tableOption');
+        $node_option->addAttribute('sqlFormat', 'pgsql8');
+        $node_option->addAttribute('name', 'with');
+        $node_option->addAttribute('value', '('.implode(',',$params).')');
+
         //hasindexes | hasrules | hastriggers  handled later
         // get columns for the table
         $sql = "SELECT

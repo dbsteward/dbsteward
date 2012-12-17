@@ -27,6 +27,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
       $new_table = $new_table_target;
 
       if ( $old_table && $new_table) {
+        static::update_table_options($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
         static::update_table_columns($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
       }
     }
@@ -46,6 +47,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
           continue;
         }
   
+        static::update_table_options($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
         static::update_table_columns($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
       }
     }
@@ -775,6 +777,52 @@ class mysql5_diff_tables extends sql99_diff_tables {
       dbx::primary_key_expression($node_schema, $node_table, $new_data_row_columns, $new_data_row),
       $old_columns
     );
+
+    return $sql;
+  }
+
+  public static function apply_table_options_diff($ofs1, $ofs3, $schema, $table, $alter_options, $create_options, $drop_options) {
+    $fq_name = mysql5::get_fully_qualified_table_name($schema['name'], $table['name']);
+
+    if (!empty($drop_options)) {
+      // if there are any that are dropped, the table must be recreated
+      // don't bother adding/changing the other options, since this will include them
+      $names = array_map(function($o){ return $o['name']; }, $drop_options);
+      $sql = "-- Table $fq_name must be recreated to drop options: " . implode(', ', $names) . "\n";
+      $sql.= mysql5_diff_tables::get_recreate_table_sql($schema, $table);
+      $ofs1->write($sql."\n");
+    }
+    else {
+      $alter_create = array_merge($alter_options, $create_options);
+      if (!empty($alter_create)) {
+        $sql = "ALTER TABLE $fq_name ";
+        $sql.= mysql5_table::get_table_options_sql($alter_create).";";
+        $ofs1->write($sql."\n");
+      }
+    }
+  }
+
+  private static function get_recreate_table_sql($schema, $table) {
+    $fq_name = mysql5::get_fully_qualified_table_name($schema['name'], $table['name']);
+    $fq_tmp_name = mysql5::get_fully_qualified_table_name($schema['name'], $table['name'].'_DBSTEWARD_MIGRATION');
+
+    // utilize MySQL's CREATE TABLE ... SELECT syntax for cleaner recreation
+    // see: http://dev.mysql.com/doc/refman/5.5/en/create-table-select.html
+    $sql = "CREATE TABLE $fq_tmp_name";
+
+    $opt_sql = mysql5_table::get_table_options_sql($schema, $table);
+    if (!empty($opt_sql)) {
+      $sql .= "\n" . $opt_sql;
+    }
+
+    if ( strlen($table['description']) > 0 ) {
+      $sql .= "\nCOMMENT " . mysql5::quote_string_value($table['description']);
+    }
+
+    $sql .= "\nSELECT * FROM $fq_name;\n";
+
+    $sql .= "DROP TABLE $fq_name;\n";
+    $sql .= "RENAME TABLE $fq_tmp_name TO $fq_name;";
 
     return $sql;
   }
