@@ -53,7 +53,7 @@
 <!ATTLIST schema owner CDATA #REQUIRED>
 <!ATTLIST schema description CDATA #IMPLIED>
 
-<!ELEMENT table (column+, index*, constraint*, privilege_function*, grant*, rows?)>
+<!ELEMENT table (tableOption*, column+, index*, constraint*, privilege_function*, grant*, rows?)>
 <!ATTLIST table name CDATA #REQUIRED>
 <!ATTLIST table primaryKey CDATA #REQUIRED>
 <!ATTLIST table primaryKeyName CDATA #IMPLIED>
@@ -125,6 +125,11 @@
 <!ATTLIST col sql (true|false) #IMPLIED>
 <!ATTLIST col null (true|false) #IMPLIED>
 <!ATTLIST col empty (true|false) #IMPLIED>
+
+<!ELEMENT tableOption EMPTY>
+<!ATTLIST tableOption sqlFormat CDATA #REQUIRED>
+<!ATTLIST tableOption name CDATA #REQUIRED>
+<!ATTLIST tableOption value CDATA #IMPLIED>
 
 <!ELEMENT privilegeFunction (#PCDATA)>
 
