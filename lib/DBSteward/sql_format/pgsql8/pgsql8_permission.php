@@ -64,12 +64,12 @@ class pgsql8_permission {
     $object_type = strtoupper($node_object->getName());
     switch($object_type) {
       case 'SCHEMA':
-        $object_name = $node_schema['name'];
+        $object_name = pgsql8::get_quoted_schema_name($node_schema['name']);
         break;
       case 'SEQUENCE':
       case 'TABLE':
       case 'VIEW':
-        $object_name = $node_schema['name'] . '.' . $node_object['name'];
+        $object_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_object['name']);
         break;
       case 'FUNCTION':
         $object_name = pgsql8_function::get_declaration($node_schema, $node_object);
@@ -100,7 +100,7 @@ class pgsql8_permission {
         implode(', ', $perms),
         $pg_object_type,
         $object_name,
-        xml_parser::role_enum($db_doc, $roles[$j]),
+        pgsql8::get_quoted_object_name(xml_parser::role_enum($db_doc, $roles[$j])),
         $with
       );
 
@@ -115,8 +115,8 @@ class pgsql8_permission {
             'GRANT',
             'USAGE',
             'SCHEMA',
-            $node_schema['name'],
-            $db_doc->database->role->readonly
+            pgsql8::get_quoted_schema_name($node_schema['name']),
+            pgsql8::get_quoted_object_name($db_doc->database->role->readonly)
           );
         }
       }
@@ -132,8 +132,8 @@ class pgsql8_permission {
             'GRANT',
             'SELECT',
             'SEQUENCE',
-            $node_schema['name'].'.'.$node_object['name'],
-            $db_doc->database->role->readonly
+            pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_object['name']),
+            pgsql8::get_quoted_object_name($db_doc->database->role->readonly)
           );
         }
       }
@@ -149,8 +149,8 @@ class pgsql8_permission {
             'GRANT',
             'SELECT',
             'TABLE',
-            $node_schema['name'].'.'.$node_object['name'],
-            $db_doc->database->role->readonly
+            pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_object['name']),
+            pgsql8::get_quoted_object_name($db_doc->database->role->readonly)
           );
         }
 
@@ -189,8 +189,8 @@ class pgsql8_permission {
                 'GRANT',
                 implode(',',$seq_priv),
                 'SEQUENCE',
-                $node_schema['name'] . '.' . $col_sequence,
-                xml_parser::role_enum($db_doc, $roles[$j]),
+                pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($col_sequence),
+                pgsql8::get_quoted_object_name(xml_parser::role_enum($db_doc, $roles[$j])),
                 $with
               );
             }
@@ -204,8 +204,8 @@ class pgsql8_permission {
                 'GRANT',
                 'SELECT',
                 'SEQUENCE',
-                $node_schema['name'] . '.' . $col_sequence,
-                $db_doc->database->role->readonly
+                pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($col_sequence),
+                pgsql8::get_quoted_object_name($db_doc->database->role->readonly)
               );
             }
           }

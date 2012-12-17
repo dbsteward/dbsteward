@@ -38,7 +38,7 @@ class mssql10_permission extends pgsql8_permission {
           // and then remove it from the list of operations to define
           if (strcasecmp($operations[$i], 'CREATE TABLE') == 0) {
             for ($j = 0; $j < count($roles); $j++) {
-              $sql .= "GRANT CREATE TABLE TO " . xml_parser::role_enum($db_doc, $roles[$j]) . ";\n";
+              $sql .= "GRANT CREATE TABLE TO " . mssql10::get_quoted_object_name(xml_parser::role_enum($db_doc, $roles[$j])) . ";\n";
             }
             unset($operations[$i]);
             $operations = array_merge($operations);
@@ -98,7 +98,7 @@ class mssql10_permission extends pgsql8_permission {
       if ( strlen($sql) > 0 ) {
         $sql .= "\n";
       }
-      $sql .= self::compile_sql_statement(strtoupper($node_permission->getName()), implode(', ', $operations), $ms_object_type, $object_name, xml_parser::role_enum($db_doc, $roles[$j]), $with);
+      $sql .= self::compile_sql_statement(strtoupper($node_permission->getName()), implode(', ', $operations), $ms_object_type, $object_name, mssql10::get_quoted_object_name(xml_parser::role_enum($db_doc, $roles[$j])), $with);
     }
 
     return $sql;
