@@ -1155,7 +1155,7 @@ class pgsql8 extends sql99 {
       ORDER BY schemaname, tablename;";
     $rs = pgsql8_db::query($sql);
     while (($row = pg_fetch_assoc($rs)) !== FALSE) {
-      dbsteward::console_line(3, "Analyzing " . $row['schemaname'] . "." . $row['tablename']);
+      dbsteward::console_line(3, "Analyze table options " . $row['schemaname'] . "." . $row['tablename']);
       // schemaname     |        tablename        | tableowner | tablespace | hasindexes | hasrules | hastriggers
       // create the schema if it is missing
       $nodes = $doc->xpath("schema[@name='" . $row['schemaname'] . "']");
@@ -1204,6 +1204,7 @@ class pgsql8 extends sql99 {
         $node_option->addAttribute('name', 'with');
         $node_option->addAttribute('value', '('.implode(',',$params).')');
 
+        dbsteward::console_line(3, "Analyze table columns " . $row['schemaname'] . "." . $row['tablename']);
         //hasindexes | hasrules | hastriggers  handled later
         // get columns for the table
         $sql = "SELECT
@@ -1250,6 +1251,7 @@ class pgsql8 extends sql99 {
           }
         }
 
+        dbsteward::console_line(3, "Analyze table indexes " . $row['schemaname'] . "." . $row['tablename']);
         // get table INDEXs
         $sql = "SELECT relname, indkey
           FROM pg_class, pg_index
@@ -1323,6 +1325,7 @@ class pgsql8 extends sql99 {
     // for all schemas, all tables - get table constraints .. PRIMARY KEYs, FOREIGN KEYs
     // makes the loop much faster to do it for the whole schema cause of crappy joins
     // @TODO: known bug - multi-column primary keys can be out of order with this query
+    dbsteward::console_line(3, "Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
     $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name, tc.is_deferrable, tc.initially_deferred, rc.match_option AS match_type, rc.update_rule AS on_update, rc.delete_rule AS on_delete, ccu.table_schema AS references_schema, ccu.table_name AS references_table, ccu.column_name AS references_field
       FROM information_schema.table_constraints tc
       LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_catalog = kcu.constraint_catalog AND tc.constraint_schema = kcu.constraint_schema AND tc.constraint_name = kcu.constraint_name
@@ -1437,6 +1440,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
   AND pg_catalog.pg_get_function_result(p.oid) NOT IN ( 'trigger' )";
     $rs_functions = pgsql8_db::query($sql);
     while (($row_fxn = pg_fetch_assoc($rs_functions)) !== FALSE) {
+      dbsteward::console_line(3, "Analyze function " . $row_fxn['Schema'] . "." . $row_fxn['Name']);
       $node_schema = dbx::get_schema($doc, $row_fxn['Schema'], TRUE);
       if ( !isset($node_schema['owner']) ) {
         $sql = "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = '" . $row_fxn['Schema'] . "'";
@@ -1481,6 +1485,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       WHERE trigger_schema NOT IN ('pg_catalog', 'information_schema');";
     $rc_trigger = pgsql8_db::query($sql);
     while (($row_trigger = pg_fetch_assoc($rc_trigger)) !== FALSE) {
+      dbsteward::console_line(3, "Analyze function " . $row_trigger['event_object_schema'] . "." . $row_trigger['event_object_schema']);
       $nodes = $doc->xpath("schema[@name='" . $row_trigger['event_object_schema'] . "']");
       if (count($nodes) != 1) {
         throw new exception("failed to find trigger schema '" . $row_trigger['event_object_schema'] . "'");
@@ -1519,6 +1524,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
 
     // find table grants and save them in the xml document
+    dbsteward::console_line(3, "Analyze table permissions ");
     $sql = "SELECT *
       FROM information_schema.table_privileges
       WHERE table_schema NOT IN ('pg_catalog', 'information_schema');";

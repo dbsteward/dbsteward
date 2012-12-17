@@ -361,7 +361,7 @@ class mysql5 {
       return $name;
     };
     foreach ( $db->get_tables() as $db_table ) {
-      dbsteward::console_line(3, "Analyzing " . $db_table->table_name);
+      dbsteward::console_line(3, "Analyze table options " . $db_table->table_name);
       $node_table = $node_schema->addChild('table');
       $node_table['name'] = $db_table->table_name;
       $node_table['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
@@ -375,6 +375,7 @@ class mysql5 {
         $node_option['value'] = $value;
       }
 
+      dbsteward::console_line(3, "Analyze table columns " . $db_table->table_name);
       foreach ( $db->get_columns($db_table) as $db_column ) {
         $node_column = $node_table->addChild('column');
         $node_column['name'] = $db_column->column_name;
@@ -409,6 +410,7 @@ class mysql5 {
       }
 
       // get all plain and unique indexes
+      dbsteward::console_line(3, "Analyze table indexes " . $db_table->table_name);
       foreach ( $db->get_indices($db_table) as $db_index ) {
 
         // implement unique indexes as unique columns
@@ -439,6 +441,7 @@ class mysql5 {
       }
 
       // get all primary/foreign keys
+      dbsteward::console_line(3, "Analyze table constraints " . $db_table->table_name);
       foreach ( $db->get_constraints($db_table) as $db_constraint ) {
         if ( strcasecmp($db_constraint->constraint_type, 'primary key') === 0 ) {
           $node_table['primaryKey'] = implode(',', $db_constraint->columns);
@@ -505,6 +508,7 @@ class mysql5 {
       }
 
       foreach ( $db->get_table_grants($db_table, $user) as $db_grant ) {
+        dbsteward::console_line(3, "Analyze table permissions " . $db_table->table_name);
         $node_grant = $node_table->addChild('grant');
         $node_grant['operation'] = $db_grant->operations;
         $node_grant['role'] = self::translate_role_name($doc, $user);
@@ -539,6 +543,7 @@ class mysql5 {
     }
 
     foreach ( $db->get_functions() as $db_function ) {
+      dbsteward::console_line(3, "Analyze function " . $db_function->routine_name);
       $node_fn = $node_schema->addChild('function');
       $node_fn['name'] = $db_function->routine_name;
       $node_fn['owner'] = 'ROLE_OWNER';
@@ -578,7 +583,8 @@ class mysql5 {
       $node_def['sqlFormat'] = 'mysql5';
     }
 
-    foreach ( $db->get_triggers() as $db_trigger ) { 
+    foreach ( $db->get_triggers() as $db_trigger ) {
+      dbsteward::console_line(3, "Analyze trigger " . $db_trigger->trigger_name);
       $node_trigger = $node_schema->addChild('trigger');
       foreach ( (array)$db_trigger as $k => $v ) {
         $node_trigger->addAttribute($k, $v);
@@ -586,6 +592,7 @@ class mysql5 {
     }
 
     foreach ( $db->get_views() as $db_view ) {
+      dbsteward::console_line(3, "Analyze view " . $db_view->view_name);
       if ( !empty($db_view->view_name) && empty($db_view->view_query) ) {
         throw new Exception("Found a view in the database with an empty query. User '$user' problaby doesn't have SELECT permissions on tables referenced by the view.");
       }
