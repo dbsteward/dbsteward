@@ -854,6 +854,13 @@ class pgsql8 extends sql99 {
       // new tables that were not previously present
       // new replicated columns that were not previously present
       foreach ($new_schema->table AS $new_table) {
+        if (empty($new_table['slonyId'])) {
+          dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'], 44) . " table missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
+          if (dbsteward::$require_slony_id) {
+            throw new exception($new_schema['name'] . '.' . $new_table['name'] . " table missing slonyId and slonyIds are required!");
+          }
+        }
+
         $old_table = NULL;
         if ( $old_schema ) {
           $old_table = dbx::get_table($old_schema, $new_table['name']);
@@ -874,6 +881,13 @@ class pgsql8 extends sql99 {
         foreach ($new_table->column AS $new_column) {
           // is a replicated sequence type
           if (preg_match(pgsql8::PATTERN_REPLICATED_COLUMN, $new_column['type']) > 0) {
+            if (empty($new_column['slonyId'])) {
+              dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'] . '.' . $new_column['name'], 44) . " serial column missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
+              if (dbsteward::$require_slony_id) {
+                throw new exception($new_schema['name'] . '.' . $new_table['name'] . '.' . $new_column['name'] . " serial column missing slonyId and slonyIds are required!");
+              }
+            }
+
             // schema/table/column not present before
             $old_column = NULL;
             if ($old_table !== NULL) {
@@ -883,8 +897,9 @@ class pgsql8 extends sql99 {
                 $old_column = $nodes[0];
               }
             }
-            if (($old_schema === NULL
-              || $old_table === NULL || $old_column === NULL) && strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) != 0) {
+
+            if (($old_schema === NULL || $old_table === NULL || $old_column === NULL)
+              && strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) != 0) {
               // if it has not been declared, create the upgrade set to be merged
               if (!$upgrade_set_created) {
                 self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc);
@@ -900,6 +915,13 @@ class pgsql8 extends sql99 {
 
       // new stand alone sequences not owned by tables that were not previously present
       foreach ($new_schema->sequence AS $new_sequence) {
+        if (empty($new_sequence['slonyId'])) {
+          dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_sequence['name'], 44) . " sequence missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
+          if (dbsteward::$require_slony_id) {
+            throw new exception($new_schema['name'] . '.' . $new_sequence['name'] . " sequence missing slonyId and slonyIds are required!");
+          }
+        }
+
         $old_sequence = NULL;
         if ( $old_schema ) {
           $old_sequence = dbx::get_sequence($old_schema, $new_sequence['name']);
