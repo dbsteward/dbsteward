@@ -30,6 +30,18 @@ class sql99_table {
     return $found;
   }
 
+  public function contains_table_option($node_table, $name) {
+    $format = dbsteward::get_sql_format();
+
+    foreach ($node_table->tableOption as $option) {
+      if (strcasecmp($option['sqlFormat'], $format) === 0 && strcasecmp($option['name'], $name) === 0) {
+        return $option;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Returns true if table contains given constraint $name
    *
@@ -278,6 +290,78 @@ class sql99_table {
     return $name;
   }
 
+  /**
+   * Retrieves an associative array of table options defined for a table
+   * @param  SimpleXMLElement $node_schema The schema
+   * @param  SimpleXMLElement $node_table  The table
+   * @return array            Option name => option value
+   */
+  public static function get_table_options($node_schema, $node_table=false) {
+    if (is_array($node_schema) && !$node_table) {
+      $nodes = $node_schema;
+    }
+    else {
+      $nodes = $node_table->tableOption;
+    }
+    $sql_format = dbsteward::get_sql_format();
+    $opts = array();
+
+    foreach ($nodes as $node) {
+      if ($node['sqlFormat'] != $sql_format) continue;
+
+      $name = strtolower((string)($node['name']));
+      $value = (string)($node['value']);
+      if (empty($name)) {
+        throw new Exception("tableOption of table {$node_schema['name']}.{$node_table['name']} cannot have an empty name");
+      }
+      if (array_key_exists($name, $opts)) {
+        throw new Exception("Duplicate tableOption '$name' in table {$node_schema['name']}.{$node_table['name']} is not allowed");
+      }
+      $opts[$name] = $value;
+    }
+
+    return $opts;
+  }
+
+  /**
+   * Returns the SQL to append to a CREATE TABLE expression
+   * @param  SimpleXMLElement $node_schema The schema
+   * @param  SimpleXMLElement $node_table  The table
+   * @return string           SQL
+   */
+  public static function get_table_options_sql($node_schema, $node_table=false) {
+    $opts = static::get_table_options($node_schema, $node_table);
+    $opt_sqls = array();
+    foreach ($opts as $name => $val) {
+      $opt_sqls[] = static::format_table_option($name, $val);
+    }
+    return static::join_table_option_sql($opt_sqls);
+  }
+
+  /**
+   * Formats a single name-value table option pair
+   * The default is to turn name=>value into "NAME value"
+   * You should probably override this for each format, and vary by name
+   * 
+   * @param  string $name  The name of the table option
+   * @param  string $value The value of the table option
+   * @return string        The formatted SQL
+   */
+  protected static function format_table_option($name, $value) {
+    return strtoupper($name) . ' ' . $value;
+  }
+
+  /**
+   * Joins the formatted option SQL from format_table_option()
+   * The default is to implode with a space.
+   * You should probably override this for each format
+   * 
+   * @param  array $options The formatted table option SQL entries
+   * @return string         The joined table option SQL
+   */
+  protected static function join_table_option_sql($options) {
+    return implode("\n", $options);
+  }
 }
 
 ?>

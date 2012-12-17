@@ -30,7 +30,7 @@ class mysql5_table extends sql99_table {
       return "-- Skipping table '{$node_table['name']}' because MySQL does not support table inheritance";
     }
 
-    $table_name = mysql5::get_quoted_table_name($node_table['name']);
+    $table_name = mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']);
 
     $sql = "CREATE TABLE $table_name (\n";
 
@@ -40,6 +40,11 @@ class mysql5_table extends sql99_table {
 
     }
     $sql .= "  " . implode(",\n  ", $cols) . "\n)";
+
+    $opt_sql = mysql5_table::get_table_options_sql($node_schema, $node_table);
+    if (!empty($opt_sql)) {
+      $sql .= "\n" . $opt_sql;
+    }
 
     if ( strlen($node_table['description']) > 0 ) {
       $sql .= "\nCOMMENT " . mysql5::quote_string_value($node_table['description']);
@@ -125,6 +130,10 @@ XML;
     }
 
     return $triggers;
+  }
+
+  public static function format_table_option($name, $value) {
+    return strtoupper($name) . '=' . $value;
   }
 }
 ?>

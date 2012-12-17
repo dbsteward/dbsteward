@@ -39,12 +39,55 @@ class mysql5_db {
 
   public function get_table($name) {
     return $this->query("SELECT table_schema, table_name, engine,
-                                table_rows, auto_increment, table_comment
+                                table_rows, table_comment
                          FROM tables
                          WHERE table_type = 'base table'
                            AND table_schema = ?
                            AND table_name = ?
                          LIMIT 1", array($this->dbname, $name), 'one');
+  }
+
+  public function get_table_options($table) {
+    $create_sql = $this->query("SHOW CREATE TABLE `{$this->dbname}`.`{$table->table_name}`", array(), 'one')->{"Create Table"};
+    
+    $opts = $this->parse_create_table_for_options($create_sql);
+
+    // comments handled as a description attribute, ignore here
+    unset($opts['comment']);
+
+    return $opts;
+  }
+
+  public function parse_create_table_for_options($sql) {
+    $sql = preg_replace("/\s{2,}|\n/", ' ', $sql);
+
+    // AFAIK, "SHOW CREATE TABLE x" will always show the ENGINE option first
+    $option_sql = substr($sql, strripos($sql, "ENGINE="));
+
+    // it's so big because tablespaces are a special case
+    // also note that strings are single quoted, and two in a row is an escaped single quote
+    preg_match_all('/(?:(?<name>tablespace) (?<value>\w+(?: storage disk)))|(?:(?<name1>\w+(?: \w+)*)=(?<value1>[\w,]+|\'(?:[^\']|\'\')*\'))/i', $option_sql, $matches);
+
+    // merge the two sets of name=>value, lowercasing the option names
+    $opts = array_merge(
+      array_combine(
+        array_map('strtolower',$matches['name']),
+        $matches['value']),
+      array_combine(
+        array_map('strtolower',$matches['name1']),
+        $matches['value1'])
+    );
+
+    // there will more than likely be a single ''=>'', get rid of it
+    unset($opts['']);
+
+    // now format the options
+    foreach ($opts as $key => &$val) {
+      // un-escape single quotes - let dbsteward handle this later
+      $val = str_replace("''", "'", $val);
+    }
+
+    return $opts;
   }
 
   public function uses_sequences() {
