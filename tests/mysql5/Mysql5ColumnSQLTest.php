@@ -252,5 +252,53 @@ XML;
     $this->assertEquals("`s1` int AUTO_INCREMENT", mysql5_column::get_full_definition($dbs, $dbs->schema, $dbs->schema->table, $col, true, true, true));
     $this->assertEquals("`s1` int", mysql5_column::get_full_definition($dbs, $dbs->schema, $dbs->schema->table, $col, true, true, false));
   }
+
+  public function testTimestamps() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="id" owner="NOBODY">
+    <column name="a" type="timestamp"/>
+    <column name="b" type="timestamp" null="false"/>
+    <column name="c" type="timestamp" null="true"/>
+
+    <!-- default=NULL and not nullable doesn't make sense -->
+    <column name="d" type="timestamp" default="NULL" null="true"/>
+
+    <column name="e" type="timestamp" default="CURRENT_TIMESTAMP"/>
+    <column name="f" type="timestamp" default="CURRENT_TIMESTAMP" null="false"/>
+    <column name="g" type="timestamp" default="CURRENT_TIMESTAMP" null="true"/>
+
+    <column name="h" type="timestamp" default="'2012-05-05 11:11:11'"/>
+    <column name="i" type="timestamp" default="'2012-05-05 11:11:11'" null="false"/>
+    <column name="j" type="timestamp" default="'2012-05-05 11:11:11'" null="true"/>
+  </table>
+</schema>
+XML;
+
+    $schema = new SimpleXMLElement($xml);
+    $cols = $schema->table->column;
+
+    $def = function ($col) use (&$schema) {
+      return mysql5_column::get_full_definition($schema, $schema, $schema->table, $col, true, true);
+    };
+
+    // no default
+    $this->assertEquals("`a` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP", $def($cols[0]));
+    $this->assertEquals("`b` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP", $def($cols[1]));
+    $this->assertEquals("`c` timestamp NULL DEFAULT NULL", $def($cols[2]));
+
+    // default null
+    $this->assertEquals("`d` timestamp NULL DEFAULT NULL", $def($cols[3]));
+
+    // default CURRENT_TIMESTAMP
+    $this->assertEquals("`e` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP", $def($cols[4]));
+    $this->assertEquals("`f` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP", $def($cols[5]));
+    $this->assertEquals("`g` timestamp NULL DEFAULT CURRENT_TIMESTAMP", $def($cols[6]));
+
+    // default arbitrary time
+    $this->assertEquals("`h` timestamp NOT NULL DEFAULT '2012-05-05 11:11:11'", $def($cols[7]));
+    $this->assertEquals("`i` timestamp NOT NULL DEFAULT '2012-05-05 11:11:11'", $def($cols[8]));
+    $this->assertEquals("`j` timestamp NULL DEFAULT '2012-05-05 11:11:11'", $def($cols[9]));
+  }
 }
 ?>
