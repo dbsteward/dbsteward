@@ -389,7 +389,7 @@ class mysql5 {
         if ( !$type ) {
           $type = $db_column->column_type;
 
-          if ( strcasecmp($type, 'enum') === 0 ) {
+          if ( stripos($type, 'enum') === 0 ) {
             $values = $db->parse_enum_values($db_column->column_type);
             $type = $enum_type($db_table->table_name, $db_column->column_name, $values);
           }
