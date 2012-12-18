@@ -258,7 +258,7 @@ class mysql5_db {
 
   public function parse_enum_values($enum) {
     // test to match enum('word'[, ...])
-    if ( preg_match('/enum\((\'\w+\'(?:,\'\w+\')*)\)/i', $enum, $matches) == 1 ) {
+    if ( preg_match('/enum\((\'.+?\'(?:,\'.+?\')*)\)/i', $enum, $matches) == 1 ) {
       return explode(',', str_replace("'",'',$matches[1]));
     }
     else {
