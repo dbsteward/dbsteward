@@ -389,7 +389,7 @@ class mysql5 {
         if ( !$type ) {
           $type = $db_column->column_type;
 
-          if ( strcasecmp($type, 'enum') === 0 ) {
+          if ( stripos($type, 'enum') === 0 ) {
             $values = $db->parse_enum_values($db_column->column_type);
             $type = $enum_type($db_table->table_name, $db_column->column_name, $values);
           }
@@ -403,10 +403,13 @@ class mysql5 {
         // @TODO: if there are serial sequences/triggers for the column then convert to serial
 
         if ( !empty($db_column->column_default) ) {
-          $node_column['default'] = $db_column->column_default;
+          $node_column['default'] = mysql5::escape_default_value($db_column->column_default);
+        }
+        elseif ( strcasecmp($db_column->is_nullable, 'YES') === 0 ) {
+          $node_column['default'] = 'NULL';
         }
 
-        $node_column['null'] = strcasecmp($db_column->is_nullable, 'YES') == 0 ? 'true' : 'false';
+        $node_column['null'] = strcasecmp($db_column->is_nullable, 'YES') === 0 ? 'true' : 'false';
       }
 
       // get all plain and unique indexes
@@ -690,6 +693,14 @@ class mysql5 {
     }
     
     return $value;
+  }
+
+  public static function escape_default_value($value) {
+    // mysql accepts any value as quoted, except for CURRENT_TIMESTAMP
+    if (strcasecmp($value,'CURRENT_TIMESTAMP') === 0) {
+      return strtoupper($value);
+    }
+    return mysql5::quote_string_value($value);
   }
 
   /**
