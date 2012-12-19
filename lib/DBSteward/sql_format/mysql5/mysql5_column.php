@@ -104,13 +104,13 @@ class mysql5_column extends sql99_column {
 
   public static function column_type($db_doc, $node_schema, $node_table, $node_column, &$foreign=NULL) {
     // if the column is a foreign key, solve for the foreignKey type
-    // not going to worry about auto-increment here for a now - why would an auto-increment field be a foreign key?
     if ( isset($node_column['foreignTable']) ) {
       $foreign = format_constraint::foreign_key_lookup($db_doc, $node_schema, $node_table, $node_column);
-      $foreign_type = $foreign['column']['type'];
+      $foreign_type = static::un_auto_increment($foreign['column']['type']);
       if ( static::is_serial($foreign_type) ) {
         return static::convert_serial($foreign_type);
       }
+
       return $foreign_type;
     }
 

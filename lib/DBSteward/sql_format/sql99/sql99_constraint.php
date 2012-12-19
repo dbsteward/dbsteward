@@ -110,7 +110,7 @@ class sql99_constraint {
     $constraints = array();
 
     if ($type == 'all' || $type == 'primaryKey') {
-      if (isset($node_table['primaryKey'])) {
+      if (!empty($node_table['primaryKey'])) {
         $pk_name = static::get_primary_key_name($node_table);
         $pk_def = static::get_primary_key_definition($node_table);
 
@@ -123,7 +123,7 @@ class sql99_constraint {
         );
       }
       else {
-        throw new Exception("Every table must have a primaryKey!");
+        throw new Exception("Table {$node_schema['name']}.{$node_table['name']} does not have a primaryKey!");
       }
     }
 

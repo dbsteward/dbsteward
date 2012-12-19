@@ -92,6 +92,25 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $this->assertEquals("CREATE TABLE `test` (\n  `id` int\n);", mysql5_table::get_creation_sql($schema, $schema->table));
+
+    // ensure that foreign auto_increment flags aren't transferred to the table definition
+    $xml = <<<XML
+<dbsteward>
+<database/>
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="id" owner="NOBODY">
+    <column name="id" type="int auto_increment"/>
+    <column name="fk" foreignSchema="public" foreignTable="other" foreignColumn="id"/>
+  </table>
+  <table name="other" primaryKey="id" onwer="NOBODY">
+    <column name="id" type="int auto_increment"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+    $dbs = new SimpleXMLElement($xml);
+    dbsteward::$new_database = $dbs;
+    $this->assertEquals("CREATE TABLE `test` (\n  `id` int,\n  `fk` int\n);", mysql5_table::get_creation_sql($dbs->schema, $dbs->schema->table[0]));
   }
 }
 ?>
