@@ -42,7 +42,7 @@ class mysql5_type extends sql99_type {
    * @return SimpleXMLElement
    */
   public static function get_type_node($db_doc, $node_schema, $name_ref) {
-    if ( preg_match('/(?:["`]?(\w+)["`]?\.)?["`]?(\w+)["`]?/', $name_ref, $matches) > 0 ) {
+    if ( preg_match('/(?:["`]?(\w+)["`]?\.)?["`]?(.+)["`]?/', $name_ref, $matches) > 0 ) {
       $schema_ref = $matches[1];
       $type_name = $matches[2];
 
