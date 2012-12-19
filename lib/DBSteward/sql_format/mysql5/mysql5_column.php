@@ -15,6 +15,9 @@ class mysql5_column extends sql99_column {
       // serial columns are not allowed to be null
       return false;
     }
+    elseif ( strcasecmp($node_column['type'], 'timestamp') === 0 && !isset($node_column['null']) ) {
+      return false;
+    }
     else {
       return parent::null_allowed($node_table, $node_column);
     }
@@ -38,8 +41,17 @@ class mysql5_column extends sql99_column {
 
     $definition = mysql5::get_quoted_column_name($node_column['name']) . ' ' . $column_type;
 
-    if ($include_null_definition && !static::null_allowed($node_table, $node_column) ) {
-      $definition .= " NOT NULL";
+    $nullable = static::null_allowed($node_table, $node_column);
+
+    if ($include_null_definition ) {
+      if ( $nullable ) {
+        if ( strcasecmp($node_column['type'], 'timestamp') === 0 ) {
+          $definition .= " NULL";
+        }
+      }
+      else {
+        $definition .= " NOT NULL";
+      }
     }
 
     if ( $include_auto_increment && $is_auto_increment ) {
@@ -55,7 +67,15 @@ class mysql5_column extends sql99_column {
         $definition .= " DEFAULT " . $node_column['default'];
       }
     }
-    else if ( !self::null_allowed($node_table, $node_column) && $add_defaults ) {
+    else if ( $add_defaults && strcasecmp($node_column['type'], 'timestamp') === 0 ) {
+      if ( $nullable ) {
+        $definition .= " DEFAULT NULL";
+      }
+      else {
+        $definition .= " DEFAULT CURRENT_TIMESTAMP";
+      }
+    }
+    else if ( !$nullable && $add_defaults ) {
       $default_col_value = self::get_default_value($node_column['type']);
       if ($default_col_value != null) {
         $definition .= " DEFAULT " . $default_col_value;
