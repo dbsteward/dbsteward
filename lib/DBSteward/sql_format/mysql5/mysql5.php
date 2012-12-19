@@ -395,7 +395,7 @@ class mysql5 {
           }
 
           if ( $db_column->is_auto_increment ) {
-            $type .= 'AUTO_INCREMENT';
+            $type .= ' AUTO_INCREMENT';
           }
         }
         $node_column['type'] = $type;

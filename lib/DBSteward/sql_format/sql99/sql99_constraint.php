@@ -123,7 +123,7 @@ class sql99_constraint {
         );
       }
       else {
-        throw new Exception("Every table must have a primaryKey!");
+        throw new Exception("Table {$node_schema['name']}.{$node_table['name']} does not have a primaryKey!");
       }
     }
 
