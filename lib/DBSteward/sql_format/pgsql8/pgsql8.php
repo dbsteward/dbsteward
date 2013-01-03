@@ -854,7 +854,7 @@ class pgsql8 extends sql99 {
       // new tables that were not previously present
       // new replicated columns that were not previously present
       foreach ($new_schema->table AS $new_table) {
-        if (empty($new_table['slonyId'])) {
+        if (!isset($new_table['slonyId'])) {
           dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'], 44) . " table missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
           if (dbsteward::$require_slony_id) {
             throw new exception($new_schema['name'] . '.' . $new_table['name'] . " table missing slonyId and slonyIds are required!");
