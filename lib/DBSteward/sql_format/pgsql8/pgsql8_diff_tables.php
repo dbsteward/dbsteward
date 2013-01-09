@@ -1218,7 +1218,9 @@ SQL;
       $sql .= "\nALTER TABLE $fq_name\n  " . implode(",\n  ", $actions) . ";";
     }
 
-    $ofs1->write($sql."\n");
+    if (!empty($sql)) {
+      $ofs1->write($sql."\n");
+    }
   }
 
 }
