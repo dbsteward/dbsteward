@@ -526,7 +526,12 @@ class pgsql8 extends sql99 {
 
       // throw an error if the table is using a primaryKey column that does not actually exist
       if (!empty($primary_keys_exist)) {
-        throw new exception('Primary key ' . $table['primaryKey'] . ' does not exist as a column in table ' . $table['name']);
+        if (empty($table['inheritsTable'])) {
+          throw new exception('Primary key ' . $table['primaryKey'] . ' does not exist as a column in table ' . $table['name']);
+        }
+        else {
+          dbsteward::console_line(1, 'Primary key ' . $table['primaryKey'] . ' does not exist as a column in child table ' . $table['name'] . ', but may exist in parent table');
+        }
       }
     }
 

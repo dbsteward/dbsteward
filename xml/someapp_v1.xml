@@ -14,15 +14,21 @@
       <readonly>someapp_readonly</readonly>
     </role>
     <slony>
-      <masterNode>1</masterNode>
-      <replicaNodeLocal>2</replicaNodeLocal>
-      <replicaNodeRemote>3</replicaNodeRemote>
-      <setId>1</setId>
-      <upgradeSetId>2</upgradeSetId>
+      <masterNode id="1"/>
+      <replicaNode id="2" providerId="1"/>
+      <replicaNode id="3" providerId="2"/>
+      <replicationSet id="1"/>
+      <replicationUpgradeSet id="2"/>
     </slony>
   </database>
   <schema name="public" owner="ROLE_OWNER">
-    <table name="user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="10" >
+    <table name="user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="10" description="user table comment">
+      <tablePartition type="MODULO">
+        <tablePartitionOption name="number" value="4"/>
+        <tablePartitionOption name="column" value="user_id"/>
+        <tablePartitionOption name="firstSlonyId" value="347"/>
+        <tablePartitionOption name="lastSlonyId" value="350"/>
+      </tablePartition>
       <column name="user_id" type="bigserial" slonyId="10"/>
       <column name="user_name" type="character varying(40)"/>
       <column name="password" type="text"/>
@@ -30,8 +36,9 @@
       <column name="register_date" type="timestamp with time zone"/>
       <column name="user_status_list_id" foreignSchema="public" foreignTable="user_status_list" foreignColumn="user_status_list_id"/>
       <index name="user_name" using="btree">
-        <indexDimension name="user_name">entity_id</indexDimension>
+        <indexDimension>user_name</indexDimension>
       </index>
+      <constraint name="user_name_unq" type="UNIQUE" definition="(user_name)"/>
       <grant operation="SELECT,UPDATE,DELETE,INSERT" role="ROLE_APPLICATION"/>
       <rows columns="user_id, user_name, password, user_status_list_id, import_id, register_date">
         <row>
@@ -89,10 +96,10 @@
 
     <function name="destroy_session" owner="ROLE_OWNER" returns="VOID" description="Deletes session data from the database">
       <functionParameter type="character varying"/>
-      <functionDefinition language="sql" sqlformat="pgsql8">
+      <functionDefinition language="sql" sqlFormat="pgsql8">
         DELETE FROM session_information WHERE session_id=$1;
       </functionDefinition>
-      <grant operation="USAGE,SELECT" role="ROLE_APPLICATION"/>
+      <grant operation="EXECUTE" role="ROLE_APPLICATION"/>
     </function>
 
     <grant operation="USAGE" role="ROLE_APPLICATION"/>

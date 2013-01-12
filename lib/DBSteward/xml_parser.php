@@ -127,6 +127,11 @@ class xml_parser {
       self::validate_xml(self::format_xml($composite->saveXML()));
     }
 
+    $vendor_parser = dbsteward::get_sql_format() . '_xml_parser';
+    if (class_exists($vendor_parser)) {
+      $vendor_parser::process($composite);
+    }
+    
     $composite_file = $output_prefix . '_composite.xml';
     dbsteward::console_line(1, "XML files " . $file_list . " composited");
     dbsteward::console_line(1, "Saving as " . $composite_file);

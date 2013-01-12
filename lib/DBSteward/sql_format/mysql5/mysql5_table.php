@@ -9,7 +9,6 @@
  */
 
 class mysql5_table extends sql99_table {
-
   /**
    * Creates and returns SQL for creation of the table.
    *
@@ -39,18 +38,49 @@ class mysql5_table extends sql99_table {
       $cols[] = mysql5_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, false);
 
     }
-    $sql .= "  " . implode(",\n  ", $cols) . "\n)";
+    
+    if (!empty($node_table->tablePartition)) {
+      if (!isset($node_table->tablePartition['type'])) {
+        throw new exception('No table partiton type selected for ' . $table_name);
+      }
+      if ($node_table->tablePartition['type'] != 'MODULO') {
+        throw new exception('Invalid partition type: ' . $node_table->tablePartition['type']);
+      }
+      
+      foreach ($node_table->tablePartition->tablePartitionOption AS $opt) {
+        if ($opt['name'] == 'number') {
+          $part_number = $opt['value'];
+        }
+        if ($opt['name'] == 'column') {
+          $part_col_name = $opt['value'];
+        }
+      }
+      
+      if (empty($part_number)) {
+        throw new exception('tablePartitionOption "number" must be specified for table ' . $table_name);
+      }
+      if (empty($part_col_name)) {
+        throw new exception('tablePartitionOption "column" must be specified for table ' . $table_name);
+      }
+      $cols[] = "key($part_col_name)";
+      $part_sql = "\nPARTITION BY HASH($part_col_name) PARTITIONS $part_number";
+    }
 
+    $sql .= "  " . implode(",\n  ", $cols) . "\n)";
     $opt_sql = mysql5_table::get_table_options_sql($node_schema, $node_table);
     if (!empty($opt_sql)) {
       $sql .= "\n" . $opt_sql;
     }
-
+    
     if ( strlen($node_table['description']) > 0 ) {
       $sql .= "\nCOMMENT " . mysql5::quote_string_value($node_table['description']);
     }
-
-    $sql .= ";";
+    
+    if (!empty($part_sql)) {
+      $sql .= $part_sql;
+    }
+    
+    $sql .= ';';
 
     // @TODO: implement column statistics
     // @TODO: table ownership with $node_table['owner'] ?
