@@ -36,7 +36,7 @@ class pgsql8_table extends sql99_table {
         . ",\n";
     }
 
-    $sql = substr($sql, 0, strlen($sql) - 2);
+    $sql = trim($sql, ",\n");
     $sql .= "\n)";
     
     $opt_sql = pgsql8_table::get_table_options_sql($node_schema, $node_table);
@@ -44,8 +44,11 @@ class pgsql8_table extends sql99_table {
       $sql .= "\n" . $opt_sql;
     }
 
-    if (isset($node_table['inherits']) && strlen($node_table['inherits']) > 0) {
-      $sql .= "\nINHERITS " . $node_table['inherits'];
+    if (isset($node_table['inheritsTable']) && strlen($node_table['inheritsTable']) > 0) {
+      if (!isset($node_table['inheritsSchema']) || strlen($node_table['inheritsSchema']) == 0) {
+        throw new exception("Must provide both table and schema for inheritance for $table_name");
+      }
+      $sql .= "\nINHERITS (" . pgsql8::get_quoted_schema_name($node_table['inheritsSchema']) . '.' . pgsql8::get_quoted_table_name($node_table['inheritsTable']) . ')';
     }
     $sql .= ";";
 
