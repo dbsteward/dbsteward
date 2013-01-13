@@ -456,21 +456,27 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    * @param $new_table  new table
    */
   private static function check_inherits($ofs, $old_table, $new_schema, $new_table) {
-    $old_inherits = isset($old_table['inherits']) ? (string)$old_table['inherits'] : null;
-    $new_inherits = isset($new_table['inherits']) ? (string)$new_table['inherits'] : null;
+    $old_inherits_table = isset($old_table['inheritsTable']) ? (string)$old_table['inheritsTable'] : null;
+    $new_inherits_table = isset($new_table['inheritsTable']) ? (string)$new_table['inheritsTable'] : null;
+    $old_inherits_schema = isset($old_table['inheritsSchema']) ? (string)$old_table['inheritsSchema'] : null;
+    $new_inherits_schema = isset($new_table['inheritsSchema']) ? (string)$new_table['inheritsSchema'] : null;
 
-    if (($old_inherits == null) && ($new_inherits != null)) {
-      throw new exception("Modified INHERITS on TABLE "
-        . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name'])
-        . ": original table doesn't use INHERITS but new table uses INHERITS " . $new_inherits);
-    } else if (($old_inherits != null) && ($new_inherits == null)) {
-      throw new exception("Modified INHERITS on TABLE "
-        . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name'])
-        . ": original table uses INHERITS " . $old_inherits . " but new table doesn't use INHERITS");
-    } else if (($old_inherits != null) && ($new_inherits != null) && $old_inherits != $new_inherits) {
-      throw new exception("Modified INHERITS on TABLE "
-        . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name'])
-        . ": original table uses INHERITS " . $old_inherits . " but new table uses INHERITS " . $new_inherits);
+    If (is_null($old_inherits_table) && is_null($new_inherits_table) && is_null($old_inherits_schema) && is_null($new_inherits_schema)) {
+      // Just short-circuit, there's nothing to check
+      return;
+    }
+    
+    $table_name = pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($new_table['name']);
+    
+    If (is_null($old_inherits_table) || is_null($new_inherits_table) || is_null($old_inherits_schema) || is_null($new_inherits_schema)) {
+      throw new exception("All inherits* values must be set for table $table_name");
+    }
+    
+    $old_inherits = pgsql8::get_quoted_schema_name($old_inherits_schema) . '.' . pgsql8::get_quoted_table_name($old_inherits_table);
+    $new_inherits = pgsql8::get_quoted_schema_name($new_inherits_schema) . '.' . pgsql8::get_quoted_table_name($new_inherits_table);
+    
+    if ($old_inherits != $new_inherits) {
+      throw new Exception("Changing table inheritance is not supported: $table_name");
     }
   }
 
