@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-  dbsteward XML definition file structure enforcement
+  DBSteward XML definition file structure enforcement
   
   @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
   @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
@@ -53,7 +53,7 @@
 <!ATTLIST schema owner CDATA #REQUIRED>
 <!ATTLIST schema description CDATA #IMPLIED>
 
-<!ELEMENT table (tablePartition?, tableOption*, column+, index*, constraint*, privilege_function*, grant*, rows?)>
+<!ELEMENT table (tablePartition?, tableOption*, column+, index*, constraint*, grant*, rows?)>
 <!ATTLIST table name CDATA #REQUIRED>
 <!ATTLIST table primaryKey CDATA #REQUIRED>
 <!ATTLIST table primaryKeyName CDATA #IMPLIED>
@@ -139,8 +139,6 @@
 <!ELEMENT tablePartitionOption EMPTY>
 <!ATTLIST tablePartitionOption name CDATA #REQUIRED>
 <!ATTLIST tablePartitionOption value CDATA #REQUIRED>
-
-<!ELEMENT privilegeFunction (#PCDATA)>
 
 <!ELEMENT sequence (grant*)>
 <!ATTLIST sequence name CDATA #REQUIRED>

@@ -371,7 +371,6 @@ class xml_parser {
     if (strcasecmp($base->getName(), 'table') == 0) {
       static::file_sort_reappend_child($base, 'index');
       static::file_sort_reappend_child($base, 'constraint');
-      static::file_sort_reappend_child($base, 'privilege_function');
       static::file_sort_reappend_child($base, 'grant');
       static::file_sort_reappend_child($base, 'rows');
     }
@@ -991,11 +990,10 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         }
 
         // make sure table definition order still follows the DTD:
-        // <!ELEMENT table (column+, index*, constraint*, privilege_function*, grant*, rows?)>
+        // <!ELEMENT table (column+, index*, constraint*, grant*, rows?)>
         // if column defs were not all first, they will be after this!
         self::file_sort_reappend_child($table, 'index');
         self::file_sort_reappend_child($table, 'constraint');
-        self::file_sort_reappend_child($table, 'privilege_function');
         self::file_sort_reappend_child($table, 'grant');
         self::file_sort_reappend_child($table, 'rows');
       }
