@@ -69,7 +69,7 @@ class pgsql8_xml_parser extends sql99_xml_parser {
     }
     // Create the schema node for the partitions
     $new_schema = $doc->addChild('schema');
-    self::create_partition_schema($new_schema, $schema, $table);
+    self::create_partition_schema($schema, $table, $new_schema);
     // Clone the node as many times as needed to create the partition tables
     self::create_partition_tables($schema, $new_schema, $table);
     // Remove attributes from the main table that move to the partitions
@@ -87,8 +87,10 @@ class pgsql8_xml_parser extends sql99_xml_parser {
     self::create_procedure($new_schema, $table);
   }
   
-  private static function create_partition_schema(&$new_schema, $schema, $table) {
+  private static function create_partition_schema($schema, $table, &$new_schema) {
     $new_schema['name'] = self::get_schema_name($schema, $table);
+    // make sure parition schema has the same rights as parent table schema
+    static::copy_object_grants($schema, $new_schema);
   }
   
   private static function create_procedure(&$schema, $table) {
@@ -187,6 +189,19 @@ class pgsql8_xml_parser extends sql99_xml_parser {
             );
         }
         $num++;
+      }
+      // Copy table grants
+      static::copy_object_grants($orig_table, $table);
+    }
+  }
+  
+  private static function copy_object_grants($from_object, &$to_object) {
+    foreach($from_object->grant AS $from_grant) {
+      $to_grant = $to_object->addChild('grant');
+      $to_grant['operation'] = $from_grant['operation'];
+      $to_grant['role'] = $from_grant['role'];
+      if ( isset($from_grant['with']) ) {
+        $from_grant['with'] = $from_grant['with'];
       }
     }
   }
