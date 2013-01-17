@@ -48,6 +48,8 @@ class mysql5_index extends sql99_index {
     if ( !empty($node_index['using']) ) {
       $sql .= ' USING ' . static::get_using_option_sql($node_index['using']);
     }
+    
+    //@TODO: mysql5 partial indexes with indexWhere - see pgsql8_index
 
     return $index_note.$sql.';';
   }

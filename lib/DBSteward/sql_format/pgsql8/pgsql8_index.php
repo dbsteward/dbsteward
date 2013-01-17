@@ -35,7 +35,27 @@ class pgsql8_index {
       $sql .= $dimension . ', ';
     }
     $sql = substr($sql, 0, -2);
-    $sql .= ');';
+    $sql .= ')';
+
+    if ( isset($node_index->indexWhere) ) {
+      $index_where_clause = NULL;
+      foreach($node_index->indexWhere AS $node_index_where) {
+        if ( empty($node_index_where['sqlFormat']) ) {
+          throw new Exception("Attribute sqlFormat required for indexWhere definitions. See index '{$node_index['name']}' definition");
+        }
+        if ( $node_index_where['sqlFormat'] == dbsteward::get_sql_format() ) {
+          if ( $index_where_clause !== NULL ) {
+            throw new Exception("duplicate indexWhere definition for {$node_index_where['sqlFormat']} in index '{$node_index['name']}' definition");
+          }
+          $index_where_clause = (string)$node_index_where;
+        }
+      }
+      if ( strlen($index_where_clause) > 0 ) {
+        $sql .= " WHERE ( " . $index_where_clause . " )";
+      }
+    }
+    
+    $sql .= ';';
 
     return $sql;
   }
@@ -46,6 +66,7 @@ class pgsql8_index {
   }
 
   public function equals($node_index_a, $node_index_b) {
+    $equal = true;
     if ( strcasecmp($node_index_a['name'], $node_index_b['name']) != 0 ) {
       $equal = false;
     }
@@ -67,8 +88,28 @@ class pgsql8_index {
       if ( $a_dimensions != $b_dimensions ) {
         $equal = false;
       }
-      else {
-        $equal = true;
+      
+      // check indexWhere if the index is still determined to be equal
+      if ( $equal && (isset($node_index_a->indexWhere) || isset($node_index_b->indexWhere)) ) {
+        $a_where = '';
+        if ( isset($node_index_a->indexWhere) ) {
+          foreach($node_index_a->indexWhere AS $where) {
+            if ( $where['sqlFormat'] == dbsteward::get_sql_format() ) {
+              $a_where .= (string)$where;
+            }
+          }
+        }
+        $b_where = '';
+        if ( isset($node_index_b->indexWhere) ) {
+          foreach($node_index_b->indexWhere AS $where) {
+            if ( $where['sqlFormat'] == dbsteward::get_sql_format() ) {
+              $b_where .= (string)$where;
+            }
+          }
+        }
+        if ( strcmp($a_where, $b_where) != 0 ) {
+          $equal = false;
+        }
       }
     }
     return $equal;
