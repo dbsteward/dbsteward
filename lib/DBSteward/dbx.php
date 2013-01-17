@@ -762,7 +762,7 @@ class dbx {
   
   public static function renamed_table_check_pointer($old_schema, &$old_table, $new_schema, $new_table) {
     // if there is an oldName attribute
-    if ( !dbsteward::$ignore_oldname ) {
+    if ( !dbsteward::$ignore_oldnames ) {
       if ( $new_schema && $new_table && sql99_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
         // find the tabel named oldName in $old_schema and 
         // put a pointer to it in $old_table

@@ -12,7 +12,7 @@ class sql99_diff_tables {
   
   public static function is_renamed_table($old_schema, $new_schema, $new_table) {
     // command line switch sanity first and foremost
-    if ( dbsteward::$ignore_oldname ) {
+    if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, is_renamed_table() should not be getting called");
     }
 
@@ -44,7 +44,7 @@ class sql99_diff_tables {
 
   public static function is_renamed_column($old_table, $new_table, $new_column) {
     // command line switch sanity first and foremost
-    if ( dbsteward::$ignore_oldname ) {
+    if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, is_renamed_column() should not be getting called");
     }
 

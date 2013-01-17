@@ -152,7 +152,7 @@ class pgsql8_diff_tables extends sql99_diff_tables {
   private static function add_create_table_columns(&$commands, $old_table, $new_schema, $new_table, &$drop_defaults_columns) {
     foreach(dbx::get_table_columns($new_table) as $new_column) {
       if (!pgsql8_table::contains_column($old_table, $new_column['name'])) {
-        if ( !dbsteward::$ignore_oldname && pgsql8_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
+        if ( !dbsteward::$ignore_oldnames && pgsql8_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
           // oldName renamed column ? rename column instead of create new one
           $old_column_name = pgsql8::get_quoted_column_name($new_column['oldName']);
           $new_column_name = pgsql8::get_quoted_column_name($new_column['name']);
@@ -271,7 +271,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   private static function add_drop_table_columns(&$commands, $old_table, $new_table) {
     foreach(dbx::get_table_columns($old_table) as $old_column) {
       if (!pgsql8_table::contains_column($new_table, $old_column['name'])) {
-        if ( !dbsteward::$ignore_oldname && ($renamed_column_name = pgsql8_table::column_name_by_old_name($new_table, $old_column['name'])) !== false ) {
+        if ( !dbsteward::$ignore_oldnames && ($renamed_column_name = pgsql8_table::column_name_by_old_name($new_table, $old_column['name'])) !== false ) {
           // table indicating oldName = table['name'] present in new schema? don't do DROP statement
           $old_table_name = pgsql8::get_quoted_table_name($old_table['name']);
           $old_column_name = pgsql8::get_quoted_column_name($old_column['name']);
@@ -306,7 +306,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       if (!pgsql8_table::contains_column($old_table, $new_column['name'])) {
         continue;
       }
-      if ( !dbsteward::$ignore_oldname && pgsql8_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
+      if ( !dbsteward::$ignore_oldnames && pgsql8_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
         // oldName renamed column ? skip definition diffing on it, it is being renamed
         continue;
       }
@@ -495,7 +495,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         }
       }
       if (($old_schema == null) || !pgsql8_schema::contains_table($old_schema, $table['name'])) {
-        if ( !dbsteward::$ignore_oldname && pgsql8_diff_tables::is_renamed_table($old_schema, $new_schema, $table) ) {
+        if ( !dbsteward::$ignore_oldnames && pgsql8_diff_tables::is_renamed_table($old_schema, $new_schema, $table) ) {
           // oldName renamed table ? rename table instead of create new one
           $old_table_name = pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($table['oldName']);
           // ALTER TABLE ... RENAME TO does not accept schema qualifiers when renaming a table
@@ -534,7 +534,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         if (!pgsql8_schema::contains_table($new_schema, $table['name'])) {
           // if new schema is still defined, check for renamed table
           // new_schema will be null if the new schema is no longer defined at all
-          if ( !dbsteward::$ignore_oldname && is_object($new_schema)
+          if ( !dbsteward::$ignore_oldnames && is_object($new_schema)
             && ($renamed_table_name = pgsql8_schema::table_name_by_old_name($new_schema, $table['name'])) !== false ) {
             // table indicating oldName = table['name'] present in new schema? don't do DROP statement
             $old_table_name = pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($table['name']);
@@ -1059,7 +1059,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       }
     }
     else {
-      if ( !dbsteward::$ignore_oldname ) {
+      if ( !dbsteward::$ignore_oldnames ) {
         // if it is a renamed table, remove all constraints and recreate with new table name conventions
         if ( pgsql8_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
           $old_named_table = dbx::get_renamed_table_old_table($old_schema, $old_table, $new_schema, $new_table);

@@ -61,6 +61,7 @@ class dbsteward {
   public static $require_slony_id = FALSE;
   public static $output_file_statement_limit = 900;
   public static $ignore_custom_roles = FALSE;
+  public static $ignore_primary_key_errors = FALSE;
   // when true, custom roles not found will be turned in to database->role->owner
   public static $require_verbose_interval_notation = FALSE;
   public static $quote_schema_names = FALSE;
@@ -76,7 +77,7 @@ class dbsteward {
   /**
    * Should oldName attributes be validated and traced out, or ignored?
    */
-  public static $ignore_oldname = FALSE;
+  public static $ignore_oldnames = FALSE;
   /**
    * Allow functions to be redefined?
    * Functions are unique by name AND parameter
@@ -122,7 +123,9 @@ Generating SQL DDL / DML / DCL difference statements to upgrade an 'old' databas
   --onlytable=<schema.table> ...
   --singlestageupgrade              combine upgrade stages into one file
   --maxstatementsperfile            how many DDL / DML / DCL statements per upgrade file segment
-  --ignoreoldname                   ignore table oldName values when differencing
+  --ignoreoldnames                  ignore table oldName values when differencing
+  --ignorecustomroles               ignore grants for custom roles
+  --ignoreprimarykeyerrors          ignore primary key errors when diffing two definitions
 XML utilities
   --xmlsort=<database.xml> ...
   --xmlconvert=<database.xml> ...
@@ -187,8 +190,9 @@ Database definition extraction utilities
       "onlytable::",
       "singlestageupgrade::",
       "maxstatementsperfile::",
-      "ignoreoldname::",
+      "ignoreoldnames::",
       "ignorecustomroles::",
+      "ignoreprimarykeyerrors::",
       "dbdatadiff::",
       "xmlsort::",
       "xmlconvert::"
@@ -235,12 +239,16 @@ Database definition extraction utilities
       dbsteward::$always_recreate_views = FALSE;
     }
     
-    if (isset($options["ignoreoldname"])) {
-      dbsteward::$ignore_oldname = TRUE;
+    if (isset($options["ignoreoldnames"])) {
+      dbsteward::$ignore_oldnames = TRUE;
     }
 
-    if (isset($options["ignorecustomrole"])) {
+    if (isset($options["ignorecustomroles"])) {
       dbsteward::$ignore_custom_roles = TRUE;
+    }
+    
+    if (isset($options["ignoreprimarykeyerrors"])) {
+      dbsteward::$ignore_primary_key_errors = TRUE;
     }
     
     if (isset($options["requireslonyid"])) {

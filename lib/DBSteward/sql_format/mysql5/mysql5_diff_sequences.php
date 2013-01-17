@@ -75,7 +75,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
             // there used to be a sequence named $new_seq['name']
             self::diff_single($ofs1, $common_sequences[(string)$new_seq['name']], $new_seq);
           }
-          elseif ( !dbsteward::$ignore_oldname
+          elseif ( !dbsteward::$ignore_oldnames
             && !empty($new_seq['oldName'])
             && static::schema_contains_sequence($old_schema, $new_seq['oldName']) ) {
             // there used to be a sequence named $new_seq['oldName']
@@ -103,7 +103,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
           return TRUE;
         }
 
-        if ( $include_oldnames && !dbsteward::$ignore_oldname && !empty($sequence['oldName'])
+        if ( $include_oldnames && !dbsteward::$ignore_oldnames && !empty($sequence['oldName'])
           && strcasecmp($sequence['oldName'], $sequence_name) === 0 ) {
           return TRUE;
         }
@@ -116,7 +116,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
   private static function diff_single($ofs, $old_seq, $new_seq) {
     $sql = array();
 
-    if ( !dbsteward::$ignore_oldname && !empty($new_seq['oldName']) ) {
+    if ( !dbsteward::$ignore_oldnames && !empty($new_seq['oldName']) ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::SEQ_COL) . " = '{$new_seq['name']}'";
     }
 

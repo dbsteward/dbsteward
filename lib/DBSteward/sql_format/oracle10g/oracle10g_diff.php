@@ -270,7 +270,7 @@ class oracle10g_diff extends sql99_diff {
         if ($old_schema != NULL) {
           $old_table = dbx::get_table($old_schema, $new_table['name']);
         }        
-        if ( !dbsteward::$ignore_oldname && oracle10g_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
+        if ( !dbsteward::$ignore_oldnames && oracle10g_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
           // oldName renamed table ? skip permission diffing on it, it is the same
           continue;
         }

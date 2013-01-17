@@ -78,7 +78,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
   private static function add_create_table_columns(&$commands, $old_table, $new_schema, $new_table, &$drop_defaults_columns) {
     foreach (dbx::get_table_columns($new_table) as $new_column) {
       if (!mssql10_table::contains_column($old_table, $new_column['name'])) {
-        if ( !dbsteward::$ignore_oldname && mssql10_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
+        if ( !dbsteward::$ignore_oldnames && mssql10_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
           // oldName renamed column ? rename table column of create new one
           $renamed_column_schema_name = $new_schema['name'];
           $renamed_column_table_name = $new_table['name'];
@@ -197,7 +197,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
   private static function add_drop_table_columns(&$commands, $old_table, $new_table) {
     foreach (dbx::get_table_columns($old_table) as $old_column) {
       if (!mssql10_table::contains_column($new_table, $old_column['name'])) {
-        if ( !dbsteward::$ignore_oldname && ($renamed_column_name = mssql10_table::column_name_by_old_name($new_table, $old_column['name'])) !== false ) {
+        if ( !dbsteward::$ignore_oldnames && ($renamed_column_name = mssql10_table::column_name_by_old_name($new_table, $old_column['name'])) !== false ) {
           // table indicating oldName = table['name'] present in new schema? don't do DROP statement
           $old_table_name = mssql10::get_quoted_table_name($old_table['name']);
           $old_column_name = mssql10::get_quoted_column_name($old_column['name']);
@@ -234,7 +234,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       if (!mssql10_table::contains_column($old_table, $new_column['name'])) {
         continue;
       }
-      if ( !dbsteward::$ignore_oldname && mssql10_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
+      if ( !dbsteward::$ignore_oldnames && mssql10_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
         // oldName renamed column ? skip definition diffing on it, it is being renamed
         continue;
       }
@@ -473,7 +473,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         }
       }
       if (($old_schema == NULL) || !mssql10_schema::contains_table($old_schema, $table['name'])) {
-        if ( !dbsteward::$ignore_oldname && mssql10_diff_tables::is_renamed_table($old_schema, $new_schema, $table) ) {
+        if ( !dbsteward::$ignore_oldnames && mssql10_diff_tables::is_renamed_table($old_schema, $new_schema, $table) ) {
           // oldName renamed table ? rename table instead of create new one
           $old_table_name = $new_schema['name'] . '.' . $table['oldName'];
           $new_table_name = $table['name'];
@@ -510,7 +510,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         if (!mssql10_schema::contains_table($new_schema, $table['name'])) {
           // if new schema is still defined, check for renamed table
           // new_schema will be null if the new schema is no longer defined at all
-          if ( !dbsteward::$ignore_oldname && is_object($new_schema)
+          if ( !dbsteward::$ignore_oldnames && is_object($new_schema)
             && ($renamed_table_name = mssql10_schema::table_name_by_old_name($new_schema, $table['name'])) !== false ) {
             $old_table_name = mssql10::get_quoted_schema_name($new_schema['name']) . '.' . mssql10::get_quoted_table_name($table['name']);
             $ofs->write("-- DROP TABLE $old_table_name omitted: new table $renamed_table_name indicates it is the replacement for " . $old_table_name . "\n");

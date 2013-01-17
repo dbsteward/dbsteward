@@ -122,7 +122,7 @@ class sql99_constraint {
           'definition' => $pk_def
         );
       }
-      else {
+      else if ( !dbsteward::$ignore_primary_key_errors ) {
         throw new Exception("Table {$node_schema['name']}.{$node_table['name']} does not have a primaryKey!");
       }
     }

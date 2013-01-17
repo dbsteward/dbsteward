@@ -340,7 +340,7 @@ class pgsql8_diff extends sql99_diff{
         if ( $old_schema != null ) {
           $old_table = dbx::get_table($old_schema, $new_table['name']);
         }
-        if ( !dbsteward::$ignore_oldname && pgsql8_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
+        if ( !dbsteward::$ignore_oldnames && pgsql8_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
           // oldName renamed table ? skip permission diffing on it, it is the same
           continue;
         }

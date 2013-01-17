@@ -274,7 +274,7 @@ class sql99_table {
    * @return  string
    */
   public function column_name_by_old_name($node_table, $old_name) {
-    if ( dbsteward::$ignore_oldname ) {
+    if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, column_name_by_old_name() should not be getting called");
     }
 
