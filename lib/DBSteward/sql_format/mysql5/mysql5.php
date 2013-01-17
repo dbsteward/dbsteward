@@ -355,7 +355,7 @@ class mysql5 {
       }
 
       // otherwise, make a new one
-      $name = "enum_{$obj}_${mem}_" . implode('_',$values);
+      $name = "enum_" . md5(implode('_',$values));
       $enum_types[$name] = $values;
 
       return $name;
