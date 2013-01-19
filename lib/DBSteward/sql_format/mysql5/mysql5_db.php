@@ -158,8 +158,6 @@ class mysql5_db {
                                      LEFT OUTER JOIN table_constraints USING (table_schema, table_name, constraint_name)
                                    WHERE statistics.table_schema = ?
                                      AND statistics.table_name = ?
-                                     AND (key_column_usage.constraint_name IS NULL 
-                                          OR table_constraints.constraint_type = 'UNIQUE')
                                    GROUP BY index_name", array($this->dbname, $db_table->table_name));
     foreach ($indices as &$idx) {
       // massage the output

@@ -98,11 +98,10 @@ class mysql5_constraint extends sql99_constraint {
         $drop = "PRIMARY KEY";
         break;
       case 'FOREIGN KEY':
-        // dropping a foreign key only drops the constraint
-        // we need to drop its index as well
-        $constraint_name = mysql5::get_quoted_object_name($constraint['name']);
-        $index_name = !empty($constraint['foreignIndexName']) ? mysql5::get_quoted_object_name($constraint['foreignIndexName']) : $constraint_name;
-        $drop = "FOREIGN KEY $constraint_name, DROP INDEX $index_name";
+        $drop = "FOREIGN KEY " . mysql5::get_quoted_object_name($constraint['name']);
+        break;
+      case 'KEY':
+        $drop = "KEY " . mysql5::get_quoted_object_name($constraint['name']);
         break;
       default:
         // we shouldn't actually ever get here.
