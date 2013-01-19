@@ -35,7 +35,7 @@ class structureExtractionTest extends dbstewardUnitTestBase {
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
-  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
+  <language name="plpgsql" procedural="true" owner="ROLE_OWNER" />
   <schema name="dbsteward" owner="ROLE_OWNER">
     <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
       <functionParameter name="config_parameter" type="text"/>
@@ -85,32 +85,36 @@ XML;
     <host>127.0.0.1</host>
     <name>dbsteward_phpunit</name>
     <role>
-      <application>dbsteward_phpunit_app</application>
+      <application>deployment</application>
       <owner>deployment</owner>
-      <replication/>
-      <readonly/>
+      <replication>deployment</replication>
+      <readonly>deployment</readonly>
     </role>
-    <configurationParameter name="TIME ZONE" value="America/New_York"/>
+    <configurationParameter name="TIME ZONE" value="America/New_York" />
   </database>
   <schema name="public" owner="ROLE_OWNER">
+    <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
+      <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
+      <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
+      <column name="rate_id" type="serial" null="false" />
+      <column name="rate_group_id" foreignSchema="public" foreignTable="rate_group" foreignColumn="rate_group_id" null="false" />
+      <column name="rate_name" type="varchar(120)" />
+      <column name="rate_value" type="decimal(10,0)" />
+    </table>
+    <table name="rate_group" owner="ROLE_OWNER" primaryKey="rate_group_id">
+      <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
+      <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
+      <column name="rate_group_id" type="int(11)" null="false" />
+      <column name="rate_group_name" type="varchar(100)" />
+      <column name="rate_group_enabled" type="tinyint(1)" null="false" default="1" />
+    </table>
     <function name="test_concat" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="a test function that concats strings">
-      <functionParameter name="param1" type="text"/>
-      <functionParameter name="param2" type="text"/>
+      <functionParameter name="param1" type="text" />
+      <functionParameter name="param2" type="text" />
       <functionDefinition language="sql" sqlFormat="mysql5">
         RETURN CONCAT(param1, param2);
       </functionDefinition>
     </function>
-    <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
-      <column name="rate_id" type="serial" null="false"/>
-      <column name="rate_group_id" foreignSchema="public" foreignTable="rate_group" foreignColumn="rate_group_id" null="false"/>
-      <column name="rate_name" type="varchar(120)"/>
-      <column name="rate_value" type="decimal(10,0)"/>
-    </table>
-    <table name="rate_group" owner="ROLE_OWNER" primaryKey="rate_group_id">
-      <column name="rate_group_id" type="int(11)" null="false"/>
-      <column name="rate_group_name" type="varchar(100)"/>
-      <column name="rate_group_enabled" type="tinyint(1)" null="false" default="1"/>
-    </table>
   </schema>
 </dbsteward>
 XML;
