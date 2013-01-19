@@ -27,7 +27,7 @@ class dbsteward_pgsql8_connection extends dbsteward_sql99_connection {
   }
 
   protected function pipe_file_to_client($file_name) {
-    dbsteward::cmd(sprintf("psql --host=%s --port=%s --username=%s --dbname=%s --no-password --file '%s'",
+    dbsteward::cmd(sprintf("psql --host=%s --port=%s --username=%s --dbname=%s --no-password -v ON_ERROR_STOP=1 --file '%s' 2>&1",
                            static::get_dbhost(), static::get_dbport(), static::get_dbuser(), static::get_dbname(), $file_name));
   }
 
