@@ -52,6 +52,13 @@ class mysql5 {
     // database-specific implementation refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
     dbx::set_default_schema($db_doc, 'public');
+    
+    // language defintions
+    if (dbsteward::$create_languages) {
+      foreach ($db_doc->language AS $language) {
+        dbsteward::console_line(1, "Ignoring language declarations because MySQL does not support languages other than 'sql'");
+      }
+    }
 
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
@@ -71,11 +78,6 @@ class mysql5 {
   }
 
   public function build_schema($db_doc, $ofs, $table_depends) {
-    // language defintions
-    if ( dbsteward::$create_languages ) {
-      dbsteward::console_line(1, "Ignoring language declarations because MySQL does not support languages other than 'sql'");
-    }
-
     // schema creation
     $schema = NULL;
     foreach ( $db_doc->schema AS $sch ) {

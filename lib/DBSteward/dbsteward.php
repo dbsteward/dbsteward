@@ -259,6 +259,7 @@ Database definition extraction utilities
     ///// sql_format-specific default options
     $dbport = FALSE;
     if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
+      dbsteward::$create_languages = TRUE;
       dbsteward::$quote_schema_names = FALSE;
       dbsteward::$quote_table_names = FALSE;
       dbsteward::$quote_column_names = FALSE;

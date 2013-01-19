@@ -265,6 +265,17 @@ class pgsql8 extends sql99 {
     dbsteward::console_line(1, "Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
     
+    // database-specific implementation code refers to dbsteward::$new_database when looking up roles/values/conflicts etc
+    dbsteward::$new_database = $db_doc;
+    dbx::set_default_schema($db_doc, 'public');
+    
+    // language defintions
+    if (dbsteward::$create_languages) {
+      foreach ($db_doc->language AS $language) {
+        $build_file_ofs->write(pgsql8_language::get_creation_sql($language));
+      }
+    }
+    
     // by default, postgresql will validate the contents of LANGUAGE SQL functions during creation
     // because we are creating all functions before tables, this doesn't work when LANGUAGE SQL functions
     // refer to tables yet to be created.
@@ -298,10 +309,7 @@ class pgsql8 extends sql99 {
       $build_file_ofs->write("\n");
       $build_file_ofs->write("SET check_function_bodies = FALSE; -- DBSteward " . $set_check_function_bodies_info . "\n\n");
     }
-    
-    // database-specific implementation code refers to dbsteward::$new_database when looking up roles/values/conflicts etc
-    dbsteward::$new_database = $db_doc;
-    dbx::set_default_schema($db_doc, 'public');
+
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
       dbsteward::console_line(1, "Defining structure");
@@ -322,13 +330,6 @@ class pgsql8 extends sql99 {
   }
 
   public function build_schema($db_doc, $ofs, $table_depends) {
-    // language defintions
-    if (dbsteward::$create_languages) {
-      foreach ($db_doc->language AS $language) {
-        $ofs->write(pgsql8_language::get_creation_sql($language));
-      }
-    }
-
     // schema creation
     foreach ($db_doc->schema AS $schema) {
       $ofs->write(pgsql8_schema::get_creation_sql($schema));

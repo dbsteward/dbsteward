@@ -61,6 +61,13 @@ class mssql10 {
     // database-specific implementation refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
     dbx::set_default_schema($db_doc, 'dbo');
+    
+    // language defintions
+    if (dbsteward::$create_languages) {
+      foreach ($db_doc->language AS $language) {
+        //@TODO: implement mssql10_language ? no relevant conversion exists see other TODO's stating this
+      }
+    }
 
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
@@ -83,13 +90,6 @@ class mssql10 {
     // explicitly create the ROLE_APPLICATION
     // webservers connect as a user granted this role
     $ofs->write("CREATE ROLE " . $db_doc->database->role->application . ";\n");
-
-    // language defintions
-    if (dbsteward::$create_languages) {
-      foreach ($db_doc->language AS $language) {
-        //@TODO: implement mssql10_language ? no relevant conversion exists see other TODO's stating this
-      }
-    }
 
     // schema creation
     foreach ($db_doc->schema AS $schema) {
