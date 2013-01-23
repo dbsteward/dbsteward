@@ -1538,7 +1538,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     while (($row_grant = pg_fetch_assoc($rc_grant)) !== FALSE) {
       $nodes = $doc->xpath("schema[@name='" . $row_grant['table_schema'] . "']");
       if (count($nodes) != 1) {
-        throw new exception("failed to find trigger schema '" . $row_grant['table_schema'] . "'");
+        throw new exception("failed to find grant schema '" . $row_grant['table_schema'] . "'");
       }
       else {
         $node_schema = $nodes[0];
@@ -1546,7 +1546,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
       $nodes = $node_schema->xpath("table[@name='" . $row_grant['table_name'] . "']");
       if (count($nodes) != 1) {
-        throw new exception("failed to find trigger schema " . $row_grant['table_schema'] . " table '" . $row_grant['table_name'] . "'");
+        throw new exception("failed to find grant schema " . $row_grant['table_schema'] . " table '" . $row_grant['table_name'] . "'");
       }
       else {
         $node_table = $nodes[0];
