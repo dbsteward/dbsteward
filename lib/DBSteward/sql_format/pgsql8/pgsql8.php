@@ -1527,7 +1527,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       WHERE trigger_schema NOT IN ('pg_catalog', 'information_schema');";
     $rc_trigger = pgsql8_db::query($sql);
     while (($row_trigger = pg_fetch_assoc($rc_trigger)) !== FALSE) {
-      dbsteward::console_line(3, "Analyze function " . $row_trigger['event_object_schema'] . "." . $row_trigger['event_object_schema']);
+      dbsteward::console_line(3, "Analyze trigger " . $row_trigger['event_object_schema'] . "." . $row_trigger['trigger_name']);
       $nodes = $doc->xpath("schema[@name='" . $row_trigger['event_object_schema'] . "']");
       if (count($nodes) != 1) {
         throw new exception("failed to find trigger schema '" . $row_trigger['event_object_schema'] . "'");
