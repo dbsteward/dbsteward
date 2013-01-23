@@ -1578,7 +1578,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         $node_schema = $nodes[0];
       }
 
-      $nodes = $node_schema->xpath("table[@name='" . $row_grant['table_name'] . "']");
+      $nodes = $node_schema->xpath("(table|view)[@name='" . $row_grant['table_name'] . "']");
       if (count($nodes) != 1) {
         throw new exception("failed to find grant schema " . $row_grant['table_schema'] . " table '" . $row_grant['table_name'] . "'");
       }
