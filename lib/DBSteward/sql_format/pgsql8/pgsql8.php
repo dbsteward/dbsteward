@@ -1328,6 +1328,40 @@ class pgsql8 extends sql99 {
       }
     }
 
+    // extract views
+    $sql = "SELECT *
+      FROM pg_catalog.pg_views
+      WHERE schemaname NOT IN ('information_schema', 'pg_catalog')
+      ORDER BY schemaname, viewname;";
+    $rc_views = pgsql8_db::query($sql);
+    while (($view_row = pg_fetch_assoc($rc_views)) !== FALSE) {
+      dbsteward::console_line(3, "Analyze view " . $view_row['schemaname'] . "." . $view_row['viewname']);
+
+      // create the schema if it is missing
+      $nodes = $doc->xpath("schema[@name='" . $view_row['schemaname'] . "']");
+      if (count($nodes) == 0) {
+        $node_schema = $doc->addChild('schema');
+        $node_schema->addAttribute('name', $view_row['schemaname']);
+        $sql = "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = '" . $view_row['schemaname'] . "'";
+        $schema_owner = pgsql8_db::query_str($sql);
+        $node_schema->addAttribute('owner', self::translate_role_name($schema_owner));
+      }
+      else {
+        $node_schema = $nodes[0];
+      }
+
+      $nodes = $node_schema->xpath("view[@name='" . $view_row['viewname'] . "']");
+      if (count($nodes) !== 0) {
+        throw new exception("view " . $view_row['schemaname'] . "." . $view_row['viewname'] . " already defined in XML object -- unexpected");
+      }
+
+      $node_view = $node_schema->addChild('view');
+      $node_view->addAttribute('name', $view_row['viewname']);
+      $node_view->addAttribute('owner', self::translate_role_name($view_row['viewowner']));
+      $node_query = $node_view->addChild('viewQuery', $view_row['definition']);
+      $node_query->addAttribute('sqlFormat', 'pgsql8');
+    }
+
     // for all schemas, all tables - get table constraints .. PRIMARY KEYs, FOREIGN KEYs
     // makes the loop much faster to do it for the whole schema cause of crappy joins
     // @TODO: known bug - multi-column primary keys can be out of order with this query
