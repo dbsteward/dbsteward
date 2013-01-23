@@ -1548,6 +1548,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         $node_trigger = $node_schema->addChild('trigger');
         $node_trigger->addAttribute('name', dbsteward::string_cast($row_trigger['trigger_name']));
         $node_trigger['event'] = dbsteward::string_cast($row_trigger['event_manipulation']);
+        $node_trigger['sqlFormat'] = 'pgsql8';
       }
       else {
         $node_trigger = $nodes[0];
