@@ -1490,7 +1490,9 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       if ( !$node_schema ) {
         throw new exception("failed to find function schema " . $row_fxn['Schema']);
       }
-      $node_function = dbx::get_function($node_schema, $row_fxn['Name'], $row_fxn['Argument data types'], TRUE);
+
+      $node_function = $node_schema->addChild('function');
+      $node_function['name'] = $row_fxn['Name'];
 
       $args = preg_split("/[\,]/", $row_fxn['Argument data types'], -1, PREG_SPLIT_NO_EMPTY);
       foreach($args AS $arg) {
