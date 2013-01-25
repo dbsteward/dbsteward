@@ -1437,6 +1437,11 @@ class pgsql8 extends sql99 {
         }
         $node_column['foreignColumn'] = $constraint_row['references_field'];
 
+        if (!isset($node_column['foreignKeyName'])) {
+          $node_column->addAttribute('foreignKeyName', $constraint_row['constraint_name']);
+        }
+        $node_column['foreignKeyName'] = $constraint_row['constraint_name'];
+
         // dbsteward fkey columns aren't supposed to specify a type, they will determine it from the foreign reference
         unset($node_column['type']);
       }
