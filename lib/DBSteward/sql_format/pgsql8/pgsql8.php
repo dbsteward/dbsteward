@@ -1414,6 +1414,12 @@ class pgsql8 extends sql99 {
           // reverse the standing order, this seems to work for most pk's by abusing natural order returned from the db
           $node_table['primaryKey'] = $constraint_row['column_name'] . ', ' . $node_table['primaryKey'];
         }
+
+        if (!isset($node_table['primaryKeyName'])) {
+          $node_table->addAttribute('primaryKeyName', $constraint_row['constraint_name']);
+        } else {
+          $node_table['primaryKeyName'] = $constraint_row['constraint_name'];
+        }
       }
       else if (strcasecmp('UNIQUE', $constraint_row['constraint_type']) == 0) {
         if (!isset($node_column['unique'])) {
