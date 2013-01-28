@@ -1507,7 +1507,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
       $args = preg_split("/[\,]/", $row_fxn['Argument data types'], -1, PREG_SPLIT_NO_EMPTY);
       foreach($args AS $arg) {
-        $arg_pieces = preg_split("/[\s]+/", trim($arg), -1, PREG_SPLIT_NO_EMPTY);
+        $arg_pieces = preg_split("/(?<!character)\s+/", trim($arg), -1, PREG_SPLIT_NO_EMPTY);
         $node_function_parameter = $node_function->addChild('functionParameter');
         if ( count($arg_pieces) > 1 ) {
           // if the function parameter is named, retain the name
