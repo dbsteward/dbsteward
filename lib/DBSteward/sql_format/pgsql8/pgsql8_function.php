@@ -104,7 +104,7 @@ class pgsql8_function {
    *
    * @param $node_function
    */
-  public static function get_declaration($node_schema, $node_function) {
+  public static function get_declaration($node_schema, $node_function, $include_names = TRUE) {
     $r = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . $node_function['name'] . '(';
     $parameters = dbx::get_function_parameters($node_function);
     foreach($parameters AS $parameter) {
@@ -112,7 +112,7 @@ class pgsql8_function {
       if ( isset($parameter['direction']) && strlen($parameter['direction']) > 0 ) {
         $arg .= $parameter['direction'] . ' ';
       }
-      if ( strlen($parameter['name']) > 0 ) {
+      if ( $include_names && strlen($parameter['name']) > 0 ) {
         $arg .= $parameter['name'] . ' ';
       }
       $arg .= $parameter['type'];

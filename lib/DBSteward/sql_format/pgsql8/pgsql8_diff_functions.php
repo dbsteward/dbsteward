@@ -22,7 +22,7 @@ class pgsql8_diff_functions {
     // drop functions that no longer exist in stage 3
     if ($old_schema != null) {
       foreach(dbx::get_functions($old_schema) as $old_function) {
-        if (!pgsql8_schema::contains_function($new_schema, pgsql8_function::get_declaration($new_schema, $old_function))) {
+        if (!pgsql8_schema::contains_function($new_schema, pgsql8_function::get_declaration($new_schema, $old_function, FALSE))) {
           $ofs3->write(pgsql8_function::get_drop_sql($old_schema, $old_function) . "\n");
         }
       }
