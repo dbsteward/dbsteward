@@ -1556,7 +1556,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
 
       // there is a row for each event_manipulation, so we need to aggregate them, see if the trigger already exists
-      $nodes = $node_schema->xpath("trigger[@name='" . $row_trigger['trigger_name'] . "']");
+      $nodes = $node_schema->xpath("trigger[@name='{$row_trigger['trigger_name']}' and @table='{$row_trigger['event_object_table']}']");
       if (count($nodes) == 0) {
         $node_trigger = $node_schema->addChild('trigger');
         $node_trigger->addAttribute('name', dbsteward::string_cast($row_trigger['trigger_name']));
@@ -1565,7 +1565,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
       else {
         $node_trigger = $nodes[0];
-        // add to the when if the trigger already exists
+        // add to the event if the trigger already exists
         $node_trigger['event'] .= ', ' . dbsteward::string_cast($row_trigger['event_manipulation']);
       }
 
