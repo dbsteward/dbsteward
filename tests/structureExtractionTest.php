@@ -79,7 +79,11 @@ XML;
    * @group mysql5
    */
   public function testBuildExtractCompare_mysql5() {
+    // this definition has the following things:
+    // tables with foreign keys
+    // foreign keys whose name is not the same as the index supporting the fkey (rg_blah123 / RateGrupIdx)
     $xml = <<<XML
+<?xml version="1.0"?>
 <dbsteward>
   <database>
     <host>127.0.0.1</host>
@@ -93,13 +97,17 @@ XML;
     <configurationParameter name="TIME ZONE" value="America/New_York" />
   </database>
   <schema name="public" owner="ROLE_OWNER">
+    <grant operation="ALL" role="ROLE_APPLICATION"/>
     <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
       <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
       <column name="rate_id" type="serial" null="false" />
-      <column name="rate_group_id" foreignSchema="public" foreignTable="rate_group" foreignColumn="rate_group_id" null="false" />
+      <column name="rate_group_id" foreignSchema="public" foreignTable="rate_group" foreignColumn="rate_group_id" null="false" foreignKeyName="rg_blah123" />
       <column name="rate_name" type="varchar(120)" />
       <column name="rate_value" type="decimal(10,0)" />
+      <index name="RateGrupIdx" using="btree" unique="false">
+        <indexDimension name="rate_group_id_1">rate_group_id</indexDimension>
+      </index>
     </table>
     <table name="rate_group" owner="ROLE_OWNER" primaryKey="rate_group_id">
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
