@@ -731,7 +731,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
     $sql = sprintf(
       "DELETE FROM %s WHERE (%s);\n",
       format::get_fully_qualified_table_name($schema['name'],$table['name']),
-      dbx::primary_key_expression($schema, $table, $data_row_columns, $data_row)
+      dbx::primary_key_expression(dbsteward::$old_database, $schema, $table, $data_row_columns, $data_row)
     );
   }
 
@@ -774,7 +774,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
       "UPDATE %s SET %s WHERE (%s); /* old values: %s */\n",
       format::get_fully_qualified_table_name($node_schema['name'], $node_table['name']),
       $update_columns,
-      dbx::primary_key_expression($node_schema, $node_table, $new_data_row_columns, $new_data_row),
+      dbx::primary_key_expression(dbsteward::$new_database, $node_schema, $node_table, $new_data_row_columns, $new_data_row),
       $old_columns
     );
 

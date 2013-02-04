@@ -948,7 +948,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       "DELETE FROM %s.%s WHERE (%s);\n",
       pgsql8::get_quoted_schema_name($schema['name']),
       pgsql8::get_quoted_table_name($table['name']),
-      dbx::primary_key_expression($schema, $table, $data_row_columns, $data_row)
+      dbx::primary_key_expression(dbsteward::$old_database, $schema, $table, $data_row_columns, $data_row)
     );
   }
 
@@ -1023,7 +1023,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       pgsql8::get_quoted_schema_name($node_schema['name']),
       pgsql8::get_quoted_table_name($node_table['name']),
       $update_columns,
-      dbx::primary_key_expression($node_schema, $node_table, $new_data_row_columns, $new_data_row),
+      dbx::primary_key_expression(dbsteward::$new_database, $node_schema, $node_table, $new_data_row_columns, $new_data_row),
       $old_columns
     );
 

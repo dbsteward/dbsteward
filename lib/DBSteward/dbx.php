@@ -711,7 +711,7 @@ class dbx {
    *
    * @return string
    */
-  public static function primary_key_expression($node_schema, $node_table, $data_row_columns, $data_row) {
+  public static function primary_key_expression($db_doc, $node_schema, $node_table, $data_row_columns, $data_row) {
     $primary_keys = format_table::primary_key_columns($node_table);
     $primary_key_index = xml_parser::data_row_overlay_primary_key_index($primary_keys, $data_row_columns, $data_row_columns);
 
@@ -729,7 +729,7 @@ class dbx {
       // get the type of the column, chasing foreign keys if necessary
       $node_column = dbx::get_table_column($node_table, $primary_column_name);
 
-      $value_type = format_column::column_type(dbsteward::$new_database, $node_schema, $node_table, $node_column, $foreign);
+      $value_type = format_column::column_type($db_doc, $node_schema, $node_table, $node_column, $foreign);
       $primary_key_expression[] = format::get_quoted_column_name($primary_column_name) . ' = ' . format::value_escape($value_type, $data_row->col[$column_index]);
     }
 

@@ -845,8 +845,12 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     return false;
   }
 
-  protected static function get_data_row_delete($schema, $table, $data_row_columns, $data_row, &$sql) {
-    $sql = sprintf("DELETE FROM %s.%s WHERE (%s);\n", mssql10::get_quoted_schema_name($schema['name']), mssql10::get_quoted_table_name($table['name']), dbx::primary_key_expression($schema, $table, $data_row_columns, $data_row));
+  protected static function get_data_row_delete($db_doc, $schema, $table, $data_row_columns, $data_row, &$sql) {
+    $sql = sprintf(
+      "DELETE FROM %s.%s WHERE (%s);\n",
+      mssql10::get_quoted_schema_name($schema['name']), mssql10::get_quoted_table_name($table['name']),
+      dbx::primary_key_expression(dbsteward::$old_database, $schema, $table, $data_row_columns, $data_row)
+    );
   }
 
   protected static function get_data_row_insert($node_schema, $node_table, $data_row_columns, $data_row) {
@@ -909,7 +913,13 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     $old_columns = substr($old_columns, 0, -2);
 
     // use multiline comments here, so when data has newlines they can be preserved, but upgrade scripts don't catch on fire
-    $sql = sprintf("UPDATE %s.%s SET %s WHERE (%s); /* old values: %s */\n", mssql10::get_quoted_schema_name($node_schema['name']), mssql10::get_quoted_table_name($node_table['name']), $update_columns, dbx::primary_key_expression($node_schema, $node_table, $new_data_row_columns, $new_data_row), $old_columns);
+    $sql = sprintf(
+      "UPDATE %s.%s SET %s WHERE (%s); /* old values: %s */\n",
+      mssql10::get_quoted_schema_name($node_schema['name']), mssql10::get_quoted_table_name($node_table['name']),
+      $update_columns,
+      dbx::primary_key_expression(dbsteward::$new_database, $node_schema, $node_table, $new_data_row_columns, $new_data_row),
+      $old_columns
+    );
 
     return $sql;
   }

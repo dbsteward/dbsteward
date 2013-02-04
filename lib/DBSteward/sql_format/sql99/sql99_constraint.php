@@ -277,5 +277,13 @@ class sql99_constraint {
   public static function get_reference_option_sql($ref_opt) {
     return strtoupper($ref_opt);
   }
+  
+  public static function get_constraint_sql($constraint) {
+    throw new exception("sql99 extender must implement get_constraint_sql()");
+  }
+
+  public static function get_constraint_drop_sql($constraint) {
+    throw new exception("sql99 extender must implement get_constraint_drop_sql()");
+  }
 }
 ?>
