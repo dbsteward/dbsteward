@@ -120,10 +120,10 @@ class mysql5_table extends sql99_table {
         $sequence_name = mysql5_column::get_serial_sequence_name($schema, $table, $column);
         $sequence = new SimpleXMLElement("<sequence name=\"$sequence_name\" owner=\"$owner\"/>");
 
-        if ( !empty($column['oldName']) && !dbsteward::$ignore_oldnames ) {
+        if ( !empty($column['oldColumnName']) && !dbsteward::$ignore_oldnames ) {
           $realname = (string)$column['name'];
-          $column['name'] = (string)$column['oldName'];
-          $sequence['oldName'] = mysql5_column::get_serial_sequence_name($schema, $table, $column);
+          $column['name'] = (string)$column['oldColumnName'];
+          $sequence['oldSequenceName'] = mysql5_column::get_serial_sequence_name($schema, $table, $column);
           $column['name'] = $realname;
         }
 

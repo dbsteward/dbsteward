@@ -162,6 +162,10 @@ class pgsql8_table extends sql99_table {
     if ( !is_array($constraint) ) {
       throw new exception("constraint is not an array?");
     }
+    if ( strlen($constraint['schema_name']) == 0 ) {
+      var_dump(array_keys($constraint));
+      throw new exception("schema_name is blank");
+    }
     if ( strlen($constraint['table_name']) == 0 ) {
       var_dump(array_keys($constraint));
       throw new exception("table_name is blank");

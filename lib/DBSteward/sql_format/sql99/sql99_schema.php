@@ -95,21 +95,21 @@ class sql99_schema {
   }
   
   /**
-   * Returns name of table that says it used to be called $old_name
+   * Returns name of table that says it used to be called $old_table_name
    *
    * @param   $old_name
    *
    * @return  string
    */
-  public function table_name_by_old_name($node_schema, $old_name) {
+  public function table_name_by_old_name($node_schema, $old_table_name) {
     if ( dbsteward::$ignore_oldnames ) {
-      throw new exception("dbsteward::ignore_oldname option is on, column_name_by_old_name() should not be getting called");
+      throw new exception("dbsteward::ignore_oldname option is on, table_name_by_old_name() should not be getting called");
     }
     
     $name = false;
 
     foreach(dbx::get_tables($node_schema) as $table) {
-      if (strcasecmp($table['oldName'], $old_name) == 0) {
+      if (strcasecmp($table['oldTableName'], $old_table_name) == 0) {
         $name = $table['name'];
         break;
       }

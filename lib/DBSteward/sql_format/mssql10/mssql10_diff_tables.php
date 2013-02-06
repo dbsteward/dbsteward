@@ -79,14 +79,14 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     foreach (dbx::get_table_columns($new_table) as $new_column) {
       if (!mssql10_table::contains_column($old_table, $new_column['name'])) {
         if ( !dbsteward::$ignore_oldnames && mssql10_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
-          // oldName renamed column ? rename table column of create new one
+          // oldColumnName renamed column ? rename table column of create new one
           $renamed_column_schema_name = $new_schema['name'];
           $renamed_column_table_name = $new_table['name'];
-          $old_column_name = $new_column['oldName'];
+          $old_column_name = $new_column['oldColumnName'];
           $new_column_name = $new_column['name'];
           $commands[] = array(
             'stage' => 'BEFORE1',
-            'command' => "-- column rename from oldName specification\n"
+            'command' => "-- column rename from oldColumnName specification\n"
               . "sp_rename '"
               . $renamed_column_schema_name . "." . $renamed_column_table_name . "." . $old_column_name
               . "' , '$new_column_name', 'COLUMN' ;"
@@ -198,7 +198,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     foreach (dbx::get_table_columns($old_table) as $old_column) {
       if (!mssql10_table::contains_column($new_table, $old_column['name'])) {
         if ( !dbsteward::$ignore_oldnames && ($renamed_column_name = mssql10_table::column_name_by_old_name($new_table, $old_column['name'])) !== false ) {
-          // table indicating oldName = table['name'] present in new schema? don't do DROP statement
+          // table indicating oldTableName = table['name'] present in new schema? don't do DROP statement
           $old_table_name = mssql10::get_quoted_table_name($old_table['name']);
           $old_column_name = mssql10::get_quoted_column_name($old_column['name']);
           $commands[] = array(
@@ -235,7 +235,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         continue;
       }
       if ( !dbsteward::$ignore_oldnames && mssql10_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
-        // oldName renamed column ? skip definition diffing on it, it is being renamed
+        // oldColumnName renamed column ? skip definition diffing on it, it is being renamed
         continue;
       }
       
@@ -473,12 +473,13 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         }
       }
       if (($old_schema == NULL) || !mssql10_schema::contains_table($old_schema, $table['name'])) {
-        if ( !dbsteward::$ignore_oldnames && mssql10_diff_tables::is_renamed_table($old_schema, $new_schema, $table) ) {
-          // oldName renamed table ? rename table instead of create new one
-          $old_table_name = $new_schema['name'] . '.' . $table['oldName'];
+        if ( !dbsteward::$ignore_oldnames && mssql10_diff_tables::is_renamed_table($new_schema, $table) ) {
+          // oldTableName renamed table ? rename table instead of create new one
+          $old_table_name = $new_schema['name'] . '.' . $table['oldTableName'];
           $new_table_name = $table['name'];
-          $ofs->write("-- table rename from oldName specification" . "\n"
+          $ofs->write("-- table rename from oldTableName specification" . "\n"
             . "sp_rename '$old_table_name' , '$new_table_name' ;" . "\n");
+          //@TODO: <table oldSchemaName> mssql10 support =(
         }
         else {
           $ofs->write(mssql10_table::get_creation_sql($new_schema, $table) . "\n");
@@ -955,8 +956,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     }
     else {
       // if it is a renamed table, remove all constraints and recreate with new table name conventions
-      if ( mssql10_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
-        $old_named_table = dbx::get_renamed_table_old_table($old_schema, $old_table, $new_schema, $new_table);
+      if ( mssql10_diff_tables::is_renamed_table($new_schema, $new_table) ) {
         foreach(dbx::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
           // rewrite the constraint definer to refer to the new table name
           // so the constraint by the old name, but part of the new table

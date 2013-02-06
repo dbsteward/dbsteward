@@ -188,7 +188,7 @@ SQL;
     $renamed = <<<XML
 <schema name="test0" owner="NOBODY">
   <table name="table" owner="NOBODY">
-    <column name="newid" type="serial" oldName="id"/>
+    <column name="newid" type="serial" oldColumnName="id"/>
   </table>
 </schema>
 XML;

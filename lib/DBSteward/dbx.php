@@ -563,6 +563,14 @@ class dbx {
   }
 
   public static function get_table_triggers($node_schema, $node_table) {
+    if ( !is_object($node_schema ) ) {
+      var_dump($node_schema);
+      throw new exception("node_schema is not an object");
+    }
+    if ( !is_object($node_table ) ) {
+      var_dump($node_table);
+      throw new exception("node_table is not an object");
+    }
     $nodes = $node_schema->xpath("trigger[@table='" . $node_table['name'] . "']");
     return $nodes;
   }
@@ -760,26 +768,32 @@ class dbx {
     $ofs->write("\n");
   }
   
-  public static function renamed_table_check_pointer($old_schema, &$old_table, $new_schema, $new_table) {
-    // if there is an oldName attribute
+  /**
+   * Sanity check table renaming pointers if they have been specified
+   * 
+   * @param object $old_schema
+   * @param object $old_table
+   * @param object $new_schema
+   * @param object $new_table
+   * @throws exception
+   */
+  public static function renamed_table_check_pointer(&$old_schema, &$old_table, $new_schema, $new_table) {
     if ( !dbsteward::$ignore_oldnames ) {
-      if ( $new_schema && $new_table && sql99_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
-        // find the tabel named oldName in $old_schema and 
-        // put a pointer to it in $old_table
-        if ( ! $old_schema ) {
-          throw new exception("Sanity failure: " . $new_table['name'] . " has oldName attribute, but old_schema is not defined");
+      if ( $new_schema && $new_table && sql99_diff_tables::is_renamed_table($new_schema, $new_table) ) {
+        if ( isset($new_table['oldSchemaName']) ) {
+          if ( ! ($old_schema = sql99_table::get_old_table_schema($new_schema, $new_table)) ) {
+            throw new exception("Sanity failure: " . $new_table['name'] . " has oldSchemaName attribute, but old_schema not found");
+          }
         }
-        $old_table = dbx::get_table($old_schema, $new_table['oldName']);
+        else if ( ! $old_schema ) {
+          throw new exception("Sanity failure: " . $new_table['name'] . " has oldTableName attribute, but passed old_schema is not defined");
+        }
+        $old_table = sql99_table::get_old_table($new_schema, $new_table);
         if ( ! $old_table ) {
-          throw new exception("Sanity failure: " . $new_table['name'] . " has oldName attribute, but table named oldName is not defined in old_schema");
+          throw new exception("Sanity failure: " . $new_table['name'] . " has oldTableName attribute, but table point not found");
         }
       }
     }
-  }
-  
-  public static function get_renamed_table_old_table($old_schema, $old_table, $new_schema, $new_table) {
-    $old_table = dbx::get_table($old_schema, $new_table['oldName']);
-    return $old_table;
   }
 
   public static function to_array($thing, $key=false) {

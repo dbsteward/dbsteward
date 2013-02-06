@@ -59,7 +59,7 @@ XML;
 
     $new = <<<XML
 <schema name="public" owner="ROLE_OWNER">
-  <table name="newtable" primaryKey="id" owner="ROLE_OWNER" oldName="table">
+  <table name="newtable" primaryKey="id" owner="ROLE_OWNER" oldTableName="table">
     <column name="id" type="int"/>
     <column name="col" type="text"/>
   </table>
@@ -75,7 +75,7 @@ XML;
 
     $new = <<<XML
 <schema name="public" owner="ROLE_OWNER">
-  <table name="newtable" primaryKey="id" owner="ROLE_OWNER" oldName="newtable">
+  <table name="newtable" primaryKey="id" owner="ROLE_OWNER" oldTableName="newtable">
     <column name="id" type="int"/>
     <column name="col" type="text"/>
   </table>
@@ -138,14 +138,14 @@ XML;
 <schema name="public" owner="ROLE_OWNER">
   <table name="table" primaryKey="id" owner="ROLE_OWNER">
     <column name="id" type="int"/>
-    <column name="diff" type="text" oldName="col"/>
+    <column name="diff" type="text" oldColumnName="col"/>
   </table>
 </schema>
 XML;
 
     // rename column
     $this->common_diff($old, $new,
-      "-- column rename from oldName specification\nALTER TABLE `table` CHANGE COLUMN `col` `diff` text;",
+      "-- column rename from oldColumnName specification\nALTER TABLE `table` CHANGE COLUMN `col` `diff` text;",
       '-- `table` DROP COLUMN `col` omitted: new column diff indicates it is the replacement for `col`');
 
     // drop/add column
@@ -300,7 +300,7 @@ XML;
     $one_renamed = <<<XML
 <schema name="public" owner="ROLE_OWNER">
   <table name="table" primaryKey="new_id" owner="ROLE_OWNER">
-    <column name="new_id" type="serial" oldName="id"/>
+    <column name="new_id" type="serial" oldColumnName="id"/>
   </table>
 </schema>
 XML;
@@ -308,7 +308,7 @@ XML;
     // rename serial column
     // 
     $this->common_diff($one, $one_renamed,
-      "-- column rename from oldName specification\nALTER TABLE `table` CHANGE COLUMN `id` `new_id` int NOT NULL;",
+      "-- column rename from oldColumnName specification\nALTER TABLE `table` CHANGE COLUMN `id` `new_id` int NOT NULL;",
       "-- `table` DROP COLUMN `id` omitted: new column new_id indicates it is the replacement for `id`");
 
     $one_int = <<<XML

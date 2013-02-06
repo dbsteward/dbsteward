@@ -10,32 +10,33 @@
 
 class sql99_diff_tables {
   
-  public static function is_renamed_table($old_schema, $new_schema, $new_table) {
+  public static function is_renamed_table($schema, $table) {
     // command line switch sanity first and foremost
     if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, is_renamed_table() should not be getting called");
     }
 
-    // if new_table['oldName'] is not defined, abort checks
-    if ( ! isset($new_table['oldName']) ) {
+    // if new_table['oldTableName'] is not defined, abort checks
+    if ( ! isset($table['oldTableName']) ) {
       return false;
     }
     
     // definition sanity checks
-    if ( sql99_schema::contains_table($new_schema, $new_table['oldName']) ) {
-      throw new Exception("table oldName panic - schema " . $new_schema['name'] . " still contains table named " . $new_table['oldName']);
+    if ( sql99_schema::contains_table($schema, $table['oldTableName']) ) {
+      throw new Exception("oldTableName panic - schema " . $schema['name'] . " still contains table named " . $table['oldTableName']);
     }
+    $old_schema = sql99_table::get_old_table_schema($schema, $table);
     if (!is_null($old_schema)) {
-      if ( !sql99_schema::contains_table($old_schema, $new_table['oldName']) ) {
-        throw new Exception("table oldName panic - schema " . $old_schema['name'] . " does not contain table named " . $new_table['oldName']);
+      if ( !sql99_schema::contains_table($old_schema, $table['oldTableName']) ) {
+        throw new Exception("oldTableName panic - old_schema " . $old_schema['name'] . " does not contain table named " . $table['oldTableName']);
       }
     }
     
     // it is a new old named table rename if:
-    // new_table['oldName'] exists in old schema
-    // new_table['oldName'] does not exist in new schema
-    if ( sql99_schema::contains_table($old_schema, $new_table['oldName'])
-        && !sql99_schema::contains_table($new_schema, $new_table['oldName']) ) {
+    // new_table['oldTableName'] exists in old schema
+    // new_table['oldTableName'] does not exist in new schema
+    if ( sql99_schema::contains_table($old_schema, $table['oldTableName'])
+        && !sql99_schema::contains_table($schema, $table['oldTableName']) ) {
       return true;
     }
 
@@ -48,24 +49,24 @@ class sql99_diff_tables {
       throw new exception("dbsteward::ignore_oldname option is on, is_renamed_column() should not be getting called");
     }
 
-    // if new_column['oldName'] is not defined, abort checks
-    if ( ! isset($new_column['oldName']) ) {
+    // if new_column['oldColumnName'] is not defined, abort checks
+    if ( ! isset($new_column['oldColumnName']) ) {
       return false;
     }
     
     // definition sanity checks
-    if ( sql99_table::contains_column($new_table, $new_column['oldName']) ) {
-      throw new Exception("column oldName panic - table " . $new_table['name'] . " still contains column named " . $new_column['oldName']);
+    if ( sql99_table::contains_column($new_table, $new_column['oldColumnName']) ) {
+      throw new Exception("oldColumnName panic - table " . $new_table['name'] . " still contains column named " . $new_column['oldColumnName']);
     }
-    if ( !sql99_table::contains_column($old_table, $new_column['oldName']) ) {
-      throw new Exception("column oldName panic - table " . $old_table['name'] . " does not contain column named " . $new_column['oldName']);
+    if ( !sql99_table::contains_column($old_table, $new_column['oldColumnName']) ) {
+      throw new Exception("oldColumnName panic - table " . $old_table['name'] . " does not contain column named " . $new_column['oldColumnName']);
     }
     
     // it is a new old named table rename if:
-    // new_column['oldName'] exists in old schema
-    // new_column['oldName'] does not exist in new schema
-    if ( sql99_table::contains_column($old_table, $new_column['oldName'])
-        && !sql99_table::contains_column($new_table, $new_column['oldName']) ) {
+    // new_column['oldColumnName'] exists in old schema
+    // new_column['oldColumnName'] does not exist in new schema
+    if ( sql99_table::contains_column($old_table, $new_column['oldColumnName'])
+        && !sql99_table::contains_column($new_table, $new_column['oldColumnName']) ) {
       return true;
     }
 

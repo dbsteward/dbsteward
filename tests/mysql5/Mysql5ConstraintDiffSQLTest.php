@@ -226,8 +226,8 @@ XML;
     $new = <<<XML
 <dbsteward>
 <schema name="public" owner="NOBODY">
-  <table name="newtable" owner="NOBODY" primaryKey="pkb" oldName="test">
-    <column name="pkb" type="int" oldName="pka"/>
+  <table name="newtable" owner="NOBODY" primaryKey="pkb" oldTableName="test">
+    <column name="pkb" type="int" oldColumnName="pka"/>
   </table>
 </schema>
 </dbsteward>

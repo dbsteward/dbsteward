@@ -273,7 +273,7 @@ class sql99_table {
    *
    * @return  string
    */
-  public function column_name_by_old_name($node_table, $old_name) {
+  public function column_name_by_old_name($node_table, $old_column_name) {
     if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, column_name_by_old_name() should not be getting called");
     }
@@ -281,7 +281,7 @@ class sql99_table {
     $name = false;
 
     foreach(dbx::get_table_columns($node_table) as $column) {
-      if (strcasecmp($column['oldName'], $old_name) == 0) {
+      if (strcasecmp($column['oldColumnName'], $old_column_name) == 0) {
         $name = $column['name'];
         break;
       }
@@ -361,6 +361,41 @@ class sql99_table {
    */
   protected static function join_table_option_sql($options) {
     return implode("\n", $options);
+  }
+  
+  /**
+   * If this table was renamed, get the old table definition node for this table
+   * as defined by oldTableName / oldSchemaName
+   * 
+   * @param  object  $schema  schema the table exists in
+   * @param  object  $table   table node
+   * @return object  old table node object
+   */
+  public static function &get_old_table($schema, $table) {
+    if ( !isset($table['oldTableName']) ) {
+      return NULL;
+    }
+    $old_schema = static::get_old_table_schema($schema, $table);
+    return dbx::get_table($old_schema, $table['oldTableName']);
+    return $old_table;
+  }
+  
+  /**
+   * If this table was renamed, get the old schema node for this table
+   * as defined by oldSchemaName. oldSchemaName is optional in the DTD
+   * so as to allow for table renaming when the RDBMS does not allow tables to change schema
+   * 
+   * @param  object  $schema  schema the table exists in
+   * @param  object  $table   table node
+   * @return object  old table node object
+   */
+  public static function &get_old_table_schema($schema, $table) {
+    if ( !isset($table['oldSchemaName']) ) {
+      return $schema;
+    }
+    
+    return dbx::get_schema(dbsteward::$old_database, $table['oldSchemaName']);
+    return $old_schema;
   }
 }
 

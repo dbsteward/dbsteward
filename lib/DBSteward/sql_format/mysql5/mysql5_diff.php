@@ -141,7 +141,7 @@ class mysql5_diff extends sql99_diff {
     // if the table dependency order is unknown, bang them in natural order
     if (!is_array(mysql5_diff::$new_table_dependency)) {
       foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-        //@NOTICE: @TODO: this does not honor oldName attributes, does it matter?
+        //@NOTICE: @TODO: this does not honor old*Name attributes, does it matter?
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
         
         mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);

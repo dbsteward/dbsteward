@@ -60,7 +60,8 @@
 <!ATTLIST table owner CDATA #REQUIRED>
 <!ATTLIST table slonyId CDATA #IMPLIED>
 <!ATTLIST table description CDATA #IMPLIED>
-<!ATTLIST table oldName CDATA #IMPLIED>
+<!ATTLIST table oldTableName CDATA #IMPLIED>
+<!ATTLIST table oldSchemaName CDATA #IMPLIED>
 <!ATTLIST table inheritsTable CDATA #IMPLIED>
 <!ATTLIST table inheritsSchema CDATA #IMPLIED>
 
@@ -102,7 +103,7 @@
 <!ATTLIST column afterAddStage3 CDATA #IMPLIED>
 <!ATTLIST column serialStart CDATA #IMPLIED>
 <!ATTLIST column description CDATA #IMPLIED>
-<!ATTLIST column oldName CDATA #IMPLIED>
+<!ATTLIST column oldColumnName CDATA #IMPLIED>
 
 <!ELEMENT index (indexDimension+, indexWhere?)>
 <!ATTLIST index name CDATA #REQUIRED>

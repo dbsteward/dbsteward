@@ -75,7 +75,7 @@ class dbsteward {
   public static $limit_to_tables = array();
   public static $single_stage_upgrade = FALSE;
   /**
-   * Should oldName attributes be validated and traced out, or ignored?
+   * Should old*Name attributes be validated and traced out, or ignored?
    */
   public static $ignore_oldnames = FALSE;
   /**
@@ -123,7 +123,7 @@ Generating SQL DDL / DML / DCL difference statements to upgrade an 'old' databas
   --onlytable=<schema.table> ...
   --singlestageupgrade              combine upgrade stages into one file
   --maxstatementsperfile            how many DDL / DML / DCL statements per upgrade file segment
-  --ignoreoldnames                  ignore table oldName values when differencing
+  --ignoreoldnames                  ignore oldSchemaName oldTableName oldColumnName attributes when differencing
   --ignorecustomroles               ignore grants for custom roles
   --ignoreprimarykeyerrors          ignore primary key errors when diffing two definitions
 XML utilities

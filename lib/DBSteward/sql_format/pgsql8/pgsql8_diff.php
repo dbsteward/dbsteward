@@ -176,7 +176,7 @@ class pgsql8_diff extends sql99_diff{
     // if the table dependency order is unknown, bang them in natural order
     if ( ! is_array(self::$new_table_dependency) ) {
       foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-        //@NOTICE: @TODO: this does not honor oldName attributes, does it matter?
+        //@NOTICE: @TODO: this does not honor old*Name attributes, does it matter?
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
         pgsql8_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
         pgsql8_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
@@ -280,8 +280,18 @@ class pgsql8_diff extends sql99_diff{
           $old_table = dbx::get_table($old_schema, $item['table']['name']);
         }
 
+        // if they are defined in the old definition,
+        // old_schema and old_table are already established pointers
+        // when a table has an oldTableName oldSchemaName specified,
+        // dbx::renamed_table_check_pointer() will modify these pointers to be the old table
         dbx::renamed_table_check_pointer($old_schema, $old_table, $new_schema, $new_table);
 
+        if ( $old_table ) {
+          if ( !$old_schema ) {
+            // nkiraly: is this still happening when dbx::renamed_table_check_pointer() changes the $old_table pointer?
+            throw new exception("old_table '" . $old_table['name'] . "' error: old_table is defined but old_schema is not - this cannot be for differs to diff");
+          }
+        }
         pgsql8_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema, $old_table, $new_table);
         pgsql8_diff_indexes::diff_indexes_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
         pgsql8_diff_tables::diff_clusters_table($ofs1, $old_schema, $old_table, $new_schema, $new_table);
@@ -340,8 +350,8 @@ class pgsql8_diff extends sql99_diff{
         if ( $old_schema != null ) {
           $old_table = dbx::get_table($old_schema, $new_table['name']);
         }
-        if ( !dbsteward::$ignore_oldnames && pgsql8_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table) ) {
-          // oldName renamed table ? skip permission diffing on it, it is the same
+        if ( !dbsteward::$ignore_oldnames && pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) ) {
+          // oldTableName renamed table ? skip permission diffing on it, it is the same
           continue;
         }
         foreach(dbx::get_permissions($new_table) AS $new_permission) {
