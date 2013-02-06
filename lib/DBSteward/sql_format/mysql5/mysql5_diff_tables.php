@@ -94,6 +94,20 @@ class mysql5_diff_tables extends sql99_diff_tables {
    * @param $new_table  new table
    */
   private static function update_table_columns($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table) {
+    // README: This function differs substantially from its siblings in pgsql8 or mssql10
+    // The reason for this is two-fold.
+    //
+    // First, for every ALTER TABLE, mysql actually rebuilds the whole table. Thus, it is drastically
+    // more efficient if we can pack as much into a single ALTER TABLE as possible. Secondly, unlike
+    // other RDBMS's, MySQL requires that you completely redefine a column if you (a) rename it,
+    // (b) change its NULL/NOT NULL attribute, (c) change its type, or (d) add or remove its AUTO_INCREMENT
+    // attribute. This means that just about 75% of the changes that could happen between two versions
+    // of column require a column redefine rather than granular alteration. Therefore, it doesn't make
+    // much sense to have 3 redefines of a column in a single ALTER TABLE, which is what happens if you
+    // port over the pgsql8 or mssql10 versions of this function.
+    //
+    // For these reasons, the mysql5 implementation of this function is optimized for making as few
+    // alterations to each column as possible.
 
     // arbitrary sql
     $extra = array(
