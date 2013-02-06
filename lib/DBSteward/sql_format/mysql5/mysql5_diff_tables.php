@@ -164,7 +164,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
         else {
           // new
           $cmd1['command'] = 'create';
-          $cmd1['nulls'] = FALSE;
 
           if ($col_index == 0) {
             $cmd1['first'] = TRUE;
@@ -173,50 +172,37 @@ class mysql5_diff_tables extends sql99_diff_tables {
             $cmd1['after'] = $new_columns[$col_index-1]['name'];
           }
 
-          if (!mysql5_column::null_allowed($new_table, $new_column)) {
-            $cmd3['command'] = 'modify';
-            $cmd3['nulls'] = FALSE;
-
-            if (strlen($new_column['default']) > 0) {
-              $defaults['update'][] = $new_column;
-            }
-
-            if (mysql5_diff::$add_defaults) {
-              $defaults['drop'][] = $new_column;
-            }
-
-            // some columns need filled with values before any new constraints can be applied
-            // this is accomplished by defining arbitrary SQL in the column element afterAddPre/PostStageX attribute
-            $db_doc_new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-            if ( $db_doc_new_schema ) {
-              $db_doc_new_table = dbx::get_table($db_doc_new_schema, $new_table['name']);
-              if ( $db_doc_new_table ) {
-                $db_doc_new_column = dbx::get_table_column($db_doc_new_table, $new_column['name']);
-                if ( $db_doc_new_column ) {
-                  if ( isset($db_doc_new_column['beforeAddStage1']) ) {
-                    $extras['BEFORE1'][] = trim($db_doc_new_column['beforeAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage1 definition";
-                  }
-                  if ( isset($db_doc_new_column['afterAddStage1']) ) {
-                    $extras['AFTER1'][] = trim($db_doc_new_column['afterAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage1 definition";
-                  }
-                  if ( isset($db_doc_new_column['beforeAddStage3']) ) {
-                    $extras['BEFORE3'][] = trim($db_doc_new_column['beforeAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage3 definition";
-                  }
-                  if ( isset($db_doc_new_column['afterAddStage3']) ) {
-                    $extras['AFTER3'][] = trim($db_doc_new_column['afterAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage3 definition";
-                  }
+          // some columns need filled with values before any new constraints can be applied
+          // this is accomplished by defining arbitrary SQL in the column element afterAddPre/PostStageX attribute
+          $db_doc_new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
+          if ( $db_doc_new_schema ) {
+            $db_doc_new_table = dbx::get_table($db_doc_new_schema, $new_table['name']);
+            if ( $db_doc_new_table ) {
+              $db_doc_new_column = dbx::get_table_column($db_doc_new_table, $new_column['name']);
+              if ( $db_doc_new_column ) {
+                if ( isset($db_doc_new_column['beforeAddStage1']) ) {
+                  $extras['BEFORE1'][] = trim($db_doc_new_column['beforeAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage1 definition";
                 }
-                else {
-                  throw new exception("afterAddPre/PostStageX column " . $new_column['name'] . " not found");
+                if ( isset($db_doc_new_column['afterAddStage1']) ) {
+                  $extras['AFTER1'][] = trim($db_doc_new_column['afterAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage1 definition";
+                }
+                if ( isset($db_doc_new_column['beforeAddStage3']) ) {
+                  $extras['BEFORE3'][] = trim($db_doc_new_column['beforeAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage3 definition";
+                }
+                if ( isset($db_doc_new_column['afterAddStage3']) ) {
+                  $extras['AFTER3'][] = trim($db_doc_new_column['afterAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage3 definition";
                 }
               }
               else {
-                throw new exception("afterAddPre/PostStageX table " . $new_table['name'] . " not found");
+                throw new exception("afterAddPre/PostStageX column " . $new_column['name'] . " not found");
               }
             }
             else {
-              throw new exception("afterAddPre/PostStageX schema " . $new_schema['name'] . " not found");
+              throw new exception("afterAddPre/PostStageX table " . $new_table['name'] . " not found");
             }
+          }
+          else {
+            throw new exception("afterAddPre/PostStageX schema " . $new_schema['name'] . " not found");
           }
         }
       }
@@ -271,7 +257,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
         }
         else {
           if (!$type_changed && $default_changed) {
-            // if the type was changed, the column will be redefined
+            // if the type was changed, the column will be redefined, so don't bother here
             if ($new_default) {
               $defaults['set'][] = $new_column;
             }
@@ -358,6 +344,10 @@ class mysql5_diff_tables extends sql99_diff_tables {
 
       $stage1_commands[] = "ALTER COLUMN $name SET DEFAULT $default";
     }
+    foreach ($defaults['drop'] as $column) {
+      $name = mysql5::get_quoted_column_name($column['name']);
+      $stage1_commands[] = "ALTER COLUMN $name DROP DEFAULT";
+    }
     $stage1_commands = array_filter($stage1_commands);
 
     if (count($stage1_commands) > 0) {
@@ -392,16 +382,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
         $default = mysql5_column::get_default_value($type);
       }
       $ofs1->write("UPDATE $table_name SET $name = $default WHERE $name IS NULL;\n\n");
-    }
-
-    // drop defaults, if any
-    if (count($defaults['drop']) > 0) {
-      $drops = array();
-      foreach ($defaults['drop'] as $column) {
-        $name = mysql5::get_quoted_column_name($column['name']);
-        $drops[] = "ALTER COLUMN $name DROP DEFAULT";
-      }
-      $ofs1->write("ALTER TABLE $table_name\n  " . implode(",\n  ", $drops) . ";\n\n");
     }
 
     // post-stage SQL
