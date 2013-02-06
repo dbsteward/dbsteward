@@ -431,6 +431,7 @@ class dbx {
     }
     $nodes = $filtered_nodes;
 
+    // TODO: this logic is buggy and needs fixed
     if (count($nodes) == 0) {
       if ($create_if_not_exist) {
         // function not found, caller wants the function created in the db

@@ -1328,6 +1328,40 @@ class pgsql8 extends sql99 {
       }
     }
 
+    // extract views
+    $sql = "SELECT *
+      FROM pg_catalog.pg_views
+      WHERE schemaname NOT IN ('information_schema', 'pg_catalog')
+      ORDER BY schemaname, viewname;";
+    $rc_views = pgsql8_db::query($sql);
+    while (($view_row = pg_fetch_assoc($rc_views)) !== FALSE) {
+      dbsteward::console_line(3, "Analyze view " . $view_row['schemaname'] . "." . $view_row['viewname']);
+
+      // create the schema if it is missing
+      $nodes = $doc->xpath("schema[@name='" . $view_row['schemaname'] . "']");
+      if (count($nodes) == 0) {
+        $node_schema = $doc->addChild('schema');
+        $node_schema->addAttribute('name', $view_row['schemaname']);
+        $sql = "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = '" . $view_row['schemaname'] . "'";
+        $schema_owner = pgsql8_db::query_str($sql);
+        $node_schema->addAttribute('owner', self::translate_role_name($schema_owner));
+      }
+      else {
+        $node_schema = $nodes[0];
+      }
+
+      $nodes = $node_schema->xpath("view[@name='" . $view_row['viewname'] . "']");
+      if (count($nodes) !== 0) {
+        throw new exception("view " . $view_row['schemaname'] . "." . $view_row['viewname'] . " already defined in XML object -- unexpected");
+      }
+
+      $node_view = $node_schema->addChild('view');
+      $node_view->addAttribute('name', $view_row['viewname']);
+      $node_view->addAttribute('owner', self::translate_role_name($view_row['viewowner']));
+      $node_query = $node_view->addChild('viewQuery', $view_row['definition']);
+      $node_query->addAttribute('sqlFormat', 'pgsql8');
+    }
+
     // for all schemas, all tables - get table constraints .. PRIMARY KEYs, FOREIGN KEYs
     // makes the loop much faster to do it for the whole schema cause of crappy joins
     // @TODO: known bug - multi-column primary keys can be out of order with this query
@@ -1380,6 +1414,12 @@ class pgsql8 extends sql99 {
           // reverse the standing order, this seems to work for most pk's by abusing natural order returned from the db
           $node_table['primaryKey'] = $constraint_row['column_name'] . ', ' . $node_table['primaryKey'];
         }
+
+        if (!isset($node_table['primaryKeyName'])) {
+          $node_table->addAttribute('primaryKeyName', $constraint_row['constraint_name']);
+        } else {
+          $node_table['primaryKeyName'] = $constraint_row['constraint_name'];
+        }
       }
       else if (strcasecmp('UNIQUE', $constraint_row['constraint_type']) == 0) {
         if (!isset($node_column['unique'])) {
@@ -1402,6 +1442,11 @@ class pgsql8 extends sql99 {
           $node_column->addAttribute('foreignColumn', $constraint_row['references_field']);
         }
         $node_column['foreignColumn'] = $constraint_row['references_field'];
+
+        if (!isset($node_column['foreignKeyName'])) {
+          $node_column->addAttribute('foreignKeyName', $constraint_row['constraint_name']);
+        }
+        $node_column['foreignKeyName'] = $constraint_row['constraint_name'];
 
         // dbsteward fkey columns aren't supposed to specify a type, they will determine it from the foreign reference
         unset($node_column['type']);
@@ -1456,11 +1501,13 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       if ( !$node_schema ) {
         throw new exception("failed to find function schema " . $row_fxn['Schema']);
       }
-      $node_function = dbx::get_function($node_schema, $row_fxn['Name'], $row_fxn['Argument data types'], TRUE);
+
+      $node_function = $node_schema->addChild('function');
+      $node_function['name'] = $row_fxn['Name'];
 
       $args = preg_split("/[\,]/", $row_fxn['Argument data types'], -1, PREG_SPLIT_NO_EMPTY);
       foreach($args AS $arg) {
-        $arg_pieces = preg_split("/[\s]+/", trim($arg), -1, PREG_SPLIT_NO_EMPTY);
+        $arg_pieces = preg_split("/(?<!character)\s+/", trim($arg), -1, PREG_SPLIT_NO_EMPTY);
         $node_function_parameter = $node_function->addChild('functionParameter');
         if ( count($arg_pieces) > 1 ) {
           // if the function parameter is named, retain the name
@@ -1491,7 +1538,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       WHERE trigger_schema NOT IN ('pg_catalog', 'information_schema');";
     $rc_trigger = pgsql8_db::query($sql);
     while (($row_trigger = pg_fetch_assoc($rc_trigger)) !== FALSE) {
-      dbsteward::console_line(3, "Analyze function " . $row_trigger['event_object_schema'] . "." . $row_trigger['event_object_schema']);
+      dbsteward::console_line(3, "Analyze trigger " . $row_trigger['event_object_schema'] . "." . $row_trigger['trigger_name']);
       $nodes = $doc->xpath("schema[@name='" . $row_trigger['event_object_schema'] . "']");
       if (count($nodes) != 1) {
         throw new exception("failed to find trigger schema '" . $row_trigger['event_object_schema'] . "'");
@@ -1509,15 +1556,16 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
 
       // there is a row for each event_manipulation, so we need to aggregate them, see if the trigger already exists
-      $nodes = $node_schema->xpath("trigger[@name='" . $row_trigger['trigger_name'] . "']");
+      $nodes = $node_schema->xpath("trigger[@name='{$row_trigger['trigger_name']}' and @table='{$row_trigger['event_object_table']}']");
       if (count($nodes) == 0) {
         $node_trigger = $node_schema->addChild('trigger');
         $node_trigger->addAttribute('name', dbsteward::string_cast($row_trigger['trigger_name']));
         $node_trigger['event'] = dbsteward::string_cast($row_trigger['event_manipulation']);
+        $node_trigger['sqlFormat'] = 'pgsql8';
       }
       else {
         $node_trigger = $nodes[0];
-        // add to the when if the trigger already exists
+        // add to the event if the trigger already exists
         $node_trigger['event'] .= ', ' . dbsteward::string_cast($row_trigger['event_manipulation']);
       }
 
@@ -1538,15 +1586,15 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     while (($row_grant = pg_fetch_assoc($rc_grant)) !== FALSE) {
       $nodes = $doc->xpath("schema[@name='" . $row_grant['table_schema'] . "']");
       if (count($nodes) != 1) {
-        throw new exception("failed to find trigger schema '" . $row_grant['table_schema'] . "'");
+        throw new exception("failed to find grant schema '" . $row_grant['table_schema'] . "'");
       }
       else {
         $node_schema = $nodes[0];
       }
 
-      $nodes = $node_schema->xpath("table[@name='" . $row_grant['table_name'] . "']");
+      $nodes = $node_schema->xpath("(table|view)[@name='" . $row_grant['table_name'] . "']");
       if (count($nodes) != 1) {
-        throw new exception("failed to find trigger schema " . $row_grant['table_schema'] . " table '" . $row_grant['table_name'] . "'");
+        throw new exception("failed to find grant schema " . $row_grant['table_schema'] . " table '" . $row_grant['table_name'] . "'");
       }
       else {
         $node_table = $nodes[0];
