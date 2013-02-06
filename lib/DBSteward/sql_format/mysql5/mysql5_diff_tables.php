@@ -94,333 +94,329 @@ class mysql5_diff_tables extends sql99_diff_tables {
    * @param $new_table  new table
    */
   private static function update_table_columns($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table) {
-    $commands = array();
-    $drop_defaults_columns = array();
-    static::add_drop_table_columns($commands, $old_table, $new_table);
-    static::add_create_table_columns($commands, $old_table, $new_schema, $new_table, $drop_defaults_columns);
-    static::add_modify_table_columns($commands, $old_schema, $old_table, $new_schema, $new_table, $drop_defaults_columns);
 
-    if (count($commands) > 0) {
-      // do 'pre' 'entire' statements before aggregate table alterations
-      for($i=0; $i < count($commands); $i++) {
-        if ( $commands[$i]['stage'] == 'BEFORE1' ) {
-          $ofs1->write($commands[$i]['command'] . "\n");
-        }
-        else if ( $commands[$i]['stage'] == 'BEFORE3' ) {
-          $ofs3->write($commands[$i]['command'] . "\n");
-        }
-      }
+    // arbitrary sql
+    $extra = array(
+      'BEFORE1' => array(),
+      'AFTER1' => array(),
+      'BEFORE3' => array(),
+      'AFTER3' => array()
+    );
 
-      $quotedTableName = mysql5::get_fully_qualified_table_name($new_schema['name'], $new_table['name']);
+    // each entry is keyed by column name, and has a 'command' key, which may be one of
+    //  nothing: do nothing
+    //  drop: drop this column
+    //  change: rename & redefine
+    //  create: create this column
+    //  modify: redefine without rename
+    // the 'defaults' key is whether to give the column a DEFAULT clause if it is NOT NULL
+    // the 'nulls' key is whether to include NULL / NOT NULL in the column definition
+    $commands = array(
+      '1' => array(),
+      '3' => array()
+    );
 
-      $stage1_sql = '';
-      $stage3_sql = '';
+    // what to do with 
+    $defaults = array(
+      'set' => array(),    // in stage 1, ALTER TABLE new_table ALTER COLUMN new_column SET DEFAULT new_column[default] ?: getDefaultValue(type)
+      'update' => array(), // after stage 1, UPDATE new_table SET new_column = DEFAULT WHERE new_column = DEFAULT
+      'drop' => array()    // after that, ALTER TABLE new_table ALTER COLUMN new_column DROP DEFAULT
+    );
 
-      for($i=0; $i < count($commands); $i++) {
-        if ( !isset($commands[$i]['stage']) || !isset($commands[$i]['command']) ) {
-          var_dump($commands[$i]);
-          throw new exception("bad command format");
-        }
-
-        if ( $commands[$i]['stage'] == '1' ) {
-          // we have a stage 1 alteration to make
-          // do the alter table prefix if we haven't yet
-          if ( strlen($stage1_sql) == 0 ) {
-            $stage1_sql = "ALTER TABLE " . $quotedTableName . "\n";
-          }
-          $stage1_sql .= $commands[$i]['command'] . " ,\n";
-        }
-        else if ( $commands[$i]['stage'] == '3' ) {
-          // we have a stage 3 alteration to make
-          // do the alter table prefix if we haven't yet
-          if ( strlen($stage3_sql) == 0 ) {
-            $stage3_sql = "ALTER TABLE " . $quotedTableName . "\n";
-          }
-          $stage3_sql .= $commands[$i]['command'] . " ,\n";
-        }
-      }
-
-      if ( strlen($stage1_sql) > 0 ) {
-        $stage1_sql = substr($stage1_sql, 0, -3) . ";\n";
-        $ofs1->write($stage1_sql);
-      }
-      if ( strlen($stage3_sql) > 0 ) {
-        $stage3_sql = substr($stage3_sql, 0, -3) . ";\n";
-        $ofs3->write($stage3_sql);
-      }
-
-      if (count($drop_defaults_columns) > 0) {
-        $ofs1->write("\n");
-        $ofs1->write("ALTER TABLE " . $quotedTableName . "\n");
-
-        $alters = array_map(function($c){
-          return "\tALTER COLUMN " . mysql5::get_quoted_column_name($c['name']) . " DROP DEFAULT";
-        }, $drop_defaults_columns);
-        $ofs->write(implode(",\n", $alters).";\n");
-      }
-
-      // do 'post' 'entire' statements immediately following aggregate table alterations
-      for($i=0; $i < count($commands); $i++) {
-        if ( $commands[$i]['stage'] == 'BEFORE1' ) {
-          // already taken care of in earlier entire command output loop
-        }
-        else if ( $commands[$i]['stage'] == 'BEFORE3' ) {
-          // already taken care of in earlier entire command output loop
-        }
-        else if ( $commands[$i]['stage'] == '1' ) {
-          // already taken care of in earlier command aggregate loop
-        }
-        else if ( $commands[$i]['stage'] == '3' ) {
-          // already taken care of in earlier command aggregate loop
-        }
-        else if ( $commands[$i]['stage'] == 'AFTER1' ) {
-          $ofs1->write($commands[$i]['command'] . "\n");
-        }
-        else if ( $commands[$i]['stage'] == 'AFTER3' ) {
-          $ofs3->write($commands[$i]['command'] . "\n");
-        }
-        else {
-          throw new exception("Unknown stage " . $commands[$i]['stage'] . " during table " . $quotedTableName . " updates");
-        }
-      }
-    }
-  }
-
-  /**
-   * Adds commands for removal of columns to the list of commands.
-   *
-   * @param commands list of commands
-   * @param old_table original table
-   * @param new_table new table
-   */
-  // @TODO: pull up
-  private static function add_drop_table_columns(&$commands, $old_table, $new_table) {
     foreach(dbx::get_table_columns($old_table) as $old_column) {
       if (!mysql5_table::contains_column($new_table, $old_column['name'])) {
         if ( !dbsteward::$ignore_oldnames && ($renamed_column_name = mysql5_table::column_name_by_old_name($new_table, $old_column['name'])) !== false ) {
-          // table indicating oldTableName = table['name'] present in new schema? don't do DROP statement
-          $old_table_name = mysql5::get_quoted_table_name($old_table['name']);
-          $old_column_name = mysql5::get_quoted_column_name($old_column['name']);
-          $commands[] = array(
-            'stage' => 'AFTER3',
-            'command' => "-- $old_table_name DROP COLUMN $old_column_name omitted: new column $renamed_column_name indicates it is the replacement for " . $old_column_name
-          );
+          continue;
         }
         else {
-          //echo "NOTICE: add_drop_table_columns()  " . $new_table['name'] . " does not contain " . $old_column['name'] . "\n";
-          $commands[] = array(
-            'stage' => '3',
-            'command' => "\tDROP COLUMN " . mysql5::get_quoted_column_name($old_column['name'])
+          // echo "NOTICE: add_drop_table_columns()  " . $new_table['name'] . " does not contain " . $old_column['name'] . "\n";
+          $commands['3'][(string)$old_column['name']] = array(
+            'command' => 'drop',
+            'column' => $old_column
           );
         }
       }
     }
-  }
 
-  /**
-   * Adds commands for creation of new columns to the list of
-   * commands.
-   *
-   * @param commands list of commands
-   * @param old_table original table
-   * @param new_table new table
-   * @param drop_defaults_columns list for storing columns for which default value should be dropped
-   */
-  // @TODO: pull up
-  private static function add_create_table_columns(&$commands, $old_table, $new_schema, $new_table, &$drop_defaults_columns) {
-    foreach(dbx::get_table_columns($new_table) as $new_column) {
+    $new_columns = dbx::get_table_columns($new_table);
+    foreach ($new_columns as $col_index => $new_column) {
+      $cmd1 = array(
+        'command' => 'nothing',
+        'column' => $new_column,
+        'defaults' => mysql5_diff::$add_defaults,
+        'nulls' => TRUE
+      );
+
+      $cmd3 = array(
+        'command' => 'nothing',
+        'column' => $new_column,
+        'defaults' => mysql5_diff::$add_defaults,
+        'nulls' => TRUE
+      );
+
       if (!mysql5_table::contains_column($old_table, $new_column['name'])) {
-        if ( !dbsteward::$ignore_oldnames && mysql5_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
-          // oldColumnName renamed column ? rename column instead of create new one
-          $old_column_name = mysql5::get_quoted_column_name($new_column['oldColumnName']);
-          // $new_column_name = mysql5::get_quoted_column_name($new_column['name']);
-          $to = mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mysql5_diff::$add_defaults);
-          $commands[] = array(
-            'stage' => 'AFTER1',
-            'command' => "-- column rename from oldColumnName specification\n"
-              . "ALTER TABLE " . mysql5::get_fully_qualified_table_name($new_schema['name'], $new_table['name'])
-              . " CHANGE COLUMN $old_column_name $to;"
-          );
-          continue;
+        // column not present in old table, is either renamed or new
+        if (!dbsteward::$ignore_oldnames && mysql5_diff_tables::is_renamed_column($old_table, $new_table, $new_column)) {
+          // renamed
+          $cmd1['command'] = 'change';
+          $cmd1['old'] = $new_column['oldName'];
         }
-        
-        // notice $include_null_definition is false
-        // this is because ADD COLUMNs with NOT NULL will fail when there are existing rows
+        else {
+          // new
+          $cmd1['command'] = 'create';
+          $cmd1['nulls'] = FALSE;
 
-        $commands[] = array(
-          'stage' => '1',
-          'command' => "\tADD COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mysql5_diff::$add_defaults, false)
-        );
-        // instead we put the NOT NULL defintion in stage3 schema changes once data has been updated in stage2 data
-        if ( ! pgsql8_column::null_allowed($new_table, $new_column) ) {
-          $commands[] = array(
-            'stage' => '3',
-            'command' => "\tMODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mysql5_diff::$add_defaults)
-          );
-          // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 3
-          if ( strlen($new_column['default']) > 0 ) {
-            $commands[] = array(
-              'stage' => 'AFTER1',
-              'command' => "UPDATE " . mysql5::get_fully_qualified_table_name($new_schema['name'], $new_table['name'])
-                . " SET " . mysql5::get_quoted_column_name($new_column['name']) . " = DEFAULT"
-                . " WHERE " . mysql5::get_quoted_column_name($new_column['name']) . " IS NULL;"
-            );
+          if ($col_index == 0) {
+            $cmd1['first'] = TRUE;
+          }
+          else {
+            $cmd1['after'] = $new_columns[$col_index-1]['name'];
           }
 
-        }
+          if (!mysql5_column::null_allowed($new_table, $new_column)) {
+            $cmd3['command'] = 'modify';
+            $cmd3['nulls'] = FALSE;
 
-        if (mysql5_diff::$add_defaults && !mysql5_column::null_allowed($new_table, $new_column)) {
-          $drop_defaults_columns[] = $new_column;
-        }
+            if (strlen($new_column['default']) > 0) {
+              $defaults['update'][] = $new_column;
+            }
 
-        // some columns need filled with values before any new constraints can be applied
-        // this is accomplished by defining arbitrary SQL in the column element afterAddPre/PostStageX attribute
-        $db_doc_new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-        if ( $db_doc_new_schema ) {
-          $db_doc_new_table = dbx::get_table($db_doc_new_schema, $new_table['name']);
-          if ( $db_doc_new_table ) {
-            $db_doc_new_column = dbx::get_table_column($db_doc_new_table, $new_column['name']);
-            if ( $db_doc_new_column ) {
-              if ( isset($db_doc_new_column['beforeAddStage1']) ) {
-                $commands[] = array(
-                  'stage' => 'BEFORE1',
-                  'command' => trim($db_doc_new_column['beforeAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage1 definition"
-                );
+            if (mysql5_diff::$add_defaults) {
+              $defaults['drop'][] = $new_column;
+            }
+
+            // some columns need filled with values before any new constraints can be applied
+            // this is accomplished by defining arbitrary SQL in the column element afterAddPre/PostStageX attribute
+            $db_doc_new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
+            if ( $db_doc_new_schema ) {
+              $db_doc_new_table = dbx::get_table($db_doc_new_schema, $new_table['name']);
+              if ( $db_doc_new_table ) {
+                $db_doc_new_column = dbx::get_table_column($db_doc_new_table, $new_column['name']);
+                if ( $db_doc_new_column ) {
+                  if ( isset($db_doc_new_column['beforeAddStage1']) ) {
+                    $extras['BEFORE1'][] = trim($db_doc_new_column['beforeAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage1 definition";
+                  }
+                  if ( isset($db_doc_new_column['afterAddStage1']) ) {
+                    $extras['AFTER1'][] = trim($db_doc_new_column['afterAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage1 definition";
+                  }
+                  if ( isset($db_doc_new_column['beforeAddStage3']) ) {
+                    $extras['BEFORE3'][] = trim($db_doc_new_column['beforeAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage3 definition";
+                  }
+                  if ( isset($db_doc_new_column['afterAddStage3']) ) {
+                    $extras['AFTER3'][] = trim($db_doc_new_column['afterAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage3 definition";
+                  }
+                }
+                else {
+                  throw new exception("afterAddPre/PostStageX column " . $new_column['name'] . " not found");
+                }
               }
-              if ( isset($db_doc_new_column['afterAddStage1']) ) {
-                $commands[] = array(
-                  'stage' => 'AFTER1',
-                  'command' => trim($db_doc_new_column['afterAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage1 definition"
-                );
-              }
-              if ( isset($db_doc_new_column['beforeAddStage3']) ) {
-                $commands[] = array(
-                  'stage' => 'BEFORE3',
-                  'command' => trim($db_doc_new_column['beforeAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage3 definition"
-                );
-              }
-              if ( isset($db_doc_new_column['afterAddStage3']) ) {
-                $commands[] = array(
-                  'stage' => 'AFTER3',
-                  'command' => trim($db_doc_new_column['afterAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage3 definition"
-                );
+              else {
+                throw new exception("afterAddPre/PostStageX table " . $new_table['name'] . " not found");
               }
             }
             else {
-              throw new exception("afterAddPre/PostStageX column " . $new_column['name'] . " not found");
+              throw new exception("afterAddPre/PostStageX schema " . $new_schema['name'] . " not found");
             }
           }
-          else {
-            throw new exception("afterAddPre/PostStageX table " . $new_table['name'] . " not found");
-          }
-        }
-        else {
-          throw new exception("afterAddPre/PostStageX schema " . $new_schema['name'] . " not found");
         }
       }
-    }
-  }
-
-  /**
-   * Adds commands for modification of columns to the list of
-   * commands.
-   *
-   * @param commands list of commands
-   * @param old_table original table
-   * @param new_table new table
-   * @param drop_defaults_columns list for storing columns for which default value should be dropped
-   */
-  // @TODO: pull up
-  private static function add_modify_table_columns(&$commands, $old_schema, $old_table, $new_schema, $new_table, &$drop_defaults_columns) {
-    foreach(dbx::get_table_columns($new_table) as $new_column) {
-      if (!mysql5_table::contains_column($old_table, $new_column['name'])) {
-        continue;
-      }
-      if ( !dbsteward::$ignore_oldnames && mysql5_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
-        // oldColumnName renamed column ? skip definition diffing on it, it is being renamed
-        continue;
-      }
-
-      $old_column = dbx::get_table_column($old_table, $new_column['name']);
-      $new_column_name = mysql5::get_quoted_column_name($new_column['name']);
-
-      $old_column_type = null;
-      if ( $old_column ) {
+      else if ($old_column = dbx::get_table_column($old_table, $new_column['name'])) {
         $old_column_type = mysql5_column::column_type(dbsteward::$old_database, $old_schema, $old_table, $old_column);
-      }
-      $new_column_type = mysql5_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $new_column);
+        $new_column_type = mysql5_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $new_column);
 
-      if ( strcmp($old_column_type, $new_column_type) != 0 ) {
-        // @TODO: Implement type conversion works-alike to pgsql's ALTER COLUMN ___ TYPE ___ USING ___
+        $old_default = isset($old_column['default']) ? $old_column['default'] : '';
+        $new_default = isset($new_column['default']) ? $new_column['default'] : '';
 
-        $commands[] = array(
-          'stage' => '1',
-          'command' => "  MODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mysql5_diff::$add_defaults)
-            . " /* TYPE change - table: {$new_table['name']} original: {$old_column['type']} new: $new_column_type */"
-        );
-      }
+        $new_is_nullable = mysql5_column::null_allowed($new_table, $new_column);
 
-      $old_default = isset($old_column['default']) ? $old_column['default'] : '';
-      $new_default = isset($new_column['default']) ? $new_column['default'] : '';
+        $type_changed = strcasecmp($old_column_type, $new_column_type) !== 0;
+        $default_changed = strcasecmp($old_default, $new_default) !== 0;
+        $nullable_changed = strcasecmp($old_column['null'] ?: 'true', $new_column['null'] ?: 'true') !== 0;
 
-      if (strcmp($old_default, $new_default) != 0) {
-        if (strlen($new_default) == 0) {
-          // if the default value was gotten rid of
-          $commands[] = array(
-            'stage' => '1',
-            'command' => "\tALTER COLUMN $new_column_name DROP DEFAULT"
-          );
-        }
-        else {
-          // if the default value changed
-          $commands[] = array(
-            'stage' => '1',
-            'command' => "\tALTER COLUMN $new_column_name SET DEFAULT $new_default"
-          );
-        }
-      }
+        // if the type changed, we need to redefine the column
+        // if the column went from NOT NULL -> NULL, redefine in stage 1
+        // if the column went from NULL -> NOT NULL, redefine in stage 3
+        $cmd1['command'] = $type_changed || ($nullable_changed && $new_is_nullable) ? 'modify' : 'nothing';
+        $cmd3['command'] = $nullable_changed && !$new_is_nullable ? 'modify' : 'nothing';
 
-      // note that no null attribute is a true null attribute
-      if ( strcasecmp($old_column['null'] ?: 'true', $new_column['null'] ?: 'true') != 0 ) {
-        if (mysql5_column::null_allowed($new_table, $new_column)) {
-          // if the column is now allowed to be null, redefine it (because mysql won't let you just change NULL/NOT NULL)
-          $commands[] = array(
-            'stage' => '1',
-            'command' => "\tMODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, FALSE)
-          );
-        }
-        else {
-          // the column is no longer allowed to be null
-          if (mysql5_diff::$add_defaults) {
-            $default_value = mysql5_column::get_default_value($new_column_type);
+        if ($nullable_changed) {
+          if (!$new_is_nullable) {
+            if (!$new_default) {
+              // if the column went from NULL to NOT NULL, and there is no default
+              if (mysql5_diff::$add_defaults) {
+                if (!$type_changed) {
+                  // if the type didn't change, and we're forcing it to have defaults,
+                  // set the column default to the default value of its type
+                  $defaults['set'][] = $new_column;
+                }
+                // if the type did change, we don't need to set the default, because the
+                // column will be redefined in stage 1, including the new default value.
 
-            if ($default_value != null) {
-              $commands[] = array(
-                'stage' => '1',
-                'command' => "\tALTER COLUMN $new_column_name SET DEFAULT $default_value"
-              );
-              $drop_defaults_columns[] = $new_column;
+                // regardless of how the default was set, we need to update existing rows
+                // from NULL -> DEFAULT
+                $defaults['update'][] = $new_column;
+
+                // then, because the new column doesn't *actually* have a default, we need to revoke it
+                $defaults['drop'][] = $new_column;
+
+                // make sure we don't redefine with forced defaults
+                $cmd3['defaults'] = FALSE;
+              }
+            }
+            else {
+              // the column went from NULL to NOT NULL and there *is* a default
+              if ($default_changed && !$type_changed) {
+                // if the default changed or was added (but not dropped),
+                // we need to set the new default. however, if the type did change,
+                // the column will be redefined, so we don't need to set the default
+                $defaults['set'][] = $new_column;
+              }
+
+              // regardless of type change or default change, NULLs are no longer allowed, 
+              // and so we need to update existing rows from NULL -> DEFAULT
+              $defaults['update'][] = $new_column;
             }
           }
-
-          // if the default value is defined in the dbsteward XML
-          // set the value of the column to the default in end of stage 1 so that NOT NULL can be applied in stage 3
-          // this way custom <sql> tags can be avoided for upgrade generation if defaults are specified
-          if ( strlen($new_column['default']) > 0 ) {
-            $commands[] = array(
-              'stage' => 'AFTER1',
-              'command' => "UPDATE " . mysql5::get_fully_qualified_table_name($new_schema['name'], $new_table['name'])
-                . " SET $new_column_name = {$new_column['default']} WHERE $new_column_name IS NULL;"
-                . " -- has_default_now: make modified column that is null the default value before NOT NULL hits"
-            );
+          // else {
+            // the column went from NOT NULL to NULL. regardless of changes to the default,
+            // it will be redefined in stage 1.
+          // }
+        }
+        else {
+          if (!$type_changed && $default_changed) {
+            // if the type was changed, the column will be redefined
+            if ($new_default) {
+              $defaults['set'][] = $new_column;
+            }
+            else {
+              $defaults['drop'][] = $new_column;
+            }
           }
-
-          $commands[] = array(
-            'stage' => '3',
-            'command' => "\tMODIFY COLUMN " . mysql5_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, mysql5_diff::$add_defaults)
-          );
         }
       }
+
+      $commands['1'][(string)$new_column['name']] = $cmd1;
+      $commands['3'][(string)$new_column['name']] = $cmd3;
+    } // end foreach column
+
+    $table_name = mysql5::get_fully_qualified_table_name($new_schema['name'], $new_table['name']);
+
+    $get_command_sql = function ($command) use (&$new_schema, &$new_table) {
+      if ($command['command'] == 'nothing') return NULL;
+
+      if ($command['command'] == 'drop') {
+        $name = mysql5::get_quoted_column_name($command['column']['name']);
+        return "DROP COLUMN $name";
+      }
+
+      $defn = mysql5_column::get_full_definition(
+        dbsteward::$new_database,
+        $new_schema,
+        $new_table,
+        $command['column'],
+        $command['defaults'],
+        $command['nulls']
+      );
+
+      if ($command['command'] == 'change') {
+        $old = mysql5::get_quoted_column_name($command['old']);
+        return "CHANGE COLUMN $old $defn";
+      }
+
+      if ($command['command'] == 'create') {
+        if (array_key_exists('first', $command)) {
+          return "ADD COLUMN $defn FIRST";
+        }
+        elseif (array_key_exists('after', $command)) {
+          $col = mysql5::get_quoted_column_name($command['after']);
+          return "ADD COLUMN $defn AFTER $col";
+        }
+        else {
+          return "ADD COLUMN $defn";
+        }
+      }
+
+      if ($command['command'] == 'modify') {
+        return "MODIFY COLUMN $defn";
+      }
+
+      throw new Exception("Invalid column diff command '{$command['command']}'");
+    };
+
+    // pre-stage SQL
+    foreach ($extra['BEFORE1'] as $sql) {
+      $ofs1->write($sql."\n\n");
+    }
+
+    foreach ($extra['BEFORE3'] as $sql) {
+      $ofs3->write($sql."\n\n");
+    }
+
+    // output stage 1 sql
+    $stage1_commands = array();
+    foreach ($commands['1'] as $column_name => $command) {
+      $stage1_commands[] = $get_command_sql($command);
+    }
+    // we can also add SET DEFAULTs in here
+    foreach ($defaults['set'] as $column) {
+      $name = mysql5::get_quoted_column_name($column['name']);
+
+      if (strlen($column['default']) > 0) {
+        $default = (string)$column['default'];
+      }
+      else {
+        $type = mysql5_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $column);
+        $default = mysql5_column::get_default_value($type);
+      }
+
+      $stage1_commands[] = "ALTER COLUMN $name SET DEFAULT $default";
+    }
+    $stage1_commands = array_filter($stage1_commands);
+
+    if (count($stage1_commands) > 0) {
+      $sql = "ALTER TABLE $table_name\n  ";
+      $sql .= implode(",\n  ", $stage1_commands);
+      $sql .= ";\n\n";
+      $ofs1->write($sql);
+    }
+
+    // output stage 3 sql
+    $stage3_commands = array();
+    foreach ($commands['3'] as $column_name => $command) {
+      $stage3_commands[] = $get_command_sql($command);
+    }
+    $stage3_commands = array_filter($stage3_commands);
+
+    if (count($stage3_commands) > 0) {
+      $sql = "ALTER TABLE $table_name\n  ";
+      $sql .= implode(",\n  ", $stage3_commands);
+      $sql .= ";\n\n";
+      $ofs3->write($sql);
+    }
+
+    // update defaults, if any
+    foreach ($defaults['update'] as $column) {
+      $name = mysql5::get_quoted_column_name($column['name']);
+      $ofs1->write("UPDATE $table_name SET $name = DEFAULT WHERE $name IS NULL;\n\n");
+    }
+
+    // drop defaults, if any
+    if (count($defaults['drop']) > 0) {
+      $drops = array();
+      foreach ($defaults['drop'] as $column) {
+        $name = mysql5::get_quoted_column_name($column['name']);
+        $drops[] = "ALTER COLUMN $name DROP DEFAULT";
+      }
+      $ofs1->write("ALTER TABLE $table_name\n  " . implode(",\n  ", $drops) . ";\n\n");
+    }
+
+    // post-stage SQL
+    foreach ($extra['AFTER1'] as $sql) {
+      $ofs1->write($sql."\n\n");
+    }
+
+    foreach ($extra['AFTER3'] as $sql) {
+      $ofs3->write($sql."\n\n");
     }
   }
 
