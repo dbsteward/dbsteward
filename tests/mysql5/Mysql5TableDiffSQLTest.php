@@ -125,15 +125,16 @@ XML;
     <column name="id" type="int"/>
     <column name="col" type="text"/>
     <column name="newcol" type="int"/>
+    <column name="newcol2" type="int"/>
   </table>
 </schema>
 XML;
 
     // add column
-    $this->common_diff($old, $new, "ALTER TABLE `table`\n  ADD COLUMN `newcol` int AFTER `col`;", '');
+    $this->common_diff($old, $new, "ALTER TABLE `table`\n  ADD COLUMN `newcol` int AFTER `col`,\n  ADD COLUMN `newcol2` int AFTER `newcol`;", '');
 
     // drop column
-    $this->common_diff($new, $old, '', "ALTER TABLE `table`\n  DROP COLUMN `newcol`;");
+    $this->common_diff($new, $old, '', "ALTER TABLE `table`\n  DROP COLUMN `newcol`,\n  DROP COLUMN `newcol2`;");
 
     $new = <<<XML
 <schema name="public" owner="ROLE_OWNER">
