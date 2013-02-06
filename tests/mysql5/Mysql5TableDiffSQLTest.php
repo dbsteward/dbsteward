@@ -221,7 +221,7 @@ XML;
     mysql5_diff::$add_defaults = true;
     // NULL -> NOT NULL
     $this->common_diff($nullable_with_default, $notnullable_with_default,
-     "UPDATE `table` SET `col` = DEFAULT WHERE `col` IS NULL;",
+     "UPDATE `table` SET `col` = 'xyz' WHERE `col` IS NULL;",
      "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL DEFAULT 'xyz';");
 
     // NOT NULL -> NULL
@@ -237,10 +237,10 @@ XML;
 XML;
 
     // going from NULL DEFAULT 'xyz' -> NOT NULL
-    // this means we 1) set default to type default, 2) update nulls, 3) drop the default, 4) redefine as NOT NULL with no defaults
-    // 1, 2, and 3 happen in stage 1, 4 happens in stage 3
+    // all we need to do is replace NULL with the type default.
+    // the redefinition in stage 3 will remove the default and make it NOT NULL
     $this->common_diff($nullable_with_default, $notnullable_without_default,
-      "ALTER TABLE `table`\n  ALTER COLUMN `col` SET DEFAULT '';\n\nUPDATE `table` SET `col` = DEFAULT WHERE `col` IS NULL;\n\nALTER TABLE `table`\n  ALTER COLUMN `col` DROP DEFAULT;",
+      "UPDATE `table` SET `col` = '' WHERE `col` IS NULL;",
       "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL;");
 
     $this->common_diff($notnullable_without_default, $nullable_with_default,

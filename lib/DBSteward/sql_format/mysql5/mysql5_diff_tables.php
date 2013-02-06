@@ -244,21 +244,8 @@ class mysql5_diff_tables extends sql99_diff_tables {
             if (!$new_default) {
               // if the column went from NULL to NOT NULL, and there is no default
               if (mysql5_diff::$add_defaults) {
-                if (!$type_changed) {
-                  // if the type didn't change, and we're forcing it to have defaults,
-                  // set the column default to the default value of its type
-                  $defaults['set'][] = $new_column;
-                }
-                // if the type did change, we don't need to set the default, because the
-                // column will be redefined in stage 1, including the new default value.
-
-                // regardless of how the default was set, we need to update existing rows
-                // from NULL -> DEFAULT
+                // update from NULL to type default
                 $defaults['update'][] = $new_column;
-
-                // then, because the new column doesn't *actually* have a default, we need to revoke it
-                $defaults['drop'][] = $new_column;
-
                 // make sure we don't redefine with forced defaults
                 $cmd3['defaults'] = FALSE;
               }
@@ -397,7 +384,14 @@ class mysql5_diff_tables extends sql99_diff_tables {
     // update defaults, if any
     foreach ($defaults['update'] as $column) {
       $name = mysql5::get_quoted_column_name($column['name']);
-      $ofs1->write("UPDATE $table_name SET $name = DEFAULT WHERE $name IS NULL;\n\n");
+      if (strlen($column['default']) > 0) {
+        $default = (string)$column['default'];
+      }
+      else {
+        $type = mysql5_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $column);
+        $default = mysql5_column::get_default_value($type);
+      }
+      $ofs1->write("UPDATE $table_name SET $name = $default WHERE $name IS NULL;\n\n");
     }
 
     // drop defaults, if any
