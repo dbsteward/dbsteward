@@ -41,7 +41,7 @@ class sql99_schema {
     $found = false;
 
     foreach(dbx::get_functions($node_schema) as $node_function) {
-      if (strcasecmp(format_function::get_declaration($node_schema, $node_function), $declaration) == 0) {
+      if (strcasecmp(format_function::get_declaration($node_schema, $node_function, FALSE), $declaration) == 0) {
         $found = true;
         break;
       }
