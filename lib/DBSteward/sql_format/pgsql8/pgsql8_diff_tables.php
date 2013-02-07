@@ -169,7 +169,7 @@ class pgsql8_diff_tables extends sql99_diff_tables {
         // this is because ADD COLUMNs with NOT NULL will fail when there are existing rows
 
 
-/* @DIFFTOOL for FS#15997 - look for columns of a certain type being added
+/* @DIFFTOOL - look for columns of a certain type being added
 if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   echo $new_schema . "." . $new_table['name'] . "." . $new_column['name'] . " TYPE " . $new_column['type'] . " " . $new_column['default'] . "\n";
 }
@@ -1120,7 +1120,9 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         $new_constraint = dbx::get_table_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name']);
 
         if ( !pgsql8_table::contains_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name'])
-          || !pgsql8_table::constraint_equals($new_constraint, $constraint) ) {
+          || !pgsql8_table::constraint_equals($new_constraint, $constraint)
+          || pgsql8_table::constraint_depends_on_renamed_table(dbsteward::$new_database, $new_constraint) 
+          || pgsql8_table::constraint_depends_on_renamed_table(dbsteward::$new_database, $constraint) ) {
           $list[] = $constraint;
         }
       }
@@ -1151,7 +1153,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           $old_constraint = dbx::get_table_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name']);
 
           if ( !pgsql8_table::contains_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name'])
-            || !pgsql8_table::constraint_equals($old_constraint, $constraint) ) {
+            || !pgsql8_table::constraint_equals($old_constraint, $constraint)
+            || pgsql8_table::constraint_depends_on_renamed_table(dbsteward::$new_database, $constraint) ) {
             $list[] = $constraint;
           }
         }

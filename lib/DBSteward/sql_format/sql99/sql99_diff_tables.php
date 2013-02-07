@@ -10,8 +10,22 @@
 
 class sql99_diff_tables {
   
+  /**
+   * Is the specified table in the specified schema renamed?
+   * 
+   * @param object $schema
+   * @param object $table
+   * return boolean
+   */
   public static function is_renamed_table($schema, $table) {
-    // command line switch sanity first and foremost
+    if ( !is_object($schema) ) {
+      throw new exception("schema is not an object");
+    }
+    if ( !is_object($table) ) {
+      throw new exception("table is not an object");
+    }
+    
+    // command line switch sanity
     if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, is_renamed_table() should not be getting called");
     }
@@ -33,10 +47,11 @@ class sql99_diff_tables {
     }
     
     // it is a new old named table rename if:
-    // new_table['oldTableName'] exists in old schema
-    // new_table['oldTableName'] does not exist in new schema
+    // table['oldTableName'] exists in old schema
+    // table['oldTableName'] does not exist in new schema
     if ( sql99_schema::contains_table($old_schema, $table['oldTableName'])
         && !sql99_schema::contains_table($schema, $table['oldTableName']) ) {
+      dbsteward::console_line(7, "NOTICE: " . $table['name'] . " used to be called " . $table['oldTableName']);
       return true;
     }
 
@@ -44,6 +59,16 @@ class sql99_diff_tables {
   }
 
   public static function is_renamed_column($old_table, $new_table, $new_column) {
+    if ( !is_object($old_table) ) {
+      throw new exception("old_table is not an object");
+    }
+    if ( !is_object($new_table) ) {
+      throw new exception("new_table is not an object");
+    }
+    if ( !is_object($new_column) ) {
+      throw new exception("new_column is not an object");
+    }
+
     // command line switch sanity first and foremost
     if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, is_renamed_column() should not be getting called");
@@ -71,10 +96,6 @@ class sql99_diff_tables {
     }
 
     return false;
-  }
-  
-  public static function table_was_renamed($node_schema, $table_name) {
-    return sql99_schema::table_name_by_old_name($node_schema, $table_name) !== false;
   }
 
   public static function table_option_changed($old_option, $new_option) {

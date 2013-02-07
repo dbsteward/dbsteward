@@ -99,7 +99,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         
         $new_column_type = mssql10_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $new_column, $foreign);
 
-        /* @DIFFTOOL for FS#15997 - look for columns of a certain type being added
+        /* @DIFFTOOL - look for columns of a certain type being added
         if ( preg_match('/time|date/i', $new_column_type) > 0 ) {
         echo $new_schema . "." . $new_table['name'] . "." . $new_column['name'] . " of type " . $new_column_type . " " . $new_column['default'] . " found\n";
         }

@@ -9,6 +9,8 @@
  */
 
 class sql99_table {
+  
+  const PATTERN_CONSTRAINT_REFERENCES_TABLE = "/^.+\s+REFERENCES\s+(\w+)\.(\w+)\s*\(\s*(.*)\s*\)$/i";
 
   /**
    * Returns true if table contains given column $name, otherwise false.
@@ -110,7 +112,7 @@ class sql99_table {
     }
     $new_rows[$row_data_columns]['columns'] = substr($new_rows[$row_data_columns]['columns'], 0, -1);
 //var_dump($new_rows[$row_data_columns]->asXML());
-//die('asdbasdfffff');
+//die('add_data_row tracer 115');
 
     // see @TODO: above caller collation
     xml_parser::data_rows_overlay($node_table, $new_rows[$row_data_columns]);
@@ -267,6 +269,47 @@ class sql99_table {
   }
   
   /**
+   * Does the specified constraint depend on a table
+   * that has been renamed in the specified database definition?
+   * 
+   * @param object $db_doc
+   * @param object $constraint
+   * @return boolean
+   * @throws exception
+   */
+  public static function constraint_depends_on_renamed_table($db_doc, $constraint) {
+    if ( dbsteward::$ignore_oldnames ) {
+      // don't check if ignore_oldnames is on
+      return FALSE;
+    }
+    if ( strpos($constraint['definition'], 'REFERENCES') !== FALSE ) {
+      //echo $constraint['schema_name'] . "." . $constraint['table_name'] . "  " . $constraint['name'] . " definition = " . $constraint['definition'] . "\n";
+      if (preg_match(static::PATTERN_CONSTRAINT_REFERENCES_TABLE, $constraint['definition'], $matches) > 0) {
+        $references_schema_name = $matches[1];
+        $references_table_name = $matches[2];
+      }
+      else {
+        throw new exception("Failed to parse REFERENCES definition for renamed table dependencies");
+      }
+      
+      $references_schema = dbx::get_schema($db_doc, $references_schema_name);
+      if ( !$references_schema ) {
+        throw new exception("constraint references schema '" . $references_schema_name . "' not found in specified db_doc, check caller");
+      }
+      $references_table = dbx::get_table($references_schema, $references_table_name);
+      if ( !$references_table ) {
+        throw new exception("constraint references table '" . $references_table_name . "' not found in specified db_doc, schema " . $references_schema_name . ", check caller");
+      }
+
+      if ( sql99_diff_tables::is_renamed_table($references_schema, $references_table) ) {
+        dbsteward::console_line(5, "NOTICE: constraint " . $constraint['name'] . " for " . $constraint['schema_name'] . "." . $constraint['table_name'] . " references a renamed table -- " . $constraint['definition']);
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+  
+  /**
    * Returns name of column that says it used to be called $old_name
    *
    * @param   $old_name
@@ -376,7 +419,7 @@ class sql99_table {
       return NULL;
     }
     $old_schema = static::get_old_table_schema($schema, $table);
-    return dbx::get_table($old_schema, $table['oldTableName']);
+    $old_table = dbx::get_table($old_schema, $table['oldTableName']);
     return $old_table;
   }
   
@@ -394,7 +437,7 @@ class sql99_table {
       return $schema;
     }
     
-    return dbx::get_schema(dbsteward::$old_database, $table['oldSchemaName']);
+    $old_schema = dbx::get_schema(dbsteward::$old_database, $table['oldSchemaName']);
     return $old_schema;
   }
 }
