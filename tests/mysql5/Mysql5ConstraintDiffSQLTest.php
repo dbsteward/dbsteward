@@ -174,41 +174,49 @@ XML;
 
   public function testAddSome() {
     $expected = <<<SQL
-ALTER TABLE `test` ADD UNIQUE INDEX `test_uqc_idx` (`uqc`);
+ALTER TABLE `test`
+  ADD UNIQUE INDEX `test_uqc_idx` (`uqc`);
 SQL;
     $this->common($this->xml_pka, $this->xml_pka_uqc, $expected);
   }
 
   public function testDropSome() {
     $expected = <<<SQL
-ALTER TABLE `test` DROP INDEX `test_uqc_idx`;
+ALTER TABLE `test`
+  DROP INDEX `test_uqc_idx`;
 SQL;
     $this->common($this->xml_pka_uqc, $this->xml_pka, $expected);
   }
 
   public function testChangeOne() {
     $expected = <<<SQL
-ALTER TABLE `test` DROP PRIMARY KEY;
-ALTER TABLE `test` ADD PRIMARY KEY (`pkb`);
+ALTER TABLE `test`
+  DROP PRIMARY KEY;
+ALTER TABLE `test`
+  ADD PRIMARY KEY (`pkb`);
 SQL;
     $this->common($this->xml_pka, $this->xml_pkb, $expected);
   }
 
   public function testAddSomeAndChange() {
     $expected = <<<SQL
-ALTER TABLE `test` DROP PRIMARY KEY;
-ALTER TABLE `test` ADD PRIMARY KEY (`pkb`);
-ALTER TABLE `test` ADD CONSTRAINT `test_cfke_fk` FOREIGN KEY `test_cfke_fk` (`cfke`) REFERENCES `other` (`pka`);
+ALTER TABLE `test`
+  DROP PRIMARY KEY;
+ALTER TABLE `test`
+  ADD PRIMARY KEY (`pkb`),
+  ADD CONSTRAINT `test_cfke_fk` FOREIGN KEY `test_cfke_fk` (`cfke`) REFERENCES `other` (`pka`);
 SQL;
     $this->common($this->xml_pka, $this->xml_pkb_cfke, $expected);
   }
 
   public function testDropSomeAndChange() {
     $expected = <<<SQL
-ALTER TABLE `test` DROP PRIMARY KEY;
-ALTER TABLE `test` DROP INDEX `test_uqc_idx`;
-ALTER TABLE `test` DROP FOREIGN KEY `test_ifkd_fk`, DROP INDEX `test_ifkd_fk`;
-ALTER TABLE `test` ADD PRIMARY KEY (`pkb`);
+ALTER TABLE `test`
+  DROP PRIMARY KEY,
+  DROP INDEX `test_uqc_idx`,
+  DROP FOREIGN KEY `test_ifkd_fk`, DROP INDEX `test_ifkd_fk`;
+ALTER TABLE `test`
+  ADD PRIMARY KEY (`pkb`);
 SQL;
     $this->common($this->xml_pka_uqc_ifkd_cfke, $this->xml_pkb_cfke, $expected);
   }
@@ -235,8 +243,10 @@ XML;
     // drop the PK on test *before* diffing the table
     // add the renamed PK on the renamed table *after* diffing the table
     $expected = <<<SQL
-ALTER TABLE `test` DROP PRIMARY KEY;
-ALTER TABLE `newtable` ADD PRIMARY KEY (`pkb`);
+ALTER TABLE `test`
+  DROP PRIMARY KEY;
+ALTER TABLE `newtable`
+  ADD PRIMARY KEY (`pkb`);
 SQL;
     $this->common($old, $new, $expected);
   }
@@ -265,17 +275,10 @@ XML;
 
     $this->common($auto, $notauto, "");
 
-    $this->common_type($notauto, $auto, "ALTER TABLE `test` MODIFY COLUMN `pka` int AUTO_INCREMENT;", 'primaryKey');
+    $this->common($notauto, $auto, "ALTER TABLE `test` MODIFY COLUMN `pka` int AUTO_INCREMENT;", 'primaryKey');
   }
 
-  private function common($a, $b, $expected) {
-    $this->common_type($a, $b, $expected, 'all');
-    $this->common_type($a, $b, $expected, 'primaryKey');
-    $this->common_type($a, $b, $expected, 'constraint');
-    $this->common_type($a, $b, $expected, 'foreignKey');
-  }
-
-  private function common_type($a, $b, $expected, $type) {
+  private function common($a, $b, $expected, $type = 'all') {
     $dbs_a = new SimpleXMLElement($a);
     $dbs_b = new SimpleXMLElement($b);
 
@@ -287,29 +290,8 @@ XML;
     mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, $type, true);
     mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, $type, false);
 
-    switch ($type) {
-      case 'all':
-        $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-        $this->assertEquals($expected, $actual, "all constraints diff");
-        break;
-      case 'primaryKey':
-        $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-        $pk_expected = trim(preg_replace("/.*(INDEX|FOREIGN).*\n?/",'',$expected));
-        $this->assertEquals($pk_expected, $actual, "primaryKey diff");
-        break;
-      case 'constraint':
-        $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-        $constraint_expected = trim(preg_replace("/.*(PRIMARY).*\n?/",'',$expected));
-        $this->assertEquals($constraint_expected, $actual, "constraint-only diff");
-        break;
-      case 'foreignKey':
-        $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
-        $fk_expected = trim(preg_replace("/.*(PRIMARY|(?<!, DROP )INDEX).*\n?/",'',$expected));
-        $this->assertEquals($fk_expected, $actual, "foreignKey diff");
-        break;
-      default:
-        $this->fail("Unknown type");
-    }
+    $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
+    $this->assertEquals($expected, $actual);
   }
 }
 ?>

@@ -33,5 +33,25 @@ class mysql5_diff_constraints extends sql99_diff_constraints {
       }
     }
   }
+
+  public static function get_multiple_drop_sql($node_schema, $node_table, $constraints) {
+    if (count($constraints) == 0) return '';
+    $bits = array();
+    foreach ($constraints as $constraint) {
+      $bits[] = format_constraint::get_constraint_drop_sql($constraint, FALSE);
+    }
+    $table = mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']);
+    return "ALTER TABLE $table\n  " . implode(",\n  ", $bits) . ";\n";
+  }
+
+  public static function get_multiple_create_sql($node_schema, $node_table, $constraints) {
+    if (count($constraints) == 0) return '';
+    $bits = array();
+    foreach ($constraints as $constraint) {
+      $bits[] = format_constraint::get_constraint_sql($constraint, FALSE);
+    }
+    $table = mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']);
+    return "ALTER TABLE $table\n  " . implode(",\n  ", $bits) . ";\n";
+  }
 }
 ?>
