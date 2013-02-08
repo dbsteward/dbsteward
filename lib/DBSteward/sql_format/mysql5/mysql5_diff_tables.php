@@ -175,7 +175,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
         if (!dbsteward::$ignore_oldnames && mysql5_diff_tables::is_renamed_column($old_table, $new_table, $new_column)) {
           // renamed
           $cmd1['command'] = 'change';
-          $cmd1['old'] = $new_column['oldName'];
+          $cmd1['old'] = $new_column['oldColumnName'];
         }
         else {
           // new
