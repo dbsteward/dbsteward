@@ -1070,8 +1070,11 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     }
     else {
       if ( !dbsteward::$ignore_oldnames ) {
-        // if it is a renamed table, remove all constraints and recreate with new table name conventions
-        if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) ) {
+        // if it is a renamed table
+        if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) 
+          // OR table previously exists and depends on a renamed table
+          || ( $old_table != NULL && $type =='constraint' && $drop_constraints == false && pgsql8_diff_tables::constrains_against_renamed_table(dbsteward::$new_database, $new_schema, $new_table) ) ) {
+          // remove all constraints and recreate with new table name conventions
           foreach(dbx::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
             // rewrite the constraint definer to refer to the new table name
             // so the constraint by the old name, but part of the new table
@@ -1081,13 +1084,14 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             $ofs->write(pgsql8_table::get_constraint_drop_sql($constraint) . "\n");
           }
           
-          // add all defined constraints back to the new table
+          // add all still-define constraints back and any new ones to the table
           foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
             $ofs->write(pgsql8_table::get_constraint_sql($constraint) . "\n");
           }
+          // this gets any new constraints as well. 
+          // return so that get_new_costraint() doesnt duplicate any new constraints
           return;
         }
-        // END if it is a renamed table, remove all constraints and recreate with new table name conventions
       }
 
       // add new constraints

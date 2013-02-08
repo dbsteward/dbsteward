@@ -57,6 +57,25 @@ class sql99_diff_tables {
 
     return false;
   }
+  
+  
+  /**
+   * Does this table constrain against a renamed table?
+   * 
+   * @param object $db_doc
+   * @param object $schema
+   * @param object $table
+   * return boolean
+   */
+  public static function constrains_against_renamed_table($db_doc, $schema, $table) {
+    foreach(dbx::get_table_constraints($db_doc, $schema, $table, 'constraint') as $constraint) {
+      if ( pgsql8_table::constraint_depends_on_renamed_table($db_doc, $constraint) ) {
+        dbsteward::console_line(7, "NOTICE: " . $schema['name'] . "." . $table['name'] . " constrains against a renamed table with constraint " . $constraint['name']);
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
 
   public static function is_renamed_column($old_table, $new_table, $new_column) {
     if ( !is_object($old_table) ) {
