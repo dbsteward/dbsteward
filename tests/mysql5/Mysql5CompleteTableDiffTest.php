@@ -85,6 +85,47 @@ SQL;
     $this->diff($b, $a, $expected, "");
   }
 
+//   public function testLotsOfAlterTables() {
+//     $a = <<<XML
+// <schema name="public" owner="ROLE_OWNER">
+//   <table name="foo" primaryKey="fooID" owner="ROLE_OWNER">
+//     <column name="fooID" type="int" null="false"/>
+//     <column name="barID" null="false" foreignSchema="public" foreignTable="bar" foreignColumn="barID"/>
+//   </table>
+//   <table name="bar" primaryKey="barID" owner="ROLE_OWNER">
+//     <column name="barID" type="int"/>
+//   </table>
+// </schema>
+// XML;
+
+//     $b = <<<XML
+// <schema name="public" owner="ROLE_OWNER">
+//   <table name="foo" primaryKey="barID" owner="ROLE_OWNER">
+//     <column name="fooID" type="int" null="false"/>
+//     <column name="barID" type="int" null="false"/>
+//     <column name="catID" foreignSchema="public" foreignTable="bar" foreignColumn="barID"/>
+//   </table>
+//   <table name="bar" primaryKey="barID" owner="ROLE_OWNER">
+//     <column name="barID" type="int"/>
+//   </table>
+// </schema>
+// XML;
+
+//     // maximum number of alter tables in stage 1 is caused by:
+//     //   one constraint dropped
+//     //   one primary key moved
+//     //   one column changed
+//     //   one constraint added
+//     $expected = <<<SQL
+// ALTER TABLE `foo`
+//   DROP FOREIGN KEY `foo_barID_fkey`,
+//   DROP PRIMARY KEY,
+//   ADD COLUMN `catID` int AFTER `barID`,
+//   ADD PRIMARY KEY (`barID`),
+//   ADD CONSTRAINT `foo_catID_fkey` FOREIGN KEY `foo_catID_fkey` (`catID`) REFERENCES `bar` (`barID`);
+// SQL;
+//     $this->diff($a, $b, $expected, '');
+//   }
 
   private function diff($old, $new, $expected1, $expected3, $message='') {
     dbsteward::$old_database = new SimpleXMLElement($this->db_doc_xml . $old . '</dbsteward>');
