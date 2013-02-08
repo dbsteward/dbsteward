@@ -160,7 +160,7 @@ class mysql5_diff extends sql99_diff {
       // and therefore should be done after object creation sections
       foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-        mysql5_diff_constraint::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', FALSE);
+        mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', FALSE);
       }
     }
     else {
