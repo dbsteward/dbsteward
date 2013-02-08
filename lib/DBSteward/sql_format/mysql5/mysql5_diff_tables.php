@@ -158,14 +158,16 @@ class mysql5_diff_tables extends sql99_diff_tables {
         'command' => 'nothing',
         'column' => $new_column,
         'defaults' => mysql5_diff::$add_defaults,
-        'nulls' => TRUE
+        'nulls' => TRUE,
+        'auto_increment' => FALSE
       );
 
       $cmd3 = array(
         'command' => 'nothing',
         'column' => $new_column,
         'defaults' => mysql5_diff::$add_defaults,
-        'nulls' => TRUE
+        'nulls' => TRUE,
+        'auto_increment' => FALSE
       );
 
       if (!mysql5_table::contains_column($old_table, $new_column['name'])) {
@@ -302,7 +304,8 @@ class mysql5_diff_tables extends sql99_diff_tables {
         $new_table,
         $command['column'],
         $command['defaults'],
-        $command['nulls']
+        $command['nulls'],
+        $command['auto_increment']
       );
 
       if ($command['command'] == 'change') {
