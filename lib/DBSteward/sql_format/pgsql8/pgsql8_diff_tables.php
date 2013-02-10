@@ -1071,9 +1071,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     else {
       if ( !dbsteward::$ignore_oldnames ) {
         // if it is a renamed table
-        if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) 
-          // OR table previously exists and depends on a renamed table
-          || ( $old_table != NULL && $type =='constraint' && $drop_constraints == false && pgsql8_diff_tables::constrains_against_renamed_table(dbsteward::$new_database, $new_schema, $new_table) ) ) {
+        if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) ) {
           // remove all constraints and recreate with new table name conventions
           foreach(dbx::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
             // rewrite the constraint definer to refer to the new table name
