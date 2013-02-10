@@ -130,7 +130,7 @@ class sql99_constraint {
     if ( $type == 'all' || $type == 'constraint' || $type == 'foreignKey' ) {
       // look for constraints in <constraint> elements
       foreach ( $node_table->constraint AS $node_constraint ) {
-        // further sanity check node definition constraint types
+        // sanity check node definition constraint types
         switch ( strtoupper((string)$node_constraint['type']) ) {
           case 'PRIMARY KEY':
             throw new Exception("Primary keys are not allowed to be defined in a <constraint>");
@@ -197,6 +197,22 @@ class sql99_constraint {
           }
 
           $constraints[] = $column_fkey_constraint;
+        }
+      }
+    }
+    
+    if ($type == 'all' || $type == 'constraint' || $type == 'check' ) {
+      foreach ($node_table->column AS $column) {
+        // add column check constraints to the list
+        if ( isset($column['check']) ) {
+          $column_check_constraint = array(
+            'name' => $column['name'] . '_check',
+            'schema_name' => (string)$node_schema['name'],
+            'table_name' => (string)$node_table['name'],
+            'type' => 'CHECK',
+            'definition' => $column['check']
+          );
+          $constraints[] = $column_check_constraint;
         }
       }
     }

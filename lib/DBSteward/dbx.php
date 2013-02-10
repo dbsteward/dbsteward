@@ -279,7 +279,7 @@ class dbx {
       || $type == 'foreignKey' ) {
       $nodes = $node_table->xpath("constraint");
       foreach ($nodes AS $node_constraint) {
-        // further sanity check node definition constraint types
+        // sanity check node definition constraint types
         switch ((string)$node_constraint['type']) {
           case 'CHECK':
           case 'FOREIGN KEY':
@@ -310,6 +310,7 @@ class dbx {
       || $type == 'constraint'
       || $type == 'foreignKey' ) {
       foreach ($node_table->column AS $column) {
+        // add column foreign key constraints to the list
         if (isset($column['foreignSchema']) || isset($column['foreignTable'])) {
           if (strlen($column['foreignSchema']) == 0
             || strlen($column['foreignTable']) == 0) {
@@ -345,6 +346,24 @@ class dbx {
           }
 
           $constraints[] = $column_fkey_constraint;
+        }
+      }
+    }
+
+    if ($type == 'all'
+      || $type == 'constraint'
+      || $type == 'check' ) {
+      foreach ($node_table->column AS $column) {
+        // add column check constraints to the list
+        if ( isset($column['check']) ) {
+          $column_check_constraint = array(
+            'name' => $column['name'] . '_check',
+            'schema_name' => (string)$node_schema['name'],
+            'table_name' => (string)$node_table['name'],
+            'type' => 'CHECK',
+            'definition' => $column['check']
+          );
+          $constraints[] = $column_check_constraint;
         }
       }
     }
