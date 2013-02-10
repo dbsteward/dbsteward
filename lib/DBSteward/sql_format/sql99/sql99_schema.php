@@ -95,27 +95,47 @@ class sql99_schema {
   }
   
   /**
-   * Returns name of table that says it used to be called $old_table_name
-   *
-   * @param   $old_name
-   *
-   * @return  string
+   * Return schema and table (by reference) that claim to be the $old_schema and $old_table specified
+   * 
+   * @param type $db_doc
+   * @param type $old_schema
+   * @param type $old_table
+   * @param type $prince_schema
+   * @param type $prince_table
+   * @return boolean
+   * @throws exception
    */
-  public function table_name_by_old_name($node_schema, $old_table_name) {
+  public function table_formerly_known_as($db_doc, $old_schema, $old_table, &$prince_schema = NULL, &$prince_table = NULL) {
     if ( dbsteward::$ignore_oldnames ) {
-      throw new exception("dbsteward::ignore_oldname option is on, table_name_by_old_name() should not be getting called");
+      throw new exception("dbsteward::ignore_oldname option is on, table_formerly_known_as() should not be getting called");
     }
-    
-    $name = false;
 
-    foreach(dbx::get_tables($node_schema) as $table) {
-      if (strcasecmp($table['oldTableName'], $old_table_name) == 0) {
-        $name = $table['name'];
-        break;
+    foreach(dbx::get_schemas($db_doc) as $doc_schema) {
+      foreach(dbx::get_tables($doc_schema) as $doc_table) {
+        // does doc_table claim to be old_table in a former life?
+        if (strcasecmp($old_table['name'], $doc_table['oldTableName']) == 0) {
+          // does doc_table define an old schema?
+          if ( isset($doc_table['oldSchemaName']) ) {
+            // is the table referring to it having the current old_schema?
+            if (strcasecmp($doc_table['oldSchemaName'], $old_schema['name']) != 0) {
+              // keep looking
+              continue;
+            }
+            // schema is the same
+            // fall into pointering
+          }
+          else if (strcasecmp($doc_schema['name'], $old_schema['name']) != 0) {
+            // this is not the right schema, continue
+            continue;
+          }
+          $prince_schema = $doc_schema;
+          $prince_table = $doc_table;
+          return TRUE;
+        }
       }
     }
 
-    return $name;
+    return FALSE;
   }
 
   /**
