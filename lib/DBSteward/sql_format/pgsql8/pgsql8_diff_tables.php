@@ -705,13 +705,23 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   public static function diff_data($ofs, $old_schema, $new_schema) {
     foreach(dbx::get_tables($new_schema) AS $new_table) {
       $old_table = null;
-      // does the old contain the new?
-      if ( $old_schema != null && pgsql8_schema::contains_table($old_schema, $new_table['name']) ) {
-        $old_table = dbx::get_table($old_schema, $new_table['name']);
+      // if the table was renamed, get old definition pointers, diff that
+      if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) ) {
+        $renamed_table_old_schema = pgsql8_table::get_old_table_schema($new_schema, $new_table);
+        $renamed_table_old_table = pgsql8_table::get_old_table($new_schema, $new_table);
+        $ofs->write(
+          self::get_data_sql($renamed_table_old_schema, $renamed_table_old_table, $new_schema, $new_table)
+        );
       }
-      $ofs->write(
-        self::get_data_sql($old_schema, $old_table, $new_schema, $new_table)
-      );
+      else {
+        // does the old contain the new?
+        if ( $old_schema != null && pgsql8_schema::contains_table($old_schema, $new_table['name']) ) {
+          $old_table = dbx::get_table($old_schema, $new_table['name']);
+        }
+        $ofs->write(
+          self::get_data_sql($old_schema, $old_table, $new_schema, $new_table)
+        );
+      }
     }
   }
 

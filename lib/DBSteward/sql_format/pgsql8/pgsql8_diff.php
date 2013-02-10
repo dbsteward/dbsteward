@@ -438,11 +438,18 @@ class pgsql8_diff extends sql99_diff{
         if ( $new_schema == null ) {
           throw new exception("schema " . $item['schema']['name'] . " not found in new database");
         }
-
         $new_table = dbx::get_table($new_schema, $item['table']['name']);
         if ( $new_table == null ) {
           throw new exception("table " . $item['table']['name'] . " not found in new database schema " . $new_schema['name']);
         }
+
+        // if the table was renamed, get old definition pointers for comparison
+        if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) ) {
+          dbsteward::console_line(7, "NOTICE: " . $new_schema['name'] . "." . $new_table['name'] . " used to be called " . $new_table['oldTableName'] . " -- will diff data against that definition");
+          $old_schema = pgsql8_table::get_old_table_schema($new_schema, $new_table);
+          $old_table = pgsql8_table::get_old_table($new_schema, $new_table);
+        }
+
         $ofs->write(
           pgsql8_diff_tables::get_data_sql($old_schema, $old_table, $new_schema, $new_table, $delete_mode)
         );
