@@ -522,33 +522,33 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   }
 
   /**
-   * Outputs commands for dropping tables.
-   *
-   * @param $ofs         output file pointer
-   * @param $old_schema  original schema
-   * @param $new_schema  new schema
+   * Drop tables in old_schema no longer defined in new_schema
+   * 
+   * @param type $ofs
+   * @param type $old_schema
+   * @param type $new_schema
+   * @param type $old_table
+   * @param type $new_table
    */
   public static function drop_tables($ofs, $old_schema, $new_schema, $old_table = null, $new_table = null) {
-    if ($old_schema != null) {
+    if ($old_schema != null && $new_schema != null ) {
       foreach(dbx::get_tables($old_schema) as $table) {
+        // if old table was defined
         if ( $old_table != null ) {
+          // is this the right old table?
           if ( strcasecmp($table['name'], $old_table['name']) != 0 ) {
             continue;
           }
         }
-        // if the schema is not in the new definition
-        // skip diffing table drops, they were destroyed with the schema
-        if ( $new_schema == NULL ) {
-          continue;
-        }
+
+        // does the new schema contain the old table?
         if (!pgsql8_schema::contains_table($new_schema, $table['name'])) {
-          // if new schema is still defined, check for renamed table
-          // new_schema will be null if the new schema is no longer defined at all
-          if ( !dbsteward::$ignore_oldnames && is_object($new_schema)
-            && ($renamed_table_name = pgsql8_schema::table_name_by_old_name($new_schema, $table['name'])) !== false ) {
-            // table indicating oldTableName = table['name'] present in new schema? don't do DROP statement
+          // if the table was renamed, don't drop it
+          if ( !dbsteward::$ignore_oldnames
+            && pgsql8_schema::table_formerly_known_as(dbsteward::$new_database, $new_schema, $table, $reformed_schema, $reformed_table) ) {
             $old_table_name = pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name($table['name']);
-            $ofs->write("-- DROP TABLE $old_table_name omitted: new table $renamed_table_name indicates it is the replacement for " . $old_table_name . "\n");
+            $reformed_table_name = pgsql8::get_quoted_schema_name($reformed_schema['name']) . '.' . pgsql8::get_quoted_table_name($reformed_table['name']);
+            $ofs->write("-- DROP TABLE $old_table_name omitted: new table $reformed_table_name indicates it is her replacement\n");
           }
           else {
             $ofs->write(pgsql8_table::get_drop_sql($old_schema, $table) . "\n");
