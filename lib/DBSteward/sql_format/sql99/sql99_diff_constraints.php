@@ -33,8 +33,9 @@ class sql99_diff_constraints {
   public static function diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints = false) {
     if ( $drop_constraints ) {
       // drop constraints that no longer exist or are modified
-      foreach( static::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint ) {
-        $ofs->write(format_constraint::get_constraint_drop_sql($constraint) . "\n");
+      $old_constraints = static::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type);
+      if (count($old_constraints) > 0) {
+        $ofs->write(static::get_multiple_drop_sql($old_schema, $old_table, $old_constraints));
       }
     }
     else {
@@ -46,10 +47,26 @@ class sql99_diff_constraints {
       }
 
       // add new constraints
-      foreach ( $new_constraints as $constraint ) {
-        $ofs->write(format_constraint::get_constraint_sql($constraint) . "\n");
+      if (count($new_constraints) > 0) {
+        $ofs->write(static::get_multiple_create_sql($new_schema, $new_table, $new_constraints));
       }
     }
+  }
+
+  public static function get_multiple_drop_sql($node_schema, $node_table, $constraints) {
+    $sql = '';
+    foreach ($constraints as $constraint) {
+      $sql .= format_constraint::get_constraint_drop_sql($constraint) . "\n";
+    }
+    return $sql;
+  }
+
+  public static function get_multiple_create_sql($node_schema, $node_table, $constraints) {
+    $sql = '';
+    foreach ($constraints as $constraint) {
+      $sql .= format_constraint::get_constraint_sql($constraint) . "\n";
+    }
+    return $sql;
   }
 
   /**
