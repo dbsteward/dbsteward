@@ -19,7 +19,7 @@ class mysql5_constraint extends sql99_constraint {
    *
    * @return string
    */
-  public static function get_constraint_sql($constraint) {
+  public static function get_constraint_sql($constraint, $with_alter_table=TRUE) {
     if ( ! is_array($constraint) ) {
       throw new exception("constraint is not an array?");
     }
@@ -36,7 +36,15 @@ class mysql5_constraint extends sql99_constraint {
         return "-- Ignoring constraint '{$constraint['name']}' on table '{$constraint['table_name']}' because MySQL doesn't support the CHECK constraint";
         break;
       case 'PRIMARY KEY':
-        return "ALTER TABLE " . mysql5::get_quoted_table_name($constraint['table_name']) . " ADD PRIMARY KEY " . $constraint['definition'] . ';';
+        $sql = '';
+        if ($with_alter_table) {
+          $sql .= "ALTER TABLE " . mysql5::get_fully_qualified_table_name($constraint['schema_name'], $constraint['table_name']) . " ";
+        }
+        $sql .= "ADD PRIMARY KEY " . $constraint['definition'];
+        if ($with_alter_table) {
+          $sql .= ";";
+        }
+        return $sql;
         break;
       case 'FOREIGN KEY':
         // MySQL considers foreign keys to be a constraint constraining an index
@@ -46,8 +54,12 @@ class mysql5_constraint extends sql99_constraint {
         $constraint_name = mysql5::get_quoted_object_name($constraint['name']);
         $index_name = !empty($constraint['foreignIndexName']) ? mysql5::get_quoted_object_name($constraint['foreignIndexName']) : $constraint_name;
 
-        $sql = "ALTER TABLE " . mysql5::get_quoted_table_name($constraint['table_name']) . " ADD CONSTRAINT ";
-        $sql.= "$constraint_name FOREIGN KEY $index_name {$constraint['definition']}";
+        $sql = '';
+        if ($with_alter_table) {
+          $sql .= "ALTER TABLE " . mysql5::get_fully_qualified_table_name($constraint['schema_name'], $constraint['table_name']) . " ";
+        }
+        $sql .=  "ADD CONSTRAINT ";
+        $sql .= "$constraint_name FOREIGN KEY $index_name {$constraint['definition']}";
 
         // FOREIGN KEY ON DELETE / ON UPDATE handling
         if ( strcasecmp($constraint['type'], 'FOREIGN KEY') == 0 && !empty($constraint['foreignOnDelete']) ) {
@@ -57,12 +69,22 @@ class mysql5_constraint extends sql99_constraint {
           $sql .= " ON UPDATE " . self::get_reference_option_sql($constraint['foreignOnUpdate']);
         }
 
-        return $sql.';';
+        if ($with_alter_table) {
+          $sql .= ";";
+        }
+        return $sql;
         break;
       case 'UNIQUE':
-        $sql = "ALTER TABLE " . mysql5::get_quoted_table_name($constraint['table_name']) . " ADD UNIQUE INDEX ";
-        $sql.= mysql5::get_quoted_object_name($constraint['name']) . " {$constraint['definition']}";
-        return $sql.';';
+        $sql = '';
+        if ($with_alter_table) {
+          $sql .= "ALTER TABLE " . mysql5::get_fully_qualified_table_name($constraint['schema_name'], $constraint['table_name']) . " ";
+        }
+        $sql .= "ADD UNIQUE INDEX ";
+        $sql .= mysql5::get_quoted_object_name($constraint['name']) . " {$constraint['definition']}";
+        if ($with_alter_table) {
+          $sql .= ";";
+        }
+        return $sql;
       default:
         // we shouldn't actually ever get here.
         throw new Exception("Unimplemented MySQL constraint {$constraint['type']}");
@@ -74,7 +96,7 @@ class mysql5_constraint extends sql99_constraint {
     return strtoupper(str_replace('_',' ',$ref_opt));
   }
 
-  public static function get_constraint_drop_sql($constraint) {
+  public static function get_constraint_drop_sql($constraint, $with_alter_table = TRUE) {
     if ( ! is_array($constraint) ) {
       throw new exception("constraint is not an array?");
     }
@@ -108,7 +130,14 @@ class mysql5_constraint extends sql99_constraint {
         throw new Exception("Unimplemented MySQL constraint {$constraint['type']}");
     }
 
-    $sql = "ALTER TABLE " . mysql5::get_fully_qualified_table_name($constraint['schema_name'], $constraint['table_name']) . " DROP $drop;";
+    $sql = '';
+    if ($with_alter_table) {
+      $sql .= "ALTER TABLE " . mysql5::get_fully_qualified_table_name($constraint['schema_name'], $constraint['table_name']) . " ";
+    }
+    $sql .= "DROP $drop";
+    if ($with_alter_table) {
+      $sql .= ";";
+    }
     return $sql;
   }
 }
