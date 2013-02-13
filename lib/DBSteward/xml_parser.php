@@ -602,15 +602,36 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     }
   }
 
+  /**
+   * Validate the passed XML string against the DBSteward DTD
+   * 
+   * @param type $xml
+   * @param type $echo_status
+   * @throws exception
+   */
   public static function validate_xml($xml, $echo_status = TRUE) {
-    $dtd_file = dirname(__FILE__) . '/../DBSteward/dbsteward.dtd';
-    if (!is_readable($dtd_file)) {
-      // not source mode? PEAR mode it is!
-      $dtd_file = dirname(__FILE__) . '/../data/DBSteward/DBSteward/dbsteward.dtd';
+    // because of the various ways PEAR may be installed for or by the user
+    // streamline DTD use out of the box by
+    // creating a list of possible relative paths where the DTD can be found
+    // @NOTICE: the FIRST path that is readable will be used
+    $dtd_file_paths = array(
+      // source working copy location
+      __DIR__ . '/../DBSteward/dbsteward.dtd',
+      // is it in a FreeBSD PEAR location ?
+      $dtd_file = __DIR__ . '/../data/DBSteward/DBSteward/dbsteward.dtd',
+      // is it in a Mac OS user's home pear/share/pear bear mare location ?
+      $dtd_file = __DIR__ . '/../../data/DBSteward/DBSteward/dbsteward.dtd',
+      $dtd_file = __DIR__ . '/../../../data/DBSteward/DBSteward/dbsteward.dtd'
+    );
+    foreach($dtd_file_paths AS $dtd_file_path) {
+      if (is_readable($dtd_file_path)) {
+        $dtd_file = $dtd_file_path;
+      }
     }
     if (!is_readable($dtd_file)) {
-      throw new exception("DTD file $dtd_file not readable");
+      throw new exception("DTD file dbsteward.dtd not readable from any known source paths:\n" . implode("\n", $dtd_file_paths));
     }
+    // realpath the dtd_file so when it is announced it is simplified to remove relative directory pathing
     $dtd_file = realpath($dtd_file);
     if ($echo_status) {
       dbsteward::console_line(1, "Validating XML (size = " . strlen($xml) . ") against $dtd_file");
