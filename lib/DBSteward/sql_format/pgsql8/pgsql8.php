@@ -885,6 +885,14 @@ class pgsql8 extends sql99 {
         $old_table = NULL;
         if ( $old_schema ) {
           $old_table = dbx::get_table($old_schema, $new_table['name']);
+
+          if ($old_table
+           && isset($old_table['slonyId'])
+           && strcasecmp('IGNORE_REQUIRED', $old_table['slonyId']) !== 0
+           && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) !== 0
+           && (string)$new_table['slonyId'] != (string)$old_table['slonyId']) {
+            throw new Exception("table slonyId {$new_table['slonyId']} in new does not match slonyId {$old_table['slonyId']} in old");
+          }
         }
 
         if (($old_schema === NULL || $old_table === NULL) && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) != 0) {
@@ -934,6 +942,14 @@ class pgsql8 extends sql99 {
               }
             }
 
+            if ($old_column
+             && isset($old_column['slonyId'])
+             && strcasecmp('IGNORE_REQUIRED', $old_column['slonyId']) !== 0
+             && strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) !== 0
+             && (string)$new_column['slonyId'] != (string)$old_column['slonyId']) {
+              throw new Exception("column sequence slonyId {$new_column['slonyId']} in new does not match slonyId {$old_column['slonyId']} in old");
+            }
+
             if (($old_schema === NULL || $old_table === NULL || $old_column === NULL)
               && strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) != 0) {
               // if it has not been declared, create the upgrade set to be merged
@@ -977,6 +993,14 @@ class pgsql8 extends sql99 {
         $old_sequence = NULL;
         if ( $old_schema ) {
           $old_sequence = dbx::get_sequence($old_schema, $new_sequence['name']);
+        }
+
+        if ($old_sequence
+         && isset($old_sequence['slonyId'])
+         && strcasecmp('IGNORE_REQUIRED', $old_sequence['slonyId']) !== 0
+         && strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) !== 0
+         && (string)$new_sequence['slonyId'] != (string)$old_sequence['slonyId']) {
+          throw new Exception("sequence slonyId {$new_sequence['slonyId']} in new does not match slonyId {$old_sequence['slonyId']} in old");
         }
 
         if (($old_schema === NULL || $old_sequence === NULL) && strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) != 0) {
