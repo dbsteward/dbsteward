@@ -72,12 +72,27 @@ class mysql5_permission extends sql99_permission {
    * @param array $roles
    * @param string $option_sql optional option sql
    */
-  public static function get_sql($action, $objects, $privileges, $roles, $option_sql) {
-    $keyword = strcasecmp($action, 'REVOKE') ? 'TO' : 'FROM';
+  public static function get_sql($action, $objects, $privileges, $roles, $with_grant) {
     $sql = array();
-    foreach ( (array)$objects as $object ) {
-      $sql[] = "$action " . implode(', ', (array)$privileges) . " ON $object $keyword " . implode(', ', (array)$roles) . ($option_sql?" $option_sql;":';');
+    $privileges = (array)$privileges;
+    $roles = (array)$roles;
+
+    if ($with_grant) {
+      $privileges[] = "GRANT OPTION";
+
+      if ($objects != '*') {
+        throw new Exception("Invalid object(s) $objects for GRANT OPTION privilege. GRANT OPTION can only be applied to schemas");
+      }
     }
+
+    $objects = (array)$objects;
+
+    $str = strcasecmp($action, 'REVOKE') == 0 ? "REVOKE %s ON %s FROM %s;" : "GRANT %s ON %s TO %s;";
+
+    foreach ( $objects as $object ) {
+      $sql[] = sprintf($str, implode(', ', $privileges), $object, implode(', ', $roles));
+    }
+
     return implode("\n",$sql);
   }
 
