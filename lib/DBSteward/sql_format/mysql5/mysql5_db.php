@@ -206,11 +206,15 @@ class mysql5_db {
 
   public function get_global_grants($username) {
     return $this->query("SELECT grantee, GROUP_CONCAT(DISTINCT privilege_type ORDER BY privilege_type ASC) AS operations, COUNT(DISTINCT privilege_type) AS num_ops, is_grantable='YES' as is_grantable FROM (
-                          SELECT grantee, privilege_type, is_grantable FROM schema_privileges WHERE grantee LIKE :grantee AND table_schema = :schema
-                          UNION
-                          SELECT grantee, privilege_type, is_grantable FROM user_privileges WHERE grantee LIKE :grantee
-                        ) AS tbl
-                        GROUP BY is_grantable;", array('schema'=>$this->dbname, 'grantee'=>"'$username'@%"));
+                           SELECT grantee, privilege_type, is_grantable FROM schema_privileges WHERE grantee LIKE :grantee AND table_schema = :schema
+                           UNION
+                           SELECT grantee, privilege_type, is_grantable FROM user_privileges 
+                             WHERE grantee LIKE :grantee
+                               -- some grants can ONLY be applied server-wide; ignore them
+                               AND privilege_type NOT IN ('CREATE TABLESPACE', 'CREATE USER', 'FILE', 'PROCESS', 'RELOAD',
+                                                          'REPLICATION CLIENT', 'REPLICATION SLAVE', 'SHOW DATABASES', 'SHUTDOWN', 'SUPER')
+                         ) AS tbl
+                         GROUP BY is_grantable;", array('schema'=>$this->dbname, 'grantee'=>"'$username'@%"));
   }
 
   public function get_functions() {
