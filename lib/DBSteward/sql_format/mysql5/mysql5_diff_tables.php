@@ -53,6 +53,29 @@ class mysql5_diff_tables extends sql99_diff_tables {
     }
   }
 
+  public static function diff_data($ofs, $old_schema, $new_schema) {
+    foreach(dbx::get_tables($new_schema) AS $new_table) {
+      $old_table = null;
+      // if the table was renamed, get old definition pointers, diff that
+      if ( mysql5_diff_tables::is_renamed_table($new_schema, $new_table) ) {
+        $renamed_table_old_schema = mysql5_table::get_old_table_schema($new_schema, $new_table);
+        $renamed_table_old_table = mysql5_table::get_old_table($new_schema, $new_table);
+        $ofs->write(
+          self::get_data_sql($renamed_table_old_schema, $renamed_table_old_table, $new_schema, $new_table)
+        );
+      }
+      else {
+        // does the old contain the new?
+        if ( $old_schema != null && mysql5_schema::contains_table($old_schema, $new_table['name']) ) {
+          $old_table = dbx::get_table($old_schema, $new_table['name']);
+        }
+        $ofs->write(
+          self::get_data_sql($old_schema, $old_table, $new_schema, $new_table)
+        );
+      }
+    }
+  }
+
   /**
    * Outputs commands for creation of new tables.
    *
