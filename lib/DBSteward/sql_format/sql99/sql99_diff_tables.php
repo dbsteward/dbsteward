@@ -39,6 +39,7 @@ class sql99_diff_tables {
     if ( sql99_schema::contains_table($schema, $table['oldTableName']) ) {
       throw new Exception("oldTableName panic - schema " . $schema['name'] . " still contains table named " . $table['oldTableName']);
     }
+
     $old_schema = sql99_table::get_old_table_schema($schema, $table);
     if (!is_null($old_schema)) {
       if ( !sql99_schema::contains_table($old_schema, $table['oldTableName']) ) {
