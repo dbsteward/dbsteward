@@ -100,13 +100,14 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
       
-      <changelog version="1.2.3" date="2013-02-15" license="Simplified BSD License">
+      <changelog version="1.2.3" date="2013-02-26" license="Simplified BSD License">
 DBSteward 1.2.3 Release
 
 * pgsql8 Extraction, Differencing Improvements
-* mysql5 Extraction, Differencing Optimizations
+* mysql5 Extraction, Differencing Fixes, Optimizations
 * Partitioned table defintion support for mysql5 and pgsql8
 * Fix DTD load failures under Mac OS
+* Fix bin/ references under SE-Linux, Arch Linux
 
 
 Supported Platform DDL Generation and Differencing:
@@ -241,11 +242,9 @@ Supported db structure dump into DBSteward XML:
 
       <dirroles key="bin">script</dirroles>
       <replacement path="bin/dbsteward" type="pear-config" from="@php_bin@" to="php_bin" />
-      <replacement path="bin/dbsteward.php" type="pear-config" from="@php_bin@" to="php_bin" />
-      <replacement path="bin/dbsteward.php" type="pear-config" from="@bin_dir@" to="bin_dir" />
+      <replacement path="bin/dbsteward" type="pear-config" from="@bin_dir@" to="bin_dir" />
       <release>
          <install as="dbsteward" name="bin/dbsteward" />
-         <install as="dbsteward.php" name="bin/dbsteward.php" />
       </release>
       </d51pearpkg2>
   </target>
