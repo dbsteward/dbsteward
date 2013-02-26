@@ -1259,66 +1259,33 @@ class pgsql8 extends sql99 {
 
         dbsteward::console_line(3, "Analyze table indexes " . $row['schemaname'] . "." . $row['tablename']);
         // get table INDEXs
-        $sql = "SELECT relname, indkey
-          FROM pg_class, pg_index
-          WHERE pg_class.oid = pg_index.indexrelid
-            AND pg_class.oid IN (
-              SELECT indexrelid
-              FROM pg_index, pg_class
-              WHERE pg_class.relname='" . $node_table['name'] . "'
-                AND pg_class.oid=pg_index.indrelid
-                AND indisunique != 't'
-                AND indisprimary != 't' );";
+        $sql = "SELECT ic.relname, i.indisunique, array_to_string((
+                  SELECT array_agg(attname)
+                  FROM unnest(i.indkey) AS key
+                  LEFT JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = key
+                ), ' ') AS dimensions
+                FROM pg_index i
+                LEFT JOIN pg_class ic ON ic.oid = i.indexrelid
+                LEFT JOIN pg_class tc ON tc.oid = i.indrelid
+                WHERE tc.relname = '{$node_table['name']}'
+                  AND i.indisprimary != 't'
+                  AND ic.relname NOT IN (
+                    SELECT constraint_name
+                    FROM information_schema.table_constraints
+                    WHERE table_schema = '{$node_schema['name']}'
+                      AND table_name = '{$node_table['name']}');";
         $index_rs = pgsql8_db::query($sql);
         while (($index_row = pg_fetch_assoc($index_rs)) !== FALSE) {
-          $keys = explode(' ', $index_row['indkey']);
-          foreach ($keys AS $key) {
-            /*
-            someapp1=# SELECT t.relname, a.attname, a.attnum, c.indclass
-            FROM pg_index c
-            LEFT JOIN pg_class t ON c.indrelid = t.oid
-            LEFT JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(indkey)
-            WHERE t.relname = 'program_membership';
-            relname       |              attname              | attnum | indclass
-            --------------------+-----------------------------------+--------+----------
-            program_membership | program_membership_status_list_id |      4 | 1978
-            program_membership | program_list_id                   |      3 | 1978
-            program_membership | entity_id                         |      2 | 10029
-            program_membership | program_membership_id             |      1 | 10029
-            program_membership | program_membership_id             |      1 | 10029
-            (5 rows)
-            /**/
-            // looks like only attnum 3 are real indexes
-            if ($key == '3') {
-              $sql = "SELECT t.relname, a.attname, a.attnum, c.indclass
-                FROM pg_index c
-                LEFT JOIN pg_class t ON c.indrelid = t.oid
-                LEFT JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(indkey)
-                WHERE t.relname = '" . $node_table['name'] . "'
-                  AND a.attnum = " . $key;
-              $index_key_rs = pgsql8_db::query($sql);
-              // indclass 10042 = pkey indexes
-              // indclass 10029 = fkey indexes
-              // indclass 1978 looks like actual INDEXs
-              while (($index_key_row = pg_fetch_assoc($index_key_rs)) !== FALSE) {
-                // only do indexes that are class 1978
-                if (strpos($index_key_row['indclass'], '1978') !== FALSE) {
-                  $index_name = $index_key_row['relname'] . '_' . $index_key_row['attname'] . '_idx';
-                  // to avoid duplicates from query
-                  // if index isn't in the document already, add it
-                  $nodes = $node_table->xpath("index[@name='" . $index_name . "']");
-                  if (count($nodes) == 0) {
-                    $node_index = $node_table->addChild('index');
-                    $node_index->addAttribute('name', $index_name);
-                    $node_index->addAttribute('using', 'btree');
-                    $node_index->addChild('indexDimension', (string)$index_key_row['attname']);
-                    // development/debugging stuff
-                    //                  $node_index->addAttribute('indclass', $index_key_row['indclass']);
-                    //                  $node_index->addAttribute('indkey', $key);
-                  }
-                }
-              }
-            }
+          $dimensions = explode(' ', $index_row['dimensions']);
+
+          // only add a unique index if the column was 
+          $index_name = $index_row['relname'];
+          $node_index = $node_table->addChild('index');
+          $node_index->addAttribute('name', $index_name);
+          $node_index->addAttribute('using', 'btree');
+          $node_index->addAttribute('unique', $index_row['indisunique']=='t'?'true':'false');
+          foreach ($dimensions as $dim) {
+            $node_index->addChild('indexDimension', $dim);
           }
         }
       }
