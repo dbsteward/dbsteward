@@ -1,1 +1,1 @@
-bin/dbsteward.php
+bin/dbsteward
