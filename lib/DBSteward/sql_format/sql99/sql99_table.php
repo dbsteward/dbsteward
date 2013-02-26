@@ -418,6 +418,7 @@ class sql99_table {
     if ( !isset($table['oldTableName']) ) {
       return NULL;
     }
+
     $old_schema = static::get_old_table_schema($schema, $table);
     $old_table = dbx::get_table($old_schema, $table['oldTableName']);
     return $old_table;
@@ -437,7 +438,12 @@ class sql99_table {
       return $schema;
     }
     
-    $old_schema = dbx::get_schema(dbsteward::$old_database, $table['oldSchemaName']);
+    if (is_null(dbsteward::$old_database)) {
+      $old_schema = NULL;
+    }
+    else {
+      $old_schema = dbx::get_schema(dbsteward::$old_database, $table['oldSchemaName']);
+    }
     return $old_schema;
   }
 }
