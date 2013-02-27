@@ -1576,70 +1576,66 @@ class pgsql8 extends sql99 {
     // this is based on psql 8.4's \df+ query
     // that are not language c
     // that are not triggers
-    $sql = "SELECT n.nspname as \"Schema\",
-  p.proname as \"Name\",
-  pg_catalog.pg_get_function_result(p.oid) as \"Result data type\",
-  pg_catalog.pg_get_function_arguments(p.oid) as \"Argument data types\",
- CASE
-  WHEN p.proisagg THEN 'agg'
-  WHEN p.proiswindow THEN 'window'
-  WHEN p.prorettype = 'pg_catalog.trigger'::pg_catalog.regtype THEN 'trigger'
-  ELSE 'normal'
-END as \"Type\",
- CASE
-  WHEN p.provolatile = 'i' THEN 'IMMUTABLE'
-  WHEN p.provolatile = 's' THEN 'STABLE'
-  WHEN p.provolatile = 'v' THEN 'VOLATILE'
-END as \"Volatility\",
-  pg_catalog.pg_get_userbyid(p.proowner) as \"Owner\",
-  l.lanname as \"Language\",
-  p.prosrc as \"Source code\",
-  pg_catalog.obj_description(p.oid, 'pg_proc') as \"Description\"
+    $sql = "SELECT p.oid, n.nspname as schema, p.proname as name,
+       pg_catalog.pg_get_function_result(p.oid) as return_type,
+       CASE
+         WHEN p.proisagg THEN 'agg'
+         WHEN p.proiswindow THEN 'window'
+         WHEN p.prorettype = 'pg_catalog.trigger'::pg_catalog.regtype THEN 'trigger'
+         ELSE 'normal'
+       END as type,
+       CASE
+         WHEN p.provolatile = 'i' THEN 'IMMUTABLE'
+         WHEN p.provolatile = 's' THEN 'STABLE'
+         WHEN p.provolatile = 'v' THEN 'VOLATILE'
+       END as volatility,
+       pg_catalog.pg_get_userbyid(p.proowner) as owner,
+       l.lanname as language,
+       p.prosrc as source,
+       pg_catalog.obj_description(p.oid, 'pg_proc') as description
 FROM pg_catalog.pg_proc p
-     LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-     LEFT JOIN pg_catalog.pg_language l ON l.oid = p.prolang
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+LEFT JOIN pg_catalog.pg_language l ON l.oid = p.prolang
 WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
   AND l.lanname NOT IN ( 'c' )
-  AND pg_catalog.pg_get_function_result(p.oid) NOT IN ( 'trigger' )";
+  AND pg_catalog.pg_get_function_result(p.oid) NOT IN ( 'trigger' );";
     $rs_functions = pgsql8_db::query($sql);
     while (($row_fxn = pg_fetch_assoc($rs_functions)) !== FALSE) {
-      dbsteward::console_line(3, "Analyze function " . $row_fxn['Schema'] . "." . $row_fxn['Name']);
-      $node_schema = dbx::get_schema($doc, $row_fxn['Schema'], TRUE);
+      dbsteward::console_line(3, "Analyze function " . $row_fxn['schema'] . "." . $row_fxn['name']);
+      $node_schema = dbx::get_schema($doc, $row_fxn['schema'], TRUE);
       if ( !isset($node_schema['owner']) ) {
-        $sql = "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = '" . $row_fxn['Schema'] . "'";
+        $sql = "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = '" . $row_fxn['schema'] . "'";
         $schema_owner = pgsql8_db::query_str($sql);
         $node_schema->addAttribute('owner', self::translate_role_name($schema_owner));
       }
       if ( !$node_schema ) {
-        throw new exception("failed to find function schema " . $row_fxn['Schema']);
+        throw new exception("failed to find function schema " . $row_fxn['schema']);
       }
 
       $node_function = $node_schema->addChild('function');
-      $node_function['name'] = $row_fxn['Name'];
+      $node_function['name'] = $row_fxn['name'];
 
-      $args = preg_split("/[\,]/", $row_fxn['Argument data types'], -1, PREG_SPLIT_NO_EMPTY);
-      foreach($args AS $arg) {
-        $arg_pieces = preg_split("/(?<!character)\s+/", trim($arg), -1, PREG_SPLIT_NO_EMPTY);
-        $node_function_parameter = $node_function->addChild('functionParameter');
-        if ( count($arg_pieces) > 1 ) {
-          // if the function parameter is named, retain the name
-          $arg_name = array_shift($arg_pieces);
-          $arg_type = implode(' ', $arg_pieces);
-          $node_function_parameter['name'] = $arg_name;
-          $node_function_parameter['type'] = $arg_type;
+      // @TODO: Exploits internal naming scheme to match parameters to routines (name + _ + oid)
+      $sql = "SELECT p.ordinal_position, p.parameter_name, p.data_type
+              FROM information_schema.parameters p
+              WHERE p.specific_name = '{$row_fxn['name']}_{$row_fxn['oid']}'
+              ORDER BY p.ordinal_position ASC;";
+      $rs_args = pgsql8_db::query($sql);
+      while (($row_arg = pg_fetch_assoc($rs_args)) !== FALSE) {
+        $node_param = $node_function->addChild('functionParameter');
+        if (!empty($row_arg['parameter_name'])) {
+          $node_param['name'] = $row_arg['parameter_name'];
         }
-        else {
-          $node_function_parameter['type'] = trim($arg);
-        }
+        $node_param['type'] = $row_arg['data_type'];
       }
 
-      $node_function['returns'] = $row_fxn['Result data type'];
-      $node_function['cachePolicy'] = $row_fxn['Volatility'];
-      $node_function['owner'] = $row_fxn['Owner'];
+      $node_function['returns'] = $row_fxn['return_type'];
+      $node_function['cachePolicy'] = $row_fxn['volatility'];
+      $node_function['owner'] = $row_fxn['owner'];
       // @TODO: how is / figure out how to express securityDefiner attribute in the functions query
-      $node_function['description'] = $row_fxn['Description'];
-      $node_definition = $node_function->addChild('functionDefinition', $row_fxn['Source code']);
-      $node_definition['language'] = $row_fxn['Language'];
+      $node_function['description'] = $row_fxn['description'];
+      $node_definition = $node_function->addChild('functionDefinition', $row_fxn['source']);
+      $node_definition['language'] = $row_fxn['language'];
       $node_definition['sqlFormat'] = 'pgsql8';
     }
 
