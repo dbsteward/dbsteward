@@ -1333,12 +1333,11 @@ class pgsql8 extends sql99 {
     // makes the loop much faster to do it for the whole schema cause of crappy joins
     // @TODO: known bug - multi-column primary keys can be out of order with this query
     dbsteward::console_line(3, "Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
-    $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name, tc.is_deferrable, tc.initially_deferred, rc.match_option AS match_type, rc.update_rule AS on_update, rc.delete_rule AS on_delete, ccu.table_schema AS references_schema, ccu.table_name AS references_table, ccu.column_name AS references_field
+    $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name, tc.is_deferrable, tc.initially_deferred
       FROM information_schema.table_constraints tc
       LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_catalog = kcu.constraint_catalog AND tc.constraint_schema = kcu.constraint_schema AND tc.constraint_name = kcu.constraint_name
-      LEFT JOIN information_schema.referential_constraints rc ON tc.constraint_catalog = rc.constraint_catalog AND tc.constraint_schema = rc.constraint_schema AND tc.constraint_name = rc.constraint_name
-      LEFT JOIN information_schema.constraint_column_usage ccu ON rc.unique_constraint_catalog = ccu.constraint_catalog AND rc.unique_constraint_schema = ccu.constraint_schema AND rc.unique_constraint_name = ccu.constraint_name
       WHERE tc.table_schema NOT IN ('information_schema', 'pg_catalog')
+        AND tc.constraint_type != 'FOREIGN KEY'
       ORDER BY tc.table_schema, tc.table_name;";
     $rc_constraint = pgsql8_db::query($sql);
     while (($constraint_row = pg_fetch_assoc($rc_constraint)) !== FALSE) {
@@ -1394,35 +1393,111 @@ class pgsql8 extends sql99 {
         }
         $node_column['unique'] = 'true';
       }
-      else if (strcasecmp('FOREIGN KEY', $constraint_row['constraint_type']) == 0) {
-        if (!isset($node_column['foreignSchema'])) {
-          $node_column->addAttribute('foreignSchema', $constraint_row['references_schema']);
-        }
-        $node_column['foreignSchema'] = $constraint_row['references_schema'];
-
-        if (!isset($node_column['foreignTable'])) {
-          $node_column->addAttribute('foreignTable', $constraint_row['references_table']);
-        }
-        $node_column['foreignTable'] = $constraint_row['references_table'];
-
-        if (!isset($node_column['foreignColumn'])) {
-          $node_column->addAttribute('foreignColumn', $constraint_row['references_field']);
-        }
-        $node_column['foreignColumn'] = $constraint_row['references_field'];
-
-        if (!isset($node_column['foreignKeyName'])) {
-          $node_column->addAttribute('foreignKeyName', $constraint_row['constraint_name']);
-        }
-        $node_column['foreignKeyName'] = $constraint_row['constraint_name'];
-
-        // dbsteward fkey columns aren't supposed to specify a type, they will determine it from the foreign reference
-        unset($node_column['type']);
-      }
       else if (strcasecmp('CHECK', $constraint_row['constraint_type']) == 0) {
         // @TODO: implement CHECK constraints
       }
       else {
         throw new exception("unknown constraint_type " . $constraint_row['constraint_type']);
+      }
+    }
+
+    // We cannot accurately retrieve FOREIGN KEYs via information_schema
+    // We must rely on getting them from pg_catalog instead
+    // See http://stackoverflow.com/questions/1152260/postgres-sql-to-list-table-foreign-keys
+    $sql = "SELECT con.constraint_name, con.update_rule, con.delete_rule,
+                   lns.nspname AS local_schema, lt_cl.relname AS local_table, array_to_string(array_agg(lc_att.attname), ' ') AS local_columns,
+                   fns.nspname AS foreign_schema, ft_cl.relname AS foreign_table, array_to_string(array_agg(fc_att.attname), ' ') AS foreign_columns
+            FROM
+              -- get column mappings
+              (SELECT local_constraint.conrelid AS local_table, unnest(local_constraint.conkey) AS local_col,
+                      local_constraint.confrelid AS foreign_table, unnest(local_constraint.confkey) AS foreign_col,
+                      local_constraint.conname AS constraint_name, local_constraint.confupdtype AS update_rule, local_constraint.confdeltype as delete_rule
+               FROM pg_class cl
+               INNER JOIN pg_namespace ns ON cl.relnamespace = ns.oid
+               INNER JOIN pg_constraint local_constraint ON local_constraint.conrelid = cl.oid
+               WHERE ns.nspname NOT IN ('pg_catalog','information_schema')
+                 AND local_constraint.contype = 'f'
+              ) con
+            INNER JOIN pg_class lt_cl ON lt_cl.oid = con.local_table
+            INNER JOIN pg_namespace lns ON lns.oid = lt_cl.relnamespace
+            INNER JOIN pg_attribute lc_att ON lc_att.attrelid = con.local_table AND lc_att.attnum = con.local_col
+            INNER JOIN pg_class ft_cl ON ft_cl.oid = con.foreign_table
+            INNER JOIN pg_namespace fns ON fns.oid = ft_cl.relnamespace
+            INNER JOIN pg_attribute fc_att ON fc_att.attrelid = con.foreign_table AND fc_att.attnum = con.foreign_col
+            GROUP BY con.constraint_name, lns.nspname, lt_cl.relname, fns.nspname, ft_cl.relname, con.update_rule, con.delete_rule;";
+    $rc_fk = pgsql8_db::query($sql);
+    $rules = array(
+      'a' => 'NO_ACTION',
+      'r' => 'RESTRICT',
+      'c' => 'CASCADE',
+      'n' => 'SET_NULL',
+      'd' => 'SET_DEFAULT'
+    );
+    while (($fk_row = pg_fetch_assoc($rc_fk)) !== FALSE) {
+      $local_cols = explode(' ', $fk_row['local_columns']);
+      $foreign_cols = explode(' ', $fk_row['foreign_columns']);
+
+      if (count($local_cols) != count($foreign_cols)) {
+        throw new Exception(sprintf("Unexpected: Foreign key columns (%s) on %s.%s are mismatched with columns (%s) on %s.%s",
+          implode(', ', $local_cols),
+          $fk_row['local_schema'], $fk_row['local_table'],
+          implode(', ', $foreign_cols),
+          $fk_row['foreign_schema'], $fk_row['foreign_table']));
+      }
+
+      $nodes = $doc->xpath("schema[@name='" . $fk_row['local_schema'] . "']");
+      if (count($nodes) != 1) {
+        throw new exception("failed to find constraint analysis schema '" . $fk_row['local_schema'] . "'");
+      }
+      else {
+        $node_schema = $nodes[0];
+      }
+
+      $nodes = $node_schema->xpath("table[@name='" . $fk_row['local_table'] . "']");
+      if (count($nodes) != 1) {
+        throw new exception("failed to find constraint analysis table " . $fk_row['local_schema'] . " table '" . $fk_row['local_table'] . "'");
+      }
+      else {
+        $node_table = $nodes[0];
+      }
+
+      if (count($local_cols) === 1) {
+        // inline on column
+
+        $nodes = $node_table->xpath("column[@name='" . $local_cols[0] . "']");
+        if (strlen($local_cols[0]) > 0) {
+          if (count($nodes) != 1) {
+            throw new exception("failed to find constraint analysis column " . $fk_row['local_schema'] . " table '" . $fk_row['local_table'] . "' column '" . $local_cols[0]);
+          }
+          else {
+            $node_column = $nodes[0];
+          }
+        }
+
+        $node_column['foreignSchema'] = $fk_row['foreign_schema'];
+        $node_column['foreignTable'] = $fk_row['foreign_table'];
+        $node_column['foreignColumn'] = $foreign_cols[0];
+        $node_column['foreignKeyName'] = $fk_row['constraint_name'];
+        $node_column['foreignOnUpdate'] = $rules[$fk_row['update_rule']];
+        $node_column['foreignOnDelete'] = $rules[$fk_row['delete_rule']];
+
+        // dbsteward fkey columns aren't supposed to specify a type, they will determine it from the foreign reference
+        unset($node_column['type']);
+      }
+      elseif (count($local_cols) > 1) {
+        // separately on table
+        $node_constraint = $node_table->addChild('constraint');
+        $node_constraint['name'] = $fk_row['constraint_name'];
+        $node_constraint['type'] = 'FOREIGN KEY';
+        $node_constraint['definition'] = sprintf("(%s) REFERENCES %s (%s) ON DELETE %s ON UPDATE %s",
+          implode(', ', array_map('pgsql8::get_quoted_column_name', $local_cols)),
+          pgsql8::get_fully_qualified_table_name($fk_row['foreign_schema'],$fk_row['foreign_table']),
+          implode(', ', array_map('pgsql8::get_quoted_column_name', $foreign_cols)),
+          $rules[$fk_row['update_rule']],
+          $rules[$fk_row['delete_rule']]
+        );
+        $node_constraint['foreignSchema'] = $fk_row['foreign_schema'];
+        $node_constraint['foreignTable'] = $fk_row['foreign_table'];
       }
     }
 
