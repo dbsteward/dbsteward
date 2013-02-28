@@ -86,7 +86,9 @@ http://dbsteward.org/
       </description>
 
       <lead user="nkiraly" name="Nicholas Kiraly" email="kiraly.nicholas@gmail.com" />
-      <developer user="austinhyde" name="Austin Hyde" email="austin109@gmail.com" />
+      <developer user="ahyde" name="Austin Hyde" email="austin109@gmail.com" />
+      <developer user="wmoran" name="Bill Moran" email="wmoran@potentialtech.com" />
+      <developer user="ajette" name="Adam Jette" email="jettea46@yahoo.com" />
 
       <license>http://www.opensource.org/licenses/bsd-license.php Simplified BSD License</license>
 
