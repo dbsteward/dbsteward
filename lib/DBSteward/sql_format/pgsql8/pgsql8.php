@@ -860,7 +860,22 @@ class pgsql8 extends sql99 {
       // new tables that were not previously present
       // new replicated columns that were not previously present
       foreach ($new_schema->table AS $new_table) {
-        if (!isset($new_table['slonyId'])) {
+        if (isset($new_table['slonyId']) && strlen($new_table['slonyId']) > 0) {
+          if (strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) == 0) {
+            // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
+            // but also allow for some tables to not be replicated even with the flag on
+          }
+          else {
+            if (!is_numeric(dbsteward::string_cast($new_table['slonyId']))) {
+              throw new exception('table ' . $new_table['name'] . " slonyId " . $new_table['slonyId'] . " is not numeric");
+            }
+            if (in_array(dbsteward::string_cast($new_table['slonyId']), self::$table_slony_ids)) {
+              throw new exception("table slonyId " . $new_table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
+            }
+            self::$table_slony_ids[] = dbsteward::string_cast($new_table['slonyId']);
+          }
+        }
+        else {
           dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'], 44) . " table missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
           if (dbsteward::$require_slony_id) {
             throw new exception($new_schema['name'] . '.' . $new_table['name'] . " table missing slonyId and slonyIds are required!");
@@ -870,6 +885,14 @@ class pgsql8 extends sql99 {
         $old_table = NULL;
         if ( $old_schema ) {
           $old_table = dbx::get_table($old_schema, $new_table['name']);
+
+          if ($old_table
+           && isset($old_table['slonyId'])
+           && strcasecmp('IGNORE_REQUIRED', $old_table['slonyId']) !== 0
+           && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) !== 0
+           && (string)$new_table['slonyId'] != (string)$old_table['slonyId']) {
+            throw new Exception("table slonyId {$new_table['slonyId']} in new does not match slonyId {$old_table['slonyId']} in old");
+          }
         }
 
         if (($old_schema === NULL || $old_table === NULL) && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) != 0) {
@@ -887,7 +910,22 @@ class pgsql8 extends sql99 {
         foreach ($new_table->column AS $new_column) {
           // is a replicated sequence type
           if (preg_match(pgsql8::PATTERN_REPLICATED_COLUMN, $new_column['type']) > 0) {
-            if (empty($new_column['slonyId'])) {
+            if (isset($new_column['slonyId']) && strlen($new_column['slonyId']) > 0) {
+              if (strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) == 0) {
+                // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
+                // but also allow for some tables to not be replicated even with the flag on
+              }
+              else {
+                if (!is_numeric(dbsteward::string_cast($new_column['slonyId']))) {
+                  throw new exception("serial column " . $new_column['name'] . " slonyId " . $new_column['slonyId'] . " is not numeric");
+                }
+                if (in_array(dbsteward::string_cast($new_column['slonyId']), self::$sequence_slony_ids)) {
+                  throw new exception("column sequence slonyId " . $new_column['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
+                }
+                self::$sequence_slony_ids[] = dbsteward::string_cast($new_column['slonyId']);
+              }
+            }
+            else {
               dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'] . '.' . $new_column['name'], 44) . " serial column missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
               if (dbsteward::$require_slony_id) {
                 throw new exception($new_schema['name'] . '.' . $new_table['name'] . '.' . $new_column['name'] . " serial column missing slonyId and slonyIds are required!");
@@ -902,6 +940,14 @@ class pgsql8 extends sql99 {
                 // column is in new schema
                 $old_column = $nodes[0];
               }
+            }
+
+            if ($old_column
+             && isset($old_column['slonyId'])
+             && strcasecmp('IGNORE_REQUIRED', $old_column['slonyId']) !== 0
+             && strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) !== 0
+             && (string)$new_column['slonyId'] != (string)$old_column['slonyId']) {
+              throw new Exception("column sequence slonyId {$new_column['slonyId']} in new does not match slonyId {$old_column['slonyId']} in old");
             }
 
             if (($old_schema === NULL || $old_table === NULL || $old_column === NULL)
@@ -921,7 +967,23 @@ class pgsql8 extends sql99 {
 
       // new stand alone sequences not owned by tables that were not previously present
       foreach ($new_schema->sequence AS $new_sequence) {
-        if (empty($new_sequence['slonyId'])) {
+        if (isset($new_sequence['slonyId'])
+          && strlen($new_sequence['slonyId']) > 0) {
+          if (strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) == 0) {
+            // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
+            // but also allow for some tables to not be replicated even with the flag on
+          }
+          else {
+            if (!is_numeric(dbsteward::string_cast($new_sequence['slonyId']))) {
+              throw new exception('sequence ' . $new_sequence['name'] . " slonyId " . $new_sequence['slonyId'] . " is not numeric");
+            }
+            if (in_array(dbsteward::string_cast($new_sequence['slonyId']), self::$sequence_slony_ids)) {
+              throw new exception("sequence slonyId " . $new_sequence['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
+            }
+            self::$sequence_slony_ids[] = dbsteward::string_cast($new_sequence['slonyId']);
+          }
+        }
+        else {
           dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_sequence['name'], 44) . " sequence missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
           if (dbsteward::$require_slony_id) {
             throw new exception($new_schema['name'] . '.' . $new_sequence['name'] . " sequence missing slonyId and slonyIds are required!");
@@ -931,6 +993,14 @@ class pgsql8 extends sql99 {
         $old_sequence = NULL;
         if ( $old_schema ) {
           $old_sequence = dbx::get_sequence($old_schema, $new_sequence['name']);
+        }
+
+        if ($old_sequence
+         && isset($old_sequence['slonyId'])
+         && strcasecmp('IGNORE_REQUIRED', $old_sequence['slonyId']) !== 0
+         && strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) !== 0
+         && (string)$new_sequence['slonyId'] != (string)$old_sequence['slonyId']) {
+          throw new Exception("sequence slonyId {$new_sequence['slonyId']} in new does not match slonyId {$old_sequence['slonyId']} in old");
         }
 
         if (($old_schema === NULL || $old_sequence === NULL) && strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) != 0) {
