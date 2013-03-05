@@ -286,9 +286,9 @@ class pgsql8 extends sql99 {
       foreach($schema->function AS $function) {
         if ( pgsql8_function::has_definition($function) ) {
           $definition = pgsql8_function::get_definition($function);
-          if ( $definition['language'] == 'sql'
+          if ( strcasecmp($definition['language'], 'sql') == 0
             && $definition['sqlFormat'] == 'pgsql8'
-            && preg_match('/\s+FROM ([\w.]+)\s+/i', $definition, $matches) > 0 ) {
+            && preg_match('/\s+FROM\s+([\w.]+)\s+/i', $definition, $matches) > 0 ) {
             $referenced_table_name = $matches[1];
             $table_schema_name = sql_parser::get_schema_name($referenced_table_name, $db_doc);
             $node_schema = dbx::get_schema($db_doc, $table_schema_name);
