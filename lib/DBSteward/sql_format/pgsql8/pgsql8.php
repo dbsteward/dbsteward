@@ -1399,16 +1399,14 @@ class pgsql8 extends sql99 {
       $node_query->addAttribute('sqlFormat', 'pgsql8');
     }
 
-    // for all schemas, all tables - get table constraints .. PRIMARY KEYs, FOREIGN KEYs
-    // makes the loop much faster to do it for the whole schema cause of crappy joins
-    // @TODO: known bug - multi-column primary keys can be out of order with this query
+    // for all schemas, all tables - get table constraints that are not typoe 'FOREIGN KEY'
     dbsteward::console_line(3, "Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
-    $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name, tc.is_deferrable, tc.initially_deferred
+    $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name, tc.is_deferrable, tc.initially_deferred, kcu.ordinal_position
       FROM information_schema.table_constraints tc
       LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_catalog = kcu.constraint_catalog AND tc.constraint_schema = kcu.constraint_schema AND tc.constraint_name = kcu.constraint_name
       WHERE tc.table_schema NOT IN ('information_schema', 'pg_catalog')
         AND tc.constraint_type != 'FOREIGN KEY'
-      ORDER BY tc.table_schema, tc.table_name;";
+      ORDER BY tc.table_schema, tc.table_name, kcu.ordinal_position;";
     $rc_constraint = pgsql8_db::query($sql);
     while (($constraint_row = pg_fetch_assoc($rc_constraint)) !== FALSE) {
       $nodes = $doc->xpath("schema[@name='" . $constraint_row['table_schema'] . "']");
@@ -1447,8 +1445,8 @@ class pgsql8 extends sql99 {
           $node_table['primaryKey'] = $constraint_row['column_name'];
         }
         else {
-          // reverse the standing order, this seems to work for most pk's by abusing natural order returned from the db
-          $node_table['primaryKey'] = $constraint_row['column_name'] . ', ' . $node_table['primaryKey'];
+          // the results are ordered by ordinal_position so suffix appending is the deterministic thing to do here
+          $node_table['primaryKey'] .= ', ' . $constraint_row['column_name'];
         }
 
         if (!isset($node_table['primaryKeyName'])) {
