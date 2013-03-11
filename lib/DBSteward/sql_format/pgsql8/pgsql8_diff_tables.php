@@ -973,32 +973,19 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   }
 
   private static function get_data_row_insert($node_schema, $node_table, $data_row_columns, $data_row) {
-    $columns = '';
-    $values = '';
-    $data_row_columns_count = count($data_row_columns);
-    for($i=0; $i < $data_row_columns_count; $i++) {
-      $data_column_name = $data_row_columns[$i];
-
-      if ( dbsteward::$quote_column_names ) {
-        $columns .= '"' . $data_column_name . '", ';
-      }
-      else {
-        $columns .= $data_column_name . ', ';
-      }
-
-      $value = pgsql8::column_value_default($node_schema, $node_table, $data_column_name, $data_row->col[$i]);
-
-      $values .= $value . ', ';
+    $columns = array();
+    $values = array();
+    foreach ($data_row_columns as $i => $data_column_name) {
+      $columns[] = pgsql8::get_quoted_column_name($data_column_name);
+      $values[] = pgsql8::column_value_default($node_schema, $node_table, $data_column_name, $data_row->col[$i]);
     }
-    $columns = substr($columns, 0, -2);
-    $values = substr($values, 0, -2);
 
     $sql = sprintf(
       "INSERT INTO %s.%s (%s) VALUES (%s);\n",
       pgsql8::get_quoted_schema_name($node_schema['name']),
       pgsql8::get_quoted_table_name($node_table['name']),
-      $columns,
-      $values
+      implode(', ', $columns),
+      implode(', ', $values)
     );
 
     return $sql;
