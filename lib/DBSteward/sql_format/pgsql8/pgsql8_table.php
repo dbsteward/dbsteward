@@ -84,7 +84,11 @@ class pgsql8_table extends sql99_table {
         if ( preg_match(pgsql8::PATTERN_TABLE_LINKED_TYPES, dbsteward::string_cast($column['type'])) > 0 ) {
           $sequence_name = pgsql8::identifier_name($node_schema['name'], $node_table['name'], $column['name'], '_seq');
           // we use alter table so we change the ownership of the sequence tracking counter, alter sequence can't do this
-          $sql .= "\nALTER TABLE " . $node_schema['name'] . '.' . $sequence_name . " OWNER TO " . $owner . ";\n";
+          $sql .= sprintf("\nALTER TABLE %s.%s OWNER TO %s;\n",
+            pgsql8::get_quoted_schema_name($node_schema['name']),
+            pgsql8::get_quoted_object_name($sequence_name),
+            $owner
+          );
         }
       }
     }
