@@ -515,7 +515,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           }
         }
         else {
-          $ofs->write(pgsql8_table::get_creation_sql($new_schema, $table, dbsteward::$quote_column_names) . "\n");
+          $ofs->write(pgsql8_table::get_creation_sql($new_schema, $table) . "\n");
         }
       }
     }
