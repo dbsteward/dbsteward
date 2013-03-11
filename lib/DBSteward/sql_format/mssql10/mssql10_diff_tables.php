@@ -861,13 +861,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     $data_row_columns_count = count($data_row_columns);
     for ($i = 0; $i < $data_row_columns_count; $i++) {
       $data_column_name = $data_row_columns[$i];
-
-      if (dbsteward::$quote_column_names) {
-        $columns .= '"' . $data_column_name . '", ';
-      }
-      else {
-        $columns .= $data_column_name . ', ';
-      }
+      $columns .= mssql10::get_quoted_column_name($data_column_name) . ', ';
 
       $value = mssql10::column_value_default($node_schema, $node_table, $data_column_name, $data_row->col[$i]);
 
@@ -952,7 +946,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     if ($drop_constraints) {
       // drop constraints that no longer exist or are modified
       foreach (mssql10_diff_tables::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint) {
-        $ofs->write(mssql10_table::get_constraint_drop_sql($constraint, dbsteward::$quote_column_names) . "\n");
+        $ofs->write(mssql10_table::get_constraint_drop_sql($constraint) . "\n");
       }
     }
     else {
@@ -976,7 +970,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
 
       // add new constraints
       foreach (mssql10_diff_tables::get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint) {
-        $ofs->write(mssql10_table::get_constraint_sql($constraint, dbsteward::$quote_column_names) . "\n");
+        $ofs->write(mssql10_table::get_constraint_sql($constraint) . "\n");
       }
     }
   }

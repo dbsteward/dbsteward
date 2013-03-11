@@ -1102,12 +1102,7 @@ class pgsql8 extends sql99 {
             $slony_compare_ofs->write($sql . "\n");
           }
           // explicitly name columns, so that column order is homogenized between replicas of any age/source
-          if (dbsteward::$quote_column_names) {
-            $table_columns .= '"' . $column['name'] . '"' . ', ';
-          }
-          else {
-            $table_columns .= $column['name'] . ', ';
-          }
+          $table_columns .= pgsql8::get_quoted_column_name($column['name']) . ', ';
         }
         $table_columns = substr($table_columns, 0, -2);
 
@@ -1826,13 +1821,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
             // glue the primary key expression together for the where
             $primary_key_expression = '';
             for ($k = 0; $k < count($primary_key_cols); $k++) {
-
-              if (dbsteward::$quote_column_names) {
-                $column_name = '"' . $primary_key_cols[$k] . '"';
-              }
-              else {
-                $column_name = $primary_key_cols[$k];
-              }
+              $column_name = pgsql8::get_quoted_column_name($primary_key_cols[$k]);
 
               $pk_index = array_search($primary_key_cols[$k], $cols);
               if ($pk_index === FALSE) {
