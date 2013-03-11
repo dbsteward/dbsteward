@@ -100,7 +100,7 @@ class pgsql8_permission {
         implode(', ', $perms),
         $pg_object_type,
         $object_name,
-        pgsql8::get_quoted_object_name(xml_parser::role_enum($db_doc, $roles[$j])),
+        xml_parser::role_enum($db_doc, $roles[$j]),
         $with
       );
 
@@ -116,7 +116,7 @@ class pgsql8_permission {
             'USAGE',
             'SCHEMA',
             pgsql8::get_quoted_schema_name($node_schema['name']),
-            pgsql8::get_quoted_object_name($db_doc->database->role->readonly)
+            $db_doc->database->role->readonly
           );
         }
       }
@@ -133,7 +133,7 @@ class pgsql8_permission {
             'SELECT',
             'SEQUENCE',
             pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_object['name']),
-            pgsql8::get_quoted_object_name($db_doc->database->role->readonly)
+            $db_doc->database->role->readonly
           );
         }
       }
@@ -150,7 +150,7 @@ class pgsql8_permission {
             'SELECT',
             'TABLE',
             pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_object['name']),
-            pgsql8::get_quoted_object_name($db_doc->database->role->readonly)
+            $db_doc->database->role->readonly
           );
         }
 
@@ -190,7 +190,7 @@ class pgsql8_permission {
                 implode(',',$seq_priv),
                 'SEQUENCE',
                 pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($col_sequence),
-                pgsql8::get_quoted_object_name(xml_parser::role_enum($db_doc, $roles[$j])),
+                xml_parser::role_enum($db_doc, $roles[$j]),
                 $with
               );
             }
@@ -205,7 +205,7 @@ class pgsql8_permission {
                 'SELECT',
                 'SEQUENCE',
                 pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($col_sequence),
-                pgsql8::get_quoted_object_name($db_doc->database->role->readonly)
+                $db_doc->database->role->readonly
               );
             }
           }
@@ -217,6 +217,10 @@ class pgsql8_permission {
   }
 
   public static function compile_sql_statement($action, $right, $object_type, $object_name, $role, $with = '') {
+    // the PUBLIC role is actually a keyword, not an identifier, so don't quote it
+    if (strcasecmp($role, "PUBLIC") !== 0) {
+      $role = pgsql8::get_quoted_object_name($role);
+    }
     $sql = $action . ' ' . $right . " ON " . $object_type . " " . $object_name . " TO " . $role;
     if ( strlen($with) > 0 ) {
       $sql .= ' ' . $with;
