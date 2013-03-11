@@ -32,7 +32,7 @@ class pgsql8_index {
     }
     $sql .= ' (';
     foreach($node_index->indexDimension AS $dimension) {
-      $sql .= $dimension . ', ';
+      $sql .= pgsql8::get_quoted_column_name($dimension) . ', ';
     }
     $sql = substr($sql, 0, -2);
     $sql .= ')';
