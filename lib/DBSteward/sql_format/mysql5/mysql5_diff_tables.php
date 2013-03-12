@@ -101,7 +101,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
             . "ALTER TABLE $old_table_name RENAME TO $new_table_name ;" . "\n");
         }
         else {
-          $ofs->write(mysql5_table::get_creation_sql($new_schema, $table, dbsteward::$quote_column_names) . "\n");
+          $ofs->write(mysql5_table::get_creation_sql($new_schema, $table) . "\n");
         }
       }
     }
