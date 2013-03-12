@@ -288,8 +288,7 @@ class pgsql8 extends sql99 {
           $definition = pgsql8_function::get_definition($function);
           if ( strcasecmp($definition['language'], 'sql') == 0
             && $definition['sqlFormat'] == 'pgsql8'
-            && preg_match('/\s+FROM\s+([\w.]+)\s+/i', $definition, $matches) > 0 ) {
-            $referenced_table_name = $matches[1];
+            && !is_null($referenced_table_name = static::function_definition_references_table($definition))) {
             $table_schema_name = sql_parser::get_schema_name($referenced_table_name, $db_doc);
             $node_schema = dbx::get_schema($db_doc, $table_schema_name);
             $node_table = dbx::get_table($node_schema, sql_parser::get_object_name($referenced_table_name));
@@ -1912,6 +1911,31 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    */
   public static function primary_key_split($primary_key_string) {
     return preg_split("/[\,\s]+/", $primary_key_string, -1, PREG_SPLIT_NO_EMPTY);
+  }
+
+  /**
+   * Parse a function definition and determine if it references a table
+   *
+   * @param string $definition The SQL used to create a function
+   * @return string The matched table name the function references, or NULL if no reference
+  */
+  protected static function function_definition_references_table($definition) {
+    $valid_table_name = "[\w.]";
+    $table_name = NULL;
+    if ( preg_match("/SELECT\s+([\w.,*\s]+)\s+FROM\s+($valid_table_name+)/i", $definition, $matches) > 0 ) {
+      $table_name = $matches[2];
+    }
+    else if (preg_match("/INSERT\s+INTO\s+($valid_table_name+)/i", $definition, $matches) > 0) {
+      $table_name = $matches[1];
+    }
+    else if (preg_match("/DELETE\s+FROM\s+(?:ONLY)?\s*($valid_table_name+)/i", $definition, $matches) > 0) {
+      $table_name = $matches[1];
+    }
+    else if (preg_match("/UPDATE\s+(?:ONLY)?\s*($valid_table_name+)\s+SET\s+/i", $definition, $matches) > 0) {
+      $table_name = $matches[1];
+    }
+
+    return $table_name;
   }
 }
 
