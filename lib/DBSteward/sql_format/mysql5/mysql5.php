@@ -347,8 +347,6 @@ class mysql5 {
 
     $enum_types = array();
     $enum_type = function ($obj, $mem, $values) use (&$enum_types) {
-      $values = array_map('strtolower',$values);
-
       // if that set of values is defined by a previous enum, use that
       foreach ( $enum_types as $name => $enum ) {
         if ( $enum === $values ) {
