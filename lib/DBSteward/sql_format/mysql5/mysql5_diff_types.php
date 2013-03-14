@@ -30,14 +30,14 @@ class mysql5_diff_types {
     // placehold type data in table columns, and recreate the type
     foreach (dbx::get_types($new_schema) AS $new_type) {
       // does type exist in old definition ?
-      if (($old_schema == NULL) || !pgsql8_schema::contains_type($old_schema, $new_type['name'])) {
+      if (($old_schema == NULL) || !mysql5_schema::contains_type($old_schema, $new_type['name'])) {
         continue;
       }
 
       $old_type = dbx::get_type($old_schema, $new_type['name']);
       
       // is there a difference between the old and new type definitions?
-      if ( pgsql8_type::equals($old_schema, $old_type, $new_schema, $new_type) ) {
+      if ( mysql5_type::equals($old_schema, $old_type, $new_schema, $new_type) ) {
         continue;
       }
     }
