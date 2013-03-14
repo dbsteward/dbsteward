@@ -400,6 +400,11 @@ class mysql5 {
             $type .= ' AUTO_INCREMENT';
           }
         }
+
+        if ($db_column->is_auto_update) {
+          $type .= ' ON UPDATE CURRENT_TIMESTAMP';
+        }
+        
         $node_column['type'] = $type;
 
         // @TODO: if there are serial sequences/triggers for the column then convert to serial
