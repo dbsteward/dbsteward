@@ -79,134 +79,125 @@ class mysql5 {
 
   public function build_schema($db_doc, $ofs, $table_depends) {
     // schema creation
-    $schema = NULL;
-    foreach ( $db_doc->schema AS $sch ) {
-      if ( strcasecmp($sch['name'], 'public') != 0 ) {
-        dbsteward::console_line(1, "Ignoring schema '{$sch['name']}' because the MySQL driver currently doesn't support schemas other than public");
-        continue;
+    dbsteward::console_line(1, 'MySQL understands a "database" to be a server and a "schema" to be a database.');
+    dbsteward::console_line(1, '  Interpreting all XML schemas to be databases with the same name');
+
+    foreach ( $db_doc->schema as $schema ) {
+      $ofs->write(mysql5_schema::get_creation_sql($schema)."\n");
+
+      // database grants
+      foreach ( $schema->grant AS $grant ) {
+        $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $schema, $grant) . "\n");
+      }
+      
+      // enums
+      foreach ( $schema->type AS $type ) {
+        $ofs->write(mysql5_type::get_creation_sql($schema, $type) . "\n");
       }
 
-      $schema = $sch;
-    }
-
-    if ( $schema === NULL ) {
-      throw new exception("No public schema was found. MySQL must have a public schema");
-    }
-
-    // database grants
-    foreach ( $schema->grant AS $grant ) {
-      $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $schema, $grant) . "\n");
-    }
-    
-    // enums
-    foreach ( $schema->type AS $type ) {
-      $ofs->write(mysql5_type::get_creation_sql($schema, $type) . "\n");
-    }
-
-    // function definitions
-    foreach ($schema->function AS $function) {
-      if (mysql5_function::has_definition($function)) {
-        $ofs->write(mysql5_function::get_creation_sql($schema, $function)."\n\n");
-      }
-      // function grants
-      foreach ( $function->grant AS $grant ) {
-        $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $function, $grant) . "\n");
-      }
-    }
-
-    $sequences = array();
-    $triggers = array();
-
-    // create defined tables
-    foreach ( $schema->table AS $table ) {
-
-      // get sequences and triggers needed to make this table work
-      $sequences = array_merge($sequences, mysql5_table::get_sequences_needed($schema, $table));
-      $triggers = array_merge($triggers, mysql5_table::get_triggers_needed($schema, $table));
-
-      // table definition
-      $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n\n");
-
-      // table indexes
-      mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
-
-      // table grants
-      if (isset($table->grant)) {
-        foreach ($table->grant AS $grant) {
-          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $table, $grant) . "\n");
+      // function definitions
+      foreach ($schema->function AS $function) {
+        if (mysql5_function::has_definition($function)) {
+          $ofs->write(mysql5_function::get_creation_sql($schema, $function)."\n\n");
+        }
+        // function grants
+        foreach ( $function->grant AS $grant ) {
+          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $function, $grant) . "\n");
         }
       }
 
+      $sequences = array();
+      $triggers = array();
+
+      // create defined tables
+      foreach ( $schema->table AS $table ) {
+
+        // get sequences and triggers needed to make this table work
+        $sequences = array_merge($sequences, mysql5_table::get_sequences_needed($schema, $table));
+        $triggers = array_merge($triggers, mysql5_table::get_triggers_needed($schema, $table));
+
+        // table definition
+        $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n\n");
+
+        // table indexes
+        mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
+
+        // table grants
+        if (isset($table->grant)) {
+          foreach ($table->grant AS $grant) {
+            $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $table, $grant) . "\n");
+          }
+        }
+
+        $ofs->write("\n");
+      }
+
+      // sequences contained in the schema + sequences used by serials
+      $sequences = array_merge($sequences, dbx::to_array($schema->sequence));
+      if ( count($sequences) > 0 ) {
+        $ofs->write(mysql5_sequence::get_shim_creation_sql()."\n\n");
+        $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequences)."\n\n");
+
+        // sequence grants
+        foreach ( $sequences as $sequence ) {
+          foreach ( $sequence->grant AS $grant ) {
+            $ofs->write("-- grant for the {$sequence['name']} sequence applies to ALL sequences\n");
+            $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $sequence, $grant) . "\n");
+          }
+        }
+      }
+
+      // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
+      foreach ($schema->table AS $table) {
+        mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
+      }
+      
       $ofs->write("\n");
-    }
 
-    // sequences contained in the schema + sequences used by serials
-    $sequences = array_merge($sequences, dbx::to_array($schema->sequence));
-    if ( count($sequences) > 0 ) {
-      $ofs->write(mysql5_sequence::get_shim_creation_sql()."\n\n");
-      $ofs->write(mysql5_sequence::get_creation_sql($schema, $sequences)."\n\n");
-
-      // sequence grants
-      foreach ( $sequences as $sequence ) {
-        foreach ( $sequence->grant AS $grant ) {
-          $ofs->write("-- grant for the {$sequence['name']} sequence applies to ALL sequences\n");
-          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $sequence, $grant) . "\n");
+      // foreign key references
+      // use the dependency order to specify foreign keys in an order that will satisfy nested foreign keys and etc
+      for ($i = 0; $i < count($table_depends); $i++) {
+        $dep_schema = $table_depends[$i]['schema'];
+        $table = $table_depends[$i]['table'];
+        if ( $table['name'] === dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME ) {
+          // don't do anything with this table, it is a magic internal DBSteward value
+          continue;
         }
-      }
-    }
-
-    // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
-    foreach ($schema->table AS $table) {
-      mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
-    }
-    
-    $ofs->write("\n");
-
-    // foreign key references
-    // use the dependency order to specify foreign keys in an order that will satisfy nested foreign keys and etc
-    for ($i = 0; $i < count($table_depends); $i++) {
-      $dep_schema = $table_depends[$i]['schema'];
-      $table = $table_depends[$i]['table'];
-      if ( $table['name'] === dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME ) {
-        // don't do anything with this table, it is a magic internal DBSteward value
-        continue;
-      }
-      if ( strcasecmp($dep_schema['name'],'public') == 0 ) {
-        // only process tables in the public schema
         mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $dep_schema, $table, 'constraint', FALSE);
       }
-    }
-    $ofs->write("\n");
+      $ofs->write("\n");
 
-    // trigger definitions + triggers used by serials
-    $triggers = array_merge($triggers, dbx::to_array($schema->trigger));
-    $unique_triggers = array();
-    foreach ($triggers AS $trigger) {
-      // only do triggers set to the current sql format
-      if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
-        // check that this table/timing/event combo hasn't been defined, because MySQL only
-        // allows one trigger per table per BEFORE/AFTER per action
-        $unique_name = "{$trigger['table']}-{$trigger['when']}-{$trigger['event']}";
-        if ( array_key_exists($unique_name, $unique_triggers) ) {
-          throw new Exception("MySQL will not allow trigger {$trigger['name']} to be created because it happens on the same table/timing/event as trigger {$unique_triggers[$unique_name]}");
-        }
-        
-        $unique_triggers[$unique_name] = $trigger['name'];
-        $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger)."\n");
-      }
-    }
-
-    // view creation
-    foreach ($schema->view AS $view) {
-      $ofs->write(mysql5_view::get_creation_sql($schema, $view)."\n");
-
-      // view permission grants
-      if (isset($view->grant)) {
-        foreach ($view->grant AS $grant) {
-          $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $view, $grant) . "\n");
+      // trigger definitions + triggers used by serials
+      $triggers = array_merge($triggers, dbx::to_array($schema->trigger));
+      $unique_triggers = array();
+      foreach ($triggers AS $trigger) {
+        // only do triggers set to the current sql format
+        if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
+          // check that this table/timing/event combo hasn't been defined, because MySQL only
+          // allows one trigger per table per BEFORE/AFTER per action
+          $unique_name = "{$trigger['table']}-{$trigger['when']}-{$trigger['event']}";
+          if ( array_key_exists($unique_name, $unique_triggers) ) {
+            throw new Exception("MySQL will not allow trigger {$trigger['name']} to be created because it happens on the same table/timing/event as trigger {$unique_triggers[$unique_name]}");
+          }
+          
+          $unique_triggers[$unique_name] = $trigger['name'];
+          $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger)."\n");
         }
       }
-    }
+
+      // view creation
+      foreach ($schema->view AS $view) {
+        $ofs->write(mysql5_view::get_creation_sql($schema, $view)."\n");
+
+        // view permission grants
+        if (isset($view->grant)) {
+          foreach ($view->grant AS $grant) {
+            $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $view, $grant) . "\n");
+          }
+        }
+      }
+
+    } // foreach schema
 
     // @TODO: database configurationParameter support
   }
