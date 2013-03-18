@@ -147,26 +147,6 @@ class mysql5 {
         }
       }
 
-      // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
-      foreach ($schema->table AS $table) {
-        mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
-      }
-      
-      $ofs->write("\n");
-
-      // foreign key references
-      // use the dependency order to specify foreign keys in an order that will satisfy nested foreign keys and etc
-      for ($i = 0; $i < count($table_depends); $i++) {
-        $dep_schema = $table_depends[$i]['schema'];
-        $table = $table_depends[$i]['table'];
-        if ( $table['name'] === dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME ) {
-          // don't do anything with this table, it is a magic internal DBSteward value
-          continue;
-        }
-        mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $dep_schema, $table, 'constraint', FALSE);
-      }
-      $ofs->write("\n");
-
       // trigger definitions + triggers used by serials
       $triggers = array_merge($triggers, dbx::to_array($schema->trigger));
       $unique_triggers = array();
@@ -184,7 +164,32 @@ class mysql5 {
           $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger)."\n");
         }
       }
+    }
 
+    foreach ( $db_doc->schema as $schema ) {
+      $ofs->write(mysql5_schema::get_use_sql($schema)."\n");
+      // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
+      foreach ($schema->table AS $table) {
+        mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
+      }
+      $ofs->write("\n");
+    }
+
+    // foreign key references
+    // use the dependency order to specify foreign keys in an order that will satisfy nested foreign keys and etc
+    for ($i = 0; $i < count($table_depends); $i++) {
+      $dep_schema = $table_depends[$i]['schema'];
+      $table = $table_depends[$i]['table'];
+      if ( $table['name'] === dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME ) {
+        // don't do anything with this table, it is a magic internal DBSteward value
+        continue;
+      }
+      mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $dep_schema, $table, 'constraint', FALSE);
+    }
+    $ofs->write("\n");
+
+    foreach ( $db_doc->schema as $schema ) {
+      $ofs->write(mysql5_schema::get_use_sql($schema)."\n");
       // view creation
       foreach ($schema->view AS $view) {
         $ofs->write(mysql5_view::get_creation_sql($schema, $view)."\n");
@@ -196,8 +201,7 @@ class mysql5 {
           }
         }
       }
-
-    } // foreach schema
+    }
 
     // @TODO: database configurationParameter support
   }
