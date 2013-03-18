@@ -55,7 +55,8 @@ class mysql5_trigger extends sql99_trigger {
         throw new Exception("Invalid event on trigger '{$node_trigger['name']}': '{$event}'");
       }
 
-      $trigger_name = mysql5::get_quoted_object_name($node_trigger['name'] . ($single? '' : "_$event"));
+      // @TODO: use something like get_fully_qualified_object_name
+      $trigger_name = mysql5::get_fully_qualified_table_name($node_schema['name'], $node_trigger['name'] . ($single? '' : "_$event"));
       $trigger_fn = trim($node_trigger['function']);
       if ( substr($trigger_fn, -1) != ';' ) {
         $trigger_fn .= ';';
@@ -79,13 +80,13 @@ SQL;
 
     $events = self::get_events($node_trigger);
     if ( count($events) == 1 ) {
-      return "DROP TRIGGER IF EXISTS " . mysql5::get_quoted_object_name($node_trigger['name']) . ";\n";
+      return "DROP TRIGGER IF EXISTS " . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_trigger['name']) . ";\n";
     }
     else {
       $ddl = "";
       foreach ( $events as $event ) {
         if ( $event = self::validate_event($event) ) {
-          $ddl .= "DROP TRIGGER IF EXISTS " . mysql5::get_quoted_object_name($node_trigger['name'] . "_$event") . ";\n";
+          $ddl .= "DROP TRIGGER IF EXISTS " . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_trigger['name'] . "_$event") . ";\n";
         }
       }
       return $ddl;
