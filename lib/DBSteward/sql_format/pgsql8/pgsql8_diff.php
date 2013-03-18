@@ -126,36 +126,6 @@ class pgsql8_diff extends sql99_diff{
   }
 
   /**
-   * Drops old schemas that do not exist anymore.
-   *
-   * @param  object  $ofs output file pointer
-   * @return void
-   */
-  private static function drop_old_schemas($ofs) {
-    foreach(dbx::get_schemas(dbsteward::$old_database) AS $old_schema) {
-      if ( ! dbx::get_schema(dbsteward::$new_database, $old_schema['name']) ) {
-        dbsteward::console_line(3, "Drop Old Schema " . $old_schema['name']);
-        $ofs->write(pgsql8_schema::get_drop_sql($old_schema));
-      }
-    }
-  }
-
-  /**
-   * Creates new schemas (not the objects inside the schemas)
-   *
-   * @param  object  $ofs output file pointer
-   * @return void
-   */
-  private static function create_new_schemas($ofs) {
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      if (dbx::get_schema(dbsteward::$old_database, $new_schema['name']) == null) {
-        dbsteward::console_line(3, "Create New Schema " . $new_schema['name']);
-        $ofs->write(pgsql8_schema::get_creation_sql($new_schema));
-      }
-    }
-  }
-
-  /**
    * Updates objects in schemas.
    *
    * @param $ofs1  stage1 output file segmenter
