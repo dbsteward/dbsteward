@@ -13,18 +13,21 @@ class mysql5_db {
   protected $pdo;
   protected $dbname;
 
-  public static function connect($host, $port, $database, $user, $password) {
+  public static function connect($host, $port, $user, $password) {
     // mysql puts all metadata in the information_schema database, but assigns objects to their respective DBs
-    return new mysql5_db(new PDO("mysql:host=$host;port=$port;dbname=information_schema", $user, $password), $database);
+    return new mysql5_db(new PDO("mysql:host=$host;port=$port;dbname=information_schema", $user, $password));
   }
 
-  public function __construct($pdo, $dbname) {
+  public function __construct($pdo) {
     $this->pdo = $pdo;
-    $this->dbname = $dbname;
 
     // Make sure we throw exceptions when bad stuff happens
     $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+  }
+
+  public function use_database($database) {
+    $this->dbname = $database;
   }
 
   public function get_tables() {

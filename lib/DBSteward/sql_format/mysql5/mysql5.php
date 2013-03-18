@@ -299,6 +299,8 @@ class mysql5 {
   }
 
   public function extract_schema($host, $port, $database, $user, $password) {
+    $databases = explode(',', $database);
+
     dbsteward::console_line(1, "Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ( $password === FALSE ) {
@@ -306,7 +308,7 @@ class mysql5 {
       $password = fgets(STDIN);
     }
 
-    $db = mysql5_db::connect($host, $port, $database, $user, $password);
+    $db = mysql5_db::connect($host, $port, $user, $password);
 
     $doc = new SimpleXMLElement('<dbsteward></dbsteward>');
     // set the document to contain the passed db host, name, etc to meet the DTD and for reference
@@ -319,299 +321,303 @@ class mysql5 {
     $node_role->addChild('replication', $user);
     $node_role->addChild('readonly', $user);
 
-    // create "public" schema
-    $node_schema = $doc->addChild('schema');
-    $node_schema['name'] = 'public';
-    $node_schema['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
+    foreach ($databases as $database) {
+      dbsteward::console_line(3, "Analyzing database $database");
+      $db->use_database($database);
 
-    // extract global and schema permissions under the public schema
-    foreach ( $db->get_global_grants($user) as $db_grant ) {
-      $node_grant = $node_schema->addChild('grant');
-      // There are 28 permissions encompassed by the GRANT ALL statement
-      $node_grant['operation'] = $db_grant->num_ops == 28 ? 'ALL' : $db_grant->operations;
-      $node_grant['role'] = self::translate_role_name($doc, $user);
+      $node_schema = $doc->addChild('schema');
+      $node_schema['name'] = $database;
+      $node_schema['owner'] = 'ROLE_OWNER';
 
-      if ( $db_grant->is_grantable ) {
-        $node_grant['with'] = 'GRANT';
-      }
-    }
+      // extract global and schema permissions under the public schema
+      foreach ( $db->get_global_grants($user) as $db_grant ) {
+        $node_grant = $node_schema->addChild('grant');
+        // There are 28 permissions encompassed by the GRANT ALL statement
+        $node_grant['operation'] = $db_grant->num_ops == 28 ? 'ALL' : $db_grant->operations;
+        $node_grant['role'] = self::translate_role_name($doc, $user);
 
-    $enum_types = array();
-    $enum_type = function ($obj, $mem, $values) use (&$enum_types) {
-      // if that set of values is defined by a previous enum, use that
-      foreach ( $enum_types as $name => $enum ) {
-        if ( $enum === $values ) {
-          return $name;
+        if ( $db_grant->is_grantable ) {
+          $node_grant['with'] = 'GRANT';
         }
       }
 
-      // otherwise, make a new one
-      $name = "enum_" . md5(implode('_',$values));
-      $enum_types[$name] = $values;
-
-      return $name;
-    };
-    foreach ( $db->get_tables() as $db_table ) {
-      dbsteward::console_line(3, "Analyze table options " . $db_table->table_name);
-      $node_table = $node_schema->addChild('table');
-      $node_table['name'] = $db_table->table_name;
-      $node_table['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
-      $node_table['description'] = $db_table->table_comment;
-      $node_table['primaryKey'] = '';
-
-      foreach ( $db->get_table_options($db_table) as $name => $value ) {
-        $node_option = $node_table->addChild('tableOption');
-        $node_option['sqlFormat'] = 'mysql5';
-        $node_option['name'] = $name;
-        $node_option['value'] = $value;
-      }
-
-      dbsteward::console_line(3, "Analyze table columns " . $db_table->table_name);
-      foreach ( $db->get_columns($db_table) as $db_column ) {
-        $node_column = $node_table->addChild('column');
-        $node_column['name'] = $db_column->column_name;
-
-        if (!empty($db_column->column_comment)) {
-          $node_column['description'] = $db_column->column_comment;
-        }
-
-        // returns FALSE if not serial, int/bigint if it is
-        $type = $db->is_serial_column($db_table, $db_column);
-        if ( !$type ) {
-          $type = $db_column->column_type;
-
-          if ( stripos($type, 'enum') === 0 ) {
-            $values = $db->parse_enum_values($db_column->column_type);
-            $type = $enum_type($db_table->table_name, $db_column->column_name, $values);
-          }
-
-          if ( $db_column->is_auto_increment ) {
-            $type .= ' AUTO_INCREMENT';
+      $enum_types = array();
+      $enum_type = function ($obj, $mem, $values) use (&$enum_types) {
+        // if that set of values is defined by a previous enum, use that
+        foreach ( $enum_types as $name => $enum ) {
+          if ( $enum === $values ) {
+            return $name;
           }
         }
 
-        if ($db_column->is_auto_update) {
-          $type .= ' ON UPDATE CURRENT_TIMESTAMP';
+        // otherwise, make a new one
+        $name = "enum_" . md5(implode('_',$values));
+        $enum_types[$name] = $values;
+
+        return $name;
+      };
+      foreach ( $db->get_tables() as $db_table ) {
+        dbsteward::console_line(3, "Analyze table options " . $db_table->table_name);
+        $node_table = $node_schema->addChild('table');
+        $node_table['name'] = $db_table->table_name;
+        $node_table['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
+        $node_table['description'] = $db_table->table_comment;
+        $node_table['primaryKey'] = '';
+
+        foreach ( $db->get_table_options($db_table) as $name => $value ) {
+          $node_option = $node_table->addChild('tableOption');
+          $node_option['sqlFormat'] = 'mysql5';
+          $node_option['name'] = $name;
+          $node_option['value'] = $value;
         }
-        
-        $node_column['type'] = $type;
 
-        // @TODO: if there are serial sequences/triggers for the column then convert to serial
+        dbsteward::console_line(3, "Analyze table columns " . $db_table->table_name);
+        foreach ( $db->get_columns($db_table) as $db_column ) {
+          $node_column = $node_table->addChild('column');
+          $node_column['name'] = $db_column->column_name;
 
-        if ( !empty($db_column->column_default) ) {
-          $node_column['default'] = mysql5::escape_default_value($db_column->column_default);
-        }
-        elseif ( strcasecmp($db_column->is_nullable, 'YES') === 0 ) {
-          $node_column['default'] = 'NULL';
-        }
+          if (!empty($db_column->column_comment)) {
+            $node_column['description'] = $db_column->column_comment;
+          }
 
-        $node_column['null'] = strcasecmp($db_column->is_nullable, 'YES') === 0 ? 'true' : 'false';
-      }
+          // returns FALSE if not serial, int/bigint if it is
+          $type = $db->is_serial_column($db_table, $db_column);
+          if ( !$type ) {
+            $type = $db_column->column_type;
 
-      // get all plain and unique indexes
-      dbsteward::console_line(3, "Analyze table indexes " . $db_table->table_name);
-      foreach ( $db->get_indices($db_table) as $db_index ) {
-
-        // implement unique indexes as unique columns
-        if ( $db_index->unique ) {
-          foreach ( $db_index->columns as $column ) {
-            $node_column = $node_table->xpath("column[@name='$column']");
-            if ( ! $node_column ) {
-              throw new Exception("Unexpected: Could not find column node $column for unique index {$db_index->index_name}");
-            }
-            else {
-              $node_column = $node_column[0];
+            if ( stripos($type, 'enum') === 0 ) {
+              $values = $db->parse_enum_values($db_column->column_type);
+              $type = $enum_type($db_table->table_name, $db_column->column_name, $values);
             }
 
-            $node_column['unique'] = 'true';
-          }
-        }
-        else {
-          $node_index = $node_table->addChild('index');
-          $node_index['name'] = $db_index->index_name;
-          $node_index['using'] = strtolower($db_index->index_type);
-          $node_index['unique'] = $db_index->unique ? 'true' : 'false';
-
-          $i = 1;
-          foreach ( $db_index->columns as $column_name ) {
-            $node_index->addChild('indexDimension', $column_name)
-              ->addAttribute('name', $column_name . '_' . $i++);
-          }
-        }
-      }
-
-      // get all primary/foreign keys
-      dbsteward::console_line(3, "Analyze table constraints " . $db_table->table_name);
-      foreach ( $db->get_constraints($db_table) as $db_constraint ) {
-        if ( strcasecmp($db_constraint->constraint_type, 'primary key') === 0 ) {
-          $node_table['primaryKey'] = implode(',', $db_constraint->columns);
-        }
-        elseif ( strcasecmp($db_constraint->constraint_type, 'foreign key') === 0 ) {
-          // mysql sees foreign keys as indexes pointing at indexes.
-          // it's therefore possible for a compound index to point at a compound index
-
-          if ( ! $db_constraint->referenced_columns || ! $db_constraint->referenced_table_name ) {
-            throw new Exception("Unexpected: Foreign key constraint {$db_constraint->constraint_name} does not refer to any foreign columns");
-          }
-
-          if ( count($db_constraint->referenced_columns) == 1 && count($db_constraint->columns) == 1 ) {
-            // not a compound index, define the FK inline in the column
-            $column = $db_constraint->columns[0];
-            $ref_column = $db_constraint->referenced_columns[0];
-            $node_column = dbx::get_table_column($node_table, $column);
-            if ( ! $node_column ) {
-              throw new Exception("Unexpected: Could not find column node $column for foreign key constraint {$db_constraint->constraint_name}");
-            }
-            $node_column['foreignSchema'] = 'public';
-            $node_column['foreignTable'] = $db_constraint->referenced_table_name;
-            $node_column['foreignColumn'] = $ref_column;
-            unset($node_column['type']); // inferred from referenced column
-            $node_column['foreignKeyName'] = $db_constraint->constraint_name;
-
-            // RESTRICT is the default, leave it implicit if possible
-            if ( strcasecmp($db_constraint->delete_rule, 'restrict') !== 0 ) {
-              $node_column['foreignOnDelete'] = str_replace(' ', '_', $db_constraint->delete_rule);
-            }
-            if ( strcasecmp($db_constraint->update_rule, 'restrict') !== 0 ) {
-              $node_column['foreignOnUpdate'] = str_replace(' ', '_', $db_constraint->update_rule);
+            if ( $db_column->is_auto_increment ) {
+              $type .= ' AUTO_INCREMENT';
             }
           }
-          elseif ( count($db_constraint->referenced_columns) > 1
-                && count($db_constraint->referenced_columns) == count($db_constraint->columns) ) {
-            // compound index, define the FK as a constraint node
-            $node_constraint = $node_table->addChild('constraint');
-            $node_constraint['name'] = $db_constraint->constraint_name;
-            $node_constraint['type'] = 'FOREIGN KEY';
-            $node_constraint['foreignSchema'] = 'public';
-            $node_constraint['foreignTable'] = $db_constraint->referenced_table_name;
-            
-            $def = '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns));
-            $def.= ') REFERENCES ' . mysql5::get_quoted_table_name($db_constraint->referenced_table_name);
-            $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns));
-            $def.= ') ON DELETE ' . $db_constraint->delete_rule . ' ON UPDATE ' . $db_constraint->update_rule;
-            $node_constraint['definition'] = $def;
+
+          if ($db_column->is_auto_update) {
+            $type .= ' ON UPDATE CURRENT_TIMESTAMP';
+          }
+          
+          $node_column['type'] = $type;
+
+          // @TODO: if there are serial sequences/triggers for the column then convert to serial
+
+          if ( !empty($db_column->column_default) ) {
+            $node_column['default'] = mysql5::escape_default_value($db_column->column_default);
+          }
+          elseif ( strcasecmp($db_column->is_nullable, 'YES') === 0 ) {
+            $node_column['default'] = 'NULL';
+          }
+
+          $node_column['null'] = strcasecmp($db_column->is_nullable, 'YES') === 0 ? 'true' : 'false';
+        }
+
+        // get all plain and unique indexes
+        dbsteward::console_line(3, "Analyze table indexes " . $db_table->table_name);
+        foreach ( $db->get_indices($db_table) as $db_index ) {
+
+          // implement unique indexes as unique columns
+          if ( $db_index->unique ) {
+            foreach ( $db_index->columns as $column ) {
+              $node_column = $node_table->xpath("column[@name='$column']");
+              if ( ! $node_column ) {
+                throw new Exception("Unexpected: Could not find column node $column for unique index {$db_index->index_name}");
+              }
+              else {
+                $node_column = $node_column[0];
+              }
+
+              $node_column['unique'] = 'true';
+            }
           }
           else {
-            var_dump($db_constraint);
-            throw new Exception("Unexpected: Foreign key constraint {$db_constraint->constraint_name} has mismatched columns");
+            $node_index = $node_table->addChild('index');
+            $node_index['name'] = $db_index->index_name;
+            $node_index['using'] = strtolower($db_index->index_type);
+            $node_index['unique'] = $db_index->unique ? 'true' : 'false';
+
+            $i = 1;
+            foreach ( $db_index->columns as $column_name ) {
+              $node_index->addChild('indexDimension', $column_name)
+                ->addAttribute('name', $column_name . '_' . $i++);
+            }
           }
         }
-        elseif ( strcasecmp($db_constraint->constraint_type, 'unique') === 0 ) {
-          dbsteward::console_line(1, "Ignoring UNIQUE constraint '{$db_constraint->constraint_name}' because they are implemented as indices");
+
+        // get all primary/foreign keys
+        dbsteward::console_line(3, "Analyze table constraints " . $db_table->table_name);
+        foreach ( $db->get_constraints($db_table) as $db_constraint ) {
+          if ( strcasecmp($db_constraint->constraint_type, 'primary key') === 0 ) {
+            $node_table['primaryKey'] = implode(',', $db_constraint->columns);
+          }
+          elseif ( strcasecmp($db_constraint->constraint_type, 'foreign key') === 0 ) {
+            // mysql sees foreign keys as indexes pointing at indexes.
+            // it's therefore possible for a compound index to point at a compound index
+
+            if ( ! $db_constraint->referenced_columns || ! $db_constraint->referenced_table_name ) {
+              throw new Exception("Unexpected: Foreign key constraint {$db_constraint->constraint_name} does not refer to any foreign columns");
+            }
+
+            if ( count($db_constraint->referenced_columns) == 1 && count($db_constraint->columns) == 1 ) {
+              // not a compound index, define the FK inline in the column
+              $column = $db_constraint->columns[0];
+              $ref_column = $db_constraint->referenced_columns[0];
+              $node_column = dbx::get_table_column($node_table, $column);
+              if ( ! $node_column ) {
+                throw new Exception("Unexpected: Could not find column node $column for foreign key constraint {$db_constraint->constraint_name}");
+              }
+              $node_column['foreignSchema'] = 'public';
+              $node_column['foreignTable'] = $db_constraint->referenced_table_name;
+              $node_column['foreignColumn'] = $ref_column;
+              unset($node_column['type']); // inferred from referenced column
+              $node_column['foreignKeyName'] = $db_constraint->constraint_name;
+
+              // RESTRICT is the default, leave it implicit if possible
+              if ( strcasecmp($db_constraint->delete_rule, 'restrict') !== 0 ) {
+                $node_column['foreignOnDelete'] = str_replace(' ', '_', $db_constraint->delete_rule);
+              }
+              if ( strcasecmp($db_constraint->update_rule, 'restrict') !== 0 ) {
+                $node_column['foreignOnUpdate'] = str_replace(' ', '_', $db_constraint->update_rule);
+              }
+            }
+            elseif ( count($db_constraint->referenced_columns) > 1
+                  && count($db_constraint->referenced_columns) == count($db_constraint->columns) ) {
+              // compound index, define the FK as a constraint node
+              $node_constraint = $node_table->addChild('constraint');
+              $node_constraint['name'] = $db_constraint->constraint_name;
+              $node_constraint['type'] = 'FOREIGN KEY';
+              $node_constraint['foreignSchema'] = 'public';
+              $node_constraint['foreignTable'] = $db_constraint->referenced_table_name;
+              
+              $def = '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns));
+              $def.= ') REFERENCES ' . mysql5::get_quoted_table_name($db_constraint->referenced_table_name);
+              $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns));
+              $def.= ') ON DELETE ' . $db_constraint->delete_rule . ' ON UPDATE ' . $db_constraint->update_rule;
+              $node_constraint['definition'] = $def;
+            }
+            else {
+              var_dump($db_constraint);
+              throw new Exception("Unexpected: Foreign key constraint {$db_constraint->constraint_name} has mismatched columns");
+            }
+          }
+          elseif ( strcasecmp($db_constraint->constraint_type, 'unique') === 0 ) {
+            dbsteward::console_line(1, "Ignoring UNIQUE constraint '{$db_constraint->constraint_name}' because they are implemented as indices");
+          }
+          elseif ( strcasecmp($db_constraint->constraint_type, 'check') === 0 ) {
+            // @TODO: implement CHECK constraints
+          }
+          else {
+            throw new exception("unknown constraint_type {$db_constraint->constraint_type}");
+          }
         }
-        elseif ( strcasecmp($db_constraint->constraint_type, 'check') === 0 ) {
-          // @TODO: implement CHECK constraints
-        }
-        else {
-          throw new exception("unknown constraint_type {$db_constraint->constraint_type}");
+
+        foreach ( $db->get_table_grants($db_table, $user) as $db_grant ) {
+          dbsteward::console_line(3, "Analyze table permissions " . $db_table->table_name);
+          $node_grant = $node_table->addChild('grant');
+          $node_grant['operation'] = $db_grant->operations;
+          $node_grant['role'] = self::translate_role_name($doc, $user);
+
+          if ( $db_grant->is_grantable ) {
+            $node_grant['with'] = 'GRANT';
+          }
         }
       }
 
-      foreach ( $db->get_table_grants($db_table, $user) as $db_grant ) {
-        dbsteward::console_line(3, "Analyze table permissions " . $db_table->table_name);
-        $node_grant = $node_table->addChild('grant');
-        $node_grant['operation'] = $db_grant->operations;
-        $node_grant['role'] = self::translate_role_name($doc, $user);
+      foreach ( $db->get_sequences() as $db_seq ) {
+        $node_seq = $node_schema->addChild('sequence');
+        $node_seq['name'] = $db_seq->name;
+        $node_seq['owner'] = 'ROLE_OWNER';
+        $node_seq['start'] = $db_seq->start_value;
+        $node_seq['min'] = $db_seq->min_value;
+        $node_seq['max'] = $db_seq->max_value;
+        $node_seq['inc'] = $db_seq->increment;
+        $node_seq['cycle'] = $db_seq->cycle ? 'true' : 'false';
 
-        if ( $db_grant->is_grantable ) {
-          $node_grant['with'] = 'GRANT';
+        // the sequences table is a special case, since it's not picked up in the tables loop
+        $seq_table = $db->get_table(mysql5_sequence::TABLE_NAME);
+        foreach ( $db->get_table_grants($seq_table, $user) as $db_grant ) {
+          $node_grant = $node_seq->addChild('grant');
+          $node_grant['operation'] = $db_grant->operations;
+          $node_grant['role'] = self::translate_role_name($doc, $user);
+
+          if ( $db_grant->is_grantable ) {
+            $node_grant['with'] = 'GRANT';
+          }
         }
       }
-    }
 
-    foreach ( $db->get_sequences() as $db_seq ) {
-      $node_seq = $node_schema->addChild('sequence');
-      $node_seq['name'] = $db_seq->name;
-      $node_seq['owner'] = 'ROLE_OWNER';
-      $node_seq['start'] = $db_seq->start_value;
-      $node_seq['min'] = $db_seq->min_value;
-      $node_seq['max'] = $db_seq->max_value;
-      $node_seq['inc'] = $db_seq->increment;
-      $node_seq['cycle'] = $db_seq->cycle ? 'true' : 'false';
-
-      // the sequences table is a special case, since it's not picked up in the tables loop
-      $seq_table = $db->get_table(mysql5_sequence::TABLE_NAME);
-      foreach ( $db->get_table_grants($seq_table, $user) as $db_grant ) {
-        $node_grant = $node_seq->addChild('grant');
-        $node_grant['operation'] = $db_grant->operations;
-        $node_grant['role'] = self::translate_role_name($doc, $user);
-
-        if ( $db_grant->is_grantable ) {
-          $node_grant['with'] = 'GRANT';
-        }
-      }
-    }
-
-    foreach ( $db->get_functions() as $db_function ) {
-      dbsteward::console_line(3, "Analyze function " . $db_function->routine_name);
-      $node_fn = $node_schema->addChild('function');
-      $node_fn['name'] = $db_function->routine_name;
-      $node_fn['owner'] = 'ROLE_OWNER';
-      $node_fn['returns'] = $type = $db_function->dtd_identifier;
-      if ( strcasecmp($type, 'enum') === 0 ) {
-        $node_fn['returns'] = $enum_type($db_function->routine_name,
-                                         'returns',
-                                         $db->parse_enum_values($db_function->dtd_identifier));
-      }
-      $node_fn['description'] = $db_function->routine_comment;
-
-      // $node_fn['procedure'] = 'false';
-
-      // I just don't trust mysql enough to make guarantees about data safety
-      $node_fn['cachePolicy'] = 'VOLATILE';
-
-      // INVOKER is the default, leave it implicit when possible
-      if ( strcasecmp($db_function->security_type, 'definer') === 0 ) {
-        $node_fn['securityDefiner'] = 'true';
-      }
-
-      foreach ( $db_function->parameters as $param ) {
-        $node_param = $node_fn->addChild('functionParameter');
-        // not supported in mysql functions, even though it's provided?
-        // $node_param['direction'] = strtoupper($param->parameter_mode);
-        $node_param['name'] = $param->parameter_name;
-        $node_param['type'] = $type = $param->dtd_identifier;
+      foreach ( $db->get_functions() as $db_function ) {
+        dbsteward::console_line(3, "Analyze function " . $db_function->routine_name);
+        $node_fn = $node_schema->addChild('function');
+        $node_fn['name'] = $db_function->routine_name;
+        $node_fn['owner'] = 'ROLE_OWNER';
+        $node_fn['returns'] = $type = $db_function->dtd_identifier;
         if ( strcasecmp($type, 'enum') === 0 ) {
-          $node_param['type'] = $enum_type($db_function->routine_name,
-                                           $param->parameter_name,
-                                           $db->parse_enum_values($param->dtd_identifier));
+          $node_fn['returns'] = $enum_type($db_function->routine_name,
+                                           'returns',
+                                           $db->parse_enum_values($db_function->dtd_identifier));
+        }
+        $node_fn['description'] = $db_function->routine_comment;
+
+        // $node_fn['procedure'] = 'false';
+
+        // I just don't trust mysql enough to make guarantees about data safety
+        $node_fn['cachePolicy'] = 'VOLATILE';
+
+        // INVOKER is the default, leave it implicit when possible
+        if ( strcasecmp($db_function->security_type, 'definer') === 0 ) {
+          $node_fn['securityDefiner'] = 'true';
+        }
+
+        foreach ( $db_function->parameters as $param ) {
+          $node_param = $node_fn->addChild('functionParameter');
+          // not supported in mysql functions, even though it's provided?
+          // $node_param['direction'] = strtoupper($param->parameter_mode);
+          $node_param['name'] = $param->parameter_name;
+          $node_param['type'] = $type = $param->dtd_identifier;
+          if ( strcasecmp($type, 'enum') === 0 ) {
+            $node_param['type'] = $enum_type($db_function->routine_name,
+                                             $param->parameter_name,
+                                             $db->parse_enum_values($param->dtd_identifier));
+          }
+        }
+
+        $node_def = $node_fn->addChild('functionDefinition', $db_function->routine_definition);
+        $node_def['language'] = 'sql';
+        $node_def['sqlFormat'] = 'mysql5';
+      }
+
+      foreach ( $db->get_triggers() as $db_trigger ) {
+        dbsteward::console_line(3, "Analyze trigger " . $db_trigger->trigger_name);
+        $node_trigger = $node_schema->addChild('trigger');
+        foreach ( (array)$db_trigger as $k => $v ) {
+          $node_trigger->addAttribute($k, $v);
         }
       }
 
-      $node_def = $node_fn->addChild('functionDefinition', $db_function->routine_definition);
-      $node_def['language'] = 'sql';
-      $node_def['sqlFormat'] = 'mysql5';
-    }
+      foreach ( $db->get_views() as $db_view ) {
+        dbsteward::console_line(3, "Analyze view " . $db_view->view_name);
+        if ( !empty($db_view->view_name) && empty($db_view->view_query) ) {
+          throw new Exception("Found a view in the database with an empty query. User '$user' problaby doesn't have SELECT permissions on tables referenced by the view.");
+        }
 
-    foreach ( $db->get_triggers() as $db_trigger ) {
-      dbsteward::console_line(3, "Analyze trigger " . $db_trigger->trigger_name);
-      $node_trigger = $node_schema->addChild('trigger');
-      foreach ( (array)$db_trigger as $k => $v ) {
-        $node_trigger->addAttribute($k, $v);
-      }
-    }
-
-    foreach ( $db->get_views() as $db_view ) {
-      dbsteward::console_line(3, "Analyze view " . $db_view->view_name);
-      if ( !empty($db_view->view_name) && empty($db_view->view_query) ) {
-        throw new Exception("Found a view in the database with an empty query. User '$user' problaby doesn't have SELECT permissions on tables referenced by the view.");
+        $node_view = $node_schema->addChild('view');
+        $node_view['name'] = $db_view->view_name;
+        $node_view['owner'] = 'ROLE_OWNER';
+        $node_view
+          ->addChild('viewQuery', $db_view->view_query)
+            ->addAttribute('sqlFormat', 'mysql5');
       }
 
-      $node_view = $node_schema->addChild('view');
-      $node_view['name'] = $db_view->view_name;
-      $node_view['owner'] = 'ROLE_OWNER';
-      $node_view
-        ->addChild('viewQuery', $db_view->view_query)
-          ->addAttribute('sqlFormat', 'mysql5');
-    }
+      foreach ( $enum_types as $name => $values ) {
+        $node_type = $node_schema->addChild('type');
+        $node_type['type'] = 'enum';
+        $node_type['name'] = $name;
 
-    foreach ( $enum_types as $name => $values ) {
-      $node_type = $node_schema->addChild('type');
-      $node_type['type'] = 'enum';
-      $node_type['name'] = $name;
-
-      foreach ( $values as $v ) {
-        $node_type->addChild('enum')->addAttribute('name', $v);
+        foreach ( $values as $v ) {
+          $node_type->addChild('enum')->addAttribute('name', $v);
+        }
       }
     }
 
