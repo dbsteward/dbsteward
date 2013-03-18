@@ -86,6 +86,7 @@ class mysql5_diff extends sql99_diff {
 
   public static function revoke_permissions($ofs1, $ofs3) {
     foreach (dbx::get_schemas(dbsteward::$old_database) as $old_schema) {
+      $ofs1->write(mysql5_schema::get_use_sql($old_schema)."\n");
       $old_permissions = $old_schema->xpath('.//grant');
       foreach ( $old_permissions as $node_permission ) {
         $node_object = $node_permission->xpath('parent::*');
@@ -103,6 +104,7 @@ class mysql5_diff extends sql99_diff {
 
   public static function update_permissions($ofs1, $ofs3) {
     foreach (dbx::get_schemas(dbsteward::$new_database) as $new_schema) {
+      $ofs1->write(mysql5_schema::get_use_sql($new_schema)."\n");
       $permissions = $new_schema->xpath('.//grant');
       foreach ( $permissions as $node_permission ) {
         $node_object = $node_permission->xpath('parent::*');
