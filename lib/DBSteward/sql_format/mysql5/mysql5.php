@@ -467,7 +467,7 @@ class mysql5 {
               if ( ! $node_column ) {
                 throw new Exception("Unexpected: Could not find column node $column for foreign key constraint {$db_constraint->constraint_name}");
               }
-              $node_column['foreignSchema'] = 'public';
+              $node_column['foreignSchema'] = $db_constraint->referenced_table_schema;
               $node_column['foreignTable'] = $db_constraint->referenced_table_name;
               $node_column['foreignColumn'] = $ref_column;
               unset($node_column['type']); // inferred from referenced column
@@ -487,14 +487,14 @@ class mysql5 {
               $node_constraint = $node_table->addChild('constraint');
               $node_constraint['name'] = $db_constraint->constraint_name;
               $node_constraint['type'] = 'FOREIGN KEY';
-              $node_constraint['foreignSchema'] = 'public';
+              $node_constraint['foreignSchema'] = $db_constraint->referenced_table_schema;
               $node_constraint['foreignTable'] = $db_constraint->referenced_table_name;
               
-              $def = '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns));
-              $def.= ') REFERENCES ' . mysql5::get_quoted_table_name($db_constraint->referenced_table_name);
-              $def.= '(' . implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns));
-              $def.= ') ON DELETE ' . $db_constraint->delete_rule . ' ON UPDATE ' . $db_constraint->update_rule;
-              $node_constraint['definition'] = $def;
+              $node_constraint['definition'] = sprintf("(%s) REFERENCES %s (%s) ON DELETE %s ON UPDATE %s",
+                implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns)),
+                mysql5::get_fully_qualified_table_name($db_constraint->referenced_table_schema,$db_constraint->referenced_table_name),
+                implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns)),
+                $db_constraint->delete_rule, $db_constraint->update_rule);
             }
             else {
               var_dump($db_constraint);

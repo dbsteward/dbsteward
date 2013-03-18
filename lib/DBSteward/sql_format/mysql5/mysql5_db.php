@@ -174,7 +174,7 @@ class mysql5_db {
   public function get_constraints($db_table) {
     $constraints = $this->query("SELECT constraint_type, table_constraints.table_name, table_constraints.constraint_name,
                                         GROUP_CONCAT(DISTINCT key_column_usage.column_name ORDER BY ordinal_position) as columns,
-                                        key_column_usage.referenced_table_name, update_rule, delete_rule,
+                                        key_column_usage.referenced_table_schema, key_column_usage.referenced_table_name, update_rule, delete_rule,
                                         GROUP_CONCAT(DISTINCT referenced_column_name ORDER BY ordinal_position) as referenced_columns
                                  FROM table_constraints
                                   INNER JOIN key_column_usage USING (table_schema, table_name, constraint_name)
