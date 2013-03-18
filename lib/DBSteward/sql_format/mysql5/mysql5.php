@@ -51,7 +51,6 @@ class mysql5 {
     $table_dependency = xml_parser::table_dependency_order($db_doc);
     // database-specific implementation refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
-    dbx::set_default_schema($db_doc, 'public');
     
     // language defintions
     if (dbsteward::$create_languages) {
