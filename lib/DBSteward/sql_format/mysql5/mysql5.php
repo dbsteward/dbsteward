@@ -84,6 +84,7 @@ class mysql5 {
 
     foreach ( $db_doc->schema as $schema ) {
       $ofs->write(mysql5_schema::get_creation_sql($schema)."\n");
+      $ofs->write(mysql5_schema::get_use_sql($schema)."\n");
 
       // database grants
       foreach ( $schema->grant AS $grant ) {

@@ -19,6 +19,11 @@ class mysql5_schema extends sql99_schema {
     $name = mysql5::get_quoted_schema_name($node_schema['name']);
     return "CREATE DATABASE IF NOT EXISTS $name;";
   }
+
+  public function get_use_sql($node_schema) {
+    $name = mysql5::get_quoted_schema_name($node_schema['name']);
+    return "USE $name;";
+  }
   
   /**
    * returns DDL to drop specified schema
