@@ -60,7 +60,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-CREATE TABLE `test` (
+CREATE TABLE `public`.`test` (
   `id` int,
   `foo` int
 )

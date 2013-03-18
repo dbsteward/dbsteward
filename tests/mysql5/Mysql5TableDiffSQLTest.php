@@ -56,7 +56,7 @@ XML;
     $this->common_drop($new, $old, '');
 
     // drop a single table
-    $this->common_drop($old, $new, 'DROP TABLE `table`;');
+    $this->common_drop($old, $new, 'DROP TABLE `public`.`table`;');
 
     $new = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -69,10 +69,10 @@ XML;
     
 
     // don't drop a renamed table
-    $this->common_drop($old, $new, '-- DROP TABLE `table` omitted: new table newtable indicates it is the replacement for `table`');
+    $this->common_drop($old, $new, '-- DROP TABLE `public`.`table` omitted: new table `public`.`newtable` indicates it is her replacement');
 
     // going backwards, it should look like we dropped newtable and added table
-    $this->common_drop($new, $old, 'DROP TABLE `newtable`;');
+    $this->common_drop($new, $old, 'DROP TABLE `public`.`newtable`;');
 
     $new = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -105,7 +105,7 @@ XML;
 </schema>
 XML;
     
-    $expected1 = "CREATE TABLE `table` (\n  `id` int,\n  `col` text\n);";
+    $expected1 = "CREATE TABLE `public`.`table` (\n  `id` int,\n  `col` text\n);";
 
     $this->common_diff($old, $new, $expected1, '');
   }
@@ -131,10 +131,10 @@ XML;
 XML;
 
     // add column
-    $this->common_diff($old, $new, "ALTER TABLE `table`\n  ADD COLUMN `newcol` int AFTER `col`,\n  ADD COLUMN `newcol2` int AFTER `newcol`;", '');
+    $this->common_diff($old, $new, "ALTER TABLE `public`.`table`\n  ADD COLUMN `newcol` int AFTER `col`,\n  ADD COLUMN `newcol2` int AFTER `newcol`;", '');
 
     // drop column
-    $this->common_diff($new, $old, '', "ALTER TABLE `table`\n  DROP COLUMN `newcol`,\n  DROP COLUMN `newcol2`;");
+    $this->common_diff($new, $old, '', "ALTER TABLE `public`.`table`\n  DROP COLUMN `newcol`,\n  DROP COLUMN `newcol2`;");
 
     $new = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -147,11 +147,11 @@ XML;
 
     // rename column
     $this->common_diff($old, $new,
-      "ALTER TABLE `table`\n  CHANGE COLUMN `col` `diff` text;",
+      "ALTER TABLE `public`.`table`\n  CHANGE COLUMN `col` `diff` text;",
       '');
 
     // drop/add column
-    $this->common_diff($new, $old, "ALTER TABLE `table`\n  ADD COLUMN `col` text AFTER `id`;", "ALTER TABLE `table`\n  DROP COLUMN `diff`;");
+    $this->common_diff($new, $old, "ALTER TABLE `public`.`table`\n  ADD COLUMN `col` text AFTER `id`;", "ALTER TABLE `public`.`table`\n  DROP COLUMN `diff`;");
   }
 
   public function testNullAndDefaultColumnChanges() {
@@ -173,10 +173,10 @@ XML;
 XML;
 
     // drop defaults
-    $this->common_diff($old, $new, "ALTER TABLE `table`\n  ALTER COLUMN `col` DROP DEFAULT;", '');
+    $this->common_diff($old, $new, "ALTER TABLE `public`.`table`\n  ALTER COLUMN `col` DROP DEFAULT;", '');
 
     // add defaults
-    $this->common_diff($new, $old, "ALTER TABLE `table`\n  ALTER COLUMN `col` SET DEFAULT 'xyz';", '');
+    $this->common_diff($new, $old, "ALTER TABLE `public`.`table`\n  ALTER COLUMN `col` SET DEFAULT 'xyz';", '');
 
 
     $nullable = <<<XML
@@ -197,10 +197,10 @@ XML;
 XML;
     
     // NULL -> NOT NULL
-    $this->common_diff($nullable, $notnullable, '', "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL;");
+    $this->common_diff($nullable, $notnullable, '', "ALTER TABLE `public`.`table`\n  MODIFY COLUMN `col` text NOT NULL;");
 
     // NOT NULL -> NULL
-    $this->common_diff($notnullable, $nullable, "ALTER TABLE `table`\n  MODIFY COLUMN `col` text;", '');
+    $this->common_diff($notnullable, $nullable, "ALTER TABLE `public`.`table`\n  MODIFY COLUMN `col` text;", '');
 
     $nullable_with_default = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -221,11 +221,11 @@ XML;
     mysql5_diff::$add_defaults = true;
     // NULL -> NOT NULL
     $this->common_diff($nullable_with_default, $notnullable_with_default,
-     "UPDATE `table` SET `col` = 'xyz' WHERE `col` IS NULL;",
-     "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL DEFAULT 'xyz';");
+     "UPDATE `public`.`table` SET `col` = 'xyz' WHERE `col` IS NULL;",
+     "ALTER TABLE `public`.`table`\n  MODIFY COLUMN `col` text NOT NULL DEFAULT 'xyz';");
 
     // NOT NULL -> NULL
-    $this->common_diff($notnullable_with_default, $nullable_with_default, "ALTER TABLE `table`\n  MODIFY COLUMN `col` text DEFAULT 'xyz';", '');
+    $this->common_diff($notnullable_with_default, $nullable_with_default, "ALTER TABLE `public`.`table`\n  MODIFY COLUMN `col` text DEFAULT 'xyz';", '');
 
     $notnullable_without_default = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -240,11 +240,11 @@ XML;
     // all we need to do is replace NULL with the type default.
     // the redefinition in stage 3 will remove the default and make it NOT NULL
     $this->common_diff($nullable_with_default, $notnullable_without_default,
-      "UPDATE `table` SET `col` = '' WHERE `col` IS NULL;",
-      "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL;");
+      "UPDATE `public`.`table` SET `col` = '' WHERE `col` IS NULL;",
+      "ALTER TABLE `public`.`table`\n  MODIFY COLUMN `col` text NOT NULL;");
 
     $this->common_diff($notnullable_without_default, $nullable_with_default,
-      "ALTER TABLE `table`\n  MODIFY COLUMN `col` text DEFAULT 'xyz';",
+      "ALTER TABLE `public`.`table`\n  MODIFY COLUMN `col` text DEFAULT 'xyz';",
       "");
   }
 
@@ -293,7 +293,7 @@ XML;
 
     // add table with serial
     $this->common_diff($none, $one, 
-      "CREATE TABLE `table` (\n  `id` int NOT NULL\n);",
+      "CREATE TABLE `public`.`table` (\n  `id` int NOT NULL\n);",
       '');
     
     // drop table with serial
@@ -312,7 +312,7 @@ XML;
     // rename serial column
     // 
     $this->common_diff($one, $one_renamed,
-      "ALTER TABLE `table`\n  CHANGE COLUMN `id` `new_id` int NOT NULL;",
+      "ALTER TABLE `public`.`table`\n  CHANGE COLUMN `id` `new_id` int NOT NULL;",
       "");
 
     $one_int = <<<XML

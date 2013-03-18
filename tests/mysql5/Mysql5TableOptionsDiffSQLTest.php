@@ -63,7 +63,7 @@ XML;
 </schema>
 XML;
     
-    $this->common($old, $new, "ALTER TABLE `test` ENGINE=InnoDB;");
+    $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=InnoDB;");
   }
 
   public function testAlter() {
@@ -85,7 +85,7 @@ XML;
 </schema>
 XML;
     
-    $this->common($old, $new, "ALTER TABLE `test` ENGINE=MyISAM;");
+    $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=MyISAM;");
   }
 
   public function testAddAndAlter() {
@@ -108,7 +108,7 @@ XML;
 </schema>
 XML;
       
-    $this->common($old, $new, "ALTER TABLE `test` ENGINE=MyISAM\nAUTO_INCREMENT=5;");
+    $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=MyISAM\nAUTO_INCREMENT=5;");
   }
 
   public function testDrop() {
@@ -130,11 +130,11 @@ XML;
 XML;
 
     $expected = <<<SQL
--- Table `test` must be recreated to drop options: engine
-CREATE TABLE `test_DBSTEWARD_MIGRATION`
-SELECT * FROM `test`;
-DROP TABLE `test`;
-RENAME TABLE `test_DBSTEWARD_MIGRATION` TO `test`;
+-- Table `public`.`test` must be recreated to drop options: engine
+CREATE TABLE `public`.`test_DBSTEWARD_MIGRATION`
+SELECT * FROM `public`.`test`;
+DROP TABLE `public`.`test`;
+RENAME TABLE `public`.`test_DBSTEWARD_MIGRATION` TO `public`.`test`;
 SQL;
       
     $this->common($old, $new, $expected);
@@ -162,13 +162,13 @@ XML;
 XML;
 
     $expected = <<<SQL
--- Table `test` must be recreated to drop options: engine
-CREATE TABLE `test_DBSTEWARD_MIGRATION`
+-- Table `public`.`test` must be recreated to drop options: engine
+CREATE TABLE `public`.`test_DBSTEWARD_MIGRATION`
 AUTO_INCREMENT=10
 ROW_FORMAT=compressed
-SELECT * FROM `test`;
-DROP TABLE `test`;
-RENAME TABLE `test_DBSTEWARD_MIGRATION` TO `test`;
+SELECT * FROM `public`.`test`;
+DROP TABLE `public`.`test`;
+RENAME TABLE `public`.`test_DBSTEWARD_MIGRATION` TO `public`.`test`;
 SQL;
       
     $this->common($old, $new, $expected);
