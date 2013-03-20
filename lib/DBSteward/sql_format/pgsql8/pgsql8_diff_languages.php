@@ -64,7 +64,7 @@ class pgsql8_diff_languages {
     if (dbsteward::$old_database != null) {
       foreach(dbx::get_languages(dbsteward::$old_database) as $language) {
         if (dbx::get_language(dbsteward::$new_database, $language['name']) == null) {
-          $ofs->write(pgsql8_language::get_creation_sql($language) . "\n");
+          $ofs->write(pgsql8_language::get_drop_sql($language) . "\n");
         }
       }
     }
