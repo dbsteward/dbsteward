@@ -14,8 +14,9 @@
 <!ELEMENT inlineAssembly EMPTY>
 <!ATTLIST inlineAssembly name CDATA #REQUIRED>
 
-<!ELEMENT database (host, name, role, slony?, configurationParameter*)>
+<!ELEMENT database (host, sqlformat?, name, role, slony?, configurationParameter*)>
 <!ELEMENT host (#PCDATA)>
+<!ELEMENT sqlformat (#PCDATA)>
 <!ELEMENT name (#PCDATA)>
 
 <!ELEMENT role (application, owner, replication, readonly, customRole?)>
