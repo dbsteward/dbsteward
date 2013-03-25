@@ -297,6 +297,7 @@ class mysql5 {
     // set the document to contain the passed db host, name, etc to meet the DTD and for reference
     $node_database = $doc->addChild('database');
     $node_database->addChild('host', $host);
+    $node_database->addChild('sqlformat', 'mysql5');
     $node_database->addChild('name', $database);
     $node_role = $node_database->addChild('role');
     $node_role->addChild('application', $user);
