@@ -28,6 +28,21 @@ class dbsteward {
   const PATTERN_SPLIT_ROLE = "/\,/";
   
   const TABLE_DEPENDENCY_IGNORABLE_NAME = 'DBSTEWARD_PLACEHOLDER_TABLE_UNMATCHABLE_TABLE_NAME_DO_NOT_PROCESS_DO_NOT_PANIC_KEEP_HEAD_DOWN';
+
+  const MODE_UNKNOWN = 0;
+  const MODE_XML_DATA_INSERT = 1;
+  const MODE_XML_SORT = 2;
+  const MODE_XML_CONVERT = 4;
+  const MODE_BUILD = 8;
+  const MODE_DIFF = 16;
+  const MODE_EXTRACT = 32;
+  const MODE_DB_DATA_DIFF = 64;
+  const MODE_SQL_DIFF = 128;
+  const MODE_SLONIK_CONVERT = 256;
+  const MODE_SLONY_COMPARE = 512;
+  const MODE_SLONY_DIFF = 1024;
+
+  const DEFAULT_SQL_FORMAT = 'pgsql8';
   
   protected static $sql_format = 'pgsql8';
 
@@ -205,15 +220,79 @@ Database definition extraction utilities
       'pgdata' => array()
     );
 
-    
-    ///// set the global SQL format
-    if (isset($options["sqlformat"])) {
-      dbsteward::set_sql_format($options["sqlformat"]);
-    } else {
-      // need to call set_sql_format for the magic autoloader to be initialized
-      dbsteward::set_sql_format(dbsteward::$sql_format);
+
+    ///// XML file parameter sanity checks
+    if ( isset($options['xml']) ) {
+      if (count($options['xml']) > 0 && isset($options['oldxml']) && count($options['oldxml']) > 0) {
+        dbsteward::console_line(0, "Parameter error: xml and oldxml options are not to be mixed. Did you mean newxml?");
+        exit(1);
+      }
+      if (count($options['xml']) > 0 && isset($options['newxml']) && count($options['newxml']) > 0) {
+        dbsteward::console_line(0, "Parameter error: xml and newxml options are not to be mixed. Did you mean oldxml?");
+        exit(1);
+      }
+    }
+    if ((isset($options['oldxml']) && count($options['oldxml']) > 0) && (!isset($options['newxml']) || count($options['newxml']) == 0)) {
+      dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
+      exit(1);
+    }
+    if ((!isset($options['oldxml']) || count($options['oldxml']) == 0) && (isset($options['newxml']) && count($options['newxml']) > 0)) {
+      dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
+      exit(1);
     }
 
+    ///// database connectivity values
+    $dbhost = FALSE;
+    if (isset($options["dbhost"])
+      && strlen($options["dbhost"]) > 0) {
+      $dbhost = $options["dbhost"];
+    }
+    // $dbport set in sql_format defaults section
+    if (isset($options["dbport"])
+      && strlen($options["dbport"]) > 0) {
+      $dbport = $options["dbport"];
+    }
+    $dbname = FALSE;
+    if (isset($options["dbname"])
+      && strlen($options["dbname"]) > 0) {
+      $dbname = $options["dbname"];
+    }
+    $dbuser = FALSE;
+    if (isset($options["dbuser"])
+      && strlen($options["dbuser"]) > 0) {
+      $dbuser = $options["dbuser"];
+    }
+    if (isset($options['dbpassword'])
+      && strlen($options['dbpassword']) > 0) {
+      $this->cli_dbpassword = $options['dbpassword'];
+    }
+
+    ///// SQL DDL DML DCL output flags
+    if (isset($options["onlyschemasql"])) {
+      dbsteward::$only_schema_sql = TRUE;
+    }
+    if (isset($options["onlydatasql"])) {
+      dbsteward::$only_data_sql = TRUE;
+    }
+    if (isset($options['onlytable'])) {
+      $onlytables = $options['onlytable'];
+      if (!is_array($onlytables)) {
+        $onlytables = array($onlytables);
+      }
+      foreach ($onlytables AS $onlytable) {
+        $onlytable_schema = 'public';
+        $onlytable_table = $onlytable;
+        if (strpos($onlytable_table, '.') !== FALSE) {
+          $chunks = explode('.', $onlytable_table);
+          $onlytable_schema = $chunks[0];
+          $onlytable_table = $chunks[1];
+        }
+        if (!isset(dbsteward::$limit_to_tables[$onlytable_schema])) {
+          dbsteward::$limit_to_tables[$onlytable_schema] = array();
+        }
+        dbsteward::$limit_to_tables[$onlytable_schema][] = $onlytable_table;
+      }
+    }
 
     ///// common parameter for output file for converter functions
     // for modes that can do it, omitting this parameter will cause output to be directed to stdout
@@ -255,6 +334,159 @@ Database definition extraction utilities
       dbsteward::$require_slony_id = TRUE;
     }
 
+    // user-specified overrides for identifier quoting
+    if (isset($options["quoteschemanames"])) {
+      dbsteward::$quote_schema_names = TRUE;
+    }
+    if (isset($options["quotetablenames"])) {
+      dbsteward::$quote_table_names = TRUE;
+    }
+    if (isset($options["quotecolumnnames"])) {
+      dbsteward::$quote_column_names = TRUE;
+    }
+    if (isset($options["quoteallnames"])) {
+      dbsteward::$quote_all_names = TRUE;
+    }
+
+    ///// determine the operation and check arguments for each
+    $mode = dbsteward::MODE_UNKNOWN;
+    if (isset($options['xmldatainsert'])) {
+      if (!isset($options['xml'])) {
+        throw new exception("xmldatainsert needs xml parameter defined");
+      }
+      $mode = dbsteward::MODE_XML_DATA_INSERT;
+    }
+    elseif (isset($options["xmlsort"])) {
+      $mode = dbsteward::MODE_XML_SORT;
+    }
+    elseif (isset($options["xmlconvert"])) {
+      $mode = dbsteward::MODE_XML_CONVERT;
+    }
+    elseif ( isset($options['xml']) && count($options['xml']) > 0 ) {
+      $mode = dbsteward::MODE_BUILD;
+    }
+    elseif ( isset($options['newxml']) && count($options['newxml']) > 0 ) {
+      $mode = dbsteward::MODE_DIFF;
+    }
+    elseif (isset($options["dbschemadump"])) {
+      if (strlen($dbhost) === FALSE) {
+        throw new exception("dbschemadump error: dbhost not specified");
+      }
+      elseif (strlen($dbname) === FALSE) {
+        throw new exception("dbschemadump error: dbname not specified");
+      }
+      elseif (strlen($dbuser) === FALSE) {
+        throw new exception("dbschemadump error: dbuser not specified");
+      }
+      elseif ($output_file === FALSE) {
+        throw new exception("dbschemadump error: outputfile not specified");
+      }
+      $mode = dbsteward::MODE_EXTRACT;
+    }
+    elseif (isset($options['dbdatadiff'])) {
+      if (strlen($dbhost) === FALSE) {
+        throw new exception("dbdatadiff error: dbhost not specified");
+      }
+      elseif (strlen($dbname) === FALSE) {
+        throw new exception("dbdatadiff error: dbname not specified");
+      }
+      elseif (strlen($dbuser) === FALSE) {
+        throw new exception("dbdatadiff error: dbuser not specified");
+      }
+      $mode = dbsteward::MODE_DB_DATA_DIFF;
+    }
+    elseif (isset($options["oldsql"]) || isset($options["newsql"])) {
+      if ($output_file === FALSE) {
+        throw new exception("sql diff error: you must specify an outputfile for this mode");
+      }
+      $mode = dbsteward::MODE_SQL_DIFF;
+    }
+    elseif (isset($options["slonikconvert"])) {
+      $mode = dbsteward::MODE_SLONIK_CONVERT;
+    }
+    elseif (isset($options["slonycompare"])) {
+      $mode = dbsteward::MODE_SLONY_COMPARE;
+    }
+    elseif (isset($options["slonydiffold"])) {
+      $mode = dbsteward::MODE_SLONY_DIFF;
+    }
+
+    ///// For the appropriate modes, composite the input XML
+    ///// and figure out the SQL format of it
+    $target_sql_format = FALSE;
+    switch ($mode) {
+      case dbsteward::MODE_BUILD:
+        $files = (array)$options['xml'];
+        $output_prefix = dbsteward::get_output_prefix($files);
+        dbsteward::console_line(1, "Compositing XML files..");
+        $db_doc = xml_parser::xml_composite($output_prefix, $files, $build_composite_file);
+        if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
+          dbsteward::console_line(1, "Compositing pgdata XML files on top of XML composite..");
+          xml_parser::xml_composite_pgdata($output_prefix, $db_doc, (array)$options['pgdataxml']);
+        }
+        if (!empty($db_doc->database->sqlformat)) {
+          $target_sql_format = (string)$db_doc->database->sqlformat;
+        }
+        break;
+
+      case dbsteward::MODE_DIFF:
+        $old_files = (array)$options['oldxml'];
+        $new_files = (array)$options['newxml'];
+
+
+        dbsteward::console_line(1, "Compositing old XML files..");
+        $old_output_prefix = dbsteward::get_output_prefix($old_files);
+        $old_db_doc = xml_parser::xml_composite($old_output_prefix, $old_files, $old_composite_file);
+
+        dbsteward::console_line(1, "Compositing new XML files..");
+        $new_output_prefix = dbsteward::get_output_prefix($new_files);
+        $new_db_doc = xml_parser::xml_composite($new_output_prefix, $new_files, $new_composite_file);
+        if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
+          dbsteward::console_line(1, "Compositing pgdata XML files on top of new XML composite..");
+          xml_parser::xml_composite_pgdata($new_output_prefix, $new_db_doc, (array)$options['pgdataxml']);
+        }
+
+        // prefer the new sql_format
+        if (!empty($new_db_doc->database->sqlformat)) {
+          $target_sql_format = (string)$new_db_doc->database->sqlformat;
+        }
+        elseif (!empty($old_db_doc->database->sqlformat)) {
+          $target_sql_format = (string)$old_db_doc->database->sqlformat;
+        }
+        break;
+    }
+
+    $force_sql_format = FALSE;
+    if (isset($options['sqlformat'])) {
+      $force_sql_format = $options['sqlformat'];
+    }
+
+    if ($target_sql_format !== FALSE) {
+      if ($force_sql_format !== FALSE) {
+        if (strcasecmp($target_sql_format, $force_sql_format) == 0) {
+          $use_sql_format = $target_sql_format;
+        }
+        else {
+          dbsteward::console_line(1, "WARNING: XML is targeted for $target_sql_format, but you are forcing $force_sql_format. Things will probably break!");
+          $use_sql_format = $force_sql_format;
+        }
+      }
+      else {
+        // not forcing a sql_format, use target
+        dbsteward::console_line(1, "XML file(s) are targeted for sqlformat=$target_sql_format");
+        $use_sql_format = $target_sql_format;
+      }
+    }
+    elseif ($force_sql_format !== FALSE) {
+      $use_sql_format = $force_sql_format;
+    }
+    else {
+      $use_sql_format = dbsteward::DEFAULT_SQL_FORMAT;
+    }
+    
+    ///// set the global SQL format
+    dbsteward::console_line(1, "Using sqlformat=$use_sql_format");
+    dbsteward::set_sql_format($use_sql_format);
 
     ///// sql_format-specific default options
     $dbport = FALSE;
@@ -283,20 +515,6 @@ Database definition extraction utilities
       dbsteward::$quote_column_names = TRUE;
     }
     
-    // user-specified overrides for identifier quoting
-    if (isset($options["quoteschemanames"])) {
-      dbsteward::$quote_schema_names = TRUE;
-    }
-    if (isset($options["quotetablenames"])) {
-      dbsteward::$quote_table_names = TRUE;
-    }
-    if (isset($options["quotecolumnnames"])) {
-      dbsteward::$quote_column_names = TRUE;
-    }
-    if (isset($options["quoteallnames"])) {
-      dbsteward::$quote_all_names = TRUE;
-    }
-    
     if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') != 0) {
       if (isset($options['pgdataxml'])) {
         dbsteward::console_line(0, "pgdataxml parameter is not supported by " . dbsteward::get_sql_format() . " driver");
@@ -304,206 +522,76 @@ Database definition extraction utilities
       }
     }
 
+    switch ($mode) {
+      case dbsteward::MODE_XML_DATA_INSERT:
+        dbsteward::xml_data_insert($options['xml'], $options['xmldatainsert']);
+        break;
 
-    ///// SQL DDL DML DCL output flags
-    if (isset($options["onlyschemasql"])) {
-      dbsteward::$only_schema_sql = TRUE;
-    }
-    if (isset($options["onlydatasql"])) {
-      dbsteward::$only_data_sql = TRUE;
-    }
-    if (isset($options['onlytable'])) {
-      $onlytables = $options['onlytable'];
-      if (!is_array($onlytables)) {
-        $onlytables = array($onlytables);
-      }
-      foreach ($onlytables AS $onlytable) {
-        $onlytable_schema = 'public';
-        $onlytable_table = $onlytable;
-        if (strpos($onlytable_table, '.') !== FALSE) {
-          $chunks = explode('.', $onlytable_table);
-          $onlytable_schema = $chunks[0];
-          $onlytable_table = $chunks[1];
+      case dbsteward::MODE_XML_SORT:
+        dbsteward::xml_sort($options['xmlsort']);
+        break;
+
+      case dbsteward::MODE_XML_CONVERT:
+        dbsteward::xml_convert($options['xmlconvert']);
+        break;
+
+      case dbsteward::MODE_BUILD:
+        format::build($output_prefix, $db_doc);
+        break;
+
+      case dbsteward::MODE_DIFF:
+        format::build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $new_output_prefix, $new_composite_file, $new_db_doc);
+        break;
+
+      case dbsteward::MODE_EXTRACT:
+        $output = format::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
+        dbsteward::console_line(1, "Saving extracted database schema to " . $output_file);
+        if (!file_put_contents($output_file, $output)) {
+          throw new exception("Failed to save extracted database schema to " . $output_file);
         }
-        if (!isset(dbsteward::$limit_to_tables[$onlytable_schema])) {
-          dbsteward::$limit_to_tables[$onlytable_schema] = array();
+        break;
+
+      case dbsteward::MODE_DB_DATA_DIFF:
+        $output = format::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdatadiff']);
+        if (!file_put_contents($output_file, $output)) {
+          throw new exception("Failed to save extracted database schema to " . $output_file);
         }
-        dbsteward::$limit_to_tables[$onlytable_schema][] = $onlytable_table;
-      }
-    }
+        break;
 
+      case dbsteward::MODE_SQL_DIFF:
+        format::sql_diff($options["oldsql"], $options["newsql"], $output_file);
+        break;
 
-    ///// database connectivity values
-    $dbhost = FALSE;
-    if (isset($options["dbhost"])
-      && strlen($options["dbhost"]) > 0) {
-      $dbhost = $options["dbhost"];
-    }
-    // $dbport set in sql_format defaults section
-    if (isset($options["dbport"])
-      && strlen($options["dbport"]) > 0) {
-      $dbport = $options["dbport"];
-    }
-    $dbname = FALSE;
-    if (isset($options["dbname"])
-      && strlen($options["dbname"]) > 0) {
-      $dbname = $options["dbname"];
-    }
-    $dbuser = FALSE;
-    if (isset($options["dbuser"])
-      && strlen($options["dbuser"]) > 0) {
-      $dbuser = $options["dbuser"];
-    }
-    if (isset($options['dbpassword'])
-      && strlen($options['dbpassword']) > 0) {
-      $this->cli_dbpassword = $options['dbpassword'];
-    }
-
-
-    ///// XML utility functions
-    if (isset($options['xmldatainsert'])) {
-      if (!isset($options['xml'])) {
-        throw new exception("xmldatainsert needs xml parameter defined");
-      }
-      dbsteward::xml_data_insert($options['xml'], $options['xmldatainsert']);
-      exit(0);
-    }
-
-    if (isset($options["xmlsort"])) {
-      dbsteward::xml_sort($options["xmlsort"]);
-      exit(0);
-    }
-    
-    if (isset($options["xmlconvert"])) {
-      dbsteward::xml_convert($options["xmlconvert"]);
-      exit(0);
-    }
-
-    
-    ///// XML file parameter sanity checks
-    if ( isset($options['xml']) ) {
-      if (count($options['xml']) > 0 && isset($options['oldxml']) && count($options['oldxml']) > 0) {
-        dbsteward::console_line(0, "Parameter error: xml and oldxml options are not to be mixed. Did you mean newxml?");
-        exit(1);
-      }
-      if (count($options['xml']) > 0 && isset($options['newxml']) && count($options['newxml']) > 0) {
-        dbsteward::console_line(0, "Parameter error: xml and newxml options are not to be mixed. Did you mean oldxml?");
-        exit(1);
-      }
-    }
-    if ((isset($options['oldxml']) && count($options['oldxml']) > 0) && (!isset($options['newxml']) || count($options['newxml']) == 0)) {
-      dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
-      exit(1);
-    }
-    if ((!isset($options['oldxml']) || count($options['oldxml']) == 0) && (isset($options['newxml']) && count($options['newxml']) > 0)) {
-      dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
-      exit(1);
-    }
-
-
-    ///// --[new|old]xml option(s) specificity - generate database DDL DML DCL
-    if ( isset($options['xml']) && count($options['xml']) > 0 ) {
-      if (isset($options['pgdataxml'])) {
-        $pgdataxml = $options['pgdataxml'];
-        format::build($options['xml'], $pgdataxml);
-      }
-      else {
-        format::build($options['xml']);
-      }
-    }
-    else if ( isset($options['newxml']) && count($options['newxml']) > 0 ) {
-      if (isset($options['pgdataxml'])) {
-        $pgdataxml = $options['pgdataxml'];
-        format::build_upgrade($options['oldxml'], $options['newxml'], $pgdataxml);
-      }
-      else {
-        format::build_upgrade($options['oldxml'], $options['newxml']);
-      }
-    }
-    
-    
-    ///// special comparison and output modes
-
-    // dump the schema from a running database
-    if (isset($options["dbschemadump"])) {
-      if (strlen($dbhost) === FALSE) {
-        throw new exception("dbschemadump error: dbhost not specified");
-      }
-      else if (strlen($dbname) === FALSE) {
-        throw new exception("dbschemadump error: dbname not specified");
-      }
-      else if (strlen($dbuser) === FALSE) {
-        throw new exception("dbschemadump error: dbuser not specified");
-      }
-      else if ($output_file === FALSE) {
-        throw new exception("dbschemadump error: outputfile not specified");
-      }
-
-      $output = format::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
-      
-      dbsteward::console_line(1, "Saving extracted database schema to " . $output_file);
-      if (!file_put_contents($output_file, $output)) {
-        throw new exception("Failed to save extracted database schema to " . $output_file);
-      }
-      exit(0);
-    }
-
-    // difference a schema definition against a running database
-    if (isset($options['dbdatadiff'])) {
-      if (strlen($dbhost) === FALSE) {
-        throw new exception("dbdatadiff error: dbhost not specified");
-      }
-      else if (strlen($dbname) === FALSE) {
-        throw new exception("dbdatadiff error: dbname not specified");
-      }
-      else if (strlen($dbuser) === FALSE) {
-        throw new exception("dbdatadiff error: dbuser not specified");
-      }
-
-      $output = format::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdatadiff']);
-      if (!file_put_contents($output_file, $output)) {
-        throw new exception("Failed to save extracted database schema to " . $output_file);
-      }
-      exit(0);
-    }
-
-
-    // difference two SQL database dump files
-    if (isset($options["oldsql"]) || isset($options["newsql"])) {
-      if ($output_file === FALSE) {
-        dbsteward::console_line(0, "sql diff error: you must specify an outputfile for this mode");
-        exit(1);
-      }
-      format::sql_diff($options["oldsql"], $options["newsql"], $output_file);
-      exit(0);
-    }
-
-    // convert a slonik configuration file into DBSteward database definition XML
-    if (isset($options["slonikconvert"])) {
-      $output = slony1_slonik::convert($options["slonikconvert"]);
-      if ($output_file !== FALSE) {
-        dbsteward::console_line(1, "Saving slonikconvert output to " . $output_file);
-        if (!file_put_contents($output, $output_file)) {
-          throw new exception("Failed to save slonikconvert output to " . $output_file);
+      case dbsteward::MODE_SLONIK_CONVERT:
+        $output = slony1_slonik::convert($options["slonikconvert"]);
+        if ($output_file !== FALSE) {
+          dbsteward::console_line(1, "Saving slonikconvert output to " . $output_file);
+          if (!file_put_contents($output, $output_file)) {
+            throw new exception("Failed to save slonikconvert output to " . $output_file);
+          }
         }
-      }
-      else {
-        echo $output;
-      }
-      exit(0);
-    }
+        else {
+          echo $output;
+        }
+        break;
 
-    // generate table SELECT statements for database health comparison between replicas
-    if (isset($options["slonycompare"])) {
-      pgsql8::slony_compare($options["slonycompare"]);
-      exit(0);
-    }
+      case dbsteward::MODE_SLONY_COMPARE:
+        pgsql8::slony_compare($options["slonycompare"]);
+        break;
 
-    // compare table slonyId assignment between two versions of a database definition
-    if (isset($options["slonydiffold"])) {
-      pgsql8::slony_diff($options["slonydiffold"], $options["slonydiffnew"]);
-      exit(0);
+      case dbsteward::MODE_SLONY_DIFF:
+        pgsql8::slony_diff($options["slonydiffold"], $options["slonydiffnew"]);
+        break;
+
+      case dbsteward::MODE_UNKNOWN:
+      default:
+        throw new Exception("No operation specified!");
     }
+  }
+
+  public static function get_output_prefix($files) {
+    $files = (array)$files;
+    return dirname($files[0]) . '/' . basename($files[0], '.xml');
   }
 
   public static function cmd($command, $error_fatal = TRUE) {
