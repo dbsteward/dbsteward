@@ -107,7 +107,7 @@ class mysql5_table extends sql99_table {
       var_dump($node_table);
       throw new exception("node_table element type is not table. check stack for offending caller");
     }
-    return "DROP TABLE " . mysql5::get_quoted_table_name($node_table['name']) . ";";
+    return "DROP TABLE " . mysql5::get_fully_qualified_table_name($node_schema['name'],$node_table['name']) . ";";
   }
 
   public static function get_sequences_needed($schema, $table) {

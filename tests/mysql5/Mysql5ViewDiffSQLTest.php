@@ -64,7 +64,7 @@ XML;
     $this->common_drop($none, $one, '', "none to one");
 
     // only removing, expect single drop
-    $this->common_drop($one, $none, "DROP VIEW IF EXISTS `test_view`;", "one to none");
+    $this->common_drop($one, $none, "DROP VIEW IF EXISTS `public`.`test_view`;", "one to none");
 
     // change the query
     $alt_one = <<<XML
@@ -76,7 +76,7 @@ XML;
 XML;
 
     // query changed, expect single drop
-    $this->common_drop($one, $alt_one, "DROP VIEW IF EXISTS `test_view`;", "redefined");
+    $this->common_drop($one, $alt_one, "DROP VIEW IF EXISTS `public`.`test_view`;", "redefined");
 
     // change the owner
     $alt_one = <<<XML
@@ -88,7 +88,7 @@ XML;
 XML;
 
     // owner changed, expect single drop
-    $this->common_drop($one, $alt_one, "DROP VIEW IF EXISTS `test_view`;", "different owner");
+    $this->common_drop($one, $alt_one, "DROP VIEW IF EXISTS `public`.`test_view`;", "different owner");
   }
 
   public function testCreate() {
@@ -111,7 +111,7 @@ XML;
     $this->common_create($none, $none, '', "none to none");
 
     // only adding, expect single create
-    $this->common_create($none, $one, "CREATE OR REPLACE DEFINER = the_owner SQL SECURITY DEFINER VIEW `test_view`\n  AS SELECT * FROM foo;", "none to one");
+    $this->common_create($none, $one, "CREATE OR REPLACE DEFINER = the_owner SQL SECURITY DEFINER VIEW `public`.`test_view`\n  AS SELECT * FROM foo;", "none to one");
 
     // only removing, no creates
     $this->common_create($one, $none, '', "one to none");
@@ -126,7 +126,7 @@ XML;
 XML;
 
     // query changed, expect single create
-    $this->common_create($one, $alt_one, "CREATE OR REPLACE DEFINER = the_owner SQL SECURITY DEFINER VIEW `test_view`\n  AS SELECT * FROM bar;", "redefined");
+    $this->common_create($one, $alt_one, "CREATE OR REPLACE DEFINER = the_owner SQL SECURITY DEFINER VIEW `public`.`test_view`\n  AS SELECT * FROM bar;", "redefined");
 
     // change the owner
     $alt_one = <<<XML
@@ -138,7 +138,7 @@ XML;
 XML;
 
     // owner changed, expect single drop
-    $this->common_create($one, $alt_one, "CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `test_view`\n  AS SELECT * FROM foo;", "different owner");
+    $this->common_create($one, $alt_one, "CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `public`.`test_view`\n  AS SELECT * FROM foo;", "different owner");
   }
 
   public function testAlwaysRecreate() {
@@ -154,8 +154,8 @@ XML;
     $this->common_create($view, $view, '');
 
     dbsteward::$always_recreate_views = TRUE;
-    $this->common_drop($view, $view, "DROP VIEW IF EXISTS `test_view`;");
-    $this->common_create($view, $view, "CREATE OR REPLACE DEFINER = the_owner SQL SECURITY DEFINER VIEW `test_view`\n  AS SELECT * FROM foo;");
+    $this->common_drop($view, $view, "DROP VIEW IF EXISTS `public`.`test_view`;");
+    $this->common_create($view, $view, "CREATE OR REPLACE DEFINER = the_owner SQL SECURITY DEFINER VIEW `public`.`test_view`\n  AS SELECT * FROM foo;");
   }
 
 

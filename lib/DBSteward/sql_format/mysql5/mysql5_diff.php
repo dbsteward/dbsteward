@@ -32,6 +32,12 @@ class mysql5_diff extends sql99_diff {
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1BEFORE');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
+    dbsteward::console_line(1, "Drop Old Schemas");
+    self::drop_old_schemas($stage3_ofs);
+
+    dbsteward::console_line(1, "Create New Schemas");
+    self::create_new_schemas($stage1_ofs);
+
     dbsteward::console_line(1, "Revoke Permissions");
     self::revoke_permissions($stage1_ofs, $stage3_ofs);
 
@@ -79,44 +85,37 @@ class mysql5_diff extends sql99_diff {
   }
 
   public static function revoke_permissions($ofs1, $ofs3) {
-    $old_schema = dbx::get_schema(dbsteward::$old_database, 'public');
-    if ( $old_schema === null ) {
-      // there was no old schema, no permissions to revoke
-      return;
-    }
+    foreach (dbx::get_schemas(dbsteward::$old_database) as $old_schema) {
+      $ofs1->write(mysql5_schema::get_use_sql($old_schema)."\n");
+      $old_permissions = $old_schema->xpath('.//grant');
+      foreach ( $old_permissions as $node_permission ) {
+        $node_object = $node_permission->xpath('parent::*');
+        $node_object = $node_object[0];
+        if ( $node_object === null ) {
+          // I have a hard time imagining this could actually happen this far along, but better safe than sorry...
+          throw new Exception("Could not find parent node of permission GRANT {$node_permission['operation']} TO {$node_permission['role']}");
+        }
 
-    $old_permissions = $old_schema->xpath('.//grant');
-    foreach ( $old_permissions as $node_permission ) {
-      $node_object = $node_permission->xpath('parent::*');
-      $node_object = $node_object[0];
-      if ( $node_object === null ) {
-        // I have a hard time imagining this could actually happen this far along, but better safe than sorry...
-        throw new Exception("Could not find parent node of permission GRANT {$node_permission['operation']} TO {$node_permission['role']}");
+        $ofs1->write(mysql5_permission::get_permission_sql(dbsteward::$old_database, $old_schema, $node_object, $node_permission, 'revoke')."\n");
       }
-
-      $ofs1->write(mysql5_permission::get_permission_sql(dbsteward::$old_database, $old_schema, $node_object, $node_permission, 'revoke')."\n");
     }
   }
 
 
   public static function update_permissions($ofs1, $ofs3) {
-    // $old_schema = dbx::get_schema(dbsteward::$old_database, 'public');
-    $new_schema = dbx::get_schema(dbsteward::$new_database, 'public');
-    if ( $new_schema === null ) {
-      // no new schema, no permissions to grant
-      return;
-    }
-
-    $permissions = $new_schema->xpath('.//grant');
-    foreach ( $permissions as $node_permission ) {
-      $node_object = $node_permission->xpath('parent::*');
-      $node_object = $node_object[0];
-      if ( $node_object === null ) {
-        // I have a hard time imagining this could actually happen this far along, but better safe than sorry...
-        throw new Exception("Could not find parent node of permission GRANT {$node_permission['operation']} TO {$node_permission['role']}");
+    foreach (dbx::get_schemas(dbsteward::$new_database) as $new_schema) {
+      $ofs1->write(mysql5_schema::get_use_sql($new_schema)."\n");
+      $permissions = $new_schema->xpath('.//grant');
+      foreach ( $permissions as $node_permission ) {
+        $node_object = $node_permission->xpath('parent::*');
+        $node_object = $node_object[0];
+        if ( $node_object === null ) {
+          // I have a hard time imagining this could actually happen this far along, but better safe than sorry...
+          throw new Exception("Could not find parent node of permission GRANT {$node_permission['operation']} TO {$node_permission['role']}");
+        }
+        
+        $ofs1->write(mysql5_permission::get_permission_sql(dbsteward::$new_database, $new_schema, $node_object, $node_permission, 'grant')."\n");
       }
-      
-      $ofs1->write(mysql5_permission::get_permission_sql(dbsteward::$new_database, $new_schema, $node_object, $node_permission, 'grant')."\n");
     }
   }
 

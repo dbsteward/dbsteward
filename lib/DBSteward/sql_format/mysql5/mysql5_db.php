@@ -13,18 +13,21 @@ class mysql5_db {
   protected $pdo;
   protected $dbname;
 
-  public static function connect($host, $port, $database, $user, $password) {
+  public static function connect($host, $port, $user, $password) {
     // mysql puts all metadata in the information_schema database, but assigns objects to their respective DBs
-    return new mysql5_db(new PDO("mysql:host=$host;port=$port;dbname=information_schema", $user, $password), $database);
+    return new mysql5_db(new PDO("mysql:host=$host;port=$port;dbname=information_schema", $user, $password));
   }
 
-  public function __construct($pdo, $dbname) {
+  public function __construct($pdo) {
     $this->pdo = $pdo;
-    $this->dbname = $dbname;
 
     // Make sure we throw exceptions when bad stuff happens
     $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+  }
+
+  public function use_database($database) {
+    $this->dbname = $database;
   }
 
   public function get_tables() {
@@ -171,7 +174,7 @@ class mysql5_db {
   public function get_constraints($db_table) {
     $constraints = $this->query("SELECT constraint_type, table_constraints.table_name, table_constraints.constraint_name,
                                         GROUP_CONCAT(DISTINCT key_column_usage.column_name ORDER BY ordinal_position) as columns,
-                                        key_column_usage.referenced_table_name, update_rule, delete_rule,
+                                        key_column_usage.referenced_table_schema, key_column_usage.referenced_table_name, update_rule, delete_rule,
                                         GROUP_CONCAT(DISTINCT referenced_column_name ORDER BY ordinal_position) as referenced_columns
                                  FROM table_constraints
                                   INNER JOIN key_column_usage USING (table_schema, table_name, constraint_name)

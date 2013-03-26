@@ -174,7 +174,7 @@ XML;
 
   public function testAddSome() {
     $expected = <<<SQL
-ALTER TABLE `test`
+ALTER TABLE `public`.`test`
   ADD UNIQUE INDEX `test_uqc_idx` (`uqc`);
 SQL;
     $this->common($this->xml_pka, $this->xml_pka_uqc, $expected);
@@ -182,7 +182,7 @@ SQL;
 
   public function testDropSome() {
     $expected = <<<SQL
-ALTER TABLE `test`
+ALTER TABLE `public`.`test`
   DROP INDEX `test_uqc_idx`;
 SQL;
     $this->common($this->xml_pka_uqc, $this->xml_pka, $expected);
@@ -190,9 +190,9 @@ SQL;
 
   public function testChangeOne() {
     $expected = <<<SQL
-ALTER TABLE `test`
+ALTER TABLE `public`.`test`
   DROP PRIMARY KEY;
-ALTER TABLE `test`
+ALTER TABLE `public`.`test`
   ADD PRIMARY KEY (`pkb`);
 SQL;
     $this->common($this->xml_pka, $this->xml_pkb, $expected);
@@ -200,9 +200,9 @@ SQL;
 
   public function testAddSomeAndChange() {
     $expected = <<<SQL
-ALTER TABLE `test`
+ALTER TABLE `public`.`test`
   DROP PRIMARY KEY;
-ALTER TABLE `test`
+ALTER TABLE `public`.`test`
   ADD PRIMARY KEY (`pkb`),
   ADD CONSTRAINT `test_cfke_fk` FOREIGN KEY `test_cfke_fk` (`cfke`) REFERENCES `other` (`pka`);
 SQL;
@@ -211,11 +211,11 @@ SQL;
 
   public function testDropSomeAndChange() {
     $expected = <<<SQL
-ALTER TABLE `test`
+ALTER TABLE `public`.`test`
   DROP PRIMARY KEY,
   DROP INDEX `test_uqc_idx`,
   DROP FOREIGN KEY `test_ifkd_fk`, DROP INDEX `test_ifkd_fk`;
-ALTER TABLE `test`
+ALTER TABLE `public`.`test`
   ADD PRIMARY KEY (`pkb`);
 SQL;
     $this->common($this->xml_pka_uqc_ifkd_cfke, $this->xml_pkb_cfke, $expected);
@@ -243,9 +243,9 @@ XML;
     // drop the PK on test *before* diffing the table
     // add the renamed PK on the renamed table *after* diffing the table
     $expected = <<<SQL
-ALTER TABLE `test`
+ALTER TABLE `public`.`test`
   DROP PRIMARY KEY;
-ALTER TABLE `newtable`
+ALTER TABLE `public`.`newtable`
   ADD PRIMARY KEY (`pkb`);
 SQL;
     $this->common($old, $new, $expected);
@@ -275,7 +275,7 @@ XML;
 
     $this->common($auto, $notauto, "");
 
-    $this->common($notauto, $auto, "ALTER TABLE `test` MODIFY COLUMN `pka` int AUTO_INCREMENT;", 'primaryKey');
+    $this->common($notauto, $auto, "ALTER TABLE `public`.`test` MODIFY COLUMN `pka` int AUTO_INCREMENT;", 'primaryKey');
   }
 
   private function common($a, $b, $expected, $type = 'all') {

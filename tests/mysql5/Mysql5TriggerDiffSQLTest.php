@@ -100,48 +100,48 @@ XML;
 XML;
 
   private $create_a = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_a`;
-CREATE TRIGGER `trigger_a` BEFORE INSERT ON `table`
+DROP TRIGGER IF EXISTS `public`.`trigger_a`;
+CREATE TRIGGER `public`.`trigger_a` BEFORE INSERT ON `public`.`table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $create_a_timing = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_a`;
-CREATE TRIGGER `trigger_a` AFTER INSERT ON `table`
+DROP TRIGGER IF EXISTS `public`.`trigger_a`;
+CREATE TRIGGER `public`.`trigger_a` AFTER INSERT ON `public`.`table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $create_a_event = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_a`;
-CREATE TRIGGER `trigger_a` BEFORE UPDATE ON `table`
+DROP TRIGGER IF EXISTS `public`.`trigger_a`;
+CREATE TRIGGER `public`.`trigger_a` BEFORE UPDATE ON `public`.`table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $create_a_table = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_a`;
-CREATE TRIGGER `trigger_a` BEFORE INSERT ON `another`
+DROP TRIGGER IF EXISTS `public`.`trigger_a`;
+CREATE TRIGGER `public`.`trigger_a` BEFORE INSERT ON `public`.`another`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $create_a_def = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_a`;
-CREATE TRIGGER `trigger_a` BEFORE INSERT ON `table`
+DROP TRIGGER IF EXISTS `public`.`trigger_a`;
+CREATE TRIGGER `public`.`trigger_a` BEFORE INSERT ON `public`.`table`
 FOR EACH ROW EXECUTE otherstuff;
 SQL;
   private $drop_a = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_a`;
+DROP TRIGGER IF EXISTS `public`.`trigger_a`;
 SQL;
   private $create_b = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_b`;
-CREATE TRIGGER `trigger_b` AFTER UPDATE ON `table`
+DROP TRIGGER IF EXISTS `public`.`trigger_b`;
+CREATE TRIGGER `public`.`trigger_b` AFTER UPDATE ON `public`.`table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $drop_b = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_b`;
+DROP TRIGGER IF EXISTS `public`.`trigger_b`;
 SQL;
   private $create_c = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_c`;
-CREATE TRIGGER `trigger_c` AFTER DELETE ON `table`
+DROP TRIGGER IF EXISTS `public`.`trigger_c`;
+CREATE TRIGGER `public`.`trigger_c` AFTER DELETE ON `public`.`table`
 FOR EACH ROW EXECUTE stuff;
 SQL;
   private $drop_c = <<<SQL
-DROP TRIGGER IF EXISTS `trigger_c`;
+DROP TRIGGER IF EXISTS `public`.`trigger_c`;
 SQL;
 
   public function testNoneToNone() {
@@ -204,8 +204,8 @@ XML;
 
     // should create a new trigger
     $expected = <<<SQL
-DROP TRIGGER IF EXISTS `__test0_table_id_serial_trigger`;
-CREATE TRIGGER `__test0_table_id_serial_trigger` BEFORE INSERT ON `table`
+DROP TRIGGER IF EXISTS `test0`.`__test0_table_id_serial_trigger`;
+CREATE TRIGGER `test0`.`__test0_table_id_serial_trigger` BEFORE INSERT ON `test0`.`table`
 FOR EACH ROW SET NEW.`id` = COALESCE(NEW.`id`, nextval('__test0_table_id_serial_seq'));
 SQL;
     $this->common($old, $new, $expected);
@@ -223,10 +223,10 @@ XML;
 
     // renaming should drop the old trigger, create the new
     $expected = <<<SQL
-DROP TRIGGER IF EXISTS `__test0_table_id_serial_trigger`;
+DROP TRIGGER IF EXISTS `test0`.`__test0_table_id_serial_trigger`;
 
-DROP TRIGGER IF EXISTS `__test0_table_newid_serial_trigger`;
-CREATE TRIGGER `__test0_table_newid_serial_trigger` BEFORE INSERT ON `table`
+DROP TRIGGER IF EXISTS `test0`.`__test0_table_newid_serial_trigger`;
+CREATE TRIGGER `test0`.`__test0_table_newid_serial_trigger` BEFORE INSERT ON `test0`.`table`
 FOR EACH ROW SET NEW.`newid` = COALESCE(NEW.`newid`, nextval('__test0_table_newid_serial_seq'));
 SQL;
     

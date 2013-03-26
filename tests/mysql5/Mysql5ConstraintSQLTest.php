@@ -49,9 +49,9 @@ XML;
 
     $this->assertEquals($expected, $pk);
 
-    $this->assertEquals("ALTER TABLE `test` ADD PRIMARY KEY (`id`);", mysql5_constraint::get_constraint_sql($pk));
+    $this->assertEquals("ALTER TABLE `public`.`test` ADD PRIMARY KEY (`id`);", mysql5_constraint::get_constraint_sql($pk));
 
-    $this->assertEquals("ALTER TABLE `test` DROP PRIMARY KEY;", mysql5_constraint::get_constraint_drop_sql($pk));
+    $this->assertEquals("ALTER TABLE `public`.`test` DROP PRIMARY KEY;", mysql5_constraint::get_constraint_drop_sql($pk));
   }
 
   public function testCompoundPrimaryKeys() {
@@ -81,9 +81,9 @@ XML;
 
     $this->assertEquals($expected, $pk);
 
-    $this->assertEquals("ALTER TABLE `test` ADD PRIMARY KEY (`id`, `a`);", mysql5_constraint::get_constraint_sql($pk));
+    $this->assertEquals("ALTER TABLE `public`.`test` ADD PRIMARY KEY (`id`, `a`);", mysql5_constraint::get_constraint_sql($pk));
 
-    $this->assertEquals("ALTER TABLE `test` DROP PRIMARY KEY;", mysql5_constraint::get_constraint_drop_sql($pk));
+    $this->assertEquals("ALTER TABLE `public`.`test` DROP PRIMARY KEY;", mysql5_constraint::get_constraint_drop_sql($pk));
   }
 
   public function testInlineForeignKeys() {
@@ -122,12 +122,12 @@ XML;
       'schema_name' => 'public',
       'table_name' => 'test',
       'type' => 'FOREIGN KEY',
-      'definition' => '(`other_id`) REFERENCES `other` (`other_id`)',
+      'definition' => '(`other_id`) REFERENCES `public`.`other` (`other_id`)',
       'foreign_key_data' => array(
         'schema' => $dbs->schema,
         'table' => $dbs->schema->table[1],
         'column' => $dbs->schema->table[1]->column,
-        'references' => '`other` (`other_id`)',
+        'references' => '`public`.`other` (`other_id`)',
         'name' => 'other_id_fk'
       ),
       'foreignOnDelete' => 'NO_ACTION',
@@ -135,11 +135,11 @@ XML;
     );
     $this->assertEquals($expected, $fk);
 
-    $expected = "ALTER TABLE `test` ADD CONSTRAINT `other_id_fk` FOREIGN KEY `other_id_fk` (`other_id`) REFERENCES `other` (`other_id`) ON DELETE NO ACTION ON UPDATE CASCADE;";
+    $expected = "ALTER TABLE `public`.`test` ADD CONSTRAINT `other_id_fk` FOREIGN KEY `other_id_fk` (`other_id`) REFERENCES `public`.`other` (`other_id`) ON DELETE NO ACTION ON UPDATE CASCADE;";
     $actual = mysql5_constraint::get_constraint_sql($fk);
     $this->assertEquals($expected, $actual);
 
-    $this->assertEquals("ALTER TABLE `test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
+    $this->assertEquals("ALTER TABLE `public`.`test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
   }
 
   public function testConstraintForeignKeys() {
@@ -176,11 +176,11 @@ XML;
     );
     $this->assertEquals($expected, $fk);
 
-    $expected = "ALTER TABLE `test` ADD CONSTRAINT `other_id_fk` FOREIGN KEY `other_id_fk` (`other_id`) REFERENCES `other` (`other_id`);";
+    $expected = "ALTER TABLE `public`.`test` ADD CONSTRAINT `other_id_fk` FOREIGN KEY `other_id_fk` (`other_id`) REFERENCES `other` (`other_id`);";
     $actual = mysql5_constraint::get_constraint_sql($fk);
     $this->assertEquals($expected, $actual);
 
-    $this->assertEquals("ALTER TABLE `test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
+    $this->assertEquals("ALTER TABLE `public`.`test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
   }
 
   /** Because MySQL, that's why */
@@ -221,12 +221,12 @@ XML;
       'schema_name' => 'public',
       'table_name' => 'test',
       'type' => 'FOREIGN KEY',
-      'definition' => '(`other_id`) REFERENCES `other` (`other_id`)',
+      'definition' => '(`other_id`) REFERENCES `public`.`other` (`other_id`)',
       'foreign_key_data' => array(
         'schema' => $dbs->schema,
         'table' => $dbs->schema->table[1],
         'column' => $dbs->schema->table[1]->column,
-        'references' => '`other` (`other_id`)',
+        'references' => '`public`.`other` (`other_id`)',
         'name' => 'other_id_fk'
       ),
       'foreignIndexName' => 'fk_idx',
@@ -235,11 +235,11 @@ XML;
     );
     $this->assertEquals($expected, $fk);
 
-    $expected = "ALTER TABLE `test` ADD CONSTRAINT `other_id_fk` FOREIGN KEY `fk_idx` (`other_id`) REFERENCES `other` (`other_id`) ON DELETE NO ACTION ON UPDATE CASCADE;";
+    $expected = "ALTER TABLE `public`.`test` ADD CONSTRAINT `other_id_fk` FOREIGN KEY `fk_idx` (`other_id`) REFERENCES `public`.`other` (`other_id`) ON DELETE NO ACTION ON UPDATE CASCADE;";
     $actual = mysql5_constraint::get_constraint_sql($fk);
     $this->assertEquals($expected, $actual);
 
-    $this->assertEquals("ALTER TABLE `test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `fk_idx`;", mysql5_constraint::get_constraint_drop_sql($fk));
+    $this->assertEquals("ALTER TABLE `public`.`test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `fk_idx`;", mysql5_constraint::get_constraint_drop_sql($fk));
   }
 
   public function testCyclicForeignKeys() {
@@ -305,12 +305,12 @@ XML;
       'schema_name' => 'public',
       'table_name' => 'test_self',
       'type' => 'FOREIGN KEY',
-      'definition' => '(`other_id`) REFERENCES `test_self` (`test_id`)',
+      'definition' => '(`other_id`) REFERENCES `public`.`test_self` (`test_id`)',
       'foreign_key_data' => array(
         'schema' => $dbs->schema,
         'table' => $dbs->schema->table[0],
         'column' => $dbs->schema->table[0]->column,
-        'references' => '`test_self` (`test_id`)',
+        'references' => '`public`.`test_self` (`test_id`)',
         'name' => 'test_id_fk'
       ),
       'foreignOnDelete' => 'NO_ACTION',
@@ -318,11 +318,11 @@ XML;
     );
     $this->assertEquals($expected, $fk);
 
-    $expected = "ALTER TABLE `test_self` ADD CONSTRAINT `test_id_fk` FOREIGN KEY `test_id_fk` (`other_id`) REFERENCES `test_self` (`test_id`) ON DELETE NO ACTION ON UPDATE CASCADE;";
+    $expected = "ALTER TABLE `public`.`test_self` ADD CONSTRAINT `test_id_fk` FOREIGN KEY `test_id_fk` (`other_id`) REFERENCES `public`.`test_self` (`test_id`) ON DELETE NO ACTION ON UPDATE CASCADE;";
     $actual = mysql5_constraint::get_constraint_sql($fk);
     $this->assertEquals($expected, $actual);
 
-    $this->assertEquals("ALTER TABLE `test_self` DROP FOREIGN KEY `test_id_fk`, DROP INDEX `test_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
+    $this->assertEquals("ALTER TABLE `public`.`test_self` DROP FOREIGN KEY `test_id_fk`, DROP INDEX `test_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
 
     $dbs->schema->table[0]->column[1]['foreignColumn'] = 'other_id';
 
@@ -410,10 +410,10 @@ XML;
     );
     $this->assertEquals($expected, $unique);
 
-    $expected = "ALTER TABLE `test` ADD UNIQUE INDEX `test_unique` (`test_id`);";
+    $expected = "ALTER TABLE `public`.`test` ADD UNIQUE INDEX `test_unique` (`test_id`);";
     $this->assertEquals($expected, mysql5_constraint::get_constraint_sql($unique));
 
-    $expected = "ALTER TABLE `test` DROP INDEX `test_unique`;";
+    $expected = "ALTER TABLE `public`.`test` DROP INDEX `test_unique`;";
     $this->assertEquals($expected, mysql5_constraint::get_constraint_drop_sql($unique));
   }
 }

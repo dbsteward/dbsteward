@@ -120,7 +120,6 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
     </view>
   </schema>
 
-  <!-- should be ignored -->
   <schema name="hotel" owner="ROLE_OWNER">
     <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id" slonyId="1">
       <column name="rate_id" type="integer" null="false"/>
@@ -138,6 +137,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
 XML;
 
     $expected = <<<SQL
+CREATE DATABASE IF NOT EXISTS `public`;
 GRANT SELECT, UPDATE, DELETE ON * TO deployment;
 
 DROP FUNCTION IF EXISTS `a_function`;
@@ -284,11 +284,13 @@ VALUES
 
 GRANT SELECT, UPDATE, DELETE ON `__sequences` TO dbsteward_phpunit_app;
 
-ALTER TABLE `user` ADD PRIMARY KEY (`user_id`);
-ALTER TABLE `group` ADD PRIMARY KEY (`group_id`);
-ALTER TABLE `user` ADD UNIQUE INDEX `username_unq` (`username`);
-
-ALTER TABLE `user` ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `group` (`group_id`);
+ALTER TABLE `user`
+  ADD PRIMARY KEY (`user_id`);
+ALTER TABLE `group`
+  ADD PRIMARY KEY (`group_id`);
+ALTER TABLE `user`
+  ADD UNIQUE INDEX `username_unq` (`username`),
+  ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `group` (`group_id`);
 
 DROP TRIGGER IF EXISTS `__public_user_user_id_serial_trigger`;
 CREATE TRIGGER `__public_user_user_id_serial_trigger` BEFORE INSERT ON `user`
@@ -304,8 +306,27 @@ FOR EACH ROW EXECUTE xyz;
 
 CREATE OR REPLACE DEFINER = deployment SQL SECURITY DEFINER VIEW `a_view`
   AS SELECT * FROM user, group;
-SQL;
 
+CREATE DATABASE IF NOT EXISTS `hotel`;
+CREATE TABLE `rate` (
+  `rate_id` integer NOT NULL,
+  `rate_group_id` integer NOT NULL,
+  `rate_name` character varying(120),
+  `rate_value` numeric
+);
+CREATE TABLE `rate_group` (
+  `rate_group_id` integer NOT NULL,
+  `rate_group_name` character varying(100),
+  `rate_group_enabled` boolean NOT NULL DEFAULT true
+);
+ALTER TABLE `rate`
+  ADD PRIMARY KEY (`rate_id`);
+ALTER TABLE `rate_group`
+  ADD PRIMARY KEY (`rate_group_id`);
+ALTER TABLE `user`
+  ADD UNIQUE INDEX `username_unq` (`username`),
+  ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `group` (`group_id`);
+SQL;
 
     $dbs = new SimpleXMLElement($xml);
     $ofs = new mock_output_file_segmenter();
