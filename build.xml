@@ -101,6 +101,29 @@ http://dbsteward.org/
       </dependencies>
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
+
+      <changelog version="1.2.4" date="2013-03-26" license="Simplified BSD License">
+DBSteward 1.2.4 Release
+
+* pgsql8 updates:
+  - diff language create / drop bug
+* mysql5 updates:
+  - preserve ENUM case during extraction
+  - extract columns timestamp ON UPDATE configuration properly
+* General updates:
+  - Quoting of some reserved words in pgsql8 and mysql5
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
       
       <changelog version="1.2.3" date="2013-02-26" license="Simplified BSD License">
 DBSteward 1.2.3 Release
