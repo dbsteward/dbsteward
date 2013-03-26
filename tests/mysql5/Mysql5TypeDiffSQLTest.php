@@ -49,8 +49,8 @@ XML;
 XML;
 
     $this->common($old, $new, "-- found enum type enum_type. references to type enum_type will be replaced by ENUM('a','b','c')
-ALTER TABLE `table`
-  MODIFY COLUMN `enum_col` ENUM('a','b','c') /* TYPE change - table: table original: text new: ENUM('a','b','c') */;");
+ALTER TABLE `public`.`table`
+  MODIFY COLUMN `enum_col` ENUM('a','b','c');");
   }
 
   public function testDrop() {
@@ -76,8 +76,8 @@ XML;
 </schema>
 XML;
     $this->common($old, $new, "-- dropping enum type enum_type. references to type enum_type will be replaced with the type 'text'
-ALTER TABLE `table`
-  MODIFY COLUMN `enum_col` text /* TYPE change - table: table original: enum_type new: text */;");
+ALTER TABLE `public`.`table`
+  MODIFY COLUMN `enum_col` text;");
   }
 
   public function testChange() {
@@ -127,8 +127,8 @@ XML;
 XML;
 
     // change values in the enum. this should cause column modifications
-    $this->common($old, $new, "ALTER TABLE `table`
-  MODIFY COLUMN `enum_col` ENUM('x','y','z') /* TYPE change - table: table original: enum_type new: ENUM('x','y','z') */;");
+    $this->common($old, $new, "ALTER TABLE `public`.`table`
+  MODIFY COLUMN `enum_col` ENUM('x','y','z');");
   }
 
   private function common($xml_a, $xml_b, $expected, $message = NULL) {

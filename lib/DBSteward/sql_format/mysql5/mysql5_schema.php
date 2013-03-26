@@ -16,7 +16,13 @@ class mysql5_schema extends sql99_schema {
    * @return created SQL
    */
   public function get_creation_sql($node_schema) {
-    throw new exception('The MySQL driver currently doesn\'t support schemas other than public');
+    $name = mysql5::get_quoted_schema_name($node_schema['name']);
+    return "CREATE DATABASE IF NOT EXISTS $name;";
+  }
+
+  public function get_use_sql($node_schema) {
+    $name = mysql5::get_quoted_schema_name($node_schema['name']);
+    return "USE $name;";
   }
   
   /**
@@ -25,7 +31,8 @@ class mysql5_schema extends sql99_schema {
    * @return string
    */
   public function get_drop_sql($node_schema) {
-    throw new exception('The MySQL driver currently doesn\'t support dropping schemas');
+    $name = mysql5::get_quoted_schema_name($node_schema['name']);
+    return "DROP DATABASE IF EXISTS $name;";
   }
 
 }

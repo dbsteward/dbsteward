@@ -63,22 +63,22 @@ XML;
     
     // drop the PK with the auto-increment, then make the other column the PK
     $expected = <<<SQL
-ALTER TABLE `foo`
+ALTER TABLE `public`.`foo`
   MODIFY `fooID` int NOT NULL,
   DROP PRIMARY KEY;
-ALTER TABLE `foo`
+ALTER TABLE `public`.`foo`
   ADD PRIMARY KEY (`barID`);
 SQL;
-    $this->diff($a, $b, $expected, "ALTER TABLE `foo`\n  DROP COLUMN `fooID`;");
+    $this->diff($a, $b, $expected, "ALTER TABLE `public`.`foo`\n  DROP COLUMN `fooID`;");
 
     // add a new column, and make it PK with auto-increment
     $expected = <<<SQL
-ALTER TABLE `foo`
+ALTER TABLE `public`.`foo`
   DROP PRIMARY KEY;
-ALTER TABLE `foo`
+ALTER TABLE `public`.`foo`
   ADD COLUMN `fooID` int NOT NULL FIRST;
 
-ALTER TABLE `foo`
+ALTER TABLE `public`.`foo`
   ADD PRIMARY KEY (`fooID`),
   MODIFY `fooID` int NOT NULL AUTO_INCREMENT;
 SQL;

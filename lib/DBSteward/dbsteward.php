@@ -149,11 +149,11 @@ Slony utils
 Database definition extraction utilities
   --dbschemadump
   --dbdatadiff=<againstdatabase.xml> ...
-    --dbhost=<hostname>
-    --dbport=<TCP-port>
-    --dbname=<database_name>
-    --dbuser=<username>
-    --dbpassword=<password>
+  --dbhost=<hostname>
+  --dbport=<TCP-port>
+  --dbname=<database_name>              for mysql5, specify a comma-separated list of databases. e.g. --dbname=one,two,three
+  --dbuser=<username>
+  --dbpassword=<password>
 ";
     return $s;
   }

@@ -40,7 +40,7 @@ class mysql5_permission extends sql99_permission {
     switch ( $object_type ) {
       case 'SCHEMA':
         // all tables on current database, because no schemas
-        $object_name = '*';
+        $object_name = mysql5::get_quoted_schema_name($node_schema['name']). '.*';
         break;
       case 'VIEW':
         return "-- Ignoring permissions on view '{$node_object['name']}' because MySQL uses SQL SECURITY DEFINER semantics\n";
@@ -80,7 +80,7 @@ class mysql5_permission extends sql99_permission {
     if ($with_grant) {
       $privileges[] = "GRANT OPTION";
 
-      if ($objects != '*') {
+      if (substr($objects,-2) != '.*') {
         throw new Exception("Invalid object(s) $objects for GRANT OPTION privilege. GRANT OPTION can only be applied to schemas");
       }
     }
