@@ -44,7 +44,7 @@ class dbsteward {
 
   const DEFAULT_SQL_FORMAT = 'pgsql8';
   
-  protected static $sql_format = 'pgsql8';
+  protected static $sql_format = NULL;
 
   /**
    * set SQL formatting mode
@@ -413,17 +413,27 @@ Database definition extraction utilities
 
     ///// For the appropriate modes, composite the input XML
     ///// and figure out the SQL format of it
+    $force_sql_format = FALSE;
+    if (isset($options['sqlformat'])) {
+      $force_sql_format = $options['sqlformat'];
+    }
+
     $target_sql_format = FALSE;
     switch ($mode) {
       case dbsteward::MODE_BUILD:
         $files = (array)$options['xml'];
-        $output_prefix = dbsteward::get_output_prefix($files);
         dbsteward::console_line(1, "Compositing XML files..");
-        $db_doc = xml_parser::xml_composite($output_prefix, $files, $build_composite_file);
+        $db_doc = xml_parser::xml_composite($files);
+
         if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
+          $pg_data_files = (array)$options['pgdataxml'];
           dbsteward::console_line(1, "Compositing pgdata XML files on top of XML composite..");
-          xml_parser::xml_composite_pgdata($output_prefix, $db_doc, (array)$options['pgdataxml']);
+          xml_parser::xml_composite_pgdata($db_doc, $pg_data_files);
+          dbsteward::console_line(1, "postgres data XML files [" . implode(' ', $pg_data_files) . "] composited.");
         }
+
+        dbsteward::console_line(1, "XML files " . implode(' ', $files) . " composited");
+
         if (!empty($db_doc->database->sqlformat)) {
           $target_sql_format = (string)$db_doc->database->sqlformat;
         }
@@ -433,18 +443,22 @@ Database definition extraction utilities
         $old_files = (array)$options['oldxml'];
         $new_files = (array)$options['newxml'];
 
-
         dbsteward::console_line(1, "Compositing old XML files..");
-        $old_output_prefix = dbsteward::get_output_prefix($old_files);
-        $old_db_doc = xml_parser::xml_composite($old_output_prefix, $old_files, $old_composite_file);
+        $old_db_doc = xml_parser::xml_composite($old_files);
+
+        dbsteward::console_line(1, "Old XML files " . implode(' ', $old_files) . " composited");
 
         dbsteward::console_line(1, "Compositing new XML files..");
-        $new_output_prefix = dbsteward::get_output_prefix($new_files);
-        $new_db_doc = xml_parser::xml_composite($new_output_prefix, $new_files, $new_composite_file);
+        $new_db_doc = xml_parser::xml_composite($new_files);
+
         if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
+          $pg_data_files = (array)$options['pgdataxml'];
           dbsteward::console_line(1, "Compositing pgdata XML files on top of new XML composite..");
-          xml_parser::xml_composite_pgdata($new_output_prefix, $new_db_doc, (array)$options['pgdataxml']);
+          xml_parser::xml_composite_pgdata($new_db_doc, $pg_data_files);
+          dbsteward::console_line(1, "postgres data XML files [" . implode(' ', $pg_data_files) . "] composited");
         }
+
+        dbsteward::console_line(1, "New XML files " . implode(' ', $new_files) . " composited");
 
         // prefer the new sql_format
         if (!empty($new_db_doc->database->sqlformat)) {
@@ -455,67 +469,40 @@ Database definition extraction utilities
         }
         break;
     }
-
-    $force_sql_format = FALSE;
-    if (isset($options['sqlformat'])) {
-      $force_sql_format = $options['sqlformat'];
-    }
-
-    if ($target_sql_format !== FALSE) {
-      if ($force_sql_format !== FALSE) {
-        if (strcasecmp($target_sql_format, $force_sql_format) == 0) {
-          $use_sql_format = $target_sql_format;
-        }
-        else {
-          dbsteward::console_line(1, "WARNING: XML is targeted for $target_sql_format, but you are forcing $force_sql_format. Things will probably break!");
-          $use_sql_format = $force_sql_format;
-        }
-      }
-      else {
-        // not forcing a sql_format, use target
-        dbsteward::console_line(1, "XML file(s) are targeted for sqlformat=$target_sql_format");
-        $use_sql_format = $target_sql_format;
-      }
-    }
-    elseif ($force_sql_format !== FALSE) {
-      $use_sql_format = $force_sql_format;
-    }
-    else {
-      $use_sql_format = dbsteward::DEFAULT_SQL_FORMAT;
-    }
     
     ///// set the global SQL format
-    dbsteward::console_line(1, "Using sqlformat=$use_sql_format");
-    dbsteward::set_sql_format($use_sql_format);
+    $sql_format = dbsteward::reconcile_sql_format($target_sql_format, $force_sql_format);
+    dbsteward::console_line(1, "Using sqlformat=$sql_format");
+    dbsteward::set_sql_format($sql_format);
 
     ///// sql_format-specific default options
     $dbport = FALSE;
-    if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') == 0) {
+    if (strcasecmp($sql_format, 'pgsql8') == 0) {
       dbsteward::$create_languages = TRUE;
       dbsteward::$quote_schema_names = FALSE;
       dbsteward::$quote_table_names = FALSE;
       dbsteward::$quote_column_names = FALSE;
       $dbport = '5432';
     }
-    else if (strcasecmp(dbsteward::get_sql_format(), 'mssql10') == 0) {
+    else if (strcasecmp($sql_format, 'mssql10') == 0) {
       // needed for MSSQL keyword-named-columns like system_user
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;
       $dbport = '1433';
     }
-    else if (strcasecmp(dbsteward::get_sql_format(), 'mysql5') == 0) {
+    else if (strcasecmp($sql_format, 'mysql5') == 0) {
       dbsteward::$quote_schema_names = TRUE;
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;
       $dbport = '3306';
     }
-    else if (strcasecmp(dbsteward::get_sql_format(), 'oracle10g') == 0) {
+    else if (strcasecmp($sql_format, 'oracle10g') == 0) {
       dbsteward::$quote_schema_names = TRUE;
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;
     }
     
-    if (strcasecmp(dbsteward::get_sql_format(), 'pgsql8') != 0) {
+    if (strcasecmp($sql_format, 'pgsql8') != 0) {
       if (isset($options['pgdataxml'])) {
         dbsteward::console_line(0, "pgdataxml parameter is not supported by " . dbsteward::get_sql_format() . " driver");
         exit(1);
@@ -536,10 +523,28 @@ Database definition extraction utilities
         break;
 
       case dbsteward::MODE_BUILD:
+        $output_prefix = dbsteward::get_output_prefix($files);
+        $composite_file = $output_prefix . '_composite.xml';
+        $db_doc = xml_parser::sql_format_convert($db_doc);
+        xml_parser::vendor_parse($db_doc);
+        xml_parser::save_composited($composite_file, $db_doc);
+
         format::build($output_prefix, $db_doc);
         break;
 
       case dbsteward::MODE_DIFF:
+        $old_output_prefix = dbsteward::get_output_prefix($old_files);
+        $old_composite_file = $old_output_prefix . '_composite.xml';
+        $old_db_doc = xml_parser::sql_format_convert($old_db_doc);
+        xml_parser::vendor_parse($old_db_doc);
+        xml_parser::save_composited($old_composite_file, $old_db_doc);
+
+        $new_output_prefix = dbsteward::get_output_prefix($new_files);
+        $new_composite_file = $new_output_prefix . '_composite.xml';
+        $new_db_doc = xml_parser::sql_format_convert($new_db_doc);
+        xml_parser::vendor_parse($new_db_doc);
+        xml_parser::save_composited($new_composite_file, $new_db_doc);
+
         format::build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $new_output_prefix, $new_composite_file, $new_db_doc);
         break;
 
@@ -592,6 +597,32 @@ Database definition extraction utilities
   public static function get_output_prefix($files) {
     $files = (array)$files;
     return dirname($files[0]) . '/' . basename($files[0], '.xml');
+  }
+
+  public static function reconcile_sql_format($target, $requested) {
+    if ($target !== FALSE) {
+      if ($requested !== FALSE) {
+        if (strcasecmp($target, $requested) == 0) {
+          $use_sql_format = $target;
+        }
+        else {
+          dbsteward::console_line(1, "WARNING: XML is targeted for $target, but you are forcing $requested. Things will probably break!");
+          $use_sql_format = $requested;
+        }
+      }
+      else {
+        // not forcing a sql_format, use target
+        dbsteward::console_line(1, "XML file(s) are targeted for sqlformat=$target");
+        $use_sql_format = $target;
+      }
+    }
+    elseif ($requested !== FALSE) {
+      $use_sql_format = $requested;
+    }
+    else {
+      $use_sql_format = dbsteward::DEFAULT_SQL_FORMAT;
+    }
+    return $use_sql_format;
   }
 
   public static function cmd($command, $error_fatal = TRUE) {
