@@ -527,7 +527,8 @@ Database definition extraction utilities
         $composite_file = $output_prefix . '_composite.xml';
         $db_doc = xml_parser::sql_format_convert($db_doc);
         xml_parser::vendor_parse($db_doc);
-        xml_parser::save_composited($composite_file, $db_doc);
+        dbsteward::console_line(1, "Saving as " . $composite_file);
+        xml_parser::save_doc($composite_file, $db_doc);
 
         format::build($output_prefix, $db_doc);
         break;
@@ -537,13 +538,15 @@ Database definition extraction utilities
         $old_composite_file = $old_output_prefix . '_composite.xml';
         $old_db_doc = xml_parser::sql_format_convert($old_db_doc);
         xml_parser::vendor_parse($old_db_doc);
-        xml_parser::save_composited($old_composite_file, $old_db_doc);
+        dbsteward::console_line(1, "Saving as " . $old_composite_file);
+        xml_parser::save_doc($old_composite_file, $old_db_doc);
 
         $new_output_prefix = dbsteward::get_output_prefix($new_files);
         $new_composite_file = $new_output_prefix . '_composite.xml';
         $new_db_doc = xml_parser::sql_format_convert($new_db_doc);
         xml_parser::vendor_parse($new_db_doc);
-        xml_parser::save_composited($new_composite_file, $new_db_doc);
+        dbsteward::console_line(1, "Saving as " . $new_composite_file);
+        xml_parser::save_doc($new_composite_file, $new_db_doc);
 
         format::build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $new_output_prefix, $new_composite_file, $new_db_doc);
         break;
@@ -594,11 +597,33 @@ Database definition extraction utilities
     }
   }
 
+  /**
+   * Convenience function to get the directory and extensionless basename of the first of a list of files
+   *
+   * @param array|string $files
+   * @return string
+   */
   public static function get_output_prefix($files) {
     $files = (array)$files;
     return dirname($files[0]) . '/' . basename($files[0], '.xml');
   }
 
+  /**
+   * Given an (optional) target sql format, and (optional) requested sql format,
+   * determine what sql format to use.
+   *
+   * The logic below should be fairly straight-forward, but here's an English version:
+   *   * The "target" format is what the XML says it's targeted for
+   *   * The "requested" format is what the user requested on the command line
+   *   * If both are present and agree, there are no problems
+   *   * If both are present and disagree, warn the user and go with the requested
+   *   * If one is missing, go with the given one
+   *   * If both are missing, go with dbsteward::DEFAULT_SQL_FORMAT
+   *
+   * @param string $target
+   * @param string $requested
+   * @return string
+   */
   public static function reconcile_sql_format($target, $requested) {
     if ($target !== FALSE) {
       if ($requested !== FALSE) {

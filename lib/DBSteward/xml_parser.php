@@ -127,6 +127,13 @@ class xml_parser {
     return $composite;
   }
 
+  /**
+   * Looks for a sql-format specific xml parser (mysql5_xml_parser, pgsql8_xml_parser, etc),
+   * attempts to load it, and processes the XML document with it
+   *
+   * @param SimpleXMLElement $doc
+   * @return void
+   */
   public static function vendor_parse($doc) {
     $vendor_parser = dbsteward::get_sql_format() . '_xml_parser';
     if (class_exists($vendor_parser)) {
@@ -903,11 +910,6 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     }    
   }
 
-  public static function save_composited($composite_file, $doc) {
-    dbsteward::console_line(1, "Saving as " . $composite_file);
-    file_put_contents($composite_file, xml_parser::format_xml($doc->saveXML()));
-  }
-
   /**
    * that's right. perform magic on strings intended for SimpleXMLNode's that may contain explicit ampersands
    *
@@ -1176,6 +1178,10 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     $dom_doc->formatOutput = TRUE;
     $dom_doc->loadXML($xml);
     return $dom_doc->saveXML();
+  }
+
+  public static function save_doc($file_name, $doc) {
+    return self::save_xml($file_name, $doc->saveXML());
   }
 
   public static function save_xml($file_name, $xml) {
