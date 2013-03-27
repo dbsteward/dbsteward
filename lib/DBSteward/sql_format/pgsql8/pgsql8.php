@@ -236,19 +236,7 @@ class pgsql8 extends sql99 {
     return $value;
   }
 
-  public static function build($files, $pgdatafiles = array()) {
-    if (!is_array($files)) {
-      $files = array($files);
-    }
-    if (!is_array($pgdatafiles)) {
-      $pgdatafiles = array($pgdatafiles);
-    }
-    $output_prefix = dirname($files[0]) . '/' . substr(basename($files[0]), 0, -4);
-    $db_doc = xml_parser::xml_composite($output_prefix, $files, $build_composite_file);
-    if (count($pgdatafiles) > 0) {
-      xml_parser::xml_composite_pgdata($output_prefix, $db_doc, $pgdatafiles);
-    }
-
+  public static function build($output_prefix, $db_doc) {
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';
     dbsteward::console_line(1, "Building complete file " . $build_file);
@@ -712,28 +700,7 @@ class pgsql8 extends sql99 {
     return $max_slony_id + 1;
   }
 
-  public function build_upgrade($old_files, $new_files, $pgdatafiles = array()) {
-    if (!is_array($old_files)) {
-      $old_files = array($old_files);
-    }
-    if (!is_array($new_files)) {
-      $new_files = array($new_files);
-    }
-    if (!is_array($pgdatafiles)) {
-      $pgdatafiles = array($pgdatafiles);
-    }
-    dbsteward::console_line(1, "Compositing old XML files..");
-    $old_output_prefix = dirname($old_files[0]) . '/' . substr(basename($old_files[0]), 0, -4);
-    $old_db_doc = xml_parser::xml_composite($old_output_prefix, $old_files, $old_composite_file);
-
-    dbsteward::console_line(1, "Compositing new XML files..");
-    $new_output_prefix = dirname($new_files[0]) . '/' . substr(basename($new_files[0]), 0, -4);
-    $new_db_doc = xml_parser::xml_composite($new_output_prefix, $new_files, $new_composite_file);
-    if (count($pgdatafiles) > 0) {
-      dbsteward::console_line(1, "Compositing pgdata XML files ontop of new XML composite..");
-      xml_parser::xml_composite_pgdata($new_output_prefix, $new_db_doc, $pgdatafiles);
-    }
-
+  public function build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $new_output_prefix, $new_composite_file, $new_db_doc) {
     // place the upgrade files with the new_files set
     $upgrade_prefix = dirname($new_output_prefix) . '/upgrade';
 
@@ -1204,6 +1171,7 @@ class pgsql8 extends sql99 {
     // set the document to contain the passed db host, name, etc to meet the DTD and for reference
     $node_database = $doc->addChild('database');
     $node_database->addChild('host', $host);
+    $node_database->addChild('sqlformat', 'pgsql8');
     $node_database->addChild('name', $database);
     $node_role = $node_database->addChild('role');
     $node_role->addChild('application', $user);
