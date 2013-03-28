@@ -23,13 +23,11 @@ class xml_parser {
    *
    * @return string    XML files contents, composited
    */
-  public static function xml_composite($output_prefix, $files, &$composite_file) {
-    $file_list = '';
+  public static function xml_composite($files) {
     $composite = new SimpleXMLElement('<dbsteward></dbsteward>');
 
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
-      $file_list .= $file_name . ' ';
       dbsteward::console_line(1, "Loading XML " . realpath($file_name) . "..");
       $xml_contents = file_get_contents($file_name);
       if ($xml_contents === FALSE) {
@@ -40,7 +38,6 @@ class xml_parser {
         throw new Exception("failed to simplexml_load_string() contents of " . $file_name);
       }
       $doc = xml_parser::expand_tabrow_data($doc);
-      $doc = xml_parser::sql_format_convert($doc);
       $xml_contents = $doc->saveXML();
 
       // only validate the first composite in the chain before composite has been completed
@@ -127,17 +124,21 @@ class xml_parser {
       self::validate_xml(self::format_xml($composite->saveXML()));
     }
 
+    return $composite;
+  }
+
+  /**
+   * Looks for a sql-format specific xml parser (mysql5_xml_parser, pgsql8_xml_parser, etc),
+   * attempts to load it, and processes the XML document with it
+   *
+   * @param SimpleXMLElement $doc
+   * @return void
+   */
+  public static function vendor_parse($doc) {
     $vendor_parser = dbsteward::get_sql_format() . '_xml_parser';
     if (class_exists($vendor_parser)) {
       $vendor_parser::process($composite);
     }
-    
-    $composite_file = $output_prefix . '_composite.xml';
-    dbsteward::console_line(1, "XML files " . $file_list . " composited");
-    dbsteward::console_line(1, "Saving as " . $composite_file);
-    file_put_contents($composite_file, self::format_xml($composite->saveXML()));
-
-    return $composite;
   }
 
   public static function xml_composite_children(&$base, &$overlay) {
@@ -846,11 +847,8 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     </megatrain_nkiraly>
     /**/
 
-    $file_list = '';
-
     foreach ($pgdatafiles AS $file) {
       $file_name = realpath($file);
-      $file_list .= $file_name . ' ';
       dbsteward::console_line(1, "Loading postgres data XML " . $file_name);
       $xml_contents = file_get_contents($file_name);
       if ($xml_contents === FALSE) {
@@ -909,11 +907,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
 
       // revalidate composited xml
       self::validate_xml($base->asXML());
-    }
-
-    $composite_file = $output_prefix . '_composite.xml';
-    dbsteward::console_line(1, "postgres data XML files [" . $file_list . "] composited. Saving as " . $composite_file);
-    xml_parser::save_xml($composite_file, $base->saveXML());
+    }    
   }
 
   /**
@@ -1184,6 +1178,10 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     $dom_doc->formatOutput = TRUE;
     $dom_doc->loadXML($xml);
     return $dom_doc->saveXML();
+  }
+
+  public static function save_doc($file_name, $doc) {
+    return self::save_xml($file_name, $doc->saveXML());
   }
 
   public static function save_xml($file_name, $xml) {
