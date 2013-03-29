@@ -137,7 +137,7 @@ class xml_parser {
   public static function vendor_parse($doc) {
     $vendor_parser = dbsteward::get_sql_format() . '_xml_parser';
     if (class_exists($vendor_parser)) {
-      $vendor_parser::process($composite);
+      $vendor_parser::process($doc);
     }
   }
 
