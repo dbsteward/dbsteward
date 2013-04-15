@@ -418,62 +418,30 @@ Database definition extraction utilities
       $force_sql_format = $options['sqlformat'];
     }
 
-    $target_sql_format = FALSE;
     switch ($mode) {
       case dbsteward::MODE_BUILD:
         $files = (array)$options['xml'];
-        dbsteward::console_line(1, "Compositing XML files..");
-        $db_doc = xml_parser::xml_composite($files);
 
-        if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
-          $pg_data_files = (array)$options['pgdataxml'];
-          dbsteward::console_line(1, "Compositing pgdata XML files on top of XML composite..");
-          xml_parser::xml_composite_pgdata($db_doc, $pg_data_files);
-          dbsteward::console_line(1, "postgres data XML files [" . implode(' ', $pg_data_files) . "] composited.");
-        }
-
-        dbsteward::console_line(1, "XML files " . implode(' ', $files) . " composited");
-
-        if (!empty($db_doc->database->sqlformat)) {
-          $target_sql_format = (string)$db_doc->database->sqlformat;
-        }
+        $target_sql_format = xml_parser::get_sql_format($files);
         break;
 
       case dbsteward::MODE_DIFF:
         $old_files = (array)$options['oldxml'];
         $new_files = (array)$options['newxml'];
 
-        dbsteward::console_line(1, "Compositing old XML files..");
-        $old_db_doc = xml_parser::xml_composite($old_files);
-
-        dbsteward::console_line(1, "Old XML files " . implode(' ', $old_files) . " composited");
-
-        dbsteward::console_line(1, "Compositing new XML files..");
-        $new_db_doc = xml_parser::xml_composite($new_files);
-
-        if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
-          $pg_data_files = (array)$options['pgdataxml'];
-          dbsteward::console_line(1, "Compositing pgdata XML files on top of new XML composite..");
-          xml_parser::xml_composite_pgdata($new_db_doc, $pg_data_files);
-          dbsteward::console_line(1, "postgres data XML files [" . implode(' ', $pg_data_files) . "] composited");
-        }
-
-        dbsteward::console_line(1, "New XML files " . implode(' ', $new_files) . " composited");
+        $old_target = xml_parser::get_sql_format($old_files);
+        $new_target = xml_parser::get_sql_format($new_files);
 
         // prefer the new sql_format
-        if (!empty($new_db_doc->database->sqlformat)) {
-          $target_sql_format = (string)$new_db_doc->database->sqlformat;
-        }
-        elseif (!empty($old_db_doc->database->sqlformat)) {
-          $target_sql_format = (string)$old_db_doc->database->sqlformat;
-        }
+        $target_sql_format = $new_target ?: $old_target;
         break;
     }
-    
+
     ///// set the global SQL format
     $sql_format = dbsteward::reconcile_sql_format($target_sql_format, $force_sql_format);
     dbsteward::console_line(1, "Using sqlformat=$sql_format");
     dbsteward::set_sql_format($sql_format);
+
 
     ///// sql_format-specific default options
     $dbport = FALSE;
@@ -523,6 +491,18 @@ Database definition extraction utilities
         break;
 
       case dbsteward::MODE_BUILD:
+        dbsteward::console_line(1, "Compositing XML files..");
+        $db_doc = xml_parser::xml_composite($files);
+
+        if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
+          $pg_data_files = (array)$options['pgdataxml'];
+          dbsteward::console_line(1, "Compositing pgdata XML files on top of XML composite..");
+          xml_parser::xml_composite_pgdata($db_doc, $pg_data_files);
+          dbsteward::console_line(1, "postgres data XML files [" . implode(' ', $pg_data_files) . "] composited.");
+        }
+
+        dbsteward::console_line(1, "XML files " . implode(' ', $files) . " composited");
+
         $output_prefix = dbsteward::get_output_prefix($files);
         $composite_file = $output_prefix . '_composite.xml';
         $db_doc = xml_parser::sql_format_convert($db_doc);
@@ -534,6 +514,23 @@ Database definition extraction utilities
         break;
 
       case dbsteward::MODE_DIFF:
+        dbsteward::console_line(1, "Compositing old XML files..");
+        $old_db_doc = xml_parser::xml_composite($old_files);
+
+        dbsteward::console_line(1, "Old XML files " . implode(' ', $old_files) . " composited");
+
+        dbsteward::console_line(1, "Compositing new XML files..");
+        $new_db_doc = xml_parser::xml_composite($new_files);
+
+        if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
+          $pg_data_files = (array)$options['pgdataxml'];
+          dbsteward::console_line(1, "Compositing pgdata XML files on top of new XML composite..");
+          xml_parser::xml_composite_pgdata($new_db_doc, $pg_data_files);
+          dbsteward::console_line(1, "postgres data XML files [" . implode(' ', $pg_data_files) . "] composited");
+        }
+
+        dbsteward::console_line(1, "New XML files " . implode(' ', $new_files) . " composited");
+
         $old_output_prefix = dbsteward::get_output_prefix($old_files);
         $old_composite_file = $old_output_prefix . '_composite.xml';
         $old_db_doc = xml_parser::sql_format_convert($old_db_doc);
@@ -548,7 +545,7 @@ Database definition extraction utilities
         dbsteward::console_line(1, "Saving as " . $new_composite_file);
         xml_parser::save_doc($new_composite_file, $new_db_doc);
 
-        format::build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $new_output_prefix, $new_composite_file, $new_db_doc);
+        format::build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $old_files, $new_output_prefix, $new_composite_file, $new_db_doc, $new_files);
         break;
 
       case dbsteward::MODE_EXTRACT:

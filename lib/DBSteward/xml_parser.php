@@ -15,6 +15,31 @@ class xml_parser {
   }
 
   /**
+   * Find the correct sql_format based on the content of the $files passed in
+   *
+   * @param array $files
+   * @return bool|string
+   */
+  public static function get_sql_format($files) {
+    foreach ($files as $file) {
+      $xml_contents = file_get_contents($file);
+      if ($xml_contents === FALSE) {
+        throw new exception("Failed to load XML from disk: " . $file_name);
+      }
+
+      $doc = simplexml_load_string($xml_contents);
+      if ($doc === FALSE) {
+        throw new Exception("failed to simplexml_load_string() contents of " . $file_name);
+      }
+
+      if (!empty($doc->database->sqlformat)) {
+        return (string)$doc->database->sqlformat;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
    * Composite a list of XML files into one dbsteward definition
    * @NOTICE: only 'base' XML files, those listed in the $files list should contain includeFile entries
    *
