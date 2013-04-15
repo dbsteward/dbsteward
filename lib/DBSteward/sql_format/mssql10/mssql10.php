@@ -251,7 +251,7 @@ class mssql10 {
     $ofs->write("\n");
   }
 
-  public function build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $new_output_prefix, $new_composite_file, $new_db_doc) {
+  public function build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $old_files, $new_output_prefix, $new_composite_file, $new_db_doc, $new_files) {
     // place the upgrade files with the new_files set
     $upgrade_prefix = dirname($new_output_prefix) . '/upgrade';
 
