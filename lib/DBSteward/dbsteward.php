@@ -545,7 +545,7 @@ Database definition extraction utilities
         dbsteward::console_line(1, "Saving as " . $new_composite_file);
         xml_parser::save_doc($new_composite_file, $new_db_doc);
 
-        format::build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $new_output_prefix, $new_composite_file, $new_db_doc);
+        format::build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $old_files, $new_output_prefix, $new_composite_file, $new_db_doc, $new_files);
         break;
 
       case dbsteward::MODE_EXTRACT:
