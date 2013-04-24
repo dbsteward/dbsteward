@@ -91,9 +91,9 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   
   protected function build_db_pgsql8() {
     $this->apply_options_pgsql8();
-    
+
     // build the DDL first, incase dbsteward code wants to throw about something
-    pgsql8::build($this->xml_file_a);
+    pgsql8::build($this->output_prefix, simplexml_load_file($this->xml_file_a));
     
     $this->pgsql8->create_db();
 
