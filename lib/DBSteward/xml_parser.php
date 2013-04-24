@@ -48,8 +48,13 @@ class xml_parser {
    *
    * @return string    XML files contents, composited
    */
-  public static function xml_composite($files) {
+  public static function xml_composite($files, $xml_collect_data_addendums, &$addendums_doc) {
     $composite = new SimpleXMLElement('<dbsteward></dbsteward>');
+
+    if ($xml_collect_data_addendums > 0) {
+      $addendums_doc = new SimpleXMLElement('<dbsteward></dbsteward>');
+      $start_addendums_idx = count($files) - $xml_collect_data_addendums;
+    }
 
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
@@ -143,7 +148,12 @@ class xml_parser {
       }
 
       // includes done, now put $doc values in, to allow definer to overwrite included file values at the same level
-      self::xml_composite_children($composite, $doc);
+      if ($addendums_doc != NULL && $i >= $start_addendums_idx) {
+        self::xml_composite_children($composite, $doc, $addendums_doc);
+      }
+      else {
+        self::xml_composite_children($composite, $doc);
+      }
 
       // revalidate composited xml
       self::validate_xml(self::format_xml($composite->saveXML()));
@@ -166,7 +176,7 @@ class xml_parser {
     }
   }
 
-  public static function xml_composite_children(&$base, &$overlay) {
+  public static function xml_composite_children(&$base, &$overlay, &$addendum = NULL) {
     // overlay elements found in the overlay node
     foreach ($overlay->children() AS $child) {
       // always reset the base relative node to null to prevent loop carry-over
@@ -308,6 +318,10 @@ class xml_parser {
       // rows entries - add when doesn't exist, merge when they do
       else if (strcasecmp($tag_name, 'rows') == 0) {
         self::data_rows_overlay($base, $child);
+        if ($addendum !== NULL) {
+          $rows = simplexml_load_string($child->asXML());
+          self::xml_join($addendum, $rows);
+        }
         // continue the loop so the rows element isn't recursed into below
         continue;
       }
@@ -385,9 +399,30 @@ class xml_parser {
         }
       }
 
+      // if we're collecting addendums, make sure we add any schemas and tables to the addendum doc
+      $node2 = NULL;
+      if ($addendum !== NULL) {
+        $tag = $node->getName();
+        if (strcasecmp($node->getName(), 'schema') == 0 || strcasecmp($node->getName(), 'table') == 0) {
+          $name = (string)$node['name'];
+          $nodes = $addendum->xpath("{$tag}[@name='{$name}']");
+          if (count($nodes) == 0) {
+            $node2 = $addendum->addChild($node->getName());
+            // for the addendum, we only need the name attribute
+            $node2->addAttribute('name', $node['name']);
+          }
+          else if (count($nodes) == 1) {
+            $node2 = $nodes[0];
+          }
+          else {
+            throw new exception("More than one $tag by name $name!? Panic!");
+          }
+        }
+      }
+
       // recurse if child has children
       if (count($child->children()) > 0) {
-        self::xml_composite_children($node, $child);
+        self::xml_composite_children($node, $child, $node2);
       }
     }
 
@@ -402,6 +437,24 @@ class xml_parser {
     }
 
     return TRUE;
+  }
+
+  // simple utility for recursive copying/joining of SimpleXMLNodes
+  // see http://www.php.net/manual/en/class.simplexmlelement.php#102361
+  private static function xml_join($root, $append) {
+    if ($append) {
+      if (strlen(trim((string) $append))==0) {
+        $xml = $root->addChild($append->getName());
+        foreach($append->children() as $child) {
+          self::xml_join($xml, $child);
+        }
+      } else {
+        $xml = $root->addChild($append->getName(), (string) $append);
+      }
+      foreach($append->attributes() as $n => $v) {
+        $xml->addAttribute($n, $v);
+      }
+    }
   }
 
   public static function data_rows_overlay(&$base, &$child) {

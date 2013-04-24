@@ -89,6 +89,7 @@ class dbsteward {
   public static $only_data_sql = FALSE;
   public static $limit_to_tables = array();
   public static $single_stage_upgrade = FALSE;
+
   /**
    * Should old*Name attributes be validated and traced out, or ignored?
    */
@@ -145,6 +146,7 @@ XML utilities
   --xmlsort=<database.xml> ...
   --xmlconvert=<database.xml> ...
   --xmldatainsert=<tabledata.xml>
+  --xmlcollectdataaddendums=N       collect the last N xml files specified during a build into an aggregate file
 ";
     return $s;
   }
@@ -210,7 +212,8 @@ Database definition extraction utilities
       "ignoreprimarykeyerrors::",
       "dbdatadiff::",
       "xmlsort::",
-      "xmlconvert::"
+      "xmlconvert::",
+      "xmlcollectdataaddendums::"
     );
     $options = getopt($short_opts, $long_opts);
     //var_dump($options); die('dieoptiondump');
@@ -436,6 +439,17 @@ Database definition extraction utilities
         $target_sql_format = $new_target ?: $old_target;
         break;
     }
+    
+    $xml_collect_data_addendums = 0;
+    if (isset($options["xmlcollectdataaddendums"]) && $options["xmlcollectdataaddendums"] > 0) {
+      $xml_collect_data_addendums = (integer)$options["xmlcollectdataaddendums"];
+      if ($mode != dbsteward::MODE_BUILD) {
+        throw new Exception("--xmlcollectdataaddendums is only supported for fresh builds");
+      }
+      if ($xml_collect_data_addendums > count($files)) {
+        throw new Exception("Cannot collect more data addendums then files provided");
+      }
+    }
 
     ///// set the global SQL format
     $sql_format = dbsteward::reconcile_sql_format($target_sql_format, $force_sql_format);
@@ -492,7 +506,11 @@ Database definition extraction utilities
 
       case dbsteward::MODE_BUILD:
         dbsteward::console_line(1, "Compositing XML files..");
-        $db_doc = xml_parser::xml_composite($files);
+        $addendums_doc = NULL;
+        if ($xml_collect_data_addendums > 0) {
+          dbsteward::console_line(1, "Collecting $xml_collect_data_addendums data addendums");
+        }
+        $db_doc = xml_parser::xml_composite($files, $xml_collect_data_addendums, &$addendums_doc);
 
         if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
           $pg_data_files = (array)$options['pgdataxml'];
@@ -509,6 +527,12 @@ Database definition extraction utilities
         xml_parser::vendor_parse($db_doc);
         dbsteward::console_line(1, "Saving as " . $composite_file);
         xml_parser::save_doc($composite_file, $db_doc);
+
+        if ($addendums_doc !== NULL) {
+          $addendums_file = $output_prefix . '_addendums.xml';
+          dbsteward::console_line(1, "Saving addendums as $addendums_file");
+          xml_parser::save_doc($addendums_file, $addendums_doc);
+        }
 
         format::build($output_prefix, $db_doc);
         break;
