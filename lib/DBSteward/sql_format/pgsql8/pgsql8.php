@@ -1192,8 +1192,11 @@ class pgsql8 extends sql99 {
       WHERE schemaname NOT IN ('information_schema', 'pg_catalog')
       ORDER BY schemaname, tablename;";
     $rs = pgsql8_db::query($sql);
+    $sequence_cols = array();
     while (($row = pg_fetch_assoc($rs)) !== FALSE) {
+
       dbsteward::console_line(3, "Analyze table options " . $row['schemaname'] . "." . $row['tablename']);
+
       // schemaname     |        tablename        | tableowner | tablespace | hasindexes | hasrules | hastriggers
       // create the schema if it is missing
       $nodes = $doc->xpath("schema[@name='" . $row['schemaname'] . "']");
@@ -1260,7 +1263,7 @@ class pgsql8 extends sql99 {
           // type int or bigint
           // is_nullable = NO
           // column_default starts with nextval and contains iq_seq
-          if ((strcasecmp('int', $col_row['data_type']) == 0 || strcasecmp('bigint', $col_row['data_type']) == 0)
+          if ((strcasecmp('integer', $col_row['data_type']) == 0 || strcasecmp('bigint', $col_row['data_type']) == 0)
             && strcasecmp($col_row['is_nullable'], 'NO') == 0
             && (stripos($col_row['column_default'], 'nextval') === 0 && stripos($col_row['column_default'], '_seq') !== FALSE)) {
             $col_type = 'serial';
@@ -1268,6 +1271,9 @@ class pgsql8 extends sql99 {
               $col_type = 'bigserial';
             }
             $node_column->addAttribute('type', $col_type);
+
+            $seq_name = explode("'", $col_row['column_default']);
+            $sequence_cols[] = $seq_name[1];
 
             // hmm, this is taken care of by the constraint iterator
             //$node_table->addAttribute('primaryKey', $col_row['column_name']);
@@ -1324,6 +1330,47 @@ class pgsql8 extends sql99 {
       else {
         // complain if it is found, it should have been
         throw new exception("table " . $row['schemaname'] . '.' . $row['tablename'] . " already defined in XML object -- unexpected");
+      }
+    }
+
+    $schemas = &dbx::get_schemas($doc);
+    foreach ($sequence_cols as $idx => $seq_col) {
+      $seq_col = "'" . $seq_col . "'";
+      $sequence_cols[$idx] = $seq_col;
+    }    
+    $sequence_str = implode(',', $sequence_cols);
+
+    foreach ($schemas as $schema) {
+      dbsteward::console_line(3, "Analyze isolated sequences in schema " . $schema['name']);
+      // filter by sequences we've defined as part of a table already
+      // and get the owner of each sequence
+      $seq_list_sql = "
+        SELECT s.relname, r.rolname
+          FROM pg_statio_all_sequences s
+          JOIN pg_class c ON (s.relname = c.relname)
+          JOIN pg_roles r ON (c.relowner = r.oid)
+          WHERE schemaname = '" . $schema['name'] . "' AND s.relname NOT IN (" .
+          $sequence_str . ");";
+      $seq_list_rs = pgsql8_db::query($seq_list_sql);
+
+      while (($seq_list_row = pg_fetch_assoc($seq_list_rs)) !== FALSE) {
+        $seq_sql = "SELECT cache_value, start_value, min_value, max_value, 
+                    increment_by, is_cycled FROM " . $schema['name'] . "." . $seq_list_row['relname'] . ";";
+        $seq_rs = pgsql8_db::query($seq_sql);
+        while (($seq_row = pg_fetch_assoc($seq_rs)) !== FALSE) {
+          $nodes = $schema->xpath("sequence[@name='" . $seq_list_row['relname'] . "']");
+          if (count($nodes) == 0) {
+            $node_sequence = $schema->addChild('sequence');
+            $node_sequence->addAttribute('name', $seq_list_row['relname']);
+            $node_sequence->addAttribute('owner', $seq_list_row['rolname']);
+            $node_sequence->addAttribute('cache', $seq_row['cache_value']);
+            $node_sequence->addAttribute('start', $seq_row['start_value']);
+            $node_sequence->addAttribute('min', $seq_row['min_value']);
+            $node_sequence->addAttribute('max', $seq_row['max_value']);
+            $node_sequence->addAttribute('inc', $seq_row['increment_by']);
+            $node_sequence->addAttribute('cycle', $seq_row['is_cycled'] === 't' ? 'true' : 'false');
+          }
+        }
       }
     }
 
@@ -1688,6 +1735,42 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         $node_grant['with'] = 'GRANT';
       }
     }
+
+    // analyze sequence grants and assign those to the xml document as well
+    dbsteward::console_line(3, "Analyze isolated sequence permissions ");
+    foreach ($schemas as $schema) {
+      $sequences = &dbx::get_sequences($schema);
+      foreach ($sequences as $sequence) {
+        $seq_name = $sequence['name'];
+        $grant_sql = "SELECT relacl FROM pg_class WHERE relname = '" . $seq_name . "';";
+        $grant_rc = pgsql8_db::query($grant_sql);
+        while (($grant_row = pg_fetch_assoc($grant_rc)) !== FALSE) {
+          // privileges for unassociated sequences are not listed in 
+          // information_schema.sequences; i think this is probably the most
+          // accurate way to get sequence-level grants
+          if ($grant_row['relacl'] === NULL) {
+            continue;
+          }
+          $grant_perm = self::parse_sequence_relacl($grant_row['relacl']);
+          foreach ($grant_perm as $user => $perms) {
+            foreach ($perms as $perm) {
+              $nodes = $sequence->xpath("grant[@role='" . self::translate_role_name($user) . "']");
+              if (count($nodes) == 0) {
+                $node_grant = $sequence->addChild('grant');
+                $node_grant->addAttribute('role', self::translate_role_name($user));
+                $node_grant->addAttribute('operation', $perm);
+              }
+              else {
+                $node_grant = $nodes[0];
+                // add to the when if the trigger already exists
+                $node_grant['operation'] .= ', ' . $perm;
+              }
+            }
+          }
+
+        }
+      }
+    }
     
     // scan all now defined tables
     $schemas = & dbx::get_schemas($doc);
@@ -1725,6 +1808,70 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     xml_parser::validate_xml($doc->asXML());
     return xml_parser::format_xml($doc->saveXML());
   }
+
+  /**
+   * Parse the relacl entry from pg_class into users and their associated perms
+   *
+   */
+  protected static function parse_sequence_relacl($grant_str) {
+    // will be receiving something like '{superuser=rwU/superuser_role,normal_role=rw/superuser_role}'
+    // first, split into each array entry
+    if (empty($grant_str)) {
+      return array();
+    }
+    $perm_trim = trim($grant_str, '{}');
+    $perm_list = explode(',', $perm_trim);
+
+    if (count($perm_list) == 1) {
+    }
+    
+    $grants = array();
+
+    // split each entry into user / perm 
+    foreach ($perm_list as $perm_entry) {
+      $single_perm = explode('=', $perm_entry);
+      // permission entry is empty? skip it
+      if (count($single_perm) < 1) {
+        continue;
+      }
+      $user = $single_perm[0];
+      if (count($single_perm) != 2) {
+        // we can't parse this, something is wrong
+        throw new Exception("Can't parse permissions! Offending grant string was $grant_str.");
+      }
+      $permissions = $single_perm[1];
+      $grants[$user] = self::make_grant_list($permissions);
+    }
+    return $grants;
+  }
+
+  /**
+   * Parse a permission string (i.e. 'rw/deployment') into permission types DBSteward will understand
+   */
+  protected static function make_grant_list($perm_set) {
+    // AFAICT the only permissions allowed for sequences are SELECT/UPDATE/USAGE
+    $mappings = array(
+      'a' => 'UPDATE',
+      'r' => 'SELECT',
+      'U' => 'USAGE'
+    );
+
+    // perm set will be something like rwU/superuser_role, split on /
+    $grant_str = explode('/', $perm_set);
+    if (count($grant_str) == 0) {
+      return FALSE;
+    }
+    $grant_chars = str_split($grant_str[0]);
+
+    $perms = array();
+    foreach ($grant_chars as $grant_char) {
+      if (array_key_exists($grant_char, $mappings)) {
+        $perms[] = $mappings[$grant_char];
+      }
+    }
+    return $perms;
+  }
+    
 
   /**
    * compare composite db doc to specified database
