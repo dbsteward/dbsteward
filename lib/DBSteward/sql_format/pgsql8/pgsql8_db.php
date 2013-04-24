@@ -36,6 +36,11 @@ class pgsql8_db {
     $s = $row[0];
     return $s;
   }
+
+  public function disconnect() {
+    self::$db_conn = pg_close(self::$db_conn);
+  }  
+
 }
 
 ?>
