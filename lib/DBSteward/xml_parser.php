@@ -49,7 +49,7 @@ class xml_parser {
    *
    * @return string    XML files contents, composited
    */
-  public static function xml_composite($files, $xml_collect_data_addendums, &$addendums_doc) {
+  public static function xml_composite($files, $xml_collect_data_addendums = 0, &$addendums_doc = NULL) {
     $composite = new SimpleXMLElement('<dbsteward></dbsteward>');
 
     if ($xml_collect_data_addendums > 0) {
