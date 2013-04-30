@@ -102,6 +102,30 @@ http://dbsteward.org/
       </dependencies>
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
+      
+      <changelog version="1.3.0" date="2013-05-06" license="Simplified BSD License">
+DBSteward 1.3.0 Release
+
+* API Updates:
+  - Format handler PHP fatals when certain CLI combos are used
+  - Data row differencing when pkeys change in the same release
+  - Addendum artifact creation mode
+  - Allow definitions to contain sqlformat hints for platform specific definitions
+* pgsql8 updates:
+  - Index quoting fixes
+* mysql5 updates:
+  - Index and column quoting fixes
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
 
       <changelog version="1.2.4" date="2013-03-26" license="Simplified BSD License">
 DBSteward 1.2.4 Release
