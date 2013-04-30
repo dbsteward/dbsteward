@@ -13,7 +13,7 @@ class pgsql8 extends sql99 {
   const QUOTE_CHAR = '"';
 
   const PATTERN_SERIAL_COLUMN = '/^serial|bigserial$/i';
-  
+
   const PATTERN_REPLICATED_COLUMN = '/^serial|bigserial$/i';
 
   const PATTERN_TABLE_LINKED_TYPES = '/^serial|bigserial$/i';
@@ -136,7 +136,7 @@ class pgsql8 extends sql99 {
     }
     return $value;
   }
-  
+
   public static function strip_string_quoting($value) {
     // 'string' becomes string
     if (strlen($value) > 2 && substr($value, 0, 1) == "'" && substr($value, -1) == "'") {
@@ -252,18 +252,18 @@ class pgsql8 extends sql99 {
 
     dbsteward::console_line(1, "Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
-    
+
     // database-specific implementation code refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
     dbx::set_default_schema($db_doc, 'public');
-    
+
     // language defintions
     if (dbsteward::$create_languages) {
       foreach ($db_doc->language AS $language) {
         $build_file_ofs->write(pgsql8_language::get_creation_sql($language));
       }
     }
-    
+
     // by default, postgresql will validate the contents of LANGUAGE SQL functions during creation
     // because we are creating all functions before tables, this doesn't work when LANGUAGE SQL functions
     // refer to tables yet to be created.
@@ -328,7 +328,7 @@ class pgsql8 extends sql99 {
         }
       }
     }
-    
+
     // types: enumerated list, etc
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->type AS $type) {
@@ -387,7 +387,7 @@ class pgsql8 extends sql99 {
           }
         }
       }
-      
+
       // add table nextvals that were omitted
       foreach ($schema->table AS $table) {
         if ( pgsql8_table::has_default_nextval($table) ) {
@@ -632,7 +632,7 @@ class pgsql8 extends sql99 {
         }
       }
     }
-    
+
     $highest_table_slony_id = self::get_next_table_slony_id($db_doc) - 1;
     dbsteward::console_line(1, "-- Highest table slonyId: " . $highest_table_slony_id);
     //$highest_sequence_slony_id = self::get_next_sequence_slony_id($db_doc) - 1;
@@ -1316,7 +1316,7 @@ class pgsql8 extends sql99 {
         while (($index_row = pg_fetch_assoc($index_rs)) !== FALSE) {
           $dimensions = explode(' ', $index_row['dimensions']);
 
-          // only add a unique index if the column was 
+          // only add a unique index if the column was
           $index_name = $index_row['relname'];
           $node_index = $node_table->addChild('index');
           $node_index->addAttribute('name', $index_name);
@@ -1337,9 +1337,9 @@ class pgsql8 extends sql99 {
     foreach ($sequence_cols as $idx => $seq_col) {
       $seq_col = "'" . $seq_col . "'";
       $sequence_cols[$idx] = $seq_col;
-    }    
+    }
     $sequence_str = implode(',', $sequence_cols);
-
+var_dump($sequence_str);
     foreach ($schemas as $schema) {
       dbsteward::console_line(3, "Analyze isolated sequences in schema " . $schema['name']);
       // filter by sequences we've defined as part of a table already
@@ -1349,12 +1349,14 @@ class pgsql8 extends sql99 {
           FROM pg_statio_all_sequences s
           JOIN pg_class c ON (s.relname = c.relname)
           JOIN pg_roles r ON (c.relowner = r.oid)
-          WHERE schemaname = '" . $schema['name'] . "' AND s.relname NOT IN (" .
-          $sequence_str . ");";
+          WHERE schemaname = '" . $schema['name'] . "'"; //. " AND s.relname NOT IN (" . $sequence_str. ");";
+      if (strlen($sequence_str) > 0) {
+        $seq_list_sql .=  " AND s.relname NOT IN (" . $sequence_str . ");";
+      }
       $seq_list_rs = pgsql8_db::query($seq_list_sql);
 
       while (($seq_list_row = pg_fetch_assoc($seq_list_rs)) !== FALSE) {
-        $seq_sql = "SELECT cache_value, start_value, min_value, max_value, 
+        $seq_sql = "SELECT cache_value, start_value, min_value, max_value,
                     increment_by, is_cycled FROM " . $schema['name'] . "." . $seq_list_row['relname'] . ";";
         $seq_rs = pgsql8_db::query($seq_sql);
         while (($seq_row = pg_fetch_assoc($seq_rs)) !== FALSE) {
@@ -1745,7 +1747,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         $grant_sql = "SELECT relacl FROM pg_class WHERE relname = '" . $seq_name . "';";
         $grant_rc = pgsql8_db::query($grant_sql);
         while (($grant_row = pg_fetch_assoc($grant_rc)) !== FALSE) {
-          // privileges for unassociated sequences are not listed in 
+          // privileges for unassociated sequences are not listed in
           // information_schema.sequences; i think this is probably the most
           // accurate way to get sequence-level grants
           if ($grant_row['relacl'] === NULL) {
@@ -1771,7 +1773,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         }
       }
     }
-    
+
     // scan all now defined tables
     $schemas = & dbx::get_schemas($doc);
     foreach ($schemas AS $schema) {
@@ -1824,10 +1826,10 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
     if (count($perm_list) == 1) {
     }
-    
+
     $grants = array();
 
-    // split each entry into user / perm 
+    // split each entry into user / perm
     foreach ($perm_list as $perm_entry) {
       $single_perm = explode('=', $perm_entry);
       // permission entry is empty? skip it
@@ -1871,7 +1873,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     }
     return $perms;
   }
-    
+
 
   /**
    * compare composite db doc to specified database
@@ -1997,7 +1999,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         }
       }
     }
-    
+
     xml_parser::validate_xml($db_doc->asXML());
     return xml_parser::format_xml($db_doc->saveXML());
   }

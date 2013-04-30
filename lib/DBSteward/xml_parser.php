@@ -558,7 +558,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 ) {
   }
 
   //public static $data_row_overlay_key_search_count = 0;
-  public static function data_row_overlay_key_search($node_rows, $overlay_row, $primary_keys, &$base_row_index) {
+  public static function data_row_overlay_key_search($node_rows, $overlay_row, $primary_keys, &$base_row_index, $table = FALSE) {
     $node_row_count = count($node_rows->row);
     //dbsteward::console_line(7, "data_row_overlay_key_search() #" . ++self::$data_row_overlay_key_search_count . " node_row_count = " . $node_row_count . " base_row_index = " . $base_row_index);
     if (!is_object($node_rows)) {
@@ -584,7 +584,11 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 ) {
       // if base had rows
       for ($i = $base_row_index; $i < $node_row_count; $i++) {
         foreach ($primary_keys AS $primary_key_name => $primary_key) {
-          if (strcmp($node_rows->row[$i]->col[$primary_key['base_index']], $overlay_row->col[$primary_key['overlay_index']]) != 0) {
+          // base_index here was calculated for table A, which in this method
+          // is called the overlay row
+          // base_index below is used on overlay row despite the confusing name
+          // so that column indexes are correct
+          if (strcmp($node_rows->row[$i]->col[$primary_key['overlay_index']], $overlay_row->col[$primary_key['base_index']]) != 0) {
             // doesn't match, on to the next row
             $row_match = FALSE;
 
@@ -1616,3 +1620,4 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
 }
 
 ?>
+
