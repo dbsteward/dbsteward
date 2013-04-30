@@ -43,8 +43,9 @@ class xml_parser {
    * Composite a list of XML files into one dbsteward definition
    * @NOTICE: only 'base' XML files, those listed in the $files list should contain includeFile entries
    *
-   * @param  string    $output_prefix
-   * @param  array     $files array list of files to composite
+   * @param  array     $files                       list of files to composite
+   * @param  integer   $xml_collect_data_addendums  number of files at the end of the list to collate for addendum
+   * @param  object    $addenums_doc                addendums doc passed by reference
    *
    * @return string    XML files contents, composited
    */
