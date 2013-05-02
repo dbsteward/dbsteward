@@ -510,7 +510,7 @@ Database definition extraction utilities
         if ($xml_collect_data_addendums > 0) {
           dbsteward::console_line(1, "Collecting $xml_collect_data_addendums data addendums");
         }
-        $db_doc = xml_parser::xml_composite($files, $xml_collect_data_addendums, &$addendums_doc);
+        $db_doc = xml_parser::xml_composite($files, $xml_collect_data_addendums, $addendums_doc);
 
         if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
           $pg_data_files = (array)$options['pgdataxml'];
