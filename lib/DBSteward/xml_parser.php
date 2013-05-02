@@ -715,6 +715,23 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
     if (!is_readable($dtd_file)) {
       throw new exception("DTD file dbsteward.dtd not readable from any known source paths:\n" . implode("\n", $dtd_file_paths));
     }
+
+    // attempt to verify that xmllint exists on the system
+    if ($echo_status) {
+      dbsteward::console_line(1, "Locating xmllint executable...");
+    }
+
+    // which will return 1 on failure to find executable, so dbsteward::cmd will throw an exception
+    try {
+      dbsteward::cmd("which xmllint");
+    } catch (Exception $ex) {
+      throw new Exception("Could not locate xmllint executable. Please ensure it is in your PATH, or install libxml2 from http://xmlsoft.org");
+    }
+
+    if ($echo_status) {
+      dbsteward::console_line(1, "Found xmllint");
+    }
+
     // realpath the dtd_file so when it is announced it is simplified to remove relative directory pathing
     $dtd_file = realpath($dtd_file);
     if ($echo_status) {

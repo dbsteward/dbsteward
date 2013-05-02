@@ -55,7 +55,7 @@ DBSteward currently supports output files in Postgresql 8 / 9, MySQL 5.5, and Mi
 
 
 # How do I get started?
-To start tinkering with the possibilities, download and install the PEAR package by following the [[Crash Course]] guide for more information and real world examples.
+To start tinkering with the possibilities, download and install the PEAR package by following the [[Crash Course]] guide for more information and real world examples. You will also need to have the `xmllint` executable installed in your PATH, available from [libxml2](http://xmlsoft.org).
 
 You can also of get a checkout at git://github.com/nkiraly/DBSteward.git
 It is runnable in source-checkout form, via php bin/dbsteward.php
