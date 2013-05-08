@@ -14,10 +14,8 @@
 <!ELEMENT inlineAssembly EMPTY>
 <!ATTLIST inlineAssembly name CDATA #REQUIRED>
 
-<!ELEMENT database (host, sqlformat?, name, role, slony?, configurationParameter*)>
-<!ELEMENT host (#PCDATA)>
+<!ELEMENT database (sqlformat?, role, slony?, configurationParameter*)>
 <!ELEMENT sqlformat (#PCDATA)>
-<!ELEMENT name (#PCDATA)>
 
 <!ELEMENT role (application, owner, replication, readonly, customRole?)>
 <!ELEMENT application (#PCDATA)>
@@ -26,16 +24,23 @@
 <!ELEMENT readonly (#PCDATA)>
 <!ELEMENT customRole (#PCDATA)>
 
-<!ELEMENT slony (masterNode, replicaNode*, replicationSet, replicationUpgradeSet)>
-<!ELEMENT masterNode EMPTY>
-<!ATTLIST masterNode id CDATA #REQUIRED>
-<!ELEMENT replicaNode EMPTY>
-<!ATTLIST replicaNode id CDATA #REQUIRED>
-<!ATTLIST replicaNode providerId CDATA #REQUIRED>
-<!ELEMENT replicationSet EMPTY>
-<!ATTLIST replicationSet id CDATA #REQUIRED>
-<!ELEMENT replicationUpgradeSet EMPTY>
-<!ATTLIST replicationUpgradeSet id CDATA #REQUIRED>
+<!ELEMENT slony (slonyNode+, slonyReplicaSet+)>
+<!ATTLIST slony clusterName CDATA #REQUIRED>
+<!ELEMENT slonyNode EMPTY>
+<!ATTLIST slonyNode id CDATA #REQUIRED>
+<!ATTLIST slonyNode dbName CDATA #REQUIRED>
+<!ATTLIST slonyNode dbHost CDATA #REQUIRED>
+<!ATTLIST slonyNode dbUser CDATA #REQUIRED>
+<!ATTLIST slonyNode dbPassword CDATA #REQUIRED>
+<!ATTLIST slonyNode comment CDATA #REQUIRED>
+<!ELEMENT slonyReplicaSet (slonyReplicaSetNode+)>
+<!ATTLIST slonyReplicaSet id CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet upgradeSetId CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet originNodeId CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet comment CDATA #REQUIRED>
+<!ELEMENT slonyReplicaSetNode EMPTY>
+<!ATTLIST slonyReplicaSetNode id CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSetNode providerNodeId CDATA #REQUIRED>
 
 <!ELEMENT language EMPTY>
 <!ATTLIST language name CDATA #REQUIRED>
@@ -60,6 +65,7 @@
 <!ATTLIST table primaryKeyName CDATA #IMPLIED>
 <!ATTLIST table owner CDATA #REQUIRED>
 <!ATTLIST table slonyId CDATA #IMPLIED>
+<!ATTLIST table slonySetId CDATA #IMPLIED>
 <!ATTLIST table description CDATA #IMPLIED>
 <!ATTLIST table oldTableName CDATA #IMPLIED>
 <!ATTLIST table oldSchemaName CDATA #IMPLIED>
@@ -89,6 +95,7 @@
 <!ATTLIST column null (true|false) #IMPLIED>
 <!ATTLIST column default CDATA #IMPLIED>
 <!ATTLIST column slonyId CDATA #IMPLIED>
+<!ATTLIST column slonySetId CDATA #IMPLIED>
 <!ATTLIST column foreignSchema CDATA #IMPLIED>
 <!ATTLIST column foreignTable CDATA #IMPLIED>
 <!ATTLIST column foreignColumn CDATA #IMPLIED>
@@ -148,6 +155,7 @@
 <!ATTLIST sequence name CDATA #REQUIRED>
 <!ATTLIST sequence owner CDATA #REQUIRED>
 <!ATTLIST sequence slonyId CDATA #IMPLIED>
+<!ATTLIST sequence slonySetId CDATA #IMPLIED>
 <!ATTLIST sequence cache CDATA #IMPLIED>
 <!ATTLIST sequence start CDATA #IMPLIED>
 <!ATTLIST sequence min CDATA #IMPLIED>
