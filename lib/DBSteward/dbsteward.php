@@ -421,6 +421,7 @@ Database definition extraction utilities
       $force_sql_format = $options['sqlformat'];
     }
 
+    $target_sql_format = FALSE;
     switch ($mode) {
       case dbsteward::MODE_BUILD:
         $files = (array)$options['xml'];
