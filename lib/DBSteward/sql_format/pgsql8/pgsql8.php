@@ -248,7 +248,7 @@ class pgsql8 extends sql99 {
     if (count(dbsteward::$limit_to_tables) == 0) {
       $build_file_ofs->write("-- full database definition file generated " . date('r') . "\n");
     }
-    $build_file_ofs->write("BEGIN; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional\n\n");
+    $build_file_ofs->write("BEGIN; -- STRIP_SLONY: SlonyI installs should strip this line as Slony will manage the transaction\n\n");
 
     dbsteward::console_line(1, "Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
@@ -309,11 +309,13 @@ class pgsql8 extends sql99 {
     }
     dbsteward::$new_database = NULL;
 
-    $build_file_ofs->write("COMMIT; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional\n\n");
+    $build_file_ofs->write("COMMIT; -- STRIP_SLONY: SlonyI installs should strip this line as Slony will manage the transaction\n\n");
 
-    $replica_sets = static::get_slony_replica_sets($db_doc);
-    foreach($replica_sets AS $replica_set) {
-      pgsql8::build_slonik_subscribe_set($db_doc, $replica_set, $output_prefix . '_slony_subscribe_set_' . $replica_set['id'] . '.slonik');
+    if ( dbsteward::$generate_slonik ) {
+      $replica_sets = static::get_slony_replica_sets($db_doc);
+      foreach($replica_sets AS $replica_set) {
+        pgsql8::build_slonik_subscribe_set($db_doc, $replica_set, $output_prefix . '_slony_subscribe_set_' . $replica_set['id'] . '.slonik');
+      }
     }
 
     return $db_doc;
@@ -674,9 +676,11 @@ class pgsql8 extends sql99 {
 
     pgsql8_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
 
-    // figure out slony replication differences
-    $slonik_header = "# Old set:  " . implode(', ', $old_files) . "\n" . "# New set:  " . implode(', ', $new_files) . "\n";
-    self::build_upgrade_slonik($old_db_doc, $new_db_doc, $upgrade_prefix, $slonik_header);
+    if ( dbsteward::$generate_slonik ) {
+      // generate upgrade slonik to apply generated sql changes
+      $slonik_header = "# Old set:  " . implode(', ', $old_files) . "\n" . "# New set:  " . implode(', ', $new_files) . "\n";
+      self::build_upgrade_slonik($old_db_doc, $new_db_doc, $upgrade_prefix, $slonik_header);
+    }
 
     return $new_db_doc;
   }

@@ -74,6 +74,7 @@ class dbsteward {
 
   public static $create_languages = FALSE;
   public static $require_slony_id = FALSE;
+  public static $generate_slonik = FALSE;
   public static $output_file_statement_limit = 900;
   public static $ignore_custom_roles = FALSE;
   public static $ignore_primary_key_errors = FALSE;
@@ -124,6 +125,7 @@ class dbsteward {
 Global Switches and Flags
   --sqlformat=<pgsql8|mssql10|mysql5|oracle10g>
   --requireslonyid                  require tables and sequences to specify a valid slonyId
+  --generateslonik                  generate slonik scripts to subscribe to or upgrade slony replicated db
   --quoteschemanames                quote schema names in SQL output
   --quotetablenames                 quote table names in SQL output
   --quotecolumnnames                quote column names in SQL output
@@ -198,6 +200,7 @@ Database definition extraction utilities
       "dbuser::",
       "dbpassword::",
       "requireslonyid::",
+      "generateslonik::",
       "quoteschemanames::",
       "quotetablenames::",
       "quotecolumnnames::",
@@ -335,6 +338,9 @@ Database definition extraction utilities
     
     if (isset($options["requireslonyid"])) {
       dbsteward::$require_slony_id = TRUE;
+    }
+    if (isset($options["generateslonik"])) {
+      dbsteward::$generate_slonik = TRUE;
     }
 
     // user-specified overrides for identifier quoting

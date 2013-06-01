@@ -63,15 +63,15 @@ class pgsql8_diff extends sql99_diff{
    */
   protected static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
     if (self::$as_transaction) {
-      $stage1_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n\n");
-      $stage1_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n");
+      $stage1_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
+      $stage1_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
       if ( ! dbsteward::$single_stage_upgrade ) {
-        $stage2_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n\n");
-        $stage3_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n\n");
-        $stage4_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n\n");
-        $stage2_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n");
-        $stage3_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n");
-        $stage4_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI slonik execute script statements should not be fed this line, strip it out during run time --\n");
+        $stage2_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
+        $stage3_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
+        $stage4_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
+        $stage2_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
+        $stage3_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
+        $stage4_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
       }
     }
 
