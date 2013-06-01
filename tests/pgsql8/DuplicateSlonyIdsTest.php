@@ -169,12 +169,14 @@ XML;
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
@@ -190,16 +192,19 @@ XML;
     pgsql8::$sequence_slony_ids = array();
     pgsql8::$known_pg_identifiers = array();
 
-    // just build
-    if ($expected !== false) {
-      $this->expect_exception($expected, function() use($doc) {
-        pgsql8::build_slonik($doc, "php://memory");
-      });
-    }
-    else {
-      $this->expect_no_exception(function() use($doc) {
-        pgsql8::build_slonik($doc, "php://memory");
-      });
+    // just ask pgsql 8 to build replica sets here
+    $replica_sets = pgsql8::get_slony_replica_sets($doc);
+    foreach($replica_sets AS $replica_set) {
+      if ($expected !== false) {
+        $this->expect_exception($expected, function() use($doc, $replica_set) {
+          pgsql8::build_slonik_subscribe_set($doc, $replica_set, "php://memory");
+        });
+      }
+      else {
+        $this->expect_no_exception(function() use($doc, $replica_set) {
+          pgsql8::build_slonik_subscribe_set($doc, $replica_set, "php://memory");
+        });
+      }
     }
 
     pgsql8::$table_slony_ids = array();

@@ -311,7 +311,10 @@ class pgsql8 extends sql99 {
 
     $build_file_ofs->write("COMMIT; -- STRIP_SLONY: SlonyI installs/upgrades strip this line, the rest need to keep the install transactional\n\n");
 
-    pgsql8::build_slonik($db_doc, $output_prefix . '_slony_subscription.slonik');
+    $replica_sets = static::get_slony_replica_sets($db_doc);
+    foreach($replica_sets AS $replica_set) {
+      pgsql8::build_slonik_subscribe_set($db_doc, $replica_set, $output_prefix . '_slony_subscribe_set_' . $replica_set['id'] . '.slonik');
+    }
 
     return $db_doc;
   }
@@ -528,16 +531,25 @@ class pgsql8 extends sql99 {
     $ofs->write("\n");
   }
 
-  public function build_slonik($db_doc, $slonik_file) {
-    dbsteward::console_line(1, "Building slonik file " . $slonik_file);
+  /**
+   * Build the slonik commands to subscribe to the specified Slony replication set
+   * *
+   * @param SimpleXMLElement $db_doc
+   * @param SimpleXMLElement $replica_set
+   * @param string           $slonik_file
+   * @throws exception
+   */
+  public static function build_slonik_subscribe_set($db_doc, $replica_set, $slonik_file) {
+    dbsteward::console_line(1, "Building slony replication set subscription file " . $slonik_file);
     $slonik_fp = fopen($slonik_file, 'w');
     if ($slonik_fp === FALSE) {
       throw new exception("failed to open slonik file " . $slonik_file . ' for output');
     }
     $slonik_ofs = new output_file_segmenter($slonik_file, 1, $slonik_fp, $slonik_file);
     $slonik_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
-    $slonik_ofs->write("# dbsteward slony full configuration file generated " . date('r') . "\n\n");
-    $slonik_ofs->write("ECHO 'dbsteward slony full configuration file generated " . date('r') . " starting';\n\n");
+    $generation_date = date('r');
+    $slonik_ofs->write("# DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " subscription generated " . $generation_date . "\n\n");
+    $slonik_ofs->write("ECHO 'DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " subscription generated " . $generation_date . " starting';\n\n");
 
     // schema and table structure
     foreach ($db_doc->schema AS $schema) {
@@ -545,111 +557,61 @@ class pgsql8 extends sql99 {
       // table definitions
       foreach ($schema->table AS $table) {
         foreach ($table->column AS $column) {
-          // serial column sequence slony configuration
-          if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, $column['type']) > 0) {
-            if (isset($column['slonyId']) && strlen($column['slonyId']) > 0) {
-              if (strcasecmp('IGNORE_REQUIRED', $column['slonyId']) == 0) {
-                // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
-                // but also allow for some tables to not be replicated even with the flag on
-              }
-              else {
-                if (!is_numeric(dbsteward::string_cast($column['slonyId']))) {
-                  throw new exception("serial column " . $column['name'] . " slonyId " . $column['slonyId'] . " is not numeric");
-                }
-                if (in_array(dbsteward::string_cast($column['slonyId']), self::$sequence_slony_ids)) {
-                  throw new exception("column sequence slonyId " . $column['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
-                }
-                self::$sequence_slony_ids[] = dbsteward::string_cast($column['slonyId']);
+          // is this table column replicated in this replica set?
+          if ( static::slony_replica_set_contains_table_column_serial_sequence($db_doc, $replica_set, $schema, $table, $column) ) {
+            if (in_array(dbsteward::string_cast($column['slonyId']), self::$sequence_slony_ids)) {
+              throw new exception("column sequence slonyId " . $column['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
+            }
+            self::$sequence_slony_ids[] = dbsteward::string_cast($column['slonyId']);
 
-                $col_sequence = pgsql8::identifier_name($schema['name'], $table['name'], $column['name'], '_seq');
-                $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($db_doc->database->slony->replicationSet['id']), dbsteward::string_cast($db_doc->database->slony->masterNode['id']), dbsteward::string_cast($column['slonyId']), $schema['name'] . '.' . $col_sequence, $schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
-              }
-            }
-            else {
-              dbsteward::console_line(1, "Warning: " . str_pad($schema['name'] . '.' . $table['name'] . '.' . $column['name'], 44) . " serial column missing slonyId\t" . self::get_next_slony_id_dialogue($db_doc));
-              if (dbsteward::$require_slony_id) {
-                throw new exception($schema['name'] . '.' . $table['name'] . '.' . $column['name'] . " serial column missing slonyId and slonyIds are required!");
-              }
-            }
-          }
-          else if (isset($column['slonyId'])) {
-            throw new exception($schema['name'] . '.' . $table['name'] . " non-serial column " . $column['name'] . " has slonyId specified. I do not understand");
+            $col_sequence = pgsql8::identifier_name($schema['name'], $table['name'], $column['name'], '_seq');
+            $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, $replica_set['id'], $replica_set['originNodeId'], $column['slonyId'], $schema['name'] . '.' . $col_sequence, $schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
           }
         }
 
-        // table slony replication configuration
-        if (isset($table['slonyId']) && strlen($table['slonyId']) > 0) {
-          if (strcasecmp('IGNORE_REQUIRED', $table['slonyId']) == 0) {
-            // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
-            // but also allow for some tables to not be replicated even with the flag on
+        // is this table replicated in this replica set?
+        if ( static::slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table) ) {
+          if (in_array(dbsteward::string_cast($table['slonyId']), self::$table_slony_ids)) {
+            throw new exception("table slonyId " . $table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
           }
-          else {
-            if (!is_numeric(dbsteward::string_cast($table['slonyId']))) {
-              throw new exception('table ' . $table['name'] . " slonyId " . $table['slonyId'] . " is not numeric");
-            }
-            if (in_array(dbsteward::string_cast($table['slonyId']), self::$table_slony_ids)) {
-              throw new exception("table slonyId " . $table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
-            }
-            self::$table_slony_ids[] = dbsteward::string_cast($table['slonyId']);
-            $slonik_ofs->write(sprintf(slony1_slonik::script_add_table, dbsteward::string_cast($db_doc->database->slony->replicationSet['id']), dbsteward::string_cast($db_doc->database->slony->masterNode['id']), dbsteward::string_cast($table['slonyId']), $schema['name'] . '.' . $table['name'], $schema['name'] . '.' . $table['name'] . ' table replication') . "\n\n");
-          }
-        }
-        else {
-          dbsteward::console_line(1, "Warning: " . str_pad($schema['name'] . '.' . $table['name'], 44) . " table missing slonyId\t" . self::get_next_slony_id_dialogue($db_doc));
-          if (dbsteward::$require_slony_id) {
-            throw new exception($schema['name'] . '.' . $table['name'] . " table missing slonyId and slonyIds are required!");
-          }
+          self::$table_slony_ids[] = dbsteward::string_cast($table['slonyId']);
+
+          $slonik_ofs->write(sprintf(slony1_slonik::script_add_table, $replica_set['id'], $replica_set['originNodeId'], $table['slonyId'], $schema['name'] . '.' . $table['name'], $schema['name'] . '.' . $table['name'] . ' table replication') . "\n\n");
         }
       }
 
       // sequence slony replication configuration
       if (isset($schema->sequence)) {
         foreach ($schema->sequence AS $sequence) {
-          if (isset($sequence['slonyId'])
-            && strlen($sequence['slonyId']) > 0) {
-            if (strcasecmp('IGNORE_REQUIRED', $sequence['slonyId']) == 0) {
-              // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
-              // but also allow for some tables to not be replicated even with the flag on
+          // is this sequence replicated in this replica set?
+          if ( static::slony_replica_set_contains_sequence($db_doc, $replica_set, $schema, $sequence) ) {
+            if (in_array(dbsteward::string_cast($sequence['slonyId']), self::$sequence_slony_ids)) {
+              throw new exception("sequence slonyId " . $sequence['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
             }
-            else {
-              if (!is_numeric(dbsteward::string_cast($sequence['slonyId']))) {
-                throw new exception('sequence ' . $sequence['name'] . " slonyId " . $sequence['slonyId'] . " is not numeric");
-              }
-              if (in_array(dbsteward::string_cast($sequence['slonyId']), self::$sequence_slony_ids)) {
-                throw new exception("sequence slonyId " . $sequence['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
-              }
-              self::$sequence_slony_ids[] = dbsteward::string_cast($sequence['slonyId']);
+            self::$sequence_slony_ids[] = dbsteward::string_cast($sequence['slonyId']);
 
-              $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($db_doc->database->slony->replicationSet['id']), dbsteward::string_cast($db_doc->database->slony->masterNode['id']), dbsteward::string_cast($sequence['slonyId']), $schema['name'] . '.' . $sequence['name'], $schema['name'] . '.' . $sequence['name'] . ' sequence replication') . "\n\n");
-            }
-          }
-          else {
-            dbsteward::console_line(1, "Warning: " . str_pad($schema['name'] . '.' . $sequence['name'], 44) . " sequence missing slonyId\t" . self::get_next_slony_id_dialogue($db_doc));
-            if (dbsteward::$require_slony_id) {
-              throw new exception($schema['name'] . '.' . $sequence['name'] . " sequence missing slonyId and slonyIds are required!");
-            }
+            $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, $replica_set['id'], $replica_set['originNodeId'], $sequence['slonyId'], $schema['name'] . '.' . $sequence['name'], $schema['name'] . '.' . $sequence['name'] . ' sequence replication') . "\n\n");
           }
         }
       }
     }
 
-    $highest_table_slony_id = self::get_next_table_slony_id($db_doc) - 1;
-    dbsteward::console_line(1, "-- Highest table slonyId: " . $highest_table_slony_id);
-    //$highest_sequence_slony_id = self::get_next_sequence_slony_id($db_doc) - 1;
-    //dbsteward::console_line(1, "Highest sequence slonyId: " . $highest_sequence_slony_id);
+    $highest_table_slony_id = self::get_slony_next_table_id($db_doc) - 1;
+    dbsteward::console_line(1, "[slony] Highest table slonyId: " . $highest_table_slony_id);
+    $highest_sequence_slony_id = self::get_slony_next_sequence_id($db_doc) - 1;
+    dbsteward::console_line(1, "[slony] Highest sequence slonyId: " . $highest_sequence_slony_id);
   }
 
-  public static function get_next_slony_id_dialogue($doc) {
+  public static function get_slony_next_id_dialogue($doc) {
     // it seems more people just want to be told what the next slonyId is
     // than what the next slonyId is for tables and schemas
     // make it so, number one
-    /**
-     $s = "NEXT table\tslonyId " . self::get_next_table_slony_id($doc) . "\t"
-     . "sequence\tslonyId " . self::get_next_sequence_slony_id($doc);
-     /*
-     */
-    $next_slony_id = $next_table_id = self::get_next_table_slony_id($doc);
-    $next_sequence_id = self::get_next_sequence_slony_id($doc);
+    /*
+    $s = "NEXT table\tslonyId " . self::get_slony_next_table_id($doc) . "\t"
+      . "sequence\tslonyId " . self::get_slony_next_sequence_id($doc);
+    */
+    $next_slony_id = $next_table_id = self::get_slony_next_table_id($doc);
+    $next_sequence_id = self::get_slony_next_sequence_id($doc);
     if ($next_slony_id < $next_sequence_id) {
       $next_slony_id = $next_sequence_id;
     }
@@ -658,7 +620,7 @@ class pgsql8 extends sql99 {
     return $s;
   }
 
-  public static function get_next_table_slony_id($doc) {
+  public static function get_slony_next_table_id($doc) {
     $max_slony_id = 0;
     foreach ($doc->schema AS $schema) {
       foreach ($schema->table AS $table) {
@@ -673,7 +635,7 @@ class pgsql8 extends sql99 {
     return $max_slony_id + 1;
   }
 
-  public static function get_next_sequence_slony_id($doc) {
+  public static function get_slony_next_sequence_id($doc) {
     $max_slony_id = 0;
     foreach ($doc->schema AS $schema) {
       foreach ($schema->table AS $table) {
@@ -842,7 +804,7 @@ class pgsql8 extends sql99 {
           }
         }
         else {
-          dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'], 44) . " table missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
+          dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'], 44) . " table missing slonyId\t" . self::get_slony_next_id_dialogue($new_db_doc));
           if (dbsteward::$require_slony_id) {
             throw new exception($new_schema['name'] . '.' . $new_table['name'] . " table missing slonyId and slonyIds are required!");
           }
@@ -892,7 +854,7 @@ class pgsql8 extends sql99 {
               }
             }
             else {
-              dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'] . '.' . $new_column['name'], 44) . " serial column missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
+              dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'] . '.' . $new_column['name'], 44) . " serial column missing slonyId\t" . self::get_slony_next_id_dialogue($new_db_doc));
               if (dbsteward::$require_slony_id) {
                 throw new exception($new_schema['name'] . '.' . $new_table['name'] . '.' . $new_column['name'] . " serial column missing slonyId and slonyIds are required!");
               }
@@ -950,7 +912,7 @@ class pgsql8 extends sql99 {
           }
         }
         else {
-          dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_sequence['name'], 44) . " sequence missing slonyId\t" . self::get_next_slony_id_dialogue($new_db_doc));
+          dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_sequence['name'], 44) . " sequence missing slonyId\t" . self::get_slony_next_id_dialogue($new_db_doc));
           if (dbsteward::$require_slony_id) {
             throw new exception($new_schema['name'] . '.' . $new_sequence['name'] . " sequence missing slonyId and slonyIds are required!");
           }
@@ -2053,6 +2015,145 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     }
     return $table_name;
   }
-}
+  
+  /**
+   * Sanity check and return the Slony replica set nodes of the definition
+   * 
+   * @param SimpleXMLElement $db_doc
+   * @return SimpleXMLElement[]
+   * @throws exception
+   */
+  public static function &get_slony_replica_sets($db_doc) {
+    if ( !isset($db_doc->database->slony) ) {
+      throw new exception("slony section not found in database definition");
+    }
+    if ( !isset($db_doc->database->slony->slonyReplicaSet) ) {
+      throw new exception("no slonyReplicaSet elements in database definition");
+    }
+    $srs = $db_doc->database->slony->slonyReplicaSet;
+    return $srs;
+  }
+  
+  /**
+   * Get the first natural order replica set definition node from the provided definition document
+   * 
+   * @param SimpleXMLElement $db_doc
+   * @return SimpleXMLElement
+   */
+  protected static function &slony_replica_set_first($db_doc) {
+    $replica_sets = static::get_slony_replica_sets($db_doc);
+    foreach($replica_sets AS $replica_set) {
+      return $replica_set;
+    }
+  }
+  
+  protected static function slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table) {
+    if (isset($table['slonyId']) && strlen($table['slonyId']) > 0) {
+      if (strcasecmp('IGNORE_REQUIRED', $table['slonyId']) == 0) {
+        // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
+        // but also allow for some tables to not be replicated even with the flag on
+        return FALSE;
+      }
+      else if (!is_numeric(dbsteward::string_cast($table['slonyId']))) {
+        throw new exception('table ' . $table['name'] . " slonyId " . $table['slonyId'] . " is not numeric");
+      }
+      else if ( strcmp($replica_set['id'], $table['slonySetId']) == 0 ) {
+        // this table is for the intended replica set
+        return TRUE;
+      }
+      else if ( !isset($table['slonySetId']) ) {
+        // this table has no replica set
+        $first_replica_set = static::slony_replica_set_first($db_doc);
+        if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
+          // but the $replica_set passed is the FIRST NATURAL ORDER replica set
+          // so yes this table pertains to this replica_set
+          return TRUE;
+        }
+      }
+    }
+    else {
+      dbsteward::console_line(1, "Warning: " . str_pad($schema['name'] . '.' . $table['name'], 44) . " table missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
+      if (dbsteward::$require_slony_id) {
+        throw new exception("Table " . $schema['name'] . '.' . $table['name'] . " missing slonyId and slonyIds are required");
+      }
+    }
+    return FALSE;
+  }
+  
+  protected static function slony_replica_set_contains_sequence($db_doc, $replica_set, $schema, $sequence) {
+    if (isset($sequence['slonyId']) && strlen($sequence['slonyId']) > 0) {
+      if (strcasecmp('IGNORE_REQUIRED', $sequence['slonyId']) == 0) {
+        // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
+        // but also allow for some sequences to not be replicated even with the flag on
+        return FALSE;
+      }
+      else if (!is_numeric(dbsteward::string_cast($sequence['slonyId']))) {
+        throw new exception('sequence ' . $sequence['name'] . " slonyId " . $sequence['slonyId'] . " is not numeric");
+      }
+      else if ( strcmp($replica_set['id'], $sequence['slonySetId']) == 0 ) {
+        // this sequence is for the intended replica set
+        return TRUE;
+      }
+      else if ( !isset($sequence['slonySetId']) ) {
+        // this sequence has no replica set
+        $first_replica_set = static::slony_replica_set_first($db_doc);
+        if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
+          // but the $replica_set passed is the FIRST NATURAL ORDER replica set
+          // so yes this sequence pertains to this replica_set
+          return TRUE;
+        }
+      }
+    }
+    else {
+      dbsteward::console_line(1, "Warning: " . str_pad($schema['name'] . '.' . $sequence['name'], 44) . " sequence missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
+      if (dbsteward::$require_slony_id) {
+        throw new exception("Sequence " . $schema['name'] . '.' . $sequence['name'] . " missing slonyId and slonyIds are required!");
+      }
+    }
+    return FALSE;
+  }
+  
+  protected static function slony_replica_set_contains_table_column_serial_sequence($db_doc, $replica_set, $schema, $table, $column) {    
+    // is it a serial column and therefore an implicit sequence to replicate?
+    if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, $column['type']) > 0) {
 
-?>
+      if (isset($column['slonyId']) && strlen($column['slonyId']) > 0) {
+        if (strcasecmp('IGNORE_REQUIRED', $column['slonyId']) == 0) {
+          // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
+          // but also allow for some table columns to not be replicated even with the flag on
+          return FALSE;
+        }
+        else if (!is_numeric(dbsteward::string_cast($column['slonyId']))) {
+          throw new exception("serial column " . $column['name'] . " slonyId " . $column['slonyId'] . " is not numeric");
+        }
+        else if ( strcmp($replica_set['id'], $column['slonySetId']) == 0 ) {
+          // this sequence is for the intended replica set
+          return TRUE;
+        }
+        else if ( !isset($column['slonySetId']) ) {
+          // this column has no replica set
+          $first_replica_set = static::slony_replica_set_first($db_doc);
+          if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
+            // but the $replica_set passed is the FIRST NATURAL ORDER replica set
+            // so yes this column pertains to this replica_set
+            return TRUE;
+          }
+        }
+      }
+      else {
+        dbsteward::console_line(1, "Warning: " . str_pad($schema['name'] . '.' . $table['name'] . '.' . $column['name'], 44) . " serial column missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
+        if (dbsteward::$require_slony_id) {
+          throw new exception($schema['name'] . '.' . $table['name'] . '.' . $column['name'] . " serial column missing slonyId and slonyIds are required!");
+        }
+      }
+
+    }
+    else if (isset($column['slonyId'])) {
+      throw new exception($schema['name'] . '.' . $table['name'] . " non-serial column " . $column['name'] . " has slonyId specified. I do not understand");
+    }
+    
+    return FALSE;
+  }
+  
+  
+}
