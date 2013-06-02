@@ -613,7 +613,7 @@ class pgsql8 extends sql99 {
     $last_id = $ids[0];
     $streak = 0;
     $s = (string)($ids[0]);
-    for($i = 1; $i < count($ids) - 1; $i++) {
+    for($i = 1; $i <= count($ids) - 1; $i++) {
       if ( $ids[$i] == $last_id + 1 ) {
         $streak++;
       }
@@ -626,7 +626,9 @@ class pgsql8 extends sql99 {
       }
       $last_id = $ids[$i];
     }
-    $s .= "-" . $ids[count($ids) - 1];
+    if ( $streak > 0 ) {
+      $s .= "-" . $ids[count($ids) - 1];
+    }
     return $s;
   }
 
