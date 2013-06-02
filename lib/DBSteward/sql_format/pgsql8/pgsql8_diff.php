@@ -8,7 +8,64 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-class pgsql8_diff extends sql99_diff{
+class pgsql8_diff extends sql99_diff {
+  
+  protected static $replica_set_ofs = array();
+  
+  /**
+   * Setup file pointers then call diff_doc_work() to do the actual diffing
+   * @param string $old_xml_file
+   * @param string $new_xml_file
+   * @param SimpleXMLElement $old_database
+   * @param SimpleXMLElement $new_database
+   * @param string $upgrade_prefix
+   */
+  public static function diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix) {
+    if ( ! dbsteward::$generate_slonik ) {
+      // if we are not generating slonik, defer to parent
+      parent::diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix);
+    }
+    
+    $timestamp = date('r');
+    
+    foreach(pgsql8::get_slony_replica_sets($new_database) AS $replica_set) {
+      $replica_set_id = (string)$replica_set['id'];
+      
+      $old_set_new_set = "-- Old definition:  " . $old_xml_file . "\n"
+      . "-- New definition:  " . $new_xml_file . "\n"
+      . "-- Replica Set: " . $replica_set_id . "\n";
+      
+      self::$replica_set_ofs[$replica_set_id]['stage1'] = new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage1_schema', 1);
+      self::$replica_set_ofs[$replica_set_id]['stage1']->set_header(
+        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 1 pre replication alteration, structure changes - generated " . $timestamp . "\n" .
+        $old_set_new_set);
+      
+      self::$replica_set_ofs[$replica_set_id]['stage2'] = new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage2_data', 1);
+      self::$replica_set_ofs[$replica_set_id]['stage2']->set_header(
+        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 2 pre replication alteration, data changes - generated " . $timestamp . "\n" .
+        $old_set_new_set);
+
+      self::$replica_set_ofs[$replica_set_id]['stage3'] = new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage3_schema', 1);
+      self::$replica_set_ofs[$replica_set_id]['stage3']->set_header(
+        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 3 post replication alteration, structure changes - generated " . $timestamp . "\n" .
+        $old_set_new_set);
+
+      self::$replica_set_ofs[$replica_set_id]['stage4'] = new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage4_data', 1);
+      self::$replica_set_ofs[$replica_set_id]['stage4']->set_header(
+        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 4 post replication alteration, data changes - generated " . $timestamp . "\n" .
+        $old_set_new_set);
+    }
+    
+    dbsteward::$old_database = $old_database;
+    dbsteward::$new_database = $new_database;
+    
+    static::diff_doc_work(
+      self::$replica_set_ofs[$replica_set_id]['stage1'],
+      self::$replica_set_ofs[$replica_set_id]['stage2'],
+      self::$replica_set_ofs[$replica_set_id]['stage3'],
+      self::$replica_set_ofs[$replica_set_id]['stage4']
+    );
+  }
 
   /**
    * Creates SQL diff of two SQL dumps

@@ -19,9 +19,12 @@ class sql99_diff {
   public static $new_table_dependency = array();
   
   /**
-   * Setup pointers and references and then call diff_doc_work() to do the actual diffing
-   *
-   * @return void
+   * Setup file pointers then call diff_doc_work() to do the actual diffing
+   * @param string $old_xml_file
+   * @param string $new_xml_file
+   * @param SimpleXMLElement $old_database
+   * @param SimpleXMLElement $new_database
+   * @param string $upgrade_prefix
    */
   public static function diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix) {
     $timestamp = date('r');

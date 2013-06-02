@@ -721,7 +721,7 @@ class pgsql8 extends sql99 {
     return $new_db_doc;
   }
 
-  public function build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $old_replica_set, $new_replica_set, $slonik_file_prefix, $origin_header = '') {
+  public static function build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $old_replica_set, $new_replica_set, $slonik_file_prefix, $origin_header = '') {
     $timestamp = date('r');
 
     $slony_stage1_file = $slonik_file_prefix . '_stage1.slonik';
