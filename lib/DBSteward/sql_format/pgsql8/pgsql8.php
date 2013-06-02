@@ -677,38 +677,45 @@ class pgsql8 extends sql99 {
     pgsql8_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
 
     if ( dbsteward::$generate_slonik ) {
-      // generate upgrade slonik to apply generated sql changes
-      $slonik_header = "# Old set:  " . implode(', ', $old_files) . "\n" . "# New set:  " . implode(', ', $new_files) . "\n";
-      self::build_upgrade_slonik($old_db_doc, $new_db_doc, $upgrade_prefix, $slonik_header);
+      $replica_sets = pgsql8::get_slony_replica_sets($new_db_doc);
+      foreach($replica_sets AS $replica_set) {
+        // separate upgrade slonik file sets for each replica set
+        $slonik_upgrade_prefix = $upgrade_prefix . "_slony_replica_set_" . $replica_set['id'];
+        // generate upgrade slonik to apply generated sql changes
+        $old_new_slonik_header = "# Old definition:  " . implode(', ', $old_files) . "\n"
+          . "# New definition:  " . implode(', ', $new_files) . "\n"
+          . "# Replica set ID " . $replica_set['id'] . "\n";
+        self::build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $replica_set, $slonik_upgrade_prefix, $old_new_slonik_header);
+      }
     }
 
     return $new_db_doc;
   }
 
-  public function build_upgrade_slonik($old_db_doc, $new_db_doc, $slonik_file_prefix, $old_set_new_set = '') {
+  public function build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $replica_set, $slonik_file_prefix, $origin_header = '') {
     $timestamp = date('r');
 
-    $slony_stage1_file = $slonik_file_prefix . '_stage1_slony.slonik';
+    $slony_stage1_file = $slonik_file_prefix . '_stage1.slonik';
     $slony_stage1_fp = fopen($slony_stage1_file, 'w');
     if ($slony_stage1_fp === FALSE) {
       throw new exception("failed to open upgrade slony stage 1 output file " . $slony_stage1_file . ' for output');
     }
     $slony_stage1_ofs = new output_file_segmenter($slony_stage1_file, 1, $slony_stage1_fp, $slony_stage1_file);
     $slony_stage1_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
-    $slony_stage1_ofs->write("# dbsteward slony stage 1 upgrade file generated " . $timestamp . "\n");
-    $slony_stage1_ofs->write($old_set_new_set . "\n");
-    $slony_stage1_ofs->write("ECHO 'dbsteward slony stage 1 upgrade file generated " . date('r') . " starting';\n\n");
+    $slony_stage1_ofs->write("# DBSteward slony stage 1 upgrade file generated " . $timestamp . "\n");
+    $slony_stage1_ofs->write($origin_header . "\n");
+    $slony_stage1_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $replica_set['id'] . " stage 1 file generated " . date('r') . " starting';\n\n");
 
-    $slony_stage3_file = $slonik_file_prefix . '_stage3_slony.slonik';
-    $slony_stage3_fp = fopen($slony_stage3_file, 'w');
+    $slony_stage3_file = $slonik_file_prefix . '_stage3.slonik';
+    $slony_stage3_fp = fopen($slony_stage3_file, 'w'); 
     if ($slony_stage3_fp === FALSE) {
       throw new exception("failed to open upgrade slony stage 3 output file " . $slony_stage3_file . ' for output');
     }
     $slony_stage3_ofs = new output_file_segmenter($slony_stage3_file, 1, $slony_stage3_fp, $slony_stage3_file);
     $slony_stage3_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
-    $slony_stage3_ofs->write("# dbsteward slony stage 3 upgrade file generated " . $timestamp . "\n");
-    $slony_stage3_ofs->write($old_set_new_set . "\n");
-    $slony_stage3_ofs->write("ECHO 'dbsteward slony stage 3 upgrade file generated " . date('r') . " starting';\n\n");
+    $slony_stage3_ofs->write("# DBSteward slony stage 3 upgrade file generated " . $timestamp . "\n");
+    $slony_stage3_ofs->write($origin_header . "\n");
+    $slony_stage3_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $replica_set['id'] . " stage 3 file generated " . date('r') . " starting';\n\n");
 
     // slony replication configuration changes
     // SLONY STAGE 1

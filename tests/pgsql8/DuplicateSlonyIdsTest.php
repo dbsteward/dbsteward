@@ -214,12 +214,12 @@ XML;
     // just upgrade
     if ($expected !== false) {
       $this->expect_exception($expected, function() use($doc) {
-        pgsql8::build_upgrade_slonik($doc, $doc, __DIR__.'/../testdata/slonyid_test');
+        pgsql8::build_upgrade_slonik_replica_set($doc, $doc, __DIR__.'/../testdata/slonyid_test');
       });
     }
     else {
       $this->expect_no_exception(function() use($doc) {
-        pgsql8::build_upgrade_slonik($doc, $doc, __DIR__.'/../testdata/slonyid_test');
+        pgsql8::build_upgrade_slonik_replica_set($doc, $doc, __DIR__.'/../testdata/slonyid_test');
       });
     }
   }
@@ -257,12 +257,12 @@ XML;
 
     if ($expected !== false) {
       $this->expect_exception($expected, function() use($adoc, $bdoc) {
-        pgsql8::build_upgrade_slonik($adoc, $bdoc, __DIR__.'/../testdata/slonyid_test');
+        pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, __DIR__.'/../testdata/slonyid_test');
       });
     }
     else {
       $this->expect_no_exception(function() use($adoc, $bdoc) {
-        pgsql8::build_upgrade_slonik($adoc, $bdoc, __DIR__.'/../testdata/slonyid_test');
+        pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, __DIR__.'/../testdata/slonyid_test');
       });
     }
   }
