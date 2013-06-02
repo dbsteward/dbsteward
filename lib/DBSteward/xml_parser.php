@@ -346,8 +346,8 @@ class xml_parser {
           $node = $nodes[0];
         }
       }
-      // match replicaNode by id
-      else if (strcasecmp($tag_name, 'replicaNode') == 0) {
+      // match slonyNode and slonyReplicaSetNode by id ( DBSteward 1.3 API )
+      else if (strcasecmp($tag_name, 'slonyNode') == 0 || strcasecmp($tag_name, 'slonyReplicaSetNode') == 0) {
         $xpath = $tag_name . "[@id='" . $child['id'] . "']";
         $nodes = $base->xpath($xpath);
         if (count($nodes) > 1) {
