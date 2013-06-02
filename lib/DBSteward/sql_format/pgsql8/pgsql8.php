@@ -685,14 +685,15 @@ class pgsql8 extends sql99 {
         $old_new_slonik_header = "# Old definition:  " . implode(', ', $old_files) . "\n"
           . "# New definition:  " . implode(', ', $new_files) . "\n"
           . "# Replica set ID " . $replica_set['id'] . "\n";
-        self::build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $replica_set, $slonik_upgrade_prefix, $old_new_slonik_header);
+        $old_replica_set = pgsql8::get_slony_replica_set($old_db_doc, (string)($replica_set['id']));
+        pgsql8::build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $old_replica_set, $replica_set, $slonik_upgrade_prefix, $old_new_slonik_header);
       }
     }
 
     return $new_db_doc;
   }
 
-  public function build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $replica_set, $slonik_file_prefix, $origin_header = '') {
+  public function build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $old_replica_set, $new_replica_set, $slonik_file_prefix, $origin_header = '') {
     $timestamp = date('r');
 
     $slony_stage1_file = $slonik_file_prefix . '_stage1.slonik';
@@ -704,7 +705,7 @@ class pgsql8 extends sql99 {
     $slony_stage1_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
     $slony_stage1_ofs->write("# DBSteward slony stage 1 upgrade file generated " . $timestamp . "\n");
     $slony_stage1_ofs->write($origin_header . "\n");
-    $slony_stage1_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $replica_set['id'] . " stage 1 file generated " . date('r') . " starting';\n\n");
+    $slony_stage1_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $new_replica_set['id'] . " stage 1 file generated " . date('r') . " starting';\n\n");
 
     $slony_stage3_file = $slonik_file_prefix . '_stage3.slonik';
     $slony_stage3_fp = fopen($slony_stage3_file, 'w'); 
@@ -715,7 +716,7 @@ class pgsql8 extends sql99 {
     $slony_stage3_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
     $slony_stage3_ofs->write("# DBSteward slony stage 3 upgrade file generated " . $timestamp . "\n");
     $slony_stage3_ofs->write($origin_header . "\n");
-    $slony_stage3_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $replica_set['id'] . " stage 3 file generated " . date('r') . " starting';\n\n");
+    $slony_stage3_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $new_replica_set['id'] . " stage 3 file generated " . date('r') . " starting';\n\n");
 
     // slony replication configuration changes
     // SLONY STAGE 1
@@ -726,6 +727,10 @@ class pgsql8 extends sql99 {
 
       // slony replicated tables that are no longer present
       foreach ($old_schema->table AS $old_table) {
+        if ( ! pgsql8::slony_replica_set_contains_table($old_db_doc, $old_replica_set, $old_schema, $old_table) ) {
+          // this old table is not contained in the old replica set being processed
+          continue;
+        }
         $new_table = NULL;
         if ( $new_schema ) {
           $new_table = dbx::get_table($new_schema, $old_table['name']);
@@ -739,7 +744,7 @@ class pgsql8 extends sql99 {
             if (preg_match(pgsql8::PATTERN_REPLICATED_COLUMN, $old_column['type']) > 0
               && isset($old_column['slonyId']) && strcasecmp('IGNORE_REQUIRED', $old_column['slonyId']) != 0) {
               $slony_stage1_ofs->write("# replicated table column " . $old_schema['name'] . '.' . $old_table['name'] . '.' . $old_column['name'] . " slonyId " . $old_table['slonyId'] . " no longer defined, dropping\n");
-              $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_column['slonyId'])) . "\n\n");
+              $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_replica_set['originNodeId']), dbsteward::string_cast($old_column['slonyId'])) . "\n\n");
             }
           }
 
@@ -747,7 +752,7 @@ class pgsql8 extends sql99 {
             && strcasecmp('IGNORE_REQUIRED', $old_table['slonyId']) != 0) {
             // drop table subscription to the table
             $slony_stage1_ofs->write("# replicated table " . $old_schema['name'] . '.' . $old_table['name'] . " slonyId " . $old_table['slonyId'] . " no longer defined, dropping\n");
-            $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_table, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_table['slonyId'])) . "\n\n");
+            $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_table, dbsteward::string_cast($old_replica_set['originNodeId']), dbsteward::string_cast($old_table['slonyId'])) . "\n\n");
           }
         }
         if ($new_table !== NULL) {
@@ -767,7 +772,7 @@ class pgsql8 extends sql99 {
 
               if ($new_column === NULL
                 && strcasecmp('IGNORE_REQUIRED', $old_column['slonyId']) != 0) {
-                $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_column['slonyId'])) . "\n\n");
+                $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_replica_set['originNodeId']), dbsteward::string_cast($old_column['slonyId'])) . "\n\n");
               }
             }
           }
@@ -776,6 +781,10 @@ class pgsql8 extends sql99 {
 
       // slony replicated stand-alone sequences that are no longer present
       foreach ($old_schema->sequence AS $old_sequence) {
+        if ( ! static::slony_replica_set_contains_sequence($old_db_doc, $old_replica_set, $old_schema, $old_sequence) ) {
+          // this old sequence is not contained in the old replica set being processed
+          continue;
+        }
         $new_sequence = NULL;
         if ($new_schema !== NULL) {
           $new_sequence = dbx::get_sequence($new_schema, $old_sequence['name']);
@@ -783,7 +792,7 @@ class pgsql8 extends sql99 {
 
         if (($new_schema === NULL || $new_sequence === NULL) && strcasecmp('IGNORE_REQUIRED', $old_sequence['slonyId']) != 0) {
           // schema or sequence no longer exists, drop the sequence subscription
-          $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($old_sequence['slonyId'])) . "\n\n");
+          $slony_stage1_ofs->write(sprintf(slony1_slonik::script_drop_sequence, dbsteward::string_cast($old_replica_set['originNodeId']), dbsteward::string_cast($old_sequence['slonyId'])) . "\n\n");
         }
       }
     }
@@ -799,77 +808,51 @@ class pgsql8 extends sql99 {
       // new tables that were not previously present
       // new replicated columns that were not previously present
       foreach ($new_schema->table AS $new_table) {
-        if (isset($new_table['slonyId']) && strlen($new_table['slonyId']) > 0) {
-          if (strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) == 0) {
-            // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
-            // but also allow for some tables to not be replicated even with the flag on
+        // is this table replicated in this replica set?
+        if ( pgsql8::slony_replica_set_contains_table($new_db_doc, $new_replica_set, $new_schema, $new_table) ) {
+          if (!is_numeric(dbsteward::string_cast($new_table['slonyId']))) {
+            throw new exception('table ' . $new_table['name'] . " slonyId " . $new_table['slonyId'] . " is not numeric");
           }
-          else {
-            if (!is_numeric(dbsteward::string_cast($new_table['slonyId']))) {
-              throw new exception('table ' . $new_table['name'] . " slonyId " . $new_table['slonyId'] . " is not numeric");
+          if (in_array(dbsteward::string_cast($new_table['slonyId']), self::$table_slony_ids)) {
+            throw new exception("table slonyId " . $new_table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
+          }
+          self::$table_slony_ids[] = dbsteward::string_cast($new_table['slonyId']);
+
+          $old_table = NULL;
+          if ( $old_schema ) {
+            $old_table = dbx::get_table($old_schema, $new_table['name']);
+
+            if ($old_table
+             && isset($old_table['slonyId'])
+             && strcasecmp('IGNORE_REQUIRED', $old_table['slonyId']) !== 0
+             && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) !== 0
+             && (string)$new_table['slonyId'] != (string)$old_table['slonyId']) {
+              throw new Exception("table slonyId {$new_table['slonyId']} in new does not match slonyId {$old_table['slonyId']} in old");
             }
-            if (in_array(dbsteward::string_cast($new_table['slonyId']), self::$table_slony_ids)) {
-              throw new exception("table slonyId " . $new_table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
+          }
+
+          if (($old_schema === NULL || $old_table === NULL) && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) != 0) {
+            // if it has not been declared, create the upgrade set to be merged
+            if (!$upgrade_set_created) {
+              self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc, $new_replica_set);
+              $upgrade_set_created = TRUE;
             }
-            self::$table_slony_ids[] = dbsteward::string_cast($new_table['slonyId']);
-          }
-        }
-        else {
-          dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'], 44) . " table missing slonyId\t" . self::get_slony_next_id_dialogue($new_db_doc));
-          if (dbsteward::$require_slony_id) {
-            throw new exception($new_schema['name'] . '.' . $new_table['name'] . " table missing slonyId and slonyIds are required!");
-          }
-        }
 
-        $old_table = NULL;
-        if ( $old_schema ) {
-          $old_table = dbx::get_table($old_schema, $new_table['name']);
-
-          if ($old_table
-           && isset($old_table['slonyId'])
-           && strcasecmp('IGNORE_REQUIRED', $old_table['slonyId']) !== 0
-           && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) !== 0
-           && (string)$new_table['slonyId'] != (string)$old_table['slonyId']) {
-            throw new Exception("table slonyId {$new_table['slonyId']} in new does not match slonyId {$old_table['slonyId']} in old");
+            // schema or table did not exist before, add it
+            $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_table, dbsteward::string_cast($new_replica_set['upgradeSetId']), dbsteward::string_cast($new_replica_set['originNodeId']), dbsteward::string_cast($new_table['slonyId']), $new_schema['name'] . '.' . $new_table['name'], $new_schema['name'] . '.' . $new_table['name'] . ' table replication') . "\n\n");
           }
-        }
-
-        if (($old_schema === NULL || $old_table === NULL) && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) != 0) {
-          // if it has not been declared, create the upgrade set to be merged
-          if (!$upgrade_set_created) {
-            self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc);
-            $upgrade_set_created = TRUE;
-          }
-
-          // schema or table did not exist before, add it
-          $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_table, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_table['slonyId']), $new_schema['name'] . '.' . $new_table['name'], $new_schema['name'] . '.' . $new_table['name'] . ' table replication') . "\n\n");
         }
 
         // add table owned sequence subscriptions for any not already present
         foreach ($new_table->column AS $new_column) {
-          // is a replicated sequence type
-          if (preg_match(pgsql8::PATTERN_REPLICATED_COLUMN, $new_column['type']) > 0) {
-            if (isset($new_column['slonyId']) && strlen($new_column['slonyId']) > 0) {
-              if (strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) == 0) {
-                // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
-                // but also allow for some tables to not be replicated even with the flag on
-              }
-              else {
-                if (!is_numeric(dbsteward::string_cast($new_column['slonyId']))) {
-                  throw new exception("serial column " . $new_column['name'] . " slonyId " . $new_column['slonyId'] . " is not numeric");
-                }
-                if (in_array(dbsteward::string_cast($new_column['slonyId']), self::$sequence_slony_ids)) {
-                  throw new exception("column sequence slonyId " . $new_column['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
-                }
-                self::$sequence_slony_ids[] = dbsteward::string_cast($new_column['slonyId']);
-              }
+          // is this column sequence replicated in this replica set?
+          if ( pgsql8::slony_replica_set_contains_table_column_serial_sequence($new_db_doc, $new_replica_set, $new_schema, $new_table, $new_column) ) {
+
+            if (in_array(dbsteward::string_cast($new_column['slonyId']), self::$sequence_slony_ids)) {
+              throw new exception("column sequence slonyId " . $new_column['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
             }
-            else {
-              dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_table['name'] . '.' . $new_column['name'], 44) . " serial column missing slonyId\t" . self::get_slony_next_id_dialogue($new_db_doc));
-              if (dbsteward::$require_slony_id) {
-                throw new exception($new_schema['name'] . '.' . $new_table['name'] . '.' . $new_column['name'] . " serial column missing slonyId and slonyIds are required!");
-              }
-            }
+            self::$sequence_slony_ids[] = dbsteward::string_cast($new_column['slonyId']);
+
 
             // schema/table/column not present before
             $old_column = NULL;
@@ -893,12 +876,12 @@ class pgsql8 extends sql99 {
               && strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) != 0) {
               // if it has not been declared, create the upgrade set to be merged
               if (!$upgrade_set_created) {
-                self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc);
+                self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc, $new_replica_set);
                 $upgrade_set_created = TRUE;
               }
 
               $col_sequence = pgsql8::identifier_name($new_schema['name'], $new_table['name'], $new_column['name'], '_seq');
-              $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_column['slonyId']), $new_schema['name'] . '.' . $col_sequence, $new_schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
+              $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_replica_set['upgradeSetId']), dbsteward::string_cast($new_replica_set['originNodeId']), dbsteward::string_cast($new_column['slonyId']), $new_schema['name'] . '.' . $col_sequence, $new_schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
             }
           }
         }
@@ -906,27 +889,13 @@ class pgsql8 extends sql99 {
 
       // new stand alone sequences not owned by tables that were not previously present
       foreach ($new_schema->sequence AS $new_sequence) {
-        if (isset($new_sequence['slonyId'])
-          && strlen($new_sequence['slonyId']) > 0) {
-          if (strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) == 0) {
-            // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
-            // but also allow for some tables to not be replicated even with the flag on
+        // is this sequence replicated in this replica set?
+        if ( pgsql8::slony_replica_set_contains_sequence($new_db_doc, $new_replica_set, $new_schema, $new_sequence) ) {
+
+          if (in_array(dbsteward::string_cast($new_sequence['slonyId']), self::$sequence_slony_ids)) {
+            throw new exception("sequence slonyId " . $new_sequence['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
           }
-          else {
-            if (!is_numeric(dbsteward::string_cast($new_sequence['slonyId']))) {
-              throw new exception('sequence ' . $new_sequence['name'] . " slonyId " . $new_sequence['slonyId'] . " is not numeric");
-            }
-            if (in_array(dbsteward::string_cast($new_sequence['slonyId']), self::$sequence_slony_ids)) {
-              throw new exception("sequence slonyId " . $new_sequence['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
-            }
-            self::$sequence_slony_ids[] = dbsteward::string_cast($new_sequence['slonyId']);
-          }
-        }
-        else {
-          dbsteward::console_line(1, "Warning: " . str_pad($new_schema['name'] . '.' . $new_sequence['name'], 44) . " sequence missing slonyId\t" . self::get_slony_next_id_dialogue($new_db_doc));
-          if (dbsteward::$require_slony_id) {
-            throw new exception($new_schema['name'] . '.' . $new_sequence['name'] . " sequence missing slonyId and slonyIds are required!");
-          }
+          self::$sequence_slony_ids[] = dbsteward::string_cast($new_sequence['slonyId']);
         }
 
         $old_sequence = NULL;
@@ -945,12 +914,12 @@ class pgsql8 extends sql99 {
         if (($old_schema === NULL || $old_sequence === NULL) && strcasecmp('IGNORE_REQUIRED', $new_sequence['slonyId']) != 0) {
           // if it has not been declared, create the upgrade set to be merged
           if (!$upgrade_set_created) {
-            self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc);
+            self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc, $new_replica_set);
             $upgrade_set_created = TRUE;
           }
 
           // sequence did not previously exist, add it
-          $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_db_doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($new_db_doc->database->slony->masterNode['id']), dbsteward::string_cast($new_sequence['slonyId']), $new_schema['name'] . '.' . $new_sequence['name'], $new_schema['name'] . '.' . $new_sequence['name'] . ' sequence replication') . "\n\n");
+          $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_replica_set['upgradeSetId']), dbsteward::string_cast($new_replica_set['originNodeId']), dbsteward::string_cast($new_sequence['slonyId']), $new_schema['name'] . '.' . $new_sequence['name'], $new_schema['name'] . '.' . $new_sequence['name'] . ' sequence replication') . "\n\n");
         }
       }
     }
@@ -960,43 +929,43 @@ class pgsql8 extends sql99 {
       $slony_stage3_ofs->write("ECHO 'Waiting for merge set creation';\n");
       $slony_stage3_ofs->write(sprintf(
           slony1_slonik::script_node_sync_wait,
-          $new_db_doc->database->slony->masterNode['id'],
-          $new_db_doc->database->slony->masterNode['id'],
-          $new_db_doc->database->slony->masterNode['id']
+          $new_replica_set['originNodeId'],
+          $new_replica_set['originNodeId'],
+          $new_replica_set['originNodeId']
         ) . "\n\n");
 
       //
-      foreach($new_db_doc->database->slony->replicaNode AS $replica_node) {
+      foreach($new_replica_set->slonyReplicaSetNode AS $replica_node) {
         // subscribe replicaNode to its provider node providerId
-        $slony_stage3_ofs->write("ECHO 'Subscribing replicaNode " . $replica_node['id'] . " to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
+        $slony_stage3_ofs->write("ECHO 'Subscribing replicaNode " . $replica_node['id'] . " to providerNodeId " . $replica_node['providerNodeId'] . " set ID " . $new_replica_set['upgradeSetId'] . "';\n");
         $slony_stage3_ofs->write(sprintf(
             slony1_slonik::script_subscribe_set,
-            $new_db_doc->database->slony->replicationUpgradeSet['id'],
-            $replica_node['providerId'],
+            $new_replica_set['upgradeSetId'],
+            $replica_node['providerNodeId'],
             $replica_node['id']
           ) . "\n\n");
         // do a sync and wait for it on the subscribing node
-        $slony_stage3_ofs->write("ECHO 'Waiting for replicaNode " . $replica_node['id'] . " subscription to providerId " . $replica_node['providerId'] . " set ID " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . "';\n");
+        $slony_stage3_ofs->write("ECHO 'Waiting for replicaNode " . $replica_node['id'] . " subscription to providerNodeId " . $replica_node['providerNodeId'] . " set ID " . $new_replica_set['upgradeSetId'] . "';\n");
         $slony_stage3_ofs->write(sprintf(
             slony1_slonik::script_node_sync_wait,
-            $new_db_doc->database->slony->masterNode['id'],
-            $new_db_doc->database->slony->masterNode['id'],
+            $new_replica_set['originNodeId'],
+            $new_replica_set['originNodeId'],
             $replica_node['id']
           ) . "\n\n");
       }
 
       // now we can merge the upgrade set to the main
-      $slony_stage3_ofs->write("ECHO 'Merging replicationUpgradeSet " . $new_db_doc->database->slony->replicationUpgradeSet['id'] . " to set " . $new_db_doc->database->slony->replicationSet['id'] . "';\n");
+      $slony_stage3_ofs->write("ECHO 'Merging replicationUpgradeSet " . $new_replica_set['upgradeSetId'] . " to set " . $new_replica_set['id'] . "';\n");
       $slony_stage3_ofs->write(sprintf(slony1_slonik::script_merge_set,
-          $new_db_doc->database->slony->replicationSet['id'],
-          $new_db_doc->database->slony->replicationUpgradeSet['id'],
-          $new_db_doc->database->slony->masterNode['id']
+          $new_replica_set['id'],
+          $new_replica_set['upgradeSetId'],
+          $new_replica_set['originNodeId']
         ) . "\n\n");
     }
   }
 
-  protected static function create_slonik_upgrade_set($ofs, $doc) {
-    $ofs->write(sprintf(slony1_slonik::script_create_set, dbsteward::string_cast($doc->database->slony->replicationUpgradeSet['id']), dbsteward::string_cast($doc->database->slony->masterNode['id']), 'temp upgrade set') . "\n\n");
+  protected static function create_slonik_upgrade_set($ofs, $doc, $replica_set) {
+    $ofs->write(sprintf(slony1_slonik::script_create_set, dbsteward::string_cast($replica_set['upgradeSetId']), dbsteward::string_cast($replica_set['originNodeId']), 'temp upgrade set') . "\n\n");
   }
 
   public static function slony_compare($files) {
@@ -2056,6 +2025,26 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     foreach($replica_sets AS $replica_set) {
       return $replica_set;
     }
+  }
+  
+  /**
+   * Get the replica set node of the specified ID
+   * 
+   * @param SimpleXMLElement $db_doc
+   * @param integer $id
+   * @return SimpleXMLElement
+   */
+  protected static function get_slony_replica_set($db_doc, $id) {
+    if ( $id == 0 || !is_numeric($id) ) {
+      throw new exception("replica set id '" . $id . "' is not a number");
+    }
+    $replica_sets = static::get_slony_replica_sets($db_doc);
+    foreach($replica_sets AS $replica_set) {
+      if ( strcmp($replica_set['id'], $id) == 0 ) {
+        return $replica_set;
+      }
+    }
+    return NULL;
   }
   
   protected static function slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table) {
