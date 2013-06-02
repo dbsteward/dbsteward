@@ -268,9 +268,9 @@ class mysql5 {
 
   public function build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $old_files, $new_output_prefix, $new_composite_file, $new_db_doc, $new_files) {
     // place the upgrade files with the new_files set
-    $upgrade_prefix = dirname($new_output_prefix) . '/upgrade';
+    $upgrade_prefix = $new_output_prefix . '_upgrade';
 
-    // msdiff needs these to intelligently create SQL difference statements in dependency order
+    // mysql5_diff needs these to intelligently create SQL difference statements in dependency order
     dbsteward::console_line(1, "Calculating old table foreign key dependency order..");
     mysql5_diff::$old_table_dependency = xml_parser::table_dependency_order($old_db_doc);
     dbsteward::console_line(1, "Calculating new table foreign key dependency order..");
