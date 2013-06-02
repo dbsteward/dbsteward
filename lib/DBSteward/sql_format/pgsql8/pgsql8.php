@@ -598,10 +598,36 @@ class pgsql8 extends sql99 {
       }
     }
 
-    $highest_table_slony_id = self::get_slony_next_table_id($db_doc) - 1;
-    dbsteward::console_line(1, "[slony] Highest table slonyId: " . $highest_table_slony_id);
-    $highest_sequence_slony_id = self::get_slony_next_sequence_id($db_doc) - 1;
-    dbsteward::console_line(1, "[slony] Highest sequence slonyId: " . $highest_sequence_slony_id);
+    dbsteward::console_line(1, "[slony] ID summary: " . count(self::$table_slony_ids) . " tables " . count(self::$sequence_slony_ids) . " sequences");
+    dbsteward::console_line(1, "[slony] table ID segments: " . static::slony_id_segment_summary(self::$table_slony_ids));
+    dbsteward::console_line(1, "[slony] sequence ID segements: " . static::slony_id_segment_summary(self::$sequence_slony_ids));
+  }
+  
+  /***
+   * Summarize the ID segments in the array of ids passed
+   * @param integer $ids
+   * @return string
+   */
+  protected static function slony_id_segment_summary($ids) {
+    sort($ids, SORT_NUMERIC);
+    $last_id = $ids[0];
+    $streak = 0;
+    $s = (string)($ids[0]);
+    for($i = 1; $i < count($ids) - 1; $i++) {
+      if ( $ids[$i] == $last_id + 1 ) {
+        $streak++;
+      }
+      else {
+        if ( $streak > 1 ) {
+          $s .= "-" . $ids[$i - 1];
+        }
+        $s .= ", " . $ids[$i];
+        $streak = 0;
+      }
+      $last_id = $ids[$i];
+    }
+    $s .= "-" . $ids[count($ids) - 1];
+    return $s;
   }
 
   public static function get_slony_next_id_dialogue($doc) {
