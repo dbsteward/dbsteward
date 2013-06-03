@@ -9,6 +9,11 @@
  */
 
 class sql99 {
+  
+  /**
+   * Current replica set ID context
+   */
+  public static $current_replica_set_id;
 
   const QUOTE_CHAR = '"';
   

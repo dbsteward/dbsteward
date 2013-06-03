@@ -1,7 +1,8 @@
 #!/usr/bin/env php
 <?php
 /**
- * DBSteward - database DDL compiler and difference calculator
+ * DBSteward
+ * Database SQL compiler and differencing via XML definition
  *
  * @package DBSteward
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License

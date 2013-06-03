@@ -1,7 +1,7 @@
 <?php
 /**
- * database sql generation from xml
- * with definition validation
+ * DBSteward
+ * Database SQL compiler and differencing via XML definition
  * full creation script generation
  * sql upgrade script generation
  *
@@ -18,6 +18,7 @@ require_once dirname(__FILE__) . '/dbx.php';
 require_once dirname(__FILE__) . '/xml_parser.php';
 require_once dirname(__FILE__) . '/sql_parser.php';
 require_once dirname(__FILE__) . '/output_file_segmenter.php';
+require_once dirname(__FILE__) . '/ofs_replica_set_router.php';
 require_once dirname(__FILE__) . '/active_sql_format_autoloader.php';
 
 class dbsteward {
