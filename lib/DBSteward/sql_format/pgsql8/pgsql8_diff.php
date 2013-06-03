@@ -26,10 +26,17 @@ class pgsql8_diff extends sql99_diff {
     
     $timestamp = date('r');
     
+    // use output_file_segementer router to route changes to the correct ofs
+    // also ignore unknown replica set IDs so changes that are not part of replicaed tables
+    // are not put in upgrade stage files
     $ofsm_stage1 = new ofs_replica_set_router();
+    $ofsm_stage1->ignore_unknown_set_ids();
     $ofsm_stage2 = new ofs_replica_set_router();
+    $ofsm_stage2->ignore_unknown_set_ids();
     $ofsm_stage3 = new ofs_replica_set_router();
+    $ofsm_stage3->ignore_unknown_set_ids();
     $ofsm_stage4 = new ofs_replica_set_router();
+    $ofsm_stage4->ignore_unknown_set_ids();
     
     foreach(pgsql8::get_slony_replica_sets($new_database) AS $replica_set) {
       $replica_set_id = (string)$replica_set['id'];

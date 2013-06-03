@@ -12,6 +12,12 @@ class ofs_replica_set_router {
   
   protected $ofs = NULL;
   
+  protected $ignore_unknown_set_ids = FALSE;
+  
+  public function ignore_unknown_set_ids($ignore = TRUE) {
+    $this->ignore_unknown_set_ids = $ignore;
+  }
+  
   public function __construct() {
     $this->ofs = array();
   }
@@ -30,6 +36,9 @@ class ofs_replica_set_router {
   
   public function __call($m, $a) {
     if ( !isset($this->ofs[format::$current_replica_set_id]) ) {
+      if ( $this->ignore_unknown_set_ids ) {
+        return FALSE;
+      }
       throw new exception("current_replica_set_id " . format::$current_replica_set_id . " not defined");
     }
     $active_set_ofs = $this->ofs[format::$current_replica_set_id];
