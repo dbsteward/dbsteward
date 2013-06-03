@@ -2048,7 +2048,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    * @param SimpleXMLElement $db_doc
    * @return SimpleXMLElement
    */
-  protected static function &slony_replica_set_first($db_doc) {
+  public static function &get_slony_replica_set_first($db_doc) {
     $replica_sets = static::get_slony_replica_sets($db_doc);
     foreach($replica_sets AS $replica_set) {
       return $replica_set;
@@ -2091,7 +2091,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
       else if ( !isset($table['slonySetId']) ) {
         // this table has no replica set
-        $first_replica_set = static::slony_replica_set_first($db_doc);
+        $first_replica_set = static::get_slony_replica_set_first($db_doc);
         if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
           // but the $replica_set passed is the FIRST NATURAL ORDER replica set
           // so yes this table pertains to this replica_set
@@ -2124,7 +2124,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
       else if ( !isset($sequence['slonySetId']) ) {
         // this sequence has no replica set
-        $first_replica_set = static::slony_replica_set_first($db_doc);
+        $first_replica_set = static::get_slony_replica_set_first($db_doc);
         if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
           // but the $replica_set passed is the FIRST NATURAL ORDER replica set
           // so yes this sequence pertains to this replica_set
@@ -2160,7 +2160,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         }
         else if ( !isset($column['slonySetId']) ) {
           // this column has no replica set
-          $first_replica_set = static::slony_replica_set_first($db_doc);
+          $first_replica_set = static::get_slony_replica_set_first($db_doc);
           if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
             // but the $replica_set passed is the FIRST NATURAL ORDER replica set
             // so yes this column pertains to this replica_set

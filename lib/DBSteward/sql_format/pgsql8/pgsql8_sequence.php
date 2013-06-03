@@ -28,6 +28,9 @@ class pgsql8_sequence {
     if ( isset($node_sequence['min']) && !is_numeric((string)$node_sequence['min']) ) {
       throw new exception("min value is not numeric: " . $node_sequence['min']);
     }
+    
+    format::set_active_replica_set($node_sequence);
+    
     $cache = 1;
     if ( isset($node_sequence['cache']) ) {
       if ( !is_numeric((string)$node_sequence['cache']) ) {
@@ -108,6 +111,7 @@ class pgsql8_sequence {
    * @return string
    */
   public function get_drop_sql($node_schema, $node_sequence) {
+    format::set_active_replica_set($node_sequence);
     $ddl = "DROP SEQUENCE " . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_sequence['name']) . ";\n";
     return $ddl;
   }

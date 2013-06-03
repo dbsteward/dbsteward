@@ -137,6 +137,7 @@ class pgsql8_diff extends sql99_diff {
    * @return void
    */
   protected static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
+    format::set_default_replica_set(dbsteward::$new_database);
     if (self::$as_transaction) {
       $stage1_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
       $stage1_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
@@ -166,8 +167,9 @@ class pgsql8_diff extends sql99_diff {
     self::update_database_config_parameters($stage1_ofs);
 
     dbsteward::console_line(1, "Update Data");
+    format::set_default_replica_set(dbsteward::$new_database);
     self::update_data($stage2_ofs, true);
-    self::update_data($stage2_ofs, false);
+    self::update_data($stage4_ofs, false);
 
     // append any literal SQL in new not in old at the end of data stage 1
     $old_sql = dbx::get_sql(dbsteward::$old_database);
@@ -194,6 +196,7 @@ class pgsql8_diff extends sql99_diff {
     }
 
     // append stage defined sql statements to appropriate stage file
+    format::set_default_replica_set(dbsteward::$new_database);
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2');
     dbx::build_staged_sql(dbsteward::$new_database, $stage3_ofs, 'STAGE3');
