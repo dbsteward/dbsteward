@@ -65,6 +65,13 @@ class output_file_segmenter {
     $this->content_header .= $text;
   }
   
+  public function disable_fixed_file_header() {
+    if ( ! $this->fixed_file_pointer ) {
+      throw new exception("fixed file pointer not in user and tried to disable_fixed_file_header()");
+    }
+    $this->wrote_fixed_file_header = TRUE;
+  }
+  
   protected function write_header() {
     $se = $this->segmenting_enabled;
     $this->segmenting_enabled = FALSE;

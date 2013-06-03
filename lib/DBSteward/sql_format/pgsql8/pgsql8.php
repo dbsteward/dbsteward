@@ -314,6 +314,7 @@ class pgsql8 extends sql99 {
     if ( dbsteward::$generate_slonik ) {
       $replica_sets = static::get_slony_replica_sets($db_doc);
       foreach($replica_sets AS $replica_set) {
+        pgsql8::build_slonik_preamble($new_db_doc, $replica_set, $upgrade_prefix . "_slony_replica_set_" . $replica_set['id'] . "_preamble.slonik");
         pgsql8::build_slonik_subscribe_set($db_doc, $replica_set, $output_prefix . '_slony_subscribe_set_' . $replica_set['id'] . '.slonik');
       }
     }
@@ -720,6 +721,40 @@ class pgsql8 extends sql99 {
 
     return $new_db_doc;
   }
+  
+  public static function build_slonik_preamble($db_doc, $replica_set, $slony_preamble_file) {
+    $timestamp = date('r');
+
+    $slony_preamble_fp = fopen($slony_preamble_file, 'w');
+    if ($slony_preamble_fp === FALSE) {
+      throw new exception("failed to open slony preamble output file " . $slony_preamble_file);
+    }
+    $slony_preamble_ofs = new output_file_segmenter($slony_preamble_file, 1, $slony_preamble_fp, $slony_preamble_file);
+    $slony_preamble_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
+    // don't write the fixed file header file name. slony preamble must start with the CLUSTER NAME directive
+    $slony_preamble_ofs->disable_fixed_file_header();
+    
+    if ( isset($db_doc->database->slony->slonyNode) ) {
+      $slony_preamble_ofs->write("CLUSTER NAME = " . $db_doc->database->slony['clusterName'] . "\n");
+      foreach($db_doc->database->slony->slonyNode AS $slony_node) {
+        $slony_preamble_ofs->write(
+          "NODE " . $slony_node['id'] . " ADMIN CONNINFO = '"
+          . "dbname=" . $slony_node['dbName']
+          . " host=" . $slony_node['dbHost']
+          . " user=" . $slony_node['dbUser']
+          . " password=" . $slony_node['dbPassword'] . "';\n"
+        );
+      }
+    }
+    else {
+      $slony_preamble_ofs->write("DBSTEWARD: NO SLONY NODES DEFINED\n");
+    }
+
+    $slony_preamble_ofs->write("\n");
+    $slony_preamble_ofs->write("# " . $slony_preamble_file . "\n");
+    $slony_preamble_ofs->write("# DBSteward slony preamble file generated " . $timestamp . "\n");
+    $slony_preamble_ofs->write("# Replica Set: " . $replica_set['id'] . "\n\n");
+  }
 
   public static function build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $old_replica_set, $new_replica_set, $slonik_file_prefix, $origin_header = '') {
     $timestamp = date('r');
@@ -727,7 +762,7 @@ class pgsql8 extends sql99 {
     $slony_stage1_file = $slonik_file_prefix . '_stage1.slonik';
     $slony_stage1_fp = fopen($slony_stage1_file, 'w');
     if ($slony_stage1_fp === FALSE) {
-      throw new exception("failed to open upgrade slony stage 1 output file " . $slony_stage1_file . ' for output');
+      throw new exception("failed to open upgrade slony stage 1 output file " . $slony_stage1_file);
     }
     $slony_stage1_ofs = new output_file_segmenter($slony_stage1_file, 1, $slony_stage1_fp, $slony_stage1_file);
     $slony_stage1_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
