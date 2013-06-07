@@ -59,6 +59,7 @@ class pgsql8_permission {
   }
 
   public static function get_sql($db_doc, $node_schema, $node_object, $node_permission) {
+    format::set_context_replica_set_id($node_object);
     $perms = pgsql8_permission::get_permission_operations($node_permission);
     $roles = preg_split(dbsteward::PATTERN_SPLIT_ROLE, $node_permission['role'], -1, PREG_SPLIT_NO_EMPTY);
     $object_type = strtoupper($node_object->getName());
