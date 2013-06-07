@@ -220,12 +220,14 @@ class pgsql8_diff extends sql99_diff {
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
       $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
+      pgsql8::set_context_replica_set_id($new_schema);
       pgsql8_diff_views::drop_views($ofs1, $old_schema, $new_schema);
     }
 
     // if the table dependency order is unknown, bang them in natural order
     if ( ! is_array(self::$new_table_dependency) ) {
       foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
+        pgsql8::set_context_replica_set_id($new_schema);
         //@NOTICE: @TODO: this does not honor old*Name attributes, does it matter?
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
         pgsql8_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
@@ -244,6 +246,7 @@ class pgsql8_diff extends sql99_diff {
       // non-primary key constraints may be inter-schema dependant, and dependant on other's primary keys
       // and therefore should be done after object creation sections
       foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
+        pgsql8::set_context_replica_set_id($new_schema);
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
         pgsql8_diff_tables::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', false);
       }
@@ -259,10 +262,13 @@ class pgsql8_diff extends sql99_diff {
 
         $new_schema = dbx::get_schema(dbsteward::$new_database, $item['schema']['name']);
         $old_schema = dbx::get_schema(dbsteward::$old_database, $item['schema']['name']);
+        
+        pgsql8::set_context_replica_set_id($new_schema);
 
         // do all types and functions on their own before table creation
         // see next loop for other once per schema work
         if ( !in_array(trim($new_schema['name']), $processed_schemas) ) {
+          pgsql8::set_context_replica_set_id($new_schema);
           pgsql8_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
           pgsql8_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
           $processed_schemas[] = trim($new_schema['name']);
@@ -281,6 +287,7 @@ class pgsql8_diff extends sql99_diff {
         $new_schema = dbx::get_schema(dbsteward::$new_database, $item['schema']['name']);
         $new_table = null;
         if ( $new_schema != null ) {
+          pgsql8::set_context_replica_set_id($new_schema);
           $new_table = dbx::get_table($new_schema, $item['table']['name']);
         }
         $old_schema = dbx::get_schema(dbsteward::$old_database, $item['schema']['name']);
@@ -308,6 +315,7 @@ class pgsql8_diff extends sql99_diff {
         $new_schema = dbx::get_schema(dbsteward::$new_database, $item['schema']['name']);
         $new_table = null;
         if ( $new_schema != null ) {
+          pgsql8::set_context_replica_set_id($new_schema);
           $new_table = dbx::get_table($new_schema, $item['table']['name']);
         }
         $old_schema = dbx::get_schema(dbsteward::$old_database, $item['schema']['name']);
@@ -382,12 +390,14 @@ class pgsql8_diff extends sql99_diff {
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
       $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
+      pgsql8::set_context_replica_set_id($new_schema);
       pgsql8_diff_views::create_views($ofs3, $old_schema, $new_schema);
     }
   }
 
   protected static function update_permissions($ofs1, $ofs3) {
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
+      pgsql8::set_context_replica_set_id($new_schema);
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
       foreach(dbx::get_permissions($new_schema) AS $new_permission) {
         if ( $old_schema == null || !pgsql8_permission::has_permission($old_schema, $new_permission) ) {
@@ -396,6 +406,7 @@ class pgsql8_diff extends sql99_diff {
       }
 
       foreach(dbx::get_tables($new_schema) AS $new_table) {
+        pgsql8::set_context_replica_set_id($new_table);
         $old_table = null;
         if ( $old_schema != null ) {
           $old_table = dbx::get_table($old_schema, $new_table['name']);
@@ -492,6 +503,8 @@ class pgsql8_diff extends sql99_diff {
         if ( $new_table == null ) {
           throw new exception("table " . $item['table']['name'] . " not found in new database schema " . $new_schema['name']);
         }
+        
+        pgsql8::set_context_replica_set_id($new_schema);
 
         // if the table was renamed, get old definition pointers for comparison
         if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) ) {
@@ -508,6 +521,7 @@ class pgsql8_diff extends sql99_diff {
     else {
       // dependency order unknown, hit them in natural order
       foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
+        pgsql8::set_context_replica_set_id($new_schema);
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
         pgsql8_diff_tables::diff_data($ofs, $old_schema, $new_schema);
       }

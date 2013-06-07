@@ -777,6 +777,7 @@ class dbx {
       $ofs->write("\n-- SQL STAGE " . $stage . " COMMANDS\n");
     }
     foreach ($db_doc->sql AS $sql_statement) {
+      pgsql8::set_context_replica_set_id($sql_statement);
       if ((isset($sql_statement['stage']) && strcasecmp($sql_statement['stage'], $stage) == 0) || (!isset($sql_statement['stage']) && $stage === NULL)) {
         if (isset($sql_statement['comment'])
           && strlen($sql_statement['comment'])) {

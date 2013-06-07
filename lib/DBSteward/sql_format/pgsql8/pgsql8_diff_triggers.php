@@ -19,6 +19,7 @@ class pgsql8_diff_triggers {
    */
   public static function diff_triggers($ofs, $old_schema, $new_schema) {
     foreach(dbx::get_tables($new_schema) as $new_table) {
+      pgsql8::set_context_replica_set_id($new_table);
       if ($old_schema == null) {
         $old_table = null;
       } else {
@@ -33,6 +34,7 @@ class pgsql8_diff_triggers {
     foreach(self::get_drop_triggers($old_schema, $old_table, $new_schema, $new_table) as $old_trigger) {
       // only do triggers set to the current sql_format
       if ( strcasecmp($old_trigger['sqlFormat'], dbsteward::get_sql_format()) == 0 ) {
+        pgsql8::set_context_replica_set_id($old_trigger);
         $ofs->write(pgsql8_trigger::get_drop_sql($old_schema, $old_trigger) . "\n");
       }
     }
@@ -41,6 +43,7 @@ class pgsql8_diff_triggers {
     foreach(self::get_new_triggers($old_schema, $old_table, $new_schema, $new_table) AS $new_trigger) {
       // only do triggers set to the current sql format
       if ( strcasecmp($new_trigger['sqlFormat'], dbsteward::get_sql_format()) == 0 ) {
+        pgsql8::set_context_replica_set_id($new_trigger);
         $ofs->write(pgsql8_trigger::get_creation_sql($new_schema, $new_trigger) . "\n");
       }
     }

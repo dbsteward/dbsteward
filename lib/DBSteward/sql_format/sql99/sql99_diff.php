@@ -84,6 +84,7 @@ class sql99_diff {
     foreach(dbx::get_schemas(dbsteward::$old_database) AS $old_schema) {
       if ( ! dbx::get_schema(dbsteward::$new_database, $old_schema['name']) ) {
         dbsteward::console_line(3, "Drop Old Schema " . $old_schema['name']);
+        pgsql8::set_context_replica_set_id($old_schema);
         $ofs->write(format_schema::get_drop_sql($old_schema));
       }
     }
@@ -99,6 +100,7 @@ class sql99_diff {
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       if (dbx::get_schema(dbsteward::$old_database, $new_schema['name']) == null) {
         dbsteward::console_line(3, "Create New Schema " . $new_schema['name']);
+        pgsql8::set_context_replica_set_id($new_schema);
         $ofs->write(format_schema::get_creation_sql($new_schema));
       }
     }

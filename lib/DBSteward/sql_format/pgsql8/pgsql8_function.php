@@ -19,6 +19,7 @@ class pgsql8_function {
    * @return string
    */
   public function get_creation_sql($node_schema, $node_function) {
+    pgsql8::set_context_replica_set_id($node_function);
     $definition = static::get_definition($node_function);
 
     $sql = "CREATE OR REPLACE FUNCTION " . pgsql8_function::get_declaration($node_schema, $node_function) . " RETURNS " . $node_function['returns'] . "\n"
@@ -170,6 +171,7 @@ class pgsql8_function {
    * @return created SQL
    */
   public function get_drop_sql($node_schema, $node_function) {
+    pgsql8::set_context_replica_set_id($node_function);
     $declaration = self::get_declaration($node_schema, $node_function);
     $declaration = str_ireplace("character varying", "varchar", $declaration);
     $declaration = str_ireplace("varying", "varchar", $declaration);

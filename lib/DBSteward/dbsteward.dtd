@@ -58,6 +58,7 @@
 <!ATTLIST schema name CDATA #REQUIRED>
 <!ATTLIST schema owner CDATA #REQUIRED>
 <!ATTLIST schema description CDATA #IMPLIED>
+<!ATTLIST schema slonySetId CDATA #IMPLIED>
 
 <!ELEMENT table (tablePartition?, tableOption*, column+, index*, constraint*, grant*, rows?)>
 <!ATTLIST table name CDATA #REQUIRED>
@@ -87,6 +88,7 @@
 <!ATTLIST trigger function CDATA #REQUIRED>
 <!ATTLIST trigger type (EXTERNAL) #IMPLIED>
 <!ATTLIST trigger withAppend (true) #IMPLIED>
+<!ATTLIST trigger slonySetId CDATA #IMPLIED>
 
 <!ELEMENT column EMPTY>
 <!ATTLIST column name CDATA #REQUIRED>
@@ -172,6 +174,7 @@
 <!ATTLIST function cachePolicy (IMMUTABLE|STABLE|VOLATILE) "VOLATILE">
 <!ATTLIST function securityDefiner (true|false) #IMPLIED>
 <!ATTLIST function forceRedefine (true|false) #IMPLIED>
+<!ATTLIST function slonySetId CDATA #IMPLIED>
 <!ELEMENT functionParameter EMPTY>
 <!ATTLIST functionParameter direction (IN|OUT) #IMPLIED>
 <!ATTLIST functionParameter name CDATA #IMPLIED>
@@ -186,10 +189,12 @@
 <!ATTLIST sql version CDATA #REQUIRED>
 <!ATTLIST sql comment CDATA #REQUIRED>
 <!ATTLIST sql stage (STAGE1BEFORE|STAGE1|STAGE2BEFORE|STAGE2|STAGE3|STAGE4) #IMPLIED>
+<!ATTLIST sql slonySetId CDATA #IMPLIED>
 
 <!ELEMENT type (enum+)>
 <!ATTLIST type name CDATA #REQUIRED>
 <!ATTLIST type type (enum) #REQUIRED>
+<!ATTLIST type slonySetId CDATA #IMPLIED>
 <!ELEMENT enum EMPTY>
 <!ATTLIST enum name CDATA #REQUIRED>
 
@@ -197,5 +202,6 @@
 <!ATTLIST view name CDATA #REQUIRED>
 <!ATTLIST view owner CDATA #REQUIRED>
 <!ATTLIST view description CDATA #IMPLIED>
+<!ATTLIST view slonySetId CDATA #IMPLIED>
 <!ELEMENT viewQuery (#PCDATA)>
 <!ATTLIST viewQuery sqlFormat CDATA #IMPLIED>

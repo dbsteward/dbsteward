@@ -35,14 +35,19 @@ class pgsql8 extends sql99 {
    * @return integer determined slonySetId
    */
   public static function set_context_replica_set_id($obj) {
-    // must be a SimpleXMLElement
+    if ( $obj === NULL ) {
+      // do not do contexting when passed PHP NULL
+      return FALSE;
+    }
+    
+    // if not explicit NULL, must be a SimpleXMLElement
     if ( !is_object($obj) || strcasecmp(get_class($obj), 'SimpleXMLElement') != 0 ) {
       throw new exception("set_context_replica_set_id passed non-SimpleXMLElement object");
     }
     
-    // must be a table sequence or column because slonySetId is what defines the replica set context
-    if ( !in_array(strtolower($obj->getName()), array('table', 'sequence', 'column')) ) {
-      throw new exception("set_context_replica_set_id element that is not a table sequence or column (" . $obj->getName() . ")");
+    // must be a schema table column trigger sequence type function view element to be defining slonySetId context attribute
+    if ( !in_array(strtolower($obj->getName()), array('schema', 'table', 'column', 'trigger', 'sequence', 'type', 'function', 'view')) ) {
+      throw new exception("set_context_replica_set_id passed element that is not a schema table column trigger sequence type function view element -- " . $obj->getName());
     }
 
     if ( !isset($obj['slonySetId']) ) {

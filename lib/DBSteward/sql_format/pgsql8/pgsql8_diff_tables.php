@@ -1059,6 +1059,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   }
 
   public static function diff_constraints_table($ofs, $old_schema, $old_table, $new_schema, $new_table, $type, $drop_constraints = false) {
+    pgsql8::set_context_replica_set_id($new_table);
     if ( $drop_constraints ) {
       // drop constraints that no longer exist or are modified
       foreach(self::get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) as $constraint) {
@@ -1109,6 +1110,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    *       added to drop because they are already removed.
   */
   private static function get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) {
+    pgsql8::set_context_replica_set_id($new_table);
     $list = array();
 
     if (($new_table != null) && ($old_table != null)) {

@@ -42,6 +42,8 @@ class pgsql8_diff_types {
         continue;
       }
       
+      pgsql8::set_context_replica_set_id($new_type);
+      
       $columns = array();
       
       $ofs->write("-- type " . $new_type['name'] . " definition migration (1/4): dependant tables column type alteration\n");
@@ -68,6 +70,7 @@ class pgsql8_diff_types {
   private static function create_types($ofs, $old_schema, $new_schema) {
     foreach(dbx::get_types($new_schema) AS $type) {
       if ( ($old_schema == NULL) || !pgsql8_schema::contains_type($old_schema, $type['name']) ) {
+        pgsql8::set_context_replica_set_id($type);
         $ofs->write(pgsql8_type::get_creation_sql($new_schema, $type) . "\n");
       }
     }
@@ -84,6 +87,7 @@ class pgsql8_diff_types {
     if ($old_schema != NULL) {
       foreach(dbx::get_types($old_schema) AS $type) {
         if ( !pgsql8_schema::contains_type($new_schema, $type['name'])) {
+          pgsql8::set_context_replica_set_id($type);
           $ofs->write(pgsql8_type::get_drop_sql($new_schema, $type) . "\n");
         }
       }
