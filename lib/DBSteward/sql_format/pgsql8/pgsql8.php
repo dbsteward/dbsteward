@@ -759,6 +759,7 @@ class pgsql8 extends sql99 {
     if ( dbsteward::$generate_slonik ) {
       $replica_sets = pgsql8::get_slony_replica_sets($new_db_doc);
       foreach($replica_sets AS $replica_set) {
+        dbsteward::console_line(1, "Generating replica set " . $replica_set['id'] . " upgrade slonik");
         // separate upgrade slonik file sets for each replica set
         $slonik_upgrade_prefix = $upgrade_prefix . "_slony_replica_set_" . $replica_set['id'];
         // generate upgrade slonik to apply generated sql changes
