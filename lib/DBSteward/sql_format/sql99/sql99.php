@@ -9,35 +9,6 @@
  */
 
 class sql99 {
-  
-  /**
-   * Current replica set ID context
-   * @var type
-   */
-  public static $current_replica_set_id;
-  
-  /**
-   * If the passed $db_object has a slonySetId
-   * set it as the current_replica_set_id
-   * @param SimpleXMLElement $obj
-   * @return integer determined slonySetId
-   */
-  public static function set_active_replica_set($obj) {
-    if ( !is_object($obj) || !isset($obj['slonySetId']) ) {
-      return static::$current_replica_set_id = -1;
-    }
-    $set_id = (integer)($obj['slonySetId']);
-    return static::$current_replica_set_id = $set_id;
-  }
-  
-  public function set_default_replica_set($db_doc) {
-    $replica_set = pgsql8::get_slony_replica_set_first($db_doc);
-    if ( $replica_set ) {
-      $set_id = (string)$replica_set['id'];
-      return static::$current_replica_set_id = $set_id;
-    }
-    return FALSE;
-  }
 
   const QUOTE_CHAR = '"';
   

@@ -22,6 +22,39 @@ class pgsql8 extends sql99 {
   // @TODO: let's not do this right now, it breaks diffs
   public static $table_slony_ids = array();
   public static $sequence_slony_ids = array();
+  
+  /**
+   * Current replica set ID context
+   * @var type
+   */
+  public static $current_replica_set_id;
+  
+  /**
+   * If the passed $db_object has a slonySetId
+   * set it as the current_replica_set_id
+   * @param SimpleXMLElement $obj
+   * @return integer determined slonySetId
+   */
+  public static function set_active_replica_set($obj) {
+    if ( !is_object($obj) || !isset($obj['slonySetId']) ) {
+      return static::$current_replica_set_id = -1;
+    }
+    $set_id = (integer)($obj['slonySetId']);
+    return static::$current_replica_set_id = $set_id;
+  }
+  
+  public function set_default_replica_set($db_doc) {
+    $replica_set = pgsql8::get_slony_replica_set_first($db_doc);
+    if ( $replica_set ) {
+      $set_id = (string)$replica_set['id'];
+      return static::$current_replica_set_id = $set_id;
+    }
+    return FALSE;
+  }
+  
+  public function get_active_replica_set($db_doc) {
+    return pgsql8::get_slony_replica_set($db_doc, static::$current_replica_set_id);
+  }
 
   public static $track_pg_identifiers = FALSE;
   public static $known_pg_identifiers = array();
@@ -2110,7 +2143,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     return NULL;
   }
   
-  protected static function slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table) {
+  public static function slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table) {
     if (isset($table['slonyId']) && strlen($table['slonyId']) > 0) {
       if (strcasecmp('IGNORE_REQUIRED', $table['slonyId']) == 0) {
         // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
@@ -2143,7 +2176,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     return FALSE;
   }
   
-  protected static function slony_replica_set_contains_sequence($db_doc, $replica_set, $schema, $sequence) {
+  public static function slony_replica_set_contains_sequence($db_doc, $replica_set, $schema, $sequence) {
     if (isset($sequence['slonyId']) && strlen($sequence['slonyId']) > 0) {
       if (strcasecmp('IGNORE_REQUIRED', $sequence['slonyId']) == 0) {
         // the slonyId IGNORE_REQUIRED magic value allows for slonyId's to be required
@@ -2176,7 +2209,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     return FALSE;
   }
   
-  protected static function slony_replica_set_contains_table_column_serial_sequence($db_doc, $replica_set, $schema, $table, $column) {    
+  public static function slony_replica_set_contains_table_column_serial_sequence($db_doc, $replica_set, $schema, $table, $column) {    
     // is it a serial column and therefore an implicit sequence to replicate?
     if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, $column['type']) > 0) {
 
