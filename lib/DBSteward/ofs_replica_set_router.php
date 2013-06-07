@@ -51,7 +51,7 @@ class ofs_replica_set_router {
       'append_footer'
     );
     if ( in_array($m, $all_ofs_methods) ) {
-      foreach($this->ofs AS $ofs) {
+      foreach($this->ofs AS $set_id => $ofs) {
         call_user_func_array(array(&$ofs, $m), $a);
       }
       return 'ALL_OFS_COMMAND_COMPLETE';

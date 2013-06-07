@@ -102,7 +102,7 @@ class output_file_segmenter {
    */
   protected function next_file_segment() {
     if ( ! $this->segmenting_enabled ) {
-      throw new exception("next_file_segment called while segmenting_enabled is false");
+      throw new exception("next_file_segment called while segmenting_enabled is false. base_file_name = " . $this->base_file_name);
     }
     if ( $this->file_pointer !== NULL ) {
       $this->write_footer();
