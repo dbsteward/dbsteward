@@ -12,10 +12,10 @@ class ofs_replica_set_router {
   
   protected $ofs = NULL;
   
-  protected $ignore_unknown_set_ids = FALSE;
+  protected $skip_unknown_set_ids = FALSE;
   
-  public function ignore_unknown_set_ids($ignore = TRUE) {
-    $this->ignore_unknown_set_ids = $ignore;
+  public function skip_unknown_set_ids($ignore = TRUE) {
+    $this->skip_unknown_set_ids = $ignore;
   }
   
   public function __construct() {
@@ -28,10 +28,12 @@ class ofs_replica_set_router {
    * @param output_file_segmenter $ofs
    * @return object
    */
-  public function set_ofs($set_id, $ofs) {
-    $set_id = (string)$set_id;
+  public function set_replica_set_ofs($set_id, $ofs) {
+    if ( !is_numeric($set_id) || $set_id < 1 ) {
+      throw new exception("set_replica_set_ofs() passed invalid replica set id");
+    }
+    $set_id = (integer)$set_id;
     $this->ofs[$set_id] = $ofs;
-    format::$current_replica_set_id = $set_id;
     return $this->ofs[$set_id];
   }
   
@@ -55,20 +57,22 @@ class ofs_replica_set_router {
       return 'ALL_OFS_COMMAND_COMPLETE';
     }
 
-    $use_replica_set_id = format::$current_replica_set_id;
-    if ( format::$current_replica_set_id === -10 ) {
-      // current_replica_set_id -10 means object does not have slonySetId defined
-      $first_replica_set = pgsql8::get_slony_replica_set_first(dbsteward::$new_database);
-      $use_replica_set_id = (int)($first_replica_set['id']);
+    $use_replica_set_id = format::get_context_replica_set_id();
+
+    if ( $use_replica_set_id == -10 ) {
+      // context_replica_set_id -10 means object does not have slonySetId defined
+      // use the natural first replica set as the replica context
+      $first_replica_set = pgsql8::get_slony_replica_set_natural_first(dbsteward::$new_database);
+      $use_replica_set_id = (integer)($first_replica_set['id']);
     }
     
     // make sure replica set id to use is known
     if ( !isset($this->ofs[$use_replica_set_id]) ) {
-      if ( $this->ignore_unknown_set_ids ) {
-        dbsteward::console_line(7, "ofs replica_set_id " . $use_replica_set_id . " not defined, skipping ofsr call");
+      if ( $this->skip_unknown_set_ids ) {
+        dbsteward::console_line(7, "[OFS RSR] context replica set ID is " . $use_replica_set_id . ", but no replica set by that ID, skipping output");
         return FALSE;
       }
-      throw new exception("current_replica_set_id " . $use_replica_set_id . " not defined");
+      throw new exception("context replica set ID " . $use_replica_set_id . " not defined");
     }
     
     $active_set_ofs = $this->ofs[$use_replica_set_id];

@@ -30,13 +30,13 @@ class pgsql8_diff extends sql99_diff {
     // also ignore unknown replica set IDs so changes that are not part of replicaed tables
     // are not put in upgrade stage files
     $ofsm_stage1 = new ofs_replica_set_router();
-    $ofsm_stage1->ignore_unknown_set_ids();
+    $ofsm_stage1->skip_unknown_set_ids();
     $ofsm_stage2 = new ofs_replica_set_router();
-    $ofsm_stage2->ignore_unknown_set_ids();
+    $ofsm_stage2->skip_unknown_set_ids();
     $ofsm_stage3 = new ofs_replica_set_router();
-    $ofsm_stage3->ignore_unknown_set_ids();
+    $ofsm_stage3->skip_unknown_set_ids();
     $ofsm_stage4 = new ofs_replica_set_router();
-    $ofsm_stage4->ignore_unknown_set_ids();
+    $ofsm_stage4->skip_unknown_set_ids();
     
     foreach(pgsql8::get_slony_replica_sets($new_database) AS $replica_set) {
       $replica_set_id = (string)$replica_set['id'];
@@ -47,28 +47,28 @@ class pgsql8_diff extends sql99_diff {
 
       pgsql8::build_slonik_preamble($new_database, $replica_set, $upgrade_prefix . "_slony_replica_set_" . $replica_set_id . "_preamble.slonik");
       
-      $ofsm_stage1->set_ofs(
+      $ofsm_stage1->set_replica_set_ofs(
         $replica_set_id,
         new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage1_schema', 1)
       )->set_header(
         "-- DBSteward slony replica set " . $replica_set['id'] . " stage 1 pre replication alteration, structure changes - generated " . $timestamp . "\n" .
         $old_set_new_set);
       
-      $ofsm_stage2->set_ofs(
+      $ofsm_stage2->set_replica_set_ofs(
         $replica_set_id,
         new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage2_data', 1)
       )->set_header(
         "-- DBSteward slony replica set " . $replica_set['id'] . " stage 2 pre replication alteration, data changes - generated " . $timestamp . "\n" .
         $old_set_new_set);
 
-      $ofsm_stage3->set_ofs(
+      $ofsm_stage3->set_replica_set_ofs(
         $replica_set_id,
         new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage3_schema', 1)
       )->set_header(
         "-- DBSteward slony replica set " . $replica_set['id'] . " stage 3 post replication alteration, structure changes - generated " . $timestamp . "\n" .
         $old_set_new_set);
 
-      $ofsm_stage4->set_ofs(
+      $ofsm_stage4->set_replica_set_ofs(
         $replica_set_id,
         new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage4_data', 1)
       )->set_header(
@@ -139,7 +139,7 @@ class pgsql8_diff extends sql99_diff {
    * @return void
    */
   protected static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
-    format::set_default_replica_set(dbsteward::$new_database);
+    format::set_context_replica_set_to_natural_first(dbsteward::$new_database);
     if (self::$as_transaction) {
       $stage1_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
       $stage1_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
@@ -169,7 +169,7 @@ class pgsql8_diff extends sql99_diff {
     self::update_database_config_parameters($stage1_ofs);
 
     dbsteward::console_line(1, "Update Data");
-    format::set_default_replica_set(dbsteward::$new_database);
+    format::set_context_replica_set_to_natural_first(dbsteward::$new_database);
     self::update_data($stage2_ofs, true);
     self::update_data($stage4_ofs, false);
 
@@ -198,7 +198,7 @@ class pgsql8_diff extends sql99_diff {
     }
 
     // append stage defined sql statements to appropriate stage file
-    format::set_default_replica_set(dbsteward::$new_database);
+    format::set_context_replica_set_to_natural_first(dbsteward::$new_database);
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2');
     dbx::build_staged_sql(dbsteward::$new_database, $stage3_ofs, 'STAGE3');

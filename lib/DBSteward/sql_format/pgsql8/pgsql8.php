@@ -27,34 +27,44 @@ class pgsql8 extends sql99 {
    * Current replica set ID context
    * @var type
    */
-  public static $current_replica_set_id;
+  protected static $context_replica_set_id;
   
   /**
-   * If the passed $db_object has a slonySetId
-   * set it as the current_replica_set_id
+   * If the passed $obj has a slonySetId, set it as the context_replica_set_id
    * @param SimpleXMLElement $obj
    * @return integer determined slonySetId
    */
-  public static function set_active_replica_set($obj) {
-    if ( !is_object($obj) || !isset($obj['slonySetId']) ) {
-      // current_replica_set_id -10 means object does not have slonySetId defined
-      return static::$current_replica_set_id = -10;
+  public static function set_context_replica_set_id($obj) {
+    if ( !is_object($obj) || strcasecmp(get_class($obj), 'SimpleXMLElement') != 0 ) {
+      throw new exception("set_context_replica_set_id passed non-SimpleXMLElement object");
+    }
+    if ( !isset($obj['slonySetId']) ) {
+      // context_replica_set_id -10 means object does not have slonySetId defined
+      return self::$context_replica_set_id = -10;
     }
     $set_id = (integer)($obj['slonySetId']);
-    return static::$current_replica_set_id = $set_id;
+    return self::$context_replica_set_id = $set_id;
   }
   
-  public function set_default_replica_set($db_doc) {
-    $replica_set = pgsql8::get_slony_replica_set_first($db_doc);
+  /**
+   * Return the current context replica set id
+   * @return integer
+   */
+  public function get_context_replica_set_id() {
+    return self::$context_replica_set_id;
+  }
+  
+  public function set_context_replica_set_to_natural_first($db_doc) {
+    $replica_set = pgsql8::get_slony_replica_set_natural_first($db_doc);
     if ( $replica_set ) {
       $set_id = (string)$replica_set['id'];
-      return static::$current_replica_set_id = $set_id;
+      return self::$context_replica_set_id = $set_id;
     }
     return FALSE;
   }
   
   public function get_active_replica_set($db_doc) {
-    return pgsql8::get_slony_replica_set($db_doc, static::$current_replica_set_id);
+    return pgsql8::get_slony_replica_set($db_doc, self::$context_replica_set_id);
   }
 
   public static $track_pg_identifiers = FALSE;
@@ -2117,11 +2127,12 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    * @param SimpleXMLElement $db_doc
    * @return SimpleXMLElement
    */
-  public static function &get_slony_replica_set_first($db_doc) {
+  public static function &get_slony_replica_set_natural_first($db_doc) {
     $replica_sets = static::get_slony_replica_sets($db_doc);
     foreach($replica_sets AS $replica_set) {
       return $replica_set;
     }
+    return FALSE;
   }
   
   /**
@@ -2141,7 +2152,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         return $replica_set;
       }
     }
-    return NULL;
+    return FALSE;
   }
   
   public static function slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table) {
@@ -2160,7 +2171,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
       else if ( !isset($table['slonySetId']) ) {
         // this table has no replica set
-        $first_replica_set = static::get_slony_replica_set_first($db_doc);
+        $first_replica_set = static::get_slony_replica_set_natural_first($db_doc);
         if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
           // but the $replica_set passed is the FIRST NATURAL ORDER replica set
           // so yes this table pertains to this replica_set
@@ -2193,7 +2204,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
       else if ( !isset($sequence['slonySetId']) ) {
         // this sequence has no replica set
-        $first_replica_set = static::get_slony_replica_set_first($db_doc);
+        $first_replica_set = static::get_slony_replica_set_natural_first($db_doc);
         if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
           // but the $replica_set passed is the FIRST NATURAL ORDER replica set
           // so yes this sequence pertains to this replica_set
@@ -2229,7 +2240,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         }
         else if ( !isset($column['slonySetId']) ) {
           // this column has no replica set
-          $first_replica_set = static::get_slony_replica_set_first($db_doc);
+          $first_replica_set = static::get_slony_replica_set_natural_first($db_doc);
           if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
             // but the $replica_set passed is the FIRST NATURAL ORDER replica set
             // so yes this column pertains to this replica_set

@@ -26,7 +26,7 @@ class pgsql8_table extends sql99_table {
       throw new exception("node_table object element name is not table. check stack for offending caller");
     }
     
-    format::set_active_replica_set($node_table);
+    format::set_context_replica_set_id($node_table);
 
     $table_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_table['name']);
 
@@ -117,7 +117,7 @@ class pgsql8_table extends sql99_table {
       var_dump($node_table);
       throw new exception("node_table element type " . $node_table->getName() . " != table. check stack for offending caller");
     }
-    format::set_active_replica_set($node_table);
+    format::set_context_replica_set_id($node_table);
     return "DROP TABLE " . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_table['name']) . ";";
   }
 
