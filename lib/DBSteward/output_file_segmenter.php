@@ -21,6 +21,7 @@ class output_file_segmenter {
   protected $content_footer = NULL;
   protected $fixed_file_pointer = FALSE;
   protected $wrote_fixed_file_header = FALSE;
+  protected $write_was_called_ever = FALSE;
 
   /**
    * constructor
@@ -49,6 +50,12 @@ class output_file_segmenter {
   }
   
   function __destruct() {
+    // before we insist on writing the footer
+    // if write was never called then the file segmenting has not initialized
+    // and will blow up when write_footer() calls write()
+    if ( !$this->write_was_called_ever ) {
+      $this->write("\n");
+    }
     $this->write_footer();
     fclose($this->file_pointer);
   }
@@ -178,6 +185,8 @@ class output_file_segmenter {
     }
     $this->count_statements($sql);
     $this->check_statement_count();
+    
+    $this->write_was_called_ever = TRUE;
   }
   
   /**
