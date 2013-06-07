@@ -37,7 +37,8 @@ class pgsql8 extends sql99 {
    */
   public static function set_active_replica_set($obj) {
     if ( !is_object($obj) || !isset($obj['slonySetId']) ) {
-      return static::$current_replica_set_id = -1;
+      // current_replica_set_id -10 means object does not have slonySetId defined
+      return static::$current_replica_set_id = -10;
     }
     $set_id = (integer)($obj['slonySetId']);
     return static::$current_replica_set_id = $set_id;

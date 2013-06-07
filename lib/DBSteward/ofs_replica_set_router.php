@@ -55,15 +55,23 @@ class ofs_replica_set_router {
       return 'ALL_OFS_COMMAND_COMPLETE';
     }
 
-    if ( !isset($this->ofs[format::$current_replica_set_id]) ) {
+    $use_replica_set_id = format::$current_replica_set_id;
+    if ( format::$current_replica_set_id === -10 ) {
+      // current_replica_set_id -10 means object does not have slonySetId defined
+      $first_replica_set = pgsql8::get_slony_replica_set_first(dbsteward::$new_database);
+      $use_replica_set_id = (int)($first_replica_set['id']);
+    }
+    
+    // make sure replica set id to use is known
+    if ( !isset($this->ofs[$use_replica_set_id]) ) {
       if ( $this->ignore_unknown_set_ids ) {
-        //dbsteward::console_line(7, "ofs replica_set_id " . format::$current_replica_set_id . " not defined, skipping ofsr call");
+        dbsteward::console_line(7, "ofs replica_set_id " . $use_replica_set_id . " not defined, skipping ofsr call");
         return FALSE;
       }
-      throw new exception("current_replica_set_id " . format::$current_replica_set_id . " not defined");
+      throw new exception("current_replica_set_id " . $use_replica_set_id . " not defined");
     }
-
-    $active_set_ofs = $this->ofs[format::$current_replica_set_id];
+    
+    $active_set_ofs = $this->ofs[$use_replica_set_id];
     return call_user_func_array(array(&$active_set_ofs, $m), $a);
   }
 
