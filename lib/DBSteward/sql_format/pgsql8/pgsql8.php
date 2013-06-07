@@ -35,9 +35,16 @@ class pgsql8 extends sql99 {
    * @return integer determined slonySetId
    */
   public static function set_context_replica_set_id($obj) {
+    // must be a SimpleXMLElement
     if ( !is_object($obj) || strcasecmp(get_class($obj), 'SimpleXMLElement') != 0 ) {
       throw new exception("set_context_replica_set_id passed non-SimpleXMLElement object");
     }
+    
+    // must be a table sequence or column because slonySetId is what defines the replica set context
+    if ( !in_array(strtolower($obj->getName()), array('table', 'sequence', 'column')) ) {
+      throw new exception("set_context_replica_set_id element that is not a table sequence or column (" . $obj->getName() . ")");
+    }
+
     if ( !isset($obj['slonySetId']) ) {
       // context_replica_set_id -10 means object does not have slonySetId defined
       return self::$context_replica_set_id = -10;

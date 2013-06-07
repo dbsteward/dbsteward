@@ -76,6 +76,7 @@ class ofs_replica_set_router {
     }
     
     $active_set_ofs = $this->ofs[$use_replica_set_id];
+    //dbsteward::console_line(7, "[OFS RSR] __call calling " . $use_replica_set_id . " ofs::" . $m);
     return call_user_func_array(array(&$active_set_ofs, $m), $a);
   }
 
