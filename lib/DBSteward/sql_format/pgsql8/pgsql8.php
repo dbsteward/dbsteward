@@ -370,8 +370,9 @@ class pgsql8 extends sql99 {
     if ( dbsteward::$generate_slonik ) {
       $replica_sets = static::get_slony_replica_sets($db_doc);
       foreach($replica_sets AS $replica_set) {
-        pgsql8::build_slonik_preamble($new_db_doc, $replica_set, $upgrade_prefix . "_slony_replica_set_" . $replica_set['id'] . "_preamble.slonik");
+        pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_preamble.slonik");
         pgsql8::build_slonik_subscribe_set($db_doc, $replica_set, $output_prefix . '_slony_subscribe_set_' . $replica_set['id'] . '.slonik');
+        pgsql8::build_slonik_paths($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_paths.slonik");
       }
     }
 
@@ -791,26 +792,70 @@ class pgsql8 extends sql99 {
     // don't write the fixed file header file name. slony preamble must start with the CLUSTER NAME directive
     $slony_preamble_ofs->disable_fixed_file_header();
     
-    if ( isset($db_doc->database->slony->slonyNode) ) {
-      $slony_preamble_ofs->write("CLUSTER NAME = " . $db_doc->database->slony['clusterName'] . "\n");
-      foreach($db_doc->database->slony->slonyNode AS $slony_node) {
-        $slony_preamble_ofs->write(
-          "NODE " . $slony_node['id'] . " ADMIN CONNINFO = '"
-          . "dbname=" . $slony_node['dbName']
-          . " host=" . $slony_node['dbHost']
-          . " user=" . $slony_node['dbUser']
-          . " password=" . $slony_node['dbPassword'] . "';\n"
-        );
-      }
-    }
-    else {
+    if ( !isset($db_doc->database->slony->slonyNode) ) {
       $slony_preamble_ofs->write("DBSTEWARD: NO SLONY NODES DEFINED\n");
+      return FALSE;
+    }
+
+    $slony_preamble_ofs->write("CLUSTER NAME = " . $db_doc->database->slony['clusterName'] . "\n");
+    foreach($db_doc->database->slony->slonyNode AS $slony_node) {
+      $slony_preamble_ofs->write(
+        "NODE " . $slony_node['id'] . " ADMIN CONNINFO = '"
+        . "dbname=" . $slony_node['dbName']
+        . " host=" . $slony_node['dbHost']
+        . " user=" . $slony_node['dbUser']
+        . " password=" . $slony_node['dbPassword'] . "';\n"
+      );
     }
 
     $slony_preamble_ofs->write("\n");
     $slony_preamble_ofs->write("# " . $slony_preamble_file . "\n");
     $slony_preamble_ofs->write("# DBSteward slony preamble file generated " . $timestamp . "\n");
     $slony_preamble_ofs->write("# Replica Set: " . $replica_set['id'] . "\n\n");
+  }
+  
+  public static function build_slonik_paths($db_doc, $replica_set, $slony_paths_file) {
+    $timestamp = date('r');
+
+    $slony_paths_fp = fopen($slony_paths_file, 'w');
+    if ($slony_paths_fp === FALSE) {
+      throw new exception("failed to open slony paths output file " . $slony_paths_file);
+    }
+    $slony_paths_ofs = new output_file_segmenter($slony_paths_file, 1, $slony_paths_fp, $slony_paths_file);
+    $slony_paths_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
+    // don't write the fixed file header file name. slony preamble must start with the CLUSTER NAME directive
+    $slony_paths_ofs->disable_fixed_file_header();
+    
+    $slony_paths_ofs->write("# " . $slony_paths_file . "\n");
+    $slony_paths_ofs->write("# DBSteward slony paths file generated " . $timestamp . "\n");
+    $slony_paths_ofs->write("# Replica Set: " . $replica_set['id'] . "\n\n");
+    
+    if ( ! isset($db_doc->database->slony->slonyNode) ) {
+      $slony_paths_ofs->write("DBSTEWARD: NO SLONY NODES DEFINED\n");
+      return FALSE;
+    }
+    
+    $node_ids = pgsql8::get_slony_replica_set_node_ids($replica_set);
+      
+    for($i = 0; $i < count($node_ids); $i++) {
+      $node_i = $node_ids[$i];
+      for($j = 0; $j < count($node_ids); $j++) {
+        $node_j = $node_ids[$j];
+        // if we are not talking about the same node for both server and client
+        // write the path
+        if ( $node_i != $node_j ) {
+          $slony_paths_ofs->write("STORE PATH (SERVER = " . $node_i . ", CLIENT = " . $node_j
+            . ", CONNINFO = '"
+            . "dbname=" . pgsql8::get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_j, 'dbName')
+            . " host=" . pgsql8::get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_j, 'dbHost')
+            . " user=" . pgsql8::get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_j, 'dbUser')
+            . " password=" . pgsql8::get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_j, 'dbPassword')
+            . "');\n");
+        }
+      }
+    }
+
+    $slony_paths_ofs->write("\n");
   }
 
   public static function build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $old_replica_set, $new_replica_set, $slonik_file_prefix, $origin_header = '') {
@@ -2163,6 +2208,70 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     foreach($replica_sets AS $replica_set) {
       if ( strcmp($replica_set['id'], $id) == 0 ) {
         return $replica_set;
+      }
+    }
+    return FALSE;
+  }
+  
+  /**
+   * Return an array of the nodes in the specified replica set
+   * @param SimpleXMLElement $replica_set
+   * @return array
+   */
+  protected static function get_slony_replica_set_node_ids($replica_set) {
+    $node_ids = array();
+    $node_ids[] = (integer)($replica_set['originNodeId']);
+    foreach($replica_set->slonyReplicaSetNode AS $set_node) {
+      $node_ids[] = (integer)($set_node['id']);
+    }
+    return $node_ids;
+  }
+  
+  /**
+   * Get the attribute of the specified replica set node
+   * Ths resolves node inheritance and explicit configuration data 
+   * such as alternate database service addresses in slony configurations
+   * @param SimpleXMLElement $replica_set
+   * @param integer $node_id
+   * @param string $attribute
+   */
+  protected static function get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_id, $attribute) {
+    $replica_node = NULL;
+    // is the node_id specified the origin node?
+    if ( (integer)($replica_set['originNodeId']) == $node_id ) {
+      $replica_node = $replica_set;
+    }
+    else {
+      foreach($replica_set->slonyReplicaSetNode AS $set_node) {
+        if ( (integer)($set_node['id']) == $node_id ) {
+          $replica_node = $set_node;
+        }
+      }
+    }
+    if ( !is_object($replica_node) ) {
+      throw new exception("Replica set " . $replica_set['id'] . " node " . $node_id . " not found");
+    }
+    // if the replica_node defines this attribute, return it, if not return master node definition value
+    if ( isset($replica_node[$attribute]) ) {
+      return (string)($replica_node[$attribute]);
+    }
+    $slony_node = pgsql8::get_slony_node($db_doc, $node_id);
+    return (string)($slony_node[$attribute]);
+  }
+  
+  /**
+   * Return the slony node element for the specified id
+   * @param type $db_doc
+   * @param type $node_id
+   * @return SimpleXMLElement
+   */
+  protected function &get_slony_node($db_doc, $node_id) {
+    if ( !isset($db_doc->database->slony->slonyNode) ) {
+      throw new exception("no slonyNode elements in database definition");
+    }
+    foreach($db_doc->database->slony->slonyNode AS $slony_node) {
+      if ( (integer)($slony_node['id']) == $node_id ) {
+        return $slony_node;
       }
     }
     return FALSE;

@@ -28,19 +28,27 @@
 <!ATTLIST slony clusterName CDATA #REQUIRED>
 <!ELEMENT slonyNode EMPTY>
 <!ATTLIST slonyNode id CDATA #REQUIRED>
+<!ATTLIST slonyNode comment CDATA #REQUIRED>
 <!ATTLIST slonyNode dbName CDATA #REQUIRED>
 <!ATTLIST slonyNode dbHost CDATA #REQUIRED>
 <!ATTLIST slonyNode dbUser CDATA #REQUIRED>
 <!ATTLIST slonyNode dbPassword CDATA #REQUIRED>
-<!ATTLIST slonyNode comment CDATA #REQUIRED>
 <!ELEMENT slonyReplicaSet (slonyReplicaSetNode+)>
 <!ATTLIST slonyReplicaSet id CDATA #REQUIRED>
 <!ATTLIST slonyReplicaSet upgradeSetId CDATA #REQUIRED>
 <!ATTLIST slonyReplicaSet originNodeId CDATA #REQUIRED>
 <!ATTLIST slonyReplicaSet comment CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet dbName CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet dbHost CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet dbUser CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet dbPassword CDATA #REQUIRED>
 <!ELEMENT slonyReplicaSetNode EMPTY>
 <!ATTLIST slonyReplicaSetNode id CDATA #REQUIRED>
 <!ATTLIST slonyReplicaSetNode providerNodeId CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet dbName CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet dbHost CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet dbUser CDATA #REQUIRED>
+<!ATTLIST slonyReplicaSet dbPassword CDATA #REQUIRED>
 
 <!ELEMENT language EMPTY>
 <!ATTLIST language name CDATA #REQUIRED>
