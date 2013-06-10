@@ -610,6 +610,8 @@ class pgsql8 extends sql99 {
     $generation_date = date('r');
     $slonik_ofs->write("# DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " subscription generated " . $generation_date . "\n\n");
     $slonik_ofs->write("ECHO 'DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " subscription generated " . $generation_date . " starting';\n\n");
+    
+    $slonik_ofs->write("CREATE SET (ID = " . $replica_set['id'] . ", ORIGIN = " . $replica_set['originNodeId'] . ", COMMENT = '" . $replica_set['comment'] . "');\n\n");
 
     // schema and table structure
     foreach ($db_doc->schema AS $schema) {
