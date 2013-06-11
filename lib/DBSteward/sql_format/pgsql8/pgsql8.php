@@ -799,7 +799,7 @@ class pgsql8 extends sql99 {
       return FALSE;
     }
 
-    $slony_preamble_ofs->write("CLUSTER NAME = " . $db_doc->database->slony['clusterName'] . "\n");
+    $slony_preamble_ofs->write("CLUSTER NAME = " . $db_doc->database->slony['clusterName'] . ";\n");
     foreach($db_doc->database->slony->slonyNode AS $slony_node) {
       $slony_preamble_ofs->write(
         "NODE " . $slony_node['id'] . " ADMIN CONNINFO = '"
