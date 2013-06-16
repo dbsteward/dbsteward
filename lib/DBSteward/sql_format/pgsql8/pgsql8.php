@@ -19,7 +19,7 @@ class pgsql8 extends sql99 {
   const PATTERN_TABLE_LINKED_TYPES = '/^serial|bigserial$/i';
 
   const E_ESCAPE = TRUE;
-  // @TODO: let's not do this right now, it breaks diffs
+
   public static $table_slony_ids = array();
   public static $sequence_slony_ids = array();
   
@@ -800,14 +800,19 @@ class pgsql8 extends sql99 {
     }
 
     $slony_preamble_ofs->write("CLUSTER NAME = " . $db_doc->database->slony['clusterName'] . ";\n");
+
+    // define the connection info for each node this replica set uses
     foreach($db_doc->database->slony->slonyNode AS $slony_node) {
-      $slony_preamble_ofs->write(
-        "NODE " . $slony_node['id'] . " ADMIN CONNINFO = '"
-        . "dbname=" . $slony_node['dbName']
-        . " host=" . $slony_node['dbHost']
-        . " user=" . $slony_node['dbUser']
-        . " password=" . $slony_node['dbPassword'] . "';\n"
-      );
+      // the set uses this node, include it
+      if ( pgsql8::slony_replica_set_uses_node($replica_set, $slony_node) ) {
+        $slony_preamble_ofs->write(
+          "NODE " . $slony_node['id'] . " ADMIN CONNINFO = '"
+          . "dbname=" . $slony_node['dbName']
+          . " host=" . $slony_node['dbHost']
+          . " user=" . $slony_node['dbUser']
+          . " password=" . $slony_node['dbPassword'] . "';\n"
+        );
+      }
     }
 
     $slony_preamble_ofs->write("\n");
@@ -2382,6 +2387,33 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     }
     else if (isset($column['slonyId'])) {
       throw new exception($schema['name'] . '.' . $table['name'] . " non-serial column " . $column['name'] . " has slonyId specified. I do not understand");
+    }
+    
+    return FALSE;
+  }
+  
+  /**
+   * Does the specified replica_set use the specified slony node?
+   * @param SimpleXMLElement $replica_set
+   * @param SimpleXMLElement $node
+   * @return boolean
+   */
+  public static function slony_replica_set_uses_node($replica_set, $node) {
+    // if replica_set has no replica nodes don't continue
+    if ( !isset($replica_set->slonyReplicaSetNode) ) {
+      return FALSE;
+    }
+
+    // is it the set origin node?
+    if ( strcmp($replica_set['originNodeId'], $node['id']) == 0 ) {
+      return TRUE;
+    }
+
+    // is it a replica node?
+    foreach($replica_set->slonyReplicaSetNode AS $rsn){
+      if ( strcmp($rsn['id'], $node['id']) == 0 ) {
+        return TRUE;
+      }
     }
     
     return FALSE;
