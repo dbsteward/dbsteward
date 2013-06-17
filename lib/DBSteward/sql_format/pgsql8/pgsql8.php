@@ -373,7 +373,14 @@ class pgsql8 extends sql99 {
         pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_preamble.slonik");
         pgsql8::build_slonik_create_set($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_create.slonik');
         pgsql8::build_slonik_paths($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_paths.slonik");
+        foreach($replica_set->slonyReplicaSetNode AS $replica_set_node) {
+          pgsql8::build_slonik_subscribe_set_node($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_subscribe_node_' . $replica_set_node['id'] . '.slonik', $replica_set_node);
+        }
       }
+
+      dbsteward::console_line(1, "[slony] ID summary: " . count(self::$table_slony_ids) . " tables " . count(self::$sequence_slony_ids) . " sequences");
+      dbsteward::console_line(1, "[slony] table ID segments: " . static::slony_id_segment_summary(self::$table_slony_ids));
+      dbsteward::console_line(1, "[slony] sequence ID segements: " . static::slony_id_segment_summary(self::$sequence_slony_ids));
     }
 
     return $db_doc;
@@ -657,10 +664,63 @@ class pgsql8 extends sql99 {
         }
       }
     }
+  }
+  
+  /**
+   * Build the slonik commands to subscribe the specified node the specified replica set
+   *
+   * @param SimpleXMLElement $db_doc
+   * @param SimpleXMLElement $replica_set
+   * @param string           $slonik_file
+   * @param SimpleXMLElement $replica_set_node
+   * @throws exception
+   */
+  public static function build_slonik_subscribe_set_node($db_doc, $replica_set, $slonik_file, $replica_set_node) {
+    dbsteward::console_line(1, "Building slony replication set " . $replica_set['id'] . " node " . $replica_set_node['id'] . " subscription file " . $slonik_file);
+    $slonik_fp = fopen($slonik_file, 'w');
+    if ($slonik_fp === FALSE) {
+      throw new exception("failed to open slonik file " . $slonik_file . ' for output');
+    }
+    $slonik_ofs = new output_file_segmenter($slonik_file, 1, $slonik_fp, $slonik_file);
+    $slonik_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
+    $generation_date = date('r');
+    $slonik_ofs->write("# DBSteward slony replica set ID " . $replica_set['id'] . " node " . $replica_set_node['id'] . " subscription commands generated " . $generation_date . "\n\n");
+    $slonik_ofs->write("ECHO 'DBSteward slony replica set ID " . $replica_set['id'] . " node " . $replica_set_node['id'] . " subscription commands generated " . $generation_date . " starting';\n\n");
 
-    dbsteward::console_line(1, "[slony] ID summary: " . count(self::$table_slony_ids) . " tables " . count(self::$sequence_slony_ids) . " sequences");
-    dbsteward::console_line(1, "[slony] table ID segments: " . static::slony_id_segment_summary(self::$table_slony_ids));
-    dbsteward::console_line(1, "[slony] sequence ID segements: " . static::slony_id_segment_summary(self::$sequence_slony_ids));
+    // on the subscriber node
+    // wait for sync to come from primary node to provider node
+    // subscribe the node to provider
+    // wait for sync to come from primary node to subscriber node
+    $subscription =
+"ECHO 'Subscribing replicaNode " . $replica_set_node['id'] . " to providerNodeID " . $replica_set_node['providerNodeId'] . " replica set ID " . $replica_set['id'] . "';
+SYNC (ID = " . $replica_set['originNodeId'] . ");
+WAIT FOR EVENT (
+  ORIGIN = " . $replica_set['originNodeId'] . ",
+  CONFIRMED = ALL,
+  WAIT ON = " . $replica_set_node['providerNodeId'] . ",
+  TIMEOUT = 0
+);
+SLEEP (SECONDS=60);
+
+SUBSCRIBE SET (
+  ID = " . $replica_set['id'] . ",
+  PROVIDER = " . $replica_set_node['providerNodeId'] . ",
+  RECEIVER = " . $replica_set_node['id'] . ",
+  FORWARD = YES
+);
+SLEEP (SECONDS=60);
+
+ECHO 'Waiting for replicaNode " . $replica_set_node['id'] . " subscription to providerNodeID " . $replica_set_node['providerNodeId'] . " replica set ID " . $replica_set['id'] . "';
+SYNC (ID = " . $replica_set['originNodeId'] . ");
+WAIT FOR EVENT (
+  ORIGIN = " . $replica_set['originNodeId'] . ",
+  CONFIRMED = ALL,
+  WAIT ON = " . $replica_set_node['id'] . ",
+  TIMEOUT = 0
+);
+SLEEP (SECONDS=60);
+";
+    $slonik_ofs->write($subscription);
   }
   
   /***
