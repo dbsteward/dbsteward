@@ -197,12 +197,12 @@ XML;
     foreach($replica_sets AS $replica_set) {
       if ($expected !== false) {
         $this->expect_exception($expected, function() use($doc, $replica_set) {
-          pgsql8::build_slonik_subscribe_set($doc, $replica_set, "php://memory");
+          pgsql8::build_slonik_create_set($doc, $replica_set, "php://memory");
         });
       }
       else {
         $this->expect_no_exception(function() use($doc, $replica_set) {
-          pgsql8::build_slonik_subscribe_set($doc, $replica_set, "php://memory");
+          pgsql8::build_slonik_create_set($doc, $replica_set, "php://memory");
         });
       }
     }

@@ -371,7 +371,7 @@ class pgsql8 extends sql99 {
       $replica_sets = static::get_slony_replica_sets($db_doc);
       foreach($replica_sets AS $replica_set) {
         pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_preamble.slonik");
-        pgsql8::build_slonik_subscribe_set($db_doc, $replica_set, $output_prefix . '_slony_subscribe_set_' . $replica_set['id'] . '.slonik');
+        pgsql8::build_slonik_create_set($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_create.slonik');
         pgsql8::build_slonik_paths($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_paths.slonik");
       }
     }
@@ -592,15 +592,15 @@ class pgsql8 extends sql99 {
   }
 
   /**
-   * Build the slonik commands to subscribe to the specified Slony replication set
-   * *
+   * Build the slonik commands to create the specified replica set
+   *
    * @param SimpleXMLElement $db_doc
    * @param SimpleXMLElement $replica_set
    * @param string           $slonik_file
    * @throws exception
    */
-  public static function build_slonik_subscribe_set($db_doc, $replica_set, $slonik_file) {
-    dbsteward::console_line(1, "Building slony replication set subscription file " . $slonik_file);
+  public static function build_slonik_create_set($db_doc, $replica_set, $slonik_file) {
+    dbsteward::console_line(1, "Building slony replication set create file " . $slonik_file);
     $slonik_fp = fopen($slonik_file, 'w');
     if ($slonik_fp === FALSE) {
       throw new exception("failed to open slonik file " . $slonik_file . ' for output');
@@ -608,8 +608,8 @@ class pgsql8 extends sql99 {
     $slonik_ofs = new output_file_segmenter($slonik_file, 1, $slonik_fp, $slonik_file);
     $slonik_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
     $generation_date = date('r');
-    $slonik_ofs->write("# DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " subscription generated " . $generation_date . "\n\n");
-    $slonik_ofs->write("ECHO 'DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " subscription generated " . $generation_date . " starting';\n\n");
+    $slonik_ofs->write("# DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " create commands generated " . $generation_date . "\n\n");
+    $slonik_ofs->write("ECHO 'DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " create commands generated " . $generation_date . " starting';\n\n");
     
     $slonik_ofs->write("CREATE SET (ID = " . $replica_set['id'] . ", ORIGIN = " . $replica_set['originNodeId'] . ", COMMENT = '" . $replica_set['comment'] . "');\n\n");
 
