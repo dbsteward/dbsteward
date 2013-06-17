@@ -911,7 +911,7 @@ SLEEP (SECONDS=60);
         // if we are not talking about the same node for both server and client
         // write the path
         if ( $node_i != $node_j ) {
-          $slony_paths_ofs->write("STORE PATH (SERVER = " . $node_i . ", CLIENT = " . $node_j
+          $slony_paths_ofs->write("STORE PATH (SERVER = " . $node_j . ", CLIENT = " . $node_i
             . ", CONNINFO = '"
             . "dbname=" . pgsql8::get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_j, 'dbName')
             . " host=" . pgsql8::get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_j, 'dbHost')
