@@ -730,11 +730,11 @@ SLEEP (SECONDS=60);
    */
   protected static function slony_id_segment_summary($ids) {
     sort($ids, SORT_NUMERIC);
-    $last_id = $ids[0];
+    $last_id = (int)($ids[0]);
     $streak = 0;
-    $s = (string)($ids[0]);
+    $s = $ids[0];
     for($i = 1; $i <= count($ids) - 1; $i++) {
-      if ( $ids[$i] == $last_id + 1 ) {
+      if ( (int)($ids[$i]) == (int)($last_id) + 1 ) {
         $streak++;
       }
       else {
@@ -742,9 +742,9 @@ SLEEP (SECONDS=60);
           $s .= "-" . $ids[$i - 1];
         }
         $s .= ", " . $ids[$i];
-        $streak = 0;
+        $streak = 1;
       }
-      $last_id = $ids[$i];
+      $last_id = (int)($ids[$i]);
     }
     if ( $streak > 0 ) {
       $s .= "-" . $ids[count($ids) - 1];
