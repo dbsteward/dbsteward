@@ -21,7 +21,7 @@ class pgsql8_diff extends sql99_diff {
   public static function diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix) {
     if ( ! dbsteward::$generate_slonik ) {
       // if we are not generating slonik, defer to parent
-      parent::diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix);
+      return parent::diff_doc($old_xml_file, $new_xml_file, $old_database, $new_database, $upgrade_prefix);
     }
     
     $timestamp = date('r');
