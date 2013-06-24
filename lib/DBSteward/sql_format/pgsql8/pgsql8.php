@@ -1344,21 +1344,12 @@ SLEEP (SECONDS=60);
     $doc = new SimpleXMLElement('<dbsteward></dbsteward>');
     // set the document to contain the passed db host, name, etc to meet the DTD and for reference
     $node_database = $doc->addChild('database');
-    $node_database->addChild('host', $host);
     $node_database->addChild('sqlformat', 'pgsql8');
-    $node_database->addChild('name', $database);
     $node_role = $node_database->addChild('role');
     $node_role->addChild('application', $user);
     $node_role->addChild('owner', $user);
     $node_role->addChild('replication', $user);
     $node_role->addChild('readonly', $user);
-    $node_slony = $node_database->addChild('slony');
-    $node_slony_master_node = $node_slony->addChild('masterNode');
-    $node_slony_master_node->addAttribute('id', '1');
-    $node_slony_replication_set = $node_slony->addChild('replicationSet');
-    $node_slony_replication_set->addAttribute('id', '1');
-    $node_slony_replication_upgrade_set = $node_slony->addChild('replicationUpgradeSet');
-    $node_slony_replication_upgrade_set->addAttribute('id', '2');
 
     // find all tables in the schema that aren't in the built-in schemas
     $sql = "SELECT *
