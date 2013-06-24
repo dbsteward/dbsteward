@@ -46,8 +46,8 @@ class pgsql8 extends sql99 {
     }
     
     // must be a schema table column trigger sequence type function view element to be defining slonySetId context attribute
-    if ( !in_array(strtolower($obj->getName()), array('schema', 'table', 'column', 'trigger', 'sequence', 'type', 'function', 'view')) ) {
-      throw new exception("set_context_replica_set_id passed element that is not a schema table column trigger sequence type function view element -- " . $obj->getName());
+    if ( !in_array(strtolower($obj->getName()), array('schema', 'table', 'column', 'trigger', 'sequence', 'sql', 'type', 'function', 'view')) ) {
+      throw new exception("set_context_replica_set_id passed element that is not a schema table column trigger sequence sql type function view element -- " . $obj->getName());
     }
 
     if ( !isset($obj['slonySetId']) ) {
