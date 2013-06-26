@@ -141,4 +141,3 @@ class mysql5_constraint extends sql99_constraint {
     return $sql;
   }
 }
-?>

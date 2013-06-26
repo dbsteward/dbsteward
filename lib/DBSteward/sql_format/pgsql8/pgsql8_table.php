@@ -151,10 +151,10 @@ class pgsql8_table extends sql99_table {
 
    // FOREIGN KEY ON DELETE / ON UPDATE handling
     if ( isset($constraint['foreignOnDelete']) && strlen($constraint['foreignOnDelete']) ) {
-      $sql .= " ON DELETE " . $constraint['foreignOnDelete'];
+      $sql .= " ON DELETE " . pgsql8_constraint::get_reference_option_sql($constraint['foreignOnDelete']);
     }
     if ( isset($constraint['foreignOnUpdate']) && strlen($constraint['foreignOnUpdate']) ) {
-      $sql .= " ON UPDATE " . $constraint['foreignOnUpdate'];
+      $sql .= " ON UPDATE " . pgsql8_constraint::get_reference_option_sql($constraint['foreignOnUpdate']);
     }
 
     return $sql;
