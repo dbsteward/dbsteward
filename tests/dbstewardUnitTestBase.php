@@ -11,6 +11,7 @@ require_once 'PHPUnit/Framework/TestCase.php';
 require_once 'PHPUnit/Framework/TestSuite.php';
 
 require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/../lib/DBSteward/active_sql_format_autoloader.php';
 
 require_once __DIR__ . '/dbsteward_sql99_connection.php';
 require_once __DIR__ . '/dbsteward_pgsql8_connection.php';
@@ -60,6 +61,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->xml_content_a = $xml;
     file_put_contents($this->xml_file_a, $xml);
   }
+  
   protected function set_xml_content_b($xml) {
     $this->xml_content_b = $xml;
     file_put_contents($this->xml_file_b, $xml);
