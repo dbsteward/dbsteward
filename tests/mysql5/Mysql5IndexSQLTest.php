@@ -29,16 +29,16 @@ class Mysql5IndexSQLTest extends PHPUnit_Framework_TestCase {
   <table name="test" owner="NOBODY">
     <column name="a"/>
     <index name="default_idx">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
     <index name="hash_idx" using="hash">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
     <index name="btree_idx" using="btree">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
     <index name="gin_idx" using="gin">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
   </table>
 </schema>
@@ -62,10 +62,10 @@ XML;
   <table name="test" owner="NOBODY">
     <column name="a" unique="true"/>
     <index name="unique_idx" unique="true">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
     <index name="not_unique_idx" unique="false">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
   </table>
 </schema>
@@ -93,9 +93,9 @@ XML;
     <column name="b"/>
     <column name="c"/>
     <index name="compound_idx">
-      <indexDimension>a</indexDimension>
-      <indexDimension>b</indexDimension>
-      <indexDimension>c</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
+      <indexDimension name="b_2">b</indexDimension>
+      <indexDimension name="c_3">c</indexDimension>
     </index>
   </table>
 </schema>
@@ -143,7 +143,7 @@ SQL;
   <table name="test" owner="NOBODY">
     <column name="a"/>
     <index name="default_idx">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
   </table>
 </schema>

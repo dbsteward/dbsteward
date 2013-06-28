@@ -57,7 +57,7 @@ class Mysql5DiffTest extends PHPUnit_Framework_TestCase {
       <column name="type" type="issue_type" default="bug"/>
 
       <index name="type_index" using="hash">
-        <indexDimension>type</indexDimension>
+        <indexDimension name="type_hash_1">type</indexDimension>
       </index>
     </table>
 
@@ -129,8 +129,8 @@ XML;
         foreignColumn="user_id"/>
 
       <index name="type_index" using="hash">
-        <indexDimension>type</indexDimension>
-        <indexDimension>project_id</indexDimension>
+        <indexDimension name="type_hash_1">type</indexDimension>
+        <indexDimension name="project_id_hash_2">project_id</indexDimension>
       </index>
     </table>
 

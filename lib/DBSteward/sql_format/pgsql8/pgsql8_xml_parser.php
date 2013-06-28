@@ -151,8 +151,10 @@ class pgsql8_xml_parser extends sql99_xml_parser {
             $index->addAttribute($att_name, $att_value);
           }
         }
+        $odi = 1;
         foreach ($orig_index->indexDimension AS $orig_dimension) {
-          $index->addChild('indexDimension', (string)$orig_dimension);
+          $index->addChild('indexDimension', (string)$orig_dimension)
+            ->addAttribute('name', ((string)$orig_dimension) . '_' . $odi++);
         }
       }
       // Copy unique constraints

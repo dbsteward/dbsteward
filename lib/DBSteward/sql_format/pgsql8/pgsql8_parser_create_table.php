@@ -165,7 +165,8 @@ class pgsql8_parser_create_table {
           $node_index = &dbx::create_table_index($node_table, pgsql8::index_name(sql_parser::get_object_name($node_table['name']), sql_parser::get_object_name($tokens[0]), 'key'));
           dbx::set_attribute($node_index, 'unique', 'true');
           dbx::set_attribute($node_index, 'using', 'btree');
-          $node_index->addChild('indexDimension', sql_parser::get_object_name($tokens[0]));
+          $node_index->addChild('indexDimension', sql_parser::get_object_name($tokens[0]))
+            ->addAttribute('name', $tokens[0] . '_unq');
 
           // make sure we don't process this token again
           unset($tokens[$i]);
