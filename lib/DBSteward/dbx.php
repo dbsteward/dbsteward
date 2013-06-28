@@ -553,7 +553,8 @@ class dbx {
         $unique_index['name'] = format_index::index_name($node_table['name'], $column['name'], 'key');
         $unique_index['unique'] = 'true';
         $unique_index['using'] = 'btree';
-        $unique_index->addChild('indexDimension', $column['name']);
+        $unique_index->addChild('indexDimension', $column['name'])
+          ->addAttribute('name', $column['name'] . '_unq');
         $nodes[] = $unique_index;
       }
     }

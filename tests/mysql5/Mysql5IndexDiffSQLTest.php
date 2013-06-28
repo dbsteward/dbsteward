@@ -38,7 +38,7 @@ XML;
   <table name="test" owner="NOBODY">
     <column name="a"/>
     <index name="test_idxa">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
   </table>
 </schema>
@@ -49,7 +49,7 @@ XML;
   <table name="test" owner="NOBODY">
     <column name="a"/>
     <index name="test_idxa" using="hash">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
   </table>
 </schema>
@@ -60,7 +60,7 @@ XML;
   <table name="test" owner="NOBODY">
     <column name="a"/>
     <index name="test_idxa" unique="true">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
   </table>
 </schema>
@@ -73,13 +73,13 @@ XML;
     <column name="b"/>
     <column name="c"/>
     <index name="test_idxa">
-      <indexDimension>a</indexDimension>
+      <indexDimension name="a_1">a</indexDimension>
     </index>
     <index name="test_idxb">
-      <indexDimension>b</indexDimension>
+      <indexDimension name="b_2">b</indexDimension>
     </index>
     <index name="test_idxc">
-      <indexDimension>c</indexDimension>
+      <indexDimension name="c_3">c</indexDimension>
     </index>
   </table>
 </schema>

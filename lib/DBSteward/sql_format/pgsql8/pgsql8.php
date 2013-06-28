@@ -1487,8 +1487,10 @@ SLEEP (SECONDS=60);
           $node_index->addAttribute('name', $index_name);
           $node_index->addAttribute('using', 'btree');
           $node_index->addAttribute('unique', $index_row['indisunique']=='t'?'true':'false');
+          $dim_i = 1;
           foreach ($dimensions as $dim) {
-            $node_index->addChild('indexDimension', $dim);
+            $node_index->addChild('indexDimension', $dim)
+              ->addAttribute('name', $dim . '_' . $dim_i++);
           }
         }
       }
