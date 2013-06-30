@@ -76,7 +76,7 @@ XML;
       pgsql8_diff_tables::diff_tables($ofs, $ofs, $old_schema, $new_schema, $old_schema->table, $new_schema->table);
     }
     catch (Exception $ex) {
-      $this->assertEquals("Column types cannot be altered to serial. If this column cannot be recreated as part of database change control, a user defined serial should be created, and corresponding nextval() defined as the default for the column.", $ex->getMessage());
+      $this->assertEquals("Table public.sometable column id has linked type serial -- Column types cannot be altered to serial. If this column cannot be recreated as part of database change control, a user defined serial should be created, and corresponding nextval() defined as the default for the column.", $ex->getMessage());
       return;
     }
     $this->fail('Expected exception because of changing to a serial type');

@@ -22,13 +22,16 @@ class outputDiffTest extends dbstewardUnitTestBase {
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
+ 
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
   <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
@@ -50,12 +53,14 @@ XML;
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
@@ -84,12 +89,14 @@ XML;
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
@@ -119,13 +126,16 @@ XML;
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
+ 
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
   <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
@@ -167,6 +177,23 @@ XML;
     parent::setUp();
   }
 
+  protected function do_upgrade($sql_format) {
+    $old_db_doc = simplexml_load_file($this->xml_file_a);
+    $new_db_doc = simplexml_load_file($this->xml_file_b);
+    $this->output_prefix = dirname(__FILE__) . '/testdata/' .  $sql_format . '_unit_test_xml_a'; 
+    // need to unfortunately do the one thing austin told me not to:
+    // use more than one format type per run
+    if (strcasecmp($sql_format, 'pgsql8') == 0) {
+      pgsql8::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array());
+    }
+    else if (strcasecmp($sql_format, 'mysql5') == 0) {
+      mysql5::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array());
+    }
+    else {
+      $this->fail("This test only uses pgsql8 and mysql5 formats, but can be expanded.");
+    }
+  }
+
   /**
    * @group pgsql8
    */
@@ -180,27 +207,28 @@ XML;
     file_put_contents($this->xml_file_b, $this->xml_content_b);
 
     $this->apply_options_pgsql8();
-    pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    dbsteward::$generate_slonik = TRUE;
+    $this->do_upgrade('pgsql8');
 
-    $upgrade_stage1_schema1_sql = file_get_contents(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
+    $upgrade_stage1_schema1_sql = file_get_contents($this->output_prefix . '_upgrade_slony_replica_set_100_stage1_schema1.sql');
     $upgrade_stage1_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage1_schema1_sql);
     $this->assertTrue(
       (boolean)preg_match('/ALTER TABLE dbsteward."serial_test" ALTER COLUMN "test_id" TYPE int/i', $upgrade_stage1_schema1_sql),
-      "Column type change was not found in upgrade_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
+      "Column type change was not found in upgrade_slony_replica_set_100_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
     $this->assertTrue(
       (boolean)preg_match('/ALTER COLUMN "test_id" DROP DEFAULT/i', $upgrade_stage1_schema1_sql),
-      "Removal of SERIAL default not found in upgrade_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
+      "Removal of SERIAL default not found in upgrade_slony_replica_set_100_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
 
-    $upgrade_stage3_schema1_sql = file_get_contents(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
+    $upgrade_stage3_schema1_sql = file_get_contents($this->output_prefix . '_upgrade_slony_replica_set_100_stage3_schema1.sql');
     $upgrade_stage3_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage3_schema1_sql);
     $this->assertTrue(
       (boolean)preg_match('/DROP SEQUENCE IF EXISTS dbsteward."serial_test_test_id_seq"/i', $upgrade_stage3_schema1_sql),
-      "Serial drop was not found in upgrade_stage3_schema1.sql:\n$upgrade_stage3_schema1_sql"
+      "Serial drop was not found in upgrade_slony_replica_set_100_stage3_schema1.sql:\n$upgrade_stage3_schema1_sql"
       );
 
-    $upgrade_stage1_slony_slonik = file_get_contents(__DIR__ . '/testdata/upgrade_stage1_slony.slonik');
+    $upgrade_stage1_slony_slonik = file_get_contents($this->output_prefix . '_upgrade_slony_replica_set_100_stage1.slonik');
     $upgrade_stage1_slony_slonik = preg_replace('/\s+/', ' ', $upgrade_stage1_slony_slonik);
     $this->assertTrue(
       (boolean)preg_match('/SET DROP SEQUENCE \( ORIGIN = 1, ID = 2 \);/i', $upgrade_stage1_slony_slonik),
@@ -224,12 +252,15 @@ XML;
     file_put_contents($this->xml_file_b, $this->xml_content_b);
 
     $this->apply_options_mysql5();
-    mysql5::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    
+    dbsteward::$generate_slonik = FALSE;
+    $this->do_upgrade('mysql5');
+    //mysql5::build_upgrade($this->xml_file_a, $this->xml_file_b);
 
-    $upgrade_stage1_schema1_sql = file_get_contents(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
+    $upgrade_stage1_schema1_sql = file_get_contents($this->output_prefix . '_upgrade_stage1_schema1.sql');
     $upgrade_stage1_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage1_schema1_sql);
 
-    $upgrade_stage3_schema1_sql = file_get_contents(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
+    $upgrade_stage3_schema1_sql = file_get_contents($this->output_prefix . '_upgrade_stage3_schema1.sql');
     $upgrade_stage3_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage3_schema1_sql);
     $this->assertTrue(
       (boolean)preg_match('/DROP TABLE IF EXISTS `__sequences`;/i', $upgrade_stage3_schema1_sql),
@@ -237,7 +268,7 @@ XML;
       );
     
     $this->assertTrue(
-      (boolean)preg_match('/DROP TRIGGER IF EXISTS __dbsteward_serial_test_test_id_serial_trigger;/i', $upgrade_stage1_schema1_sql),
+      (boolean)preg_match('/DROP TRIGGER IF EXISTS `dbsteward`.`__dbsteward_serial_test_test_id_serial_trigger`;/i', $upgrade_stage1_schema1_sql),
       "Serial trigger drop was not found in upgrade_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
   }
@@ -254,21 +285,24 @@ XML;
     $this->xml_file_b = __DIR__ . '/testdata/type_diff_xml_b.xml';
     file_put_contents($this->xml_file_b, $this->xml_content_b);
 
-    $this->apply_options_mysql5();
+    $this->apply_options_pgsql8();
     // these options are applied when specifying --singlestageupgrade
     dbsteward::$single_stage_upgrade = TRUE;
     dbsteward::$always_recreate_views = FALSE;
-    pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    dbsteward::$generate_slonik = FALSE;
 
-    $upgrade_single_stage_sql = file_get_contents(__DIR__ . '/testdata/upgrade_single_stage.sql');
+    $this->do_upgrade('pgsql8');
+    //pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
+
+    $upgrade_single_stage_sql = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
     $upgrade_single_stage_sql = preg_replace('/\s+/', ' ', $upgrade_single_stage_sql);
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote('ALTER TABLE "dbsteward"."user" ALTER COLUMN "user_name" TYPE varchar(64)','/').'/i', $upgrade_single_stage_sql),
+      (boolean)preg_match('/'.preg_quote('ALTER TABLE dbsteward."user" ALTER COLUMN "user_name" TYPE varchar(64)','/').'/i', $upgrade_single_stage_sql),
       "user_name column type change was not found in upgrade_single_stage.sql:\n$upgrade_single_stage_sql"
     );
 
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote('UPDATE "dbsteward"."user" SET "user_name" = E\'Administrator\' WHERE ("user_id" = E\'1\');','/').'/i', $upgrade_single_stage_sql),
+      (boolean)preg_match('/'.preg_quote('UPDATE dbsteward."user" SET "user_name" = E\'Administrator\' WHERE ("user_id" = \'1\');','/').'/i', $upgrade_single_stage_sql),
       "Update of user_name column static value not found in upgrade_single_stage.sql:\n$upgrade_single_stage_sql"
     );
   }
@@ -289,17 +323,20 @@ XML;
     // these options are applied when specifying --singlestageupgrade
     dbsteward::$single_stage_upgrade = TRUE;
     dbsteward::$always_recreate_views = FALSE;
-    mysql5::build_upgrade($this->xml_file_a, $this->xml_file_b);
-
-    $upgrade_single_stage_sql = file_get_contents(__DIR__ . '/testdata/upgrade_single_stage.sql');
+    $this->do_upgrade('mysql5');
+    //mysql5::build_upgrade($this->xml_file_a, $this->xml_file_b);
+    
+    dbsteward::$generate_slonik = FALSE;
+    $upgrade_single_stage_sql = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
     $upgrade_single_stage_sql = preg_replace('/\s+/', ' ', $upgrade_single_stage_sql);
+
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote("ALTER TABLE `user` MODIFY COLUMN `user_name` varchar(64)",'/').'/i', $upgrade_single_stage_sql),
+      (boolean)preg_match('/'.preg_quote("ALTER TABLE `dbsteward`.`user` MODIFY COLUMN `user_name` varchar(64)",'/').'/i', $upgrade_single_stage_sql, $matches),
       "user_name column type change was not found in upgrade_single_stage_sql.sql:\n$upgrade_single_stage_sql"
       );
 
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote("UPDATE `user` SET `user_name` = 'Administrator' WHERE (`user_id` = '1');",'/').'/i', $upgrade_single_stage_sql),
+      (boolean)preg_match('/'.preg_quote("UPDATE `dbsteward`.`user` SET `user_name` = 'Administrator' WHERE (`user_id` = 1);",'/').'/i', $upgrade_single_stage_sql),
       "Update of user_name column static value not found in upgrade_single_stage.sql:\n$upgrade_single_stage_sql"
       );
   }

@@ -436,8 +436,13 @@ class sql99_table {
   public static function &get_old_table_schema($schema, $table) {
     if ( !isset($table['oldSchemaName']) ) {
       return $schema;
+      // is this safe to do?
+      // otherwise, if a table changes but a schema doesn't, and oldSchemaName
+      // is not set, the table returned will be the NEW table which will
+      // not have table['name'] set to the oldTableName it's looking for
+      //$schema = dbx::get_schema(dbsteward::$old_database, $table['name']);
+      //return $schema;
     }
-    
     if (is_null(dbsteward::$old_database)) {
       $old_schema = NULL;
     }
