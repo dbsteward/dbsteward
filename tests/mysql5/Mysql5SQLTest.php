@@ -138,7 +138,8 @@ XML;
 
     $expected = <<<SQL
 CREATE DATABASE IF NOT EXISTS `public`;
-GRANT SELECT, UPDATE, DELETE ON * TO deployment;
+USE `public`;
+GRANT SELECT, UPDATE, DELETE ON `public`.* TO deployment;
 
 DROP FUNCTION IF EXISTS `a_function`;
 CREATE DEFINER = deployment FUNCTION `a_function` (`config_parameter` text, `config_value` text)
@@ -154,24 +155,24 @@ END;
 
 GRANT EXECUTE ON FUNCTION `a_function` TO dbsteward_phpunit_app;
 
-CREATE TABLE `user` (
+CREATE TABLE `public`.`user` (
   `user_id` int NOT NULL,
   `group_id` int NOT NULL,
   `username` varchar(80),
   `user_age` numeric
 );
-GRANT SELECT, UPDATE, DELETE ON `user` TO dbsteward_phpunit_app;
+GRANT SELECT, UPDATE, DELETE ON `public`.`user` TO dbsteward_phpunit_app;
 
-CREATE TABLE `group` (
+CREATE TABLE `public`.`group` (
   `group_id` int NOT NULL,
   `permission_level` ENUM('guest','user','admin'),
   `group_name` character varying(100),
   `group_enabled` boolean NOT NULL DEFAULT true
 );
 
-CREATE UNIQUE INDEX `group_group_name_key` ON `group` (`group_name`) USING BTREE;
+CREATE UNIQUE INDEX `group_group_name_key` ON `public`.`group` (`group_name`) USING BTREE;
 
-GRANT SELECT, UPDATE, DELETE ON `group` TO dbsteward_phpunit_app;
+GRANT SELECT, UPDATE, DELETE ON `public`.`group` TO dbsteward_phpunit_app;
 
 CREATE TABLE IF NOT EXISTS `__sequences` (
   `name` VARCHAR(100) NOT NULL,
@@ -282,50 +283,58 @@ VALUES
   ('__public_group_group_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
   ('a_sequence', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
 
-GRANT SELECT, UPDATE, DELETE ON `__sequences` TO dbsteward_phpunit_app;
+GRANT SELECT, UPDATE, DELETE ON `public`.`__sequences` TO dbsteward_phpunit_app;
 
-ALTER TABLE `user`
-  ADD PRIMARY KEY (`user_id`);
-ALTER TABLE `group`
-  ADD PRIMARY KEY (`group_id`);
-ALTER TABLE `user`
-  ADD UNIQUE INDEX `username_unq` (`username`),
-  ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `group` (`group_id`);
-
-DROP TRIGGER IF EXISTS `__public_user_user_id_serial_trigger`;
-CREATE TRIGGER `__public_user_user_id_serial_trigger` BEFORE INSERT ON `user`
+DROP TRIGGER IF EXISTS `public`.`__public_user_user_id_serial_trigger`;
+CREATE TRIGGER `public`.`__public_user_user_id_serial_trigger` BEFORE INSERT ON `public`.`user`
 FOR EACH ROW SET NEW.`user_id` = COALESCE(NEW.`user_id`, nextval('__public_user_user_id_serial_seq'));
 
-DROP TRIGGER IF EXISTS `__public_group_group_id_serial_trigger`;
-CREATE TRIGGER `__public_group_group_id_serial_trigger` BEFORE INSERT ON `group`
+DROP TRIGGER IF EXISTS `public`.`__public_group_group_id_serial_trigger`;
+CREATE TRIGGER `public`.`__public_group_group_id_serial_trigger` BEFORE INSERT ON `public`.`group`
 FOR EACH ROW SET NEW.`group_id` = COALESCE(NEW.`group_id`, nextval('__public_group_group_id_serial_seq'));
 
-DROP TRIGGER IF EXISTS `a_trigger`;
-CREATE TRIGGER `a_trigger` BEFORE INSERT ON `user`
+DROP TRIGGER IF EXISTS `public`.`a_trigger`;
+CREATE TRIGGER `public`.`a_trigger` BEFORE INSERT ON `public`.`user`
 FOR EACH ROW EXECUTE xyz;
 
-CREATE OR REPLACE DEFINER = deployment SQL SECURITY DEFINER VIEW `a_view`
-  AS SELECT * FROM user, group;
-
 CREATE DATABASE IF NOT EXISTS `hotel`;
-CREATE TABLE `rate` (
+USE `hotel`;
+CREATE TABLE `hotel`.`rate` (
   `rate_id` integer NOT NULL,
   `rate_group_id` integer NOT NULL,
   `rate_name` character varying(120),
   `rate_value` numeric
 );
-CREATE TABLE `rate_group` (
+CREATE TABLE `hotel`.`rate_group` (
   `rate_group_id` integer NOT NULL,
   `rate_group_name` character varying(100),
   `rate_group_enabled` boolean NOT NULL DEFAULT true
 );
-ALTER TABLE `rate`
+
+USE `public`;
+ALTER TABLE `public`.`user`
+  ADD PRIMARY KEY (`user_id`);
+ALTER TABLE `public`.`group`
+  ADD PRIMARY KEY (`group_id`);
+
+USE `hotel`;
+ALTER TABLE `hotel`.`rate`
   ADD PRIMARY KEY (`rate_id`);
-ALTER TABLE `rate_group`
+ALTER TABLE `hotel`.`rate_group`
   ADD PRIMARY KEY (`rate_group_id`);
-ALTER TABLE `user`
+
+
+ALTER TABLE `public`.`user`
   ADD UNIQUE INDEX `username_unq` (`username`),
-  ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `group` (`group_id`);
+  ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `public`.`group` (`group_id`);
+
+ALTER TABLE `hotel`.`rate`
+  ADD CONSTRAINT `rate_rate_group_id_fkey` FOREIGN KEY `rate_rate_group_id_fkey` (`rate_group_id`) REFERENCES `hotel`.`rate_group` (`rate_group_id`);
+
+USE `public`;
+CREATE OR REPLACE DEFINER = deployment SQL SECURITY DEFINER VIEW `public`.`a_view`
+AS SELECT * FROM user, group;
+USE `hotel`;
 SQL;
 
     $dbs = new SimpleXMLElement($xml);
@@ -337,7 +346,7 @@ SQL;
     mysql5::build_schema($dbs, $ofs, $table_dependency);
 
     $actual = $ofs->_get_output();
-    
+var_dump($actual);    
     // get rid of comments
     // $expected = preg_replace('/\s*-- .*(\n\s*)?/','',$expected);
     // // get rid of extra whitespace

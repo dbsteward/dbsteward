@@ -7,20 +7,20 @@ class AddColumnToPrimaryKeyedTableTest extends dbstewardUnitTestBase {
   protected $xml_content_a = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>dbsteward_phpunit_app</application>
       <owner>deployment</owner>
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
@@ -40,20 +40,20 @@ XML;
   protected $xml_content_b = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>dbsteward_phpunit_app</application>
       <owner>deployment</owner>
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
@@ -77,8 +77,8 @@ XML;
 
   public function testAddSerialColumn() {
     system(dirname(__FILE__) . "/../dbsteward.php --oldxml=testdata/unit_test_xml_a.xml --newxml=testdata/unit_test_xml_b.xml");
-
-    $sql_file = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage2_data1.sql');
+    $this->output_prefix = str_replace('xml_a', 'xml_b', $this->output_prefix);
+    $sql_file = file_get_contents($this->output_prefix . '_upgrade_stage4_data1.sql');
     $match = stristr($sql_file, "UPDATE dbsteward.serial_test SET test_serial = 1 WHERE (test_string = E'testtest');");
     $this->assertTrue($match !== FALSE);
     
