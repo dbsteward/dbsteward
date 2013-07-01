@@ -18,24 +18,15 @@ class structureExtractionTest extends dbstewardUnitTestBase {
     $xml = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>dbsteward_phpunit_app</application>
       <owner>deployment</owner>
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
-    </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
-  <language name="plpgsql" procedural="true" owner="ROLE_OWNER" />
+
   <schema name="dbsteward" owner="ROLE_OWNER">
     <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
       <functionParameter name="config_parameter" type="text"/>
@@ -57,18 +48,20 @@ class structureExtractionTest extends dbstewardUnitTestBase {
     </function>
   </schema>
   <schema name="hotel" owner="ROLE_OWNER">
-    <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id" slonyId="1">
+    <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id" primaryKeyName="rate_pkey">
+      <tableOption sqlFormat="pgsql8" name="with" value="(oids=false)"/>
       <column name="rate_id" type="integer" null="false"/>
-      <column name="rate_group_id" foreignSchema="hotel" foreignTable="rate_group" foreignColumn="rate_group_id" null="false"/>
+      <column name="rate_group_id" null="false" foreignSchema="hotel" foreignTable="rate_group" foreignColumn="rate_group_id" foreignKeyName="rate_rate_group_id_fkey" foreignOnUpdate="NO_ACTION" foreignOnDelete="NO_ACTION"/>
       <column name="rate_name" type="character varying(120)"/>
       <column name="rate_value" type="numeric"/>
     </table>
-    <table name="rate_group" owner="ROLE_OWNER" primaryKey="rate_group_id" slonyId="2">
+    <table name="rate_group" owner="ROLE_OWNER" primaryKey="rate_group_id" primaryKeyName="rate_group_pkey">
+      <tableOption sqlFormat="pgsql8" name="with" value="(oids=false)"/>
       <column name="rate_group_id" type="integer" null="false"/>
       <column name="rate_group_name" type="character varying(100)"/>
       <column name="rate_group_enabled" type="boolean" null="false" default="true"/>
     </table>
-  </schema>
+  </schema>            
 </dbsteward>
 XML;
 
@@ -144,21 +137,29 @@ XML;
 
     // 1) Build a database from definition A
     $this->build_db($format);
-
+    // test db built above most likely will not have slony; test will fail if 
+    // this is not set false because it will look for slony definitions 
+    // in extracted schema
+    dbsteward::$generate_slonik = FALSE;
+    
     // 2) Extract database schema to definition B
     $conn = $this->get_connection($format);
     $this->xml_content_b = $format::extract_schema($conn->get_dbhost(), $conn->get_dbport(), $conn->get_dbname(), $conn->get_dbuser(), $conn->get_dbpass());
-    
+
     $this->write_xml_definition_to_disk();
 
     // 3) Compare and expect zero differences between A and B
     $this->apply_options($format);
-    $format::build_upgrade($this->xml_file_a, $this->xml_file_b);
     
-    $upgrade_stage1_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
-    $upgrade_stage2_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
-    $upgrade_stage3_schema1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
-    $upgrade_stage4_data1_sql = $this->get_script_compress(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
+    $old_db_doc = simplexml_load_file($this->xml_file_a);
+    $new_db_doc = simplexml_load_file($this->xml_file_b);
+
+    $format::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array());
+    
+    $upgrade_stage1_schema1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage1_schema1.sql');
+    $upgrade_stage2_data1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage2_data1.sql');
+    $upgrade_stage3_schema1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage3_schema1.sql');
+    $upgrade_stage4_data1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage4_data1.sql');
 
     // check for no differences as expressed in DDL / DML
     $this->assertEquals(

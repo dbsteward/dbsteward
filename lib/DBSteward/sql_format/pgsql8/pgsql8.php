@@ -1538,7 +1538,7 @@ SLEEP (SECONDS=60);
       $sequence_cols[$idx] = $seq_col;
     }
     $sequence_str = implode(',', $sequence_cols);
-var_dump($sequence_str);
+
     foreach ($schemas as $schema) {
       dbsteward::console_line(3, "Analyze isolated sequences in schema " . $schema['name']);
       // filter by sequences we've defined as part of a table already
