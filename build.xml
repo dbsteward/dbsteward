@@ -111,8 +111,10 @@ DBSteward 1.3.0 Release
   - Data row differencing when pkeys change in the same release
   - Addendum artifact creation mode
   - Allow definitions to contain sqlformat hints for platform specific definitions
+  - refactor slony definition elements, make slony elements not required (see --generateslonik)
 * pgsql8 updates:
   - Index quoting fixes
+  - slony replica set management expansion
 * mysql5 updates:
   - Index and column quoting fixes
 
