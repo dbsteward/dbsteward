@@ -104,7 +104,7 @@ XML;
   <schema name="public" owner="ROLE_OWNER">
     <!-- add insert -->
     <grant operation="SELECT,INSERT,UPDATE,DELETE" role="ROLE_OWNER"/>
-    <table name="issue_group" oldTableName="project" owner="ROLE_OWNER" primaryKey="issue_group_id">
+    <table name="issue_group" oldSchemaName="public" oldTableName="project" owner="ROLE_OWNER" primaryKey="issue_group_id">
       <column name="issue_group_id" oldColumnName="project_id" type="serial"/>
       <column name="name" type="varchar(100)" null="false"/>
       <column name="slug" type="varchar(20)" null="false"/>

@@ -76,7 +76,7 @@ SQL;
 ALTER TABLE `public`.`foo`
   DROP PRIMARY KEY;
 ALTER TABLE `public`.`foo`
-  ADD COLUMN `fooID` int NOT NULL FIRST;
+  ADD COLUMN `fooID` int NOT NULL DEFAULT 0 FIRST;
 
 ALTER TABLE `public`.`foo`
   ADD PRIMARY KEY (`fooID`),

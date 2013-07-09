@@ -18,24 +18,23 @@ class serialStartTest extends dbstewardUnitTestBase {
   private $pgsql8_xml_a = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>dbsteward_phpunit_app</application>
       <owner>deployment</owner>
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
-  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
   <schema name="dbsteward" owner="ROLE_OWNER">
     <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
       <functionParameter name="config_parameter" type="text"/>
@@ -81,16 +80,18 @@ XML;
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
-  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
+
   <schema name="dbsteward" owner="ROLE_OWNER">
     <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
       <functionParameter name="config_parameter" type="text"/>
@@ -208,7 +209,7 @@ XML;
     // build version a
     $this->build_db_pgsql8();
     
-    $xml_a_sql = file_get_contents(dirname(__FILE__) . '/testdata/unit_test_xml_a_build.sql');
+    $xml_a_sql = file_get_contents($this->output_prefix . '_build.sql');
     $xml_a_sql = preg_replace('/\s+/', ' ', $xml_a_sql);
     // 1) Confirm serial starts are applied when creating new tables
     $this->assertRegExp(
@@ -225,17 +226,17 @@ XML;
     // diff and apply upgrade
     $this->upgrade_db_pgsql8();
     
-    $xml_b_upgrade_stage2_data1_sql = file_get_contents(dirname(__FILE__) . '/testdata/upgrade_stage2_data1.sql');
-    $xml_b_upgrade_stage2_data1_sql = preg_replace('/\s+/', ' ', $xml_b_upgrade_stage2_data1_sql);
+    $xml_b_upgrade_stage4_data1_sql = file_get_contents($this->output_prefix . '_upgrade_stage4_data1.sql');
+    $xml_b_upgrade_stage4_data1_sql = preg_replace('/\s+/', ' ', $xml_b_upgrade_stage4_data1_sql);
     // 2) Confirm when adding new tables with serial columns that serial starts are applied in stage 2
     $this->assertRegExp(
       '/-- serialStart 5678 specified for user_info.user_attribute.user_attribute_id/i',
-      $xml_b_upgrade_stage2_data1_sql,
+      $xml_b_upgrade_stage4_data1_sql,
       "serialStart specification not announced in a comment in testdata/unit_test_xml_a_build.sql"
     );
     $this->assertRegExp(
       "/SELECT setval\(pg_get_serial_sequence\('user_info.user_attribute', 'user_attribute_id'\), 5678, TRUE\);/i",
-      $xml_b_upgrade_stage2_data1_sql,
+      $xml_b_upgrade_stage4_data1_sql,
       "sequence start not being set via setval in testdata/unit_test_xml_a_build.sql"
     );
   }
@@ -267,18 +268,18 @@ XML;
     // diff and apply upgrade
     $this->upgrade_db_mysql5();
     
-    $xml_b_upgrade_stage2_data1_sql = file_get_contents(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
-    $xml_b_upgrade_stage2_data1_sql = preg_replace('/\s+/', ' ', $xml_b_upgrade_stage2_data1_sql);
+    $xml_b_upgrade_stage4_data1_sql = file_get_contents($this->output_prefix . '_upgrade_stage4_data1.sql');
+    $xml_b_upgrade_stage4_data1_sql = preg_replace('/\s+/', ' ', $xml_b_upgrade_stage4_data1_sql);
     // 2) Confirm when adding new tables with serial columns that serial starts are applied in stage 2
     $this->assertRegExp(
       '/-- serialStart 5678 specified for public.user_attribute.user_attribute_id/i',
-      $xml_b_upgrade_stage2_data1_sql,
+      $xml_b_upgrade_stage4_data1_sql,
       "serialStart specification not announced in a comment in testdata/unit_test_xml_a_build.sql"
     );
     $this->assertRegExp(
       "/SELECT setval\('__public_user_attribute_user_attribute_id_serial_seq',5678,TRUE\);/i",
-      $xml_b_upgrade_stage2_data1_sql,
-      "sequence start not being set via setval in testdata/upgrade_stage2_data1.sql"
+      $xml_b_upgrade_stage4_data1_sql,
+      "sequence start not being set via setval in testdata/upgrade_stage4_data1.sql"
     );
   }
 }

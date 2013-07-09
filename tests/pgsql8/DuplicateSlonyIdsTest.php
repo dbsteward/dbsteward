@@ -194,6 +194,8 @@ XML;
 
     // just ask pgsql 8 to build replica sets here
     $replica_sets = pgsql8::get_slony_replica_sets($doc);
+    
+    // iterate over each replica set; 
     foreach($replica_sets AS $replica_set) {
       if ($expected !== false) {
         $this->expect_exception($expected, function() use($doc, $replica_set) {
@@ -213,13 +215,17 @@ XML;
 
     // just upgrade
     if ($expected !== false) {
-      $this->expect_exception($expected, function() use($doc) {
-        pgsql8::build_upgrade_slonik_replica_set($doc, $doc, __DIR__.'/../testdata/slonyid_test');
+      $this->expect_exception($expected, function() use($doc, $replica_sets) {
+        foreach ($replica_sets as $replica_set) {
+          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, '', 'php://memory');
+        }
       });
     }
     else {
-      $this->expect_no_exception(function() use($doc) {
-        pgsql8::build_upgrade_slonik_replica_set($doc, $doc, __DIR__.'/../testdata/slonyid_test');
+      $this->expect_no_exception(function() use($doc, $replica_sets) {
+        foreach ($replica_sets as $replica_set) {
+          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, '', 'php://memory');
+        }
       });
     }
   }
@@ -236,12 +242,14 @@ XML;
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
@@ -254,15 +262,23 @@ XML;
     pgsql8::$table_slony_ids = array();
     pgsql8::$sequence_slony_ids = array();
     pgsql8::$known_pg_identifiers = array();
+    
+    // for ease in testing, since replica_sets will be the same between
+    // adoc and bdoc, just use adoc for iterating over replica sets
+    $replica_sets = pgsql8::get_slony_replica_sets($adoc);
 
     if ($expected !== false) {
-      $this->expect_exception($expected, function() use($adoc, $bdoc) {
-        pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, __DIR__.'/../testdata/slonyid_test');
+      $this->expect_exception($expected, function() use($adoc, $bdoc, $replica_sets) {
+        foreach ($replica_sets as $replica_set) {
+          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, '', 'php://memory');
+        }
       });
     }
     else {
-      $this->expect_no_exception(function() use($adoc, $bdoc) {
-        pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, __DIR__.'/../testdata/slonyid_test');
+      $this->expect_no_exception(function() use($adoc, $bdoc, $replica_sets) {
+        foreach ($replica_sets as $replica_set) {
+          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, '', 'php://memory');
+        }
       });
     }
   }

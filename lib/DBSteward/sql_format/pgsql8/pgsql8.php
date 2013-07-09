@@ -380,15 +380,47 @@ class pgsql8 extends sql99 {
         foreach($replica_set->slonyReplicaSetNode AS $replica_set_node) {
           pgsql8::build_slonik_subscribe_set_node($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_subscribe_node_' . $replica_set_node['id'] . '.slonik', $replica_set_node);
         }
+        
+        static::slony_ids_required_during_build($replica_set, $db_doc);
+        
       }
 
       dbsteward::console_line(1, "[slony] ID summary: " . count(self::$table_slony_ids) . " tables " . count(self::$sequence_slony_ids) . " sequences");
       dbsteward::console_line(1, "[slony] table ID segments: " . static::slony_id_segment_summary(self::$table_slony_ids));
-      dbsteward::console_line(1, "[slony] sequence ID segements: " . static::slony_id_segment_summary(self::$sequence_slony_ids));
+      
+      // keep this from bombing on there being no ids in $sequence_slony_ids
+      // if there were none returned (i.e. either there weren't any defined
+      // or they were all set to IGNORE_REQUIRED which hopefully doesn't happen
+      // because why would you do that for all of them)
+      if (!empty(self::$sequence_slony_ids)) {
+        dbsteward::console_line(1, "[slony] sequence ID segments: " . static::slony_id_segment_summary(self::$sequence_slony_ids));
+      }
     }
 
     return $db_doc;
   }
+  
+  /**
+   * We're not worried about actually setting slony info here because this is
+   * only called during build, which will do so on its own... what we
+   * are interested in is making sure exceptions are thrown if requireSlonyId
+   * is set TRUE and a table / sequence 
+   * @param type $replica_set
+   * @param type $db_doc
+   */
+  protected static function slony_ids_required_during_build($replica_set, $db_doc) {
+    foreach ($db_doc->schema as $schema) {
+      foreach ($schema->table as $table) {
+        dbsteward::console_line(1, $table->name);
+        static::slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table);
+      }
+      foreach ($schema->sequence as $sequence) {
+        static::slony_replica_set_contains_sequence($db_doc, $replica_set, $schema, $sequence);
+      }
+    }
+  }
+  
+  
 
   public function build_schema($db_doc, $ofs, $table_depends) {
     // schema creation
@@ -1510,7 +1542,7 @@ SLEEP (SECONDS=60);
       $sequence_cols[$idx] = $seq_col;
     }
     $sequence_str = implode(',', $sequence_cols);
-var_dump($sequence_str);
+
     foreach ($schemas as $schema) {
       dbsteward::console_line(3, "Analyze isolated sequences in schema " . $schema['name']);
       // filter by sequences we've defined as part of a table already

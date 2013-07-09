@@ -65,10 +65,10 @@ class Mysql5BuildDataTest extends PHPUnit_Framework_TestCase {
 XML;
     
     $expected = <<<SQL
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (0, 'Passed');
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (1, 'Incomplete');
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (2, 'Failure');
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (3, 'Error');
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (0, 'Passed');
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (1, 'Incomplete');
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (2, 'Failure');
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (3, 'Error');
 SQL;
 
     $this->common($xml, $expected);
@@ -115,11 +115,11 @@ SQL;
 XML;
     
     $expected = <<<SQL
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (0, 'Passed');
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (1, 'Incomplete');
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (2, 'Failure');
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (3, 'Error');
-SELECT setval('__public_result_list_result_list_id_serial_seq',MAX(`result_list_id`),TRUE) FROM `result_list`;
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (0, 'Passed');
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (1, 'Incomplete');
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (2, 'Failure');
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (3, 'Error');
+SELECT setval('__public_result_list_result_list_id_serial_seq',MAX(`result_list_id`),TRUE) FROM `public`.`result_list`;
 SQL;
 
     $this->common($xml, $expected);
@@ -162,9 +162,9 @@ SQL;
 XML;
     
     $expected = <<<SQL
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (0, 'xyz');
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (1, NULL);
-INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (2, '');
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (0, 'xyz');
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (1, NULL);
+INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (2, '');
 SQL;
 
     $this->common($xml, $expected);

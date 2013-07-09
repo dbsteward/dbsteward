@@ -139,7 +139,7 @@ XML;
     $actual = mysql5_constraint::get_constraint_sql($fk);
     $this->assertEquals($expected, $actual);
 
-    $this->assertEquals("ALTER TABLE `public`.`test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
+    $this->assertEquals("ALTER TABLE `public`.`test` DROP FOREIGN KEY `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
   }
 
   public function testConstraintForeignKeys() {
@@ -180,7 +180,7 @@ XML;
     $actual = mysql5_constraint::get_constraint_sql($fk);
     $this->assertEquals($expected, $actual);
 
-    $this->assertEquals("ALTER TABLE `public`.`test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
+    $this->assertEquals("ALTER TABLE `public`.`test` DROP FOREIGN KEY `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
   }
 
   /** Because MySQL, that's why */
@@ -239,7 +239,7 @@ XML;
     $actual = mysql5_constraint::get_constraint_sql($fk);
     $this->assertEquals($expected, $actual);
 
-    $this->assertEquals("ALTER TABLE `public`.`test` DROP FOREIGN KEY `other_id_fk`, DROP INDEX `fk_idx`;", mysql5_constraint::get_constraint_drop_sql($fk));
+    $this->assertEquals("ALTER TABLE `public`.`test` DROP FOREIGN KEY `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
   }
 
   public function testCyclicForeignKeys() {
@@ -322,7 +322,7 @@ XML;
     $actual = mysql5_constraint::get_constraint_sql($fk);
     $this->assertEquals($expected, $actual);
 
-    $this->assertEquals("ALTER TABLE `public`.`test_self` DROP FOREIGN KEY `test_id_fk`, DROP INDEX `test_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
+    $this->assertEquals("ALTER TABLE `public`.`test_self` DROP FOREIGN KEY `test_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
 
     $dbs->schema->table[0]->column[1]['foreignColumn'] = 'other_id';
 
@@ -331,7 +331,7 @@ XML;
       mysql5_constraint::get_table_constraints($dbs, $dbs->schema, $dbs->schema->table[0]);
     }
     catch ( Exception $ex ) {
-      $this->assertEquals("Foreign key cyclic dependency detected! Local column `test_self`.`other_id` pointing to foreign column `test_self`.`other_id`", $ex->getMessage());
+      $this->assertEquals("Foreign key cyclic dependency detected! Local column `public`.`test_self`.`other_id` pointing to foreign column `public`.`test_self`.`other_id`", $ex->getMessage());
     }
 
     try {
@@ -339,7 +339,7 @@ XML;
       mysql5_constraint::get_table_constraints($dbs, $dbs->schema, $dbs->schema->table[1]);
     }
     catch ( Exception $ex ) {
-      $this->assertEquals("Foreign key cyclic dependency detected! Local column `test1`.`other_id` pointing to foreign column `test2`.`other_id`", $ex->getMessage());
+      $this->assertEquals("Foreign key cyclic dependency detected! Local column `public`.`test1`.`other_id` pointing to foreign column `public`.`test2`.`other_id`", $ex->getMessage());
     }
   }
 

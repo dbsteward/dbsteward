@@ -26,7 +26,8 @@
 require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
 
 class typeDiffTest extends dbstewardUnitTestBase {
-
+  // don't use tabrows if not actually starting dbsteward builds from scratch;
+  // pgsql8::build has no provisions for expanding them
   private $pgsql8_xml_a = <<<XML
 <dbsteward>
   <database>
@@ -38,16 +39,17 @@ class typeDiffTest extends dbstewardUnitTestBase {
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
-  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
   <schema name="dbsteward" owner="ROLE_OWNER">
     <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
       <functionParameter name="config_parameter" type="text"/>
@@ -89,7 +91,11 @@ class typeDiffTest extends dbstewardUnitTestBase {
       <column name="user_create_date" type="timestamp with time zone" null="false" default="NOW()"/>
       <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
       <rows columns="user_id, user_name, user_role">
-        <tabrow>1	toor	super_admin</tabrow>
+        <row>
+          <col>1</col>
+          <col>toor</col>
+          <col>super_admin</col>
+        </row>
       </rows>
     </table>
   </schema>
@@ -101,7 +107,7 @@ class typeDiffTest extends dbstewardUnitTestBase {
       <column name="event_date" type="date" null="false" default="NOW()"/>
       <column name="event_detail" type="text" null="false"/>
       <grant role="ROLE_APPLICATION" operation="SELECT, INSERT"/>
-      <rows columns="event_id user_id, event_type, event_detail">
+      <rows columns="event_id, user_id, event_type, event_detail">
         <row>
           <col>20</col>
           <col>1</col>
@@ -134,16 +140,17 @@ XML;
       <replication/>
       <readonly/>
     </role>
-    <slony>
-      <masterNode id="1"/>
-      <replicaNode id="2" providerId="1"/>
-      <replicaNode id="3" providerId="2"/>
-      <replicationSet id="1"/>
-      <replicationUpgradeSet id="2"/>
+    <slony clusterName="duplicate_slony_ids_testsuite">
+      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
+      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
+        <slonyReplicaSetNode id="2" providerNodeId="1"/>
+        <slonyReplicaSetNode id="3" providerNodeId="2"/>
+      </slonyReplicaSet>
     </slony>
     <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
-  <language name="plpgsql" procedural="true" owner="ROLE_OWNER"/>
   <schema name="dbsteward" owner="ROLE_OWNER">
     <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
       <functionParameter name="config_parameter" type="text"/>
@@ -187,7 +194,11 @@ XML;
       <column name="user_create_date" type="timestamp with time zone" null="false" default="NOW()"/>
       <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
       <rows columns="user_id, user_name, user_role">
-        <tabrow>1	toor	super_admin</tabrow>
+        <row>
+          <col>1</col>
+          <col>toor</col>
+          <col>super_admin</col>
+        </row>
       </rows>
     </table>
   </schema>
@@ -199,7 +210,7 @@ XML;
       <column name="event_date" type="date" null="false" default="NOW()"/>
       <column name="event_detail" type="text" null="false"/>
       <grant role="ROLE_APPLICATION" operation="SELECT, INSERT"/>
-      <rows columns="event_id user_id, event_type, event_detail">
+      <rows columns="event_id, user_id, event_type, event_detail">
         <row>
           <col>20</col>
           <col>1</col>
