@@ -74,12 +74,13 @@
       <channel>pear.dbsteward.org</channel>
       <description>
             <!-- Don't exceed 48 char width -->
-Database DDL generation for creation or
+Database definition tool for creation or
 upgrade of an existing database with a
-"DDL compiler" approach.
+"SQL compiler" approach.
 
-Database upgrade DDL is generated from source
-XML, without connecting to the target database.
+Database upgrade DDL/DML/DCL
+is generated from source XML,
+without connecting to the target database.
 
 http://dbsteward.org/
 
@@ -103,7 +104,23 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
       
-      <changelog version="1.3.0" date="2013-05-06" license="Simplified BSD License">
+      <changelog version="1.3.1" date="2013-07-31" license="Simplified BSD License">
+DBSteward 1.3.1 Release
+
+* TODO
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
+      
+      <changelog version="1.3.0" date="2013-07-09" license="Simplified BSD License">
 DBSteward 1.3.0 Release
 
 * API Updates:
