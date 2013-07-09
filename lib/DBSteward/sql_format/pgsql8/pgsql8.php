@@ -67,6 +67,10 @@ class pgsql8 extends sql99 {
   }
   
   public function set_context_replica_set_to_natural_first($db_doc) {
+    if ( ! dbsteward::$generate_slonik ) {
+      // if not generating slonik, don't do anything
+      return FALSE;
+    }
     $replica_set = pgsql8::get_slony_replica_set_natural_first($db_doc);
     if ( $replica_set ) {
       $set_id = (string)$replica_set['id'];
