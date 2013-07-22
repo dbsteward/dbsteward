@@ -252,9 +252,13 @@ class mysql5_diff_tables extends sql99_diff_tables {
         $old_default = isset($old_column['default']) ? $old_column['default'] : '';
         $new_default = isset($new_column['default']) ? $new_column['default'] : '';
 
+        $auto_increment_added = !mysql5_column::is_auto_increment($old_column['type']) && mysql5_column::is_auto_increment($new_column['type']);
+        $auto_increment_removed = mysql5_column::is_auto_increment($old_column['type']) && !mysql5_column::is_auto_increment($new_column['type']);
+        $auto_increment_changed = $auto_increment_added || $auto_increment_removed;
+
         $new_is_nullable = mysql5_column::null_allowed($new_table, $new_column);
 
-        $type_changed = strcasecmp($old_column_type, $new_column_type) !== 0;
+        $type_changed = strcasecmp($old_column_type, $new_column_type) !== 0 || $auto_increment_changed;
         $default_changed = strcasecmp($old_default, $new_default) !== 0;
         $nullable_changed = strcasecmp($old_column['null'] ?: 'true', $new_column['null'] ?: 'true') !== 0;
 
@@ -263,6 +267,11 @@ class mysql5_diff_tables extends sql99_diff_tables {
         // if the column went from NULL -> NOT NULL, redefine in stage 3
         $cmd1['command'] = $type_changed || ($nullable_changed && $new_is_nullable) ? 'modify' : 'nothing';
         $cmd3['command'] = $nullable_changed && !$new_is_nullable ? 'modify' : 'nothing';
+
+        if ($auto_increment_added) {
+          $cmd1['auto_increment'] = TRUE;
+          $cmd3['auto_increment'] = TRUE;
+        }
 
         if ($nullable_changed) {
           if (!$new_is_nullable) {
@@ -354,7 +363,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
       }
 
       throw new Exception("Invalid column diff command '{$command['command']}'");
-    };
+    }; // end get_command_sql()
 
     // pre-stage SQL
     foreach ($extra['BEFORE1'] as $sql) {

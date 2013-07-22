@@ -37,7 +37,7 @@ class Mysql5CompleteTableDiffTest extends PHPUnit_Framework_TestCase {
   </database>
 XML;
 
-  public function testAutoIncrementPK() {
+  public function testAutoIncrementPKFK() {
     $a = <<<XML
 <schema name="public" owner="ROLE_OWNER">
   <table name="foo" primaryKey="fooID" owner="ROLE_OWNER">
@@ -76,13 +76,39 @@ SQL;
 ALTER TABLE `public`.`foo`
   DROP PRIMARY KEY;
 ALTER TABLE `public`.`foo`
-  ADD COLUMN `fooID` int NOT NULL DEFAULT 0 FIRST;
+  ADD COLUMN `fooID` int NOT NULL FIRST;
 
 ALTER TABLE `public`.`foo`
   ADD PRIMARY KEY (`fooID`),
   MODIFY `fooID` int NOT NULL AUTO_INCREMENT;
 SQL;
     $this->diff($b, $a, $expected, "");
+  }
+
+  /**
+   * Ensure AUTO_INCREMENT columns are correctly generated. At some point, they started getting ignored
+   */
+  public function testAutoIncrementIsAppliedInUpgrade() {
+    $with_auto_increment = <<<XML
+<schema name="ImdxTest" owner="ROLE_OWNER">
+  <table name="GbiBatches" owner="ROLE_OWNER" primaryKey="GbiBatchID">
+    <column name="GbiBatchID" type="int(11) AUTO_INCREMENT"/>
+  </table>
+</schema>
+XML;
+    $without_auto_increment = <<<XML
+<schema name="ImdxTest" owner="ROLE_OWNER">
+  <table name="GbiBatches" owner="ROLE_OWNER" primaryKey="GbiBatchID">
+    <column name="GbiBatchID" type="int(11)"/>
+  </table>
+</schema>
+XML;
+    
+    // no AI -> with AI: add AI flag via redefinition in stage 1
+    $this->diff($without_auto_increment, $with_auto_increment, "ALTER TABLE `ImdxTest`.`GbiBatches`\n  MODIFY COLUMN `GbiBatchID` int(11) AUTO_INCREMENT;", '');
+
+    // with AI -> without AI: remove AI flag via redefinition in stage 1
+    $this->diff($with_auto_increment, $without_auto_increment, "ALTER TABLE `ImdxTest`.`GbiBatches`\n  MODIFY COLUMN `GbiBatchID` int(11);", '');
   }
 
 //   public function testLotsOfAlterTables() {

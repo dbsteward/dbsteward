@@ -252,9 +252,6 @@ SQL;
   }
 
   public function testAutoIncrement() {
-    // the way this test is checking autoincrement behavior never finds
-    // the autoincrement change; mark skipped for now
-    $this->markTestSkipped();
     $auto = <<<XML
 <dbsteward>
 <schema name="public" owner="NOBODY">
@@ -274,11 +271,12 @@ XML;
 </dbsteward>
 XML;
 
+    // auto-increment is no longer considered a constraint, but rather part of a type, and is calculated during the tables diff
     $this->common($auto, $auto, "");
 
     $this->common($auto, $notauto, "");
 
-    $this->common($notauto, $auto, "ALTER TABLE `public`.`test` MODIFY COLUMN `pka` int AUTO_INCREMENT;", 'primaryKey');
+    $this->common($notauto, $auto, "", 'primaryKey');
   }
 
   private function common($a, $b, $expected, $type = 'all') {
