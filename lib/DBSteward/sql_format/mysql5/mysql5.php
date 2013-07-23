@@ -399,19 +399,23 @@ class mysql5 {
         dbsteward::console_line(3, "Analyze table indexes " . $db_table->table_name);
         foreach ( $db->get_indices($db_table) as $db_index ) {
 
-          // implement unique indexes as unique columns
-          if ( $db_index->unique ) {
-            foreach ( $db_index->columns as $column ) {
-              $node_column = $node_table->xpath("column[@name='$column']");
-              if ( ! $node_column ) {
-                throw new Exception("Unexpected: Could not find column node $column for unique index {$db_index->index_name}");
-              }
-              else {
-                $node_column = $node_column[0];
-              }
+          // don't process primary key indexes here
+          if ( strcasecmp($db_index->index_name, 'PRIMARY') === 0 ) {
+            continue;
+          }
 
-              $node_column['unique'] = 'true';
+          // implement unique indexes on a single column as unique column
+          if ( $db_index->unique && count($db_index->columns) == 1 ) {
+            $column = $db_index->columns[0];
+            $node_column = dbx::get_table_column($node_table, $column);
+            if ( ! $node_column ) {
+              throw new Exception("Unexpected: Could not find column node $column for unique index {$db_index->index_name}");
             }
+            else {
+              $node_column = $node_column[0];
+            }
+
+            $node_column['unique'] = 'true';
           }
           else {
             $node_index = $node_table->addChild('index');
@@ -419,10 +423,9 @@ class mysql5 {
             $node_index['using'] = strtolower($db_index->index_type);
             $node_index['unique'] = $db_index->unique ? 'true' : 'false';
 
-            $i = 1;
-            foreach ( $db_index->columns as $column_name ) {
+            foreach ( $db_index->columns as $i => $column_name ) {
               $node_index->addChild('indexDimension', $column_name)
-                ->addAttribute('name', $column_name . '_' . $i++);
+                ->addAttribute('name', $column_name . '_' . $i+1);
             }
           }
         }
