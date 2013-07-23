@@ -423,9 +423,10 @@ class mysql5 {
             $node_index['using'] = strtolower($db_index->index_type);
             $node_index['unique'] = $db_index->unique ? 'true' : 'false';
 
-            foreach ( $db_index->columns as $i => $column_name ) {
+            $i = 1;
+            foreach ( $db_index->columns as $column_name ) {
               $node_index->addChild('indexDimension', $column_name)
-                ->addAttribute('name', $column_name . '_' . $i+1);
+                ->addAttribute('name', $column_name . '_' . $i++);
             }
           }
         }
