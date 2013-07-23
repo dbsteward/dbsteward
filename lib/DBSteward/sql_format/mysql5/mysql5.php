@@ -404,8 +404,8 @@ class mysql5 {
             continue;
           }
 
-          // implement unique indexes on a single column as unique column
-          if ( $db_index->unique && count($db_index->columns) == 1 ) {
+          // implement unique indexes on a single column as unique column, but only if the index name is the column name
+          if ( $db_index->unique && count($db_index->columns) == 1 && strcasecmp($db_index->columns[0], $db_index->index_name) === 0 ) {
             $column = $db_index->columns[0];
             $node_column = dbx::get_table_column($node_table, $column);
             if ( ! $node_column ) {
@@ -423,9 +423,10 @@ class mysql5 {
             $node_index['using'] = strtolower($db_index->index_type);
             $node_index['unique'] = $db_index->unique ? 'true' : 'false';
 
-            foreach ( $db_index->columns as $i => $column_name ) {
+            $i = 1;
+            foreach ( $db_index->columns as $column_name ) {
               $node_index->addChild('indexDimension', $column_name)
-                ->addAttribute('name', $column_name . '_' . $i+1);
+                ->addAttribute('name', $column_name . '_' . $i++);
             }
           }
         }

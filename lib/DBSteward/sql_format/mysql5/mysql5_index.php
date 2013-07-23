@@ -13,6 +13,24 @@ require_once __DIR__ . '/../sql99/sql99_index.php';
 
 class mysql5_index extends sql99_index {
   /**
+   * Generate a name for an unnamed index that matches up with what the database engine expects
+   *
+   * For MySQL unique keys, this is as simple as the column name: http://dev.mysql.com/doc/refman/5.5/en/create-table.html (third of the way down the page)
+   *
+   * @todo Need to change this for primary key names? MySQL uses `PRIMARY`, but this is working for now, so I'd rather not change it.
+   *
+   * @param $table
+   * @param $column
+   * @param $suffix
+   * @return index name
+   */
+  public static function index_name($table, $column, $suffix) {
+    if ($suffix == 'key') {
+      return $column;
+    }
+    return parent::index_name($table, $column, $suffix);
+  }
+  /**
    * Creates and returns SQL for creation of the index.
    *
    * @return created SQL
