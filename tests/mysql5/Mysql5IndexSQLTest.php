@@ -75,12 +75,92 @@ XML;
     $expected = array(
       "CREATE UNIQUE INDEX `unique_idx` ON `public`.`test` (`a`);",
       "CREATE INDEX `not_unique_idx` ON `public`.`test` (`a`);",
-      "CREATE UNIQUE INDEX `test_a_key` ON `public`.`test` (`a`) USING BTREE;"
+      "CREATE UNIQUE INDEX `a` ON `public`.`test` (`a`) USING BTREE;"
     );
 
     $actual = array_map(function ($index) use (&$schema) {
       return trim(preg_replace('/--.*/','',mysql5_index::get_creation_sql($schema, $schema->table, $index)));
-    }, dbx::get_table_indexes($schema, $schema->table));
+    }, mysql5_index::get_table_indexes($schema, $schema->table));
+
+    $this->assertEquals($expected, $actual);
+  }
+
+  public function testUniqueColumnNameCollisions() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" owner="NOBODY">
+    <column name="a" unique="true"/>
+    <column name="b" unique="true"/>
+    <column name="c" unique="true"/>
+    <column name="d" unique="true"/>
+    <column name="e_2" unique="true"/>
+
+    <index name="a" unique="true">
+      <indexDimension name="a_1">a</indexDimension>
+    </index>
+    <index name="b_2" unique="true">
+      <indexDimension name="b_1">b</indexDimension>
+    </index>
+    <index name="c" unique="true">
+      <indexDimension name="c_1">c</indexDimension>
+    </index>
+    <index name="c_2" unique="true">
+      <indexDimension name="c_1">c</indexDimension>
+      <indexDimension name="c_1">b</indexDimension>
+    </index>
+    <index name="d_3" unique="true">
+      <indexDimension name="d_1">d</indexDimension>
+    </index>
+    <index name="d_2" unique="true">
+      <indexDimension name="d_1">d</indexDimension>
+    </index>
+    <index name="d_1" unique="true">
+      <indexDimension name="d_1">d</indexDimension>
+    </index>
+    <index name="d" unique="true">
+      <indexDimension name="d_1">d</indexDimension>
+    </index>
+    <index name="e_2" unique="true">
+      <indexDimension name="e_1">e_2</indexDimension>
+    </index>
+  </table>
+</schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+
+    $expected = array(
+      "CREATE UNIQUE INDEX `a` ON `public`.`test` (`a`);",
+      "CREATE UNIQUE INDEX `b_2` ON `public`.`test` (`b`);",
+      "CREATE UNIQUE INDEX `c` ON `public`.`test` (`c`);",
+      "CREATE UNIQUE INDEX `c_2` ON `public`.`test` (`c`, `b`);",
+      "CREATE UNIQUE INDEX `d_3` ON `public`.`test` (`d`);",
+      "CREATE UNIQUE INDEX `d_2` ON `public`.`test` (`d`);",
+      "CREATE UNIQUE INDEX `d_1` ON `public`.`test` (`d`);",
+      "CREATE UNIQUE INDEX `d` ON `public`.`test` (`d`);",
+      "CREATE UNIQUE INDEX `e_2` ON `public`.`test` (`e_2`);",
+
+      // column indexes
+      // column a should get named 'a_2', because there's already an index called 'a'
+      "CREATE UNIQUE INDEX `a_2` ON `public`.`test` (`a`) USING BTREE;",
+
+      // column b should get named 'b', because there's no other column called 'b'
+      "CREATE UNIQUE INDEX `b` ON `public`.`test` (`b`) USING BTREE;",
+
+      // column c should get named 'c_3', because there's already index 'c' and 'c_2'
+      "CREATE UNIQUE INDEX `c_3` ON `public`.`test` (`c`) USING BTREE;",
+
+      // column d should get named 'd_4', because there's already indexes 'd', 'd_2', and 'd_3'
+      // d_1 shouldn't matter.
+      "CREATE UNIQUE INDEX `d_4` ON `public`.`test` (`d`) USING BTREE;",
+
+      // get ready for this: creating an index on a column that already has a numeric suffix 
+      // actually ignores the suffix and adds ANOTHER ONE!
+      "CREATE UNIQUE INDEX `e_2_2` ON `public`.`test` (`e_2`) USING BTREE;",
+    );
+
+    $actual = array_map(function ($index) use (&$schema) {
+      return trim(preg_replace('/--.*/','',mysql5_index::get_creation_sql($schema, $schema->table, $index)));
+    }, mysql5_index::get_table_indexes($schema, $schema->table));
 
     $this->assertEquals($expected, $actual);
   }

@@ -12,24 +12,66 @@ require_once __DIR__ . '/mysql5.php';
 require_once __DIR__ . '/../sql99/sql99_index.php';
 
 class mysql5_index extends sql99_index {
-  /**
-   * Generate a name for an unnamed index that matches up with what the database engine expects
-   *
-   * For MySQL unique keys, this is as simple as the column name: http://dev.mysql.com/doc/refman/5.5/en/create-table.html (third of the way down the page)
-   *
-   * @todo Need to change this for primary key names? MySQL uses `PRIMARY`, but this is working for now, so I'd rather not change it.
-   *
-   * @param $table
-   * @param $column
-   * @param $suffix
-   * @return index name
-   */
-  public static function index_name($table, $column, $suffix) {
-    if ($suffix == 'key') {
+
+  public static function get_table_index($node_schema, $node_table, $name) {
+    $indexes = self::get_table_indexes($node_schema, $node_table);
+    $return_index = NULL;
+    foreach ($indexes AS $index) {
+      if (strcasecmp($index['name'], $name) == 0) {
+        if ($return_index === NULL) {
+          $return_index = $index;
+        }
+        else {
+          throw new exception("more than one table " . $node_schema['name'] . '.' . $node_table['name'] . " index called " . $name . " found");
+        }
+      }
+    }
+    return $return_index;
+  }
+
+  public static function get_table_indexes($node_schema, $node_table) {
+    $nodes = $node_table->xpath("index");
+    // add column unique indexes to the list
+    foreach ($node_table->column AS $column) {
+      if (isset($column['unique']) && strcasecmp($column['unique'], 'true') == 0) {
+        $unique_index = new SimpleXMLElement('<index/>');
+        // For MySQL unique indexes, this is as simple as the column name: http://dev.mysql.com/doc/refman/5.5/en/create-table.html (third of the way down the page)
+        // duplicate index names get a suffix: _2, _3, _4
+        $unique_index['name'] = static::get_index_name($column['name'], $nodes);
+        $unique_index['unique'] = 'true';
+        $unique_index['using'] = 'btree';
+        $unique_index->addChild('indexDimension', $column['name'])
+          ->addAttribute('name', $column['name'] . '_unq');
+        $nodes[] = $unique_index;
+      }
+    }
+    return $nodes;
+  }
+
+  protected static function get_index_name($column, $index_nodes) {
+    $need_suffix = false;
+    $suffix = 0;
+
+    foreach ($index_nodes as $index_node) {
+      if (preg_match('/^'.preg_quote($column).'(?:_(\d+))?$/', $index_node['name'], $matches) > 0) {
+        if (isset($matches[1])) {
+          $suffix = max($suffix, $matches[1]+1);
+        }
+        else {
+          $need_suffix = true;
+          $suffix = max($suffix, 2);
+        }
+      }
+    }
+
+    if ($need_suffix) {
+      return $column . '_' . $suffix;
+    }
+    else {
       return $column;
     }
-    return parent::index_name($table, $column, $suffix);
   }
+
   /**
    * Creates and returns SQL for creation of the index.
    *
