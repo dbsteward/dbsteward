@@ -64,7 +64,7 @@ class sql99_table {
    */
   public function contains_index($node_schema, $node_table, $name) {
     $found = false;
-    $indexes = dbx::get_table_indexes($node_schema, $node_table);
+    $indexes = format_index::get_table_indexes($node_schema, $node_table);
 
     foreach($indexes AS $index) {
       if (strcasecmp($index['name'], $name) == 0) {
