@@ -1,24 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   someapp_v2.xml
-  dbsteward database structure definition example
+  DBSteward database structure definition example
+  Upgrade definition with changes
 -->
 <dbsteward>
   <database>
-    <host>someappdbserver</host>
-    <name>someapp_db</name>
     <role>
       <application>someapp</application>
       <owner>pgsql</owner>
       <replication>someapp_slony</replication>
       <readonly>someapp_readonly</readonly>
     </role>
-    <slony>
-      <masterNode id="1" />
-      <replicaNode id="2" providerId="1" />
-      <replicaNode id="3" providerId="2" />
-      <replicationSet id="1" />
-      <replicationUpgradeSet id="2" />
+    <slony clusterName="someapp">
+      <slonyNode id="101" comment="someapp primary db" dbName="someapp" dbHost="someapp-db.dev" dbUser="someapp_slony" dbPassword="lol" />
+      <slonyNode id="102" comment="someapp local replica db" dbName="someapp" dbHost="someapp-db.backup" dbUser="someapp_slony" dbPassword="lol" />
+      <slonyNode id="103" comment="someapp remote replica db" dbName="someapp" dbHost="someapp-db.remote" dbUser="someapp_slony" dbPassword="lol" />
+      <slonyReplicaSet id="500" originNodeId="101" upgradeSetId="501" comment="user table replication">
+        <slonyReplicaSetNode id="102" providerNodeId="101" />
+        <slonyReplicaSetNode id="103" providerNodeId="102" />
+        <slonyReplicaSetNode id="104" providerNodeId="103" />
+      </slonyReplicaSet>
     </slony>
   </database>
   <schema name="public" owner="ROLE_OWNER">
@@ -38,7 +40,7 @@
       <column name="user_status_list_id" foreignSchema="public" foreignTable="user_status_list" foreignColumn="user_status_list_id" />
       <column name="user_access_level_id" null="false" default="1" foreignSchema="public" foreignTable="user_access_level" foreignColumn="user_access_level_id" />
       <index name="user_name" using="btree">
-        <indexDimension>entity_id</indexDimension>
+        <indexDimension name="user_name1">user_name</indexDimension>
       </index>
       <grant operation="SELECT,UPDATE,DELETE,INSERT" role="ROLE_APPLICATION" />
       <rows columns="user_id, user_name, password, user_status_list_id, import_id, register_date">
