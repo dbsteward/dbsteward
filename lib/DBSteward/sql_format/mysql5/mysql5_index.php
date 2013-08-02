@@ -53,7 +53,7 @@ class mysql5_index extends sql99_index {
     $suffix = 0;
 
     foreach ($index_nodes as $index_node) {
-      if (preg_match('/^'.preg_quote($column).'(?:_(\d+))?$/', $index_node['name'], $matches) > 0) {
+      if (preg_match('/^'.preg_quote($column).'(?:_(\d+))?$/i', $index_node['name'], $matches) > 0) {
         if (isset($matches[1])) {
           $suffix = max($suffix, $matches[1]+1);
         }
