@@ -49,22 +49,22 @@ class sql99_diff {
     else {
       $stage1_ofs = new output_file_segmenter($upgrade_prefix . '_stage1_schema', 1);
       $stage1_ofs->set_header(
-        "-- DBSteward stage 1 pre replication alteration, structure changes - generated " . $timestamp . "\n" .
+        "-- DBSteward stage 1 stage 1 structure additions and modifications - generated " . $timestamp . "\n" .
         $old_set_new_set);
         
       $stage2_ofs = new output_file_segmenter($upgrade_prefix . '_stage2_data', 1);
       $stage2_ofs->set_header(
-        "-- DBSteward stage 2 pre replication alteration, data changes - generated " . $timestamp . "\n" .
+        "-- DBSteward stage 2 data definitions removed - generated " . $timestamp . "\n" .
         $old_set_new_set);
 
       $stage3_ofs = new output_file_segmenter($upgrade_prefix . '_stage3_schema', 1);
       $stage3_ofs->set_header(
-        "-- DBSteward stage 3 post replication alteration, structure changes - generated " . $timestamp . "\n" .
+        "-- DBSteward stage 3 structure changes, constraints and removals - generated " . $timestamp . "\n" .
         $old_set_new_set);
   
       $stage4_ofs = new output_file_segmenter($upgrade_prefix . '_stage4_data', 1);
       $stage4_ofs->set_header(
-        "-- DBSteward stage 4 post replication alteration, data changes - generated " . $timestamp . "\n" .
+        "-- DBSteward stage 4 data definition changes and additions - generated " . $timestamp . "\n" .
         $old_set_new_set);
     }
 

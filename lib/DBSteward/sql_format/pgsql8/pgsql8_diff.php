@@ -51,28 +51,28 @@ class pgsql8_diff extends sql99_diff {
         $replica_set_id,
         new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage1_schema', 1)
       )->set_header(
-        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 1 pre replication alteration, structure changes - generated " . $timestamp . "\n" .
+        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 1 structure additions and modifications - generated " . $timestamp . "\n" .
         $old_set_new_set);
       
       $ofsm_stage2->set_replica_set_ofs(
         $replica_set_id,
         new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage2_data', 1)
       )->set_header(
-        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 2 pre replication alteration, data changes - generated " . $timestamp . "\n" .
+        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 2 data definitions removed - generated " . $timestamp . "\n" .
         $old_set_new_set);
 
       $ofsm_stage3->set_replica_set_ofs(
         $replica_set_id,
         new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage3_schema', 1)
       )->set_header(
-        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 3 post replication alteration, structure changes - generated " . $timestamp . "\n" .
+        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 3 structure changes, constraints and removals - generated " . $timestamp . "\n" .
         $old_set_new_set);
 
       $ofsm_stage4->set_replica_set_ofs(
         $replica_set_id,
         new output_file_segmenter($upgrade_prefix . '_slony_replica_set_' . $replica_set['id'] . '_stage4_data', 1)
       )->set_header(
-        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 4 post replication alteration, data changes - generated " . $timestamp . "\n" .
+        "-- DBSteward slony replica set " . $replica_set['id'] . " stage 4 data definition changes and additions - generated " . $timestamp . "\n" .
         $old_set_new_set);
     }
     
