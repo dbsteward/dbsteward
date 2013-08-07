@@ -17,18 +17,18 @@ When building a full definition ( _dbsteward --xml=someapp.xml_ ), DBSteward wil
 ## someapp_v1.xml + someapp_v2.xml -> somapp_v2_upgrade_stageN_*.sql
 When generating definition difference between two definitions ( _dbsteward --oldxml=someapp_v1.xml --newxml=someapp_v2.xml_ ), DBSteward will output several upgrade files, segmenting the upgrade process, **with all operations in foreign-key dependency order**.
 * Stage 1
-  - somapp_v2_upgrade_stage1_schema1.sql
+  - someapp_v2_upgrade_stage1_schema1.sql
   - DDL ( **_CREATE_**, **_ALTER TABLE_** ) changes and additions to database structure, in foreign-key dependency order
   - DCL ( **_GRANT_** ) apply all defined permissions
 * Stage 2
-  - somapp_v2_upgrade_stage2_data1.sql
+  - someapp_v2_upgrade_stage2_data1.sql
   - DML ( **_DELETE_**, **_UPDATE_** ) removal and modification of statically defined table data
   - DDL cleanup of constraints not enforceable at initial **_ALTER_** time
 * Stage 3
-  * somapp_v2_upgrade_stage3_schema1.sql
+  * someapp_v2_upgrade_stage3_schema1.sql
   * DDL final changes and removal of any database structure no longer defined
 * Stage 4
-  * somapp_v2_upgrade_stage4_data1.sql
+  * someapp_v2_upgrade_stage4_data1.sql
   * DML ( **_INSERT_**, **_UPDATE_** ) insert and update of statically defined table data
 
 
