@@ -12,8 +12,8 @@ Many developers maintain complete and upgrade script versions of their applicati
 
 
 # What are these output files?
-## someapp.xml -> someapp_full.sql
-When building a full definition ( _dbsteward --xml=someapp.xml_ ), DBSteward will output a someapp_full.sql file. This SQL file contains all of the DDL DML DCL to create a instance of your database definition, **with all operations in foreign-key dependency order**.
+## someapp_v1.xml -> someapp_v1_full_build.sql
+When building a full definition ( _dbsteward --xml=someapp.xml_ ), DBSteward will output a someapp_v1_full_build.sql file. This SQL file contains all of the DDL DML DCL to create a instance of your database definition, **with all operations in foreign-key dependency order**.
 ## someapp_v1.xml + someapp_v2.xml -> somapp_v2_upgrade_stageN_*.sql
 When generating definition difference between two definitions ( _dbsteward --oldxml=someapp_v1.xml --newxml=someapp_v2.xml_ ), DBSteward will output several upgrade files, segmenting the upgrade process, **with all operations in foreign-key dependency order**.
 * Stage 1
