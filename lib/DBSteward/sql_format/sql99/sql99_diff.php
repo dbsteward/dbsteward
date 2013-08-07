@@ -49,7 +49,7 @@ class sql99_diff {
     else {
       $stage1_ofs = new output_file_segmenter($upgrade_prefix . '_stage1_schema', 1);
       $stage1_ofs->set_header(
-        "-- DBSteward stage 1 stage 1 structure additions and modifications - generated " . $timestamp . "\n" .
+        "-- DBSteward stage 1 structure additions and modifications - generated " . $timestamp . "\n" .
         $old_set_new_set);
         
       $stage2_ofs = new output_file_segmenter($upgrade_prefix . '_stage2_data', 1);
