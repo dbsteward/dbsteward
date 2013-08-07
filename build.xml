@@ -104,11 +104,29 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
-      <changelog version="1.3.2" date="2013-08-01" license="Simplified BSD License">
-DBSteward 1.3.2 Release
+      <changelog version="1.3.3" date="2013-09-01" license="Simplified BSD License">
+DBSteward 1.3.3 Release
 
 Changes
 * Maintenance
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
+
+      <changelog version="1.3.2" date="2013-08-07" license="Simplified BSD License">
+DBSteward 1.3.2 Release
+
+Changes
+* mysql5 index name collision fix
+* pgsql8 index differencing code inheritance fix
 
 Supported Platform DDL Generation and Differencing:
 * pgsql8    - PostgreSQL 8

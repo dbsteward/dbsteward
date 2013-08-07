@@ -18,7 +18,7 @@ class mssql10_diff_indexes extends pgsql8_diff_indexes {
 
     // Add new indexes
     if ($old_schema == NULL) {
-      foreach (dbx::get_table_indexes($new_schema, $new_table) as $index) {
+      foreach (format_index::get_table_indexes($new_schema, $new_table) as $index) {
         $ofs->write(mssql10_index::get_creation_sql($new_schema, $new_table, $index) . "\n");
       }
     }

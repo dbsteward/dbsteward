@@ -523,7 +523,7 @@ class dbx {
   }
 
   public static function get_table_index($node_schema, $node_table, $name) {
-    $indexes = self::get_table_indexes($node_schema, $node_table);
+    $indexes = format_index::get_table_indexes($node_schema, $node_table);
     $return_index = NULL;
     foreach ($indexes AS $index) {
       if (strcasecmp($index['name'], $name) == 0) {
@@ -542,23 +542,6 @@ class dbx {
     $node_index = $node_table->addChild('index');
     $node_index->addAttribute('name', $name);
     return $node_index;
-  }
-
-  public static function get_table_indexes($node_schema, $node_table) {
-    $nodes = $node_table->xpath("index");
-    // add column unique indexes to the list
-    foreach ($node_table->column AS $column) {
-      if (isset($column['unique']) && strcasecmp($column['unique'], 'true') == 0) {
-        $unique_index = new SimpleXMLElement('<index/>');
-        $unique_index['name'] = format_index::index_name($node_table['name'], $column['name'], 'key');
-        $unique_index['unique'] = 'true';
-        $unique_index['using'] = 'btree';
-        $unique_index->addChild('indexDimension', $column['name'])
-          ->addAttribute('name', $column['name'] . '_unq');
-        $nodes[] = $unique_index;
-      }
-    }
-    return $nodes;
   }
 
   public static function &get_table_trigger(&$node_schema, &$node_table, $name, $create_if_not_exist = FALSE) {

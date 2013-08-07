@@ -36,7 +36,7 @@ class pgsql8_diff_indexes {
 
     // Add new indexes
     if ($old_schema == null) {
-      foreach(dbx::get_table_indexes($new_schema, $new_table) as $index) {
+      foreach(format_index::get_table_indexes($new_schema, $new_table) as $index) {
         $ofs->write(pgsql8_index::get_creation_sql($new_schema, $new_table, $index) . "\n");
       }
     } else {
@@ -61,7 +61,7 @@ class pgsql8_diff_indexes {
     $list = array();
 
     if (($new_table != null) && ($old_table != null)) {
-      foreach(dbx::get_table_indexes($old_schema, $old_table) as $index) {
+      foreach(format_index::get_table_indexes($old_schema, $old_table) as $index) {
         $old_index = dbx::get_table_index($new_schema, $new_table, $index['name']);
         if ( !pgsql8_table::contains_index($new_schema, $new_table, $index['name']) ) {
             $list[] = $index;
@@ -88,11 +88,11 @@ class pgsql8_diff_indexes {
 
     if ($new_table != null) {
       if ($old_table == null) {
-        foreach(dbx::get_table_indexes($new_schema, $new_table) as $index) {
+        foreach(format_index::get_table_indexes($new_schema, $new_table) as $index) {
           $list[] = $index;
         }
       } else {
-        foreach(dbx::get_table_indexes($new_schema, $new_table) as $index) {
+        foreach(format_index::get_table_indexes($new_schema, $new_table) as $index) {
           $old_index = dbx::get_table_index($old_schema, $old_table, $index['name']);
           if ( !pgsql8_table::contains_index($old_schema, $old_table, $index['name']) ) {
             $list[] = $index;

@@ -8,7 +8,7 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-class pgsql8_index {
+class pgsql8_index extends sql99_index {
 
   /**
    * Creates and returns SQL for creation of the index.
