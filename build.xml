@@ -108,7 +108,8 @@ http://dbsteward.org/
 DBSteward 1.3.3 Release
 
 Changes
-* Maintenance
+* Fix XML data rows compositing: overlays for rows with the same primary key
+  with the intention of being overwritten were not being applied
 
 Supported Platform DDL Generation and Differencing:
 * pgsql8    - PostgreSQL 8
