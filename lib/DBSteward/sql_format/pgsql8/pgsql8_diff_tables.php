@@ -847,7 +847,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     else {
       $table_b_primary_keys = preg_split("/[\,\s]+/", $table_b['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
       // @NOTICE: in the case of table row data comparising for DIFFING, the primary keys to use are table B
-      // but the table B and A columns are reversed as the comparison is B vs A not base vs overlay
+      // but the table B and A columns are reversed compared to data_rows_overlay() as the comparison is B vs A not base vs overlay (AvB)
       // so the columns to match as base and overlay are reversed, comared to other calls to data_row_overlay_primary_key_index()
       $primary_key_index = xml_parser::data_row_overlay_primary_key_index($table_b_primary_keys, $table_b_data_rows_columns, $table_a_data_rows_columns);
       $table_b_index = 0;

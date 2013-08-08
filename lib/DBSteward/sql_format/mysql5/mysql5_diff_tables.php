@@ -624,7 +624,10 @@ class mysql5_diff_tables extends sql99_diff_tables {
     }
     else {
       $table_b_primary_keys = mysql5_table::primary_key_columns($table_b);
-      $primary_key_index = xml_parser::data_row_overlay_primary_key_index($table_b_primary_keys, $table_a_data_rows_columns, $table_b_data_rows_columns);
+      // @NOTICE: in the case of table row data comparising for DIFFING, the primary keys to use are table B
+      // but the table B and A columns are reversed compared to data_rows_overlay() as the comparison is B vs A not base vs overlay (AvB)
+      // so the columns to match as base and overlay are reversed, comared to other calls to data_row_overlay_primary_key_index()
+      $primary_key_index = xml_parser::data_row_overlay_primary_key_index($table_b_primary_keys, $table_b_data_rows_columns, $table_a_data_rows_columns);
       $table_b_index = 0;
       foreach($table_a_data_rows->row AS $table_a_data_row) {
 
