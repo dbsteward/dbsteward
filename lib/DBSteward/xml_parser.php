@@ -460,38 +460,38 @@ class xml_parser {
     }
   }
 
-  public static function data_rows_overlay(&$base, &$child) {
-    $node = & dbx::get_table_rows($base, TRUE, $child['columns']);
-    $node_row_count = count($node->row);
+  public static function data_rows_overlay(&$base_table, &$overlay_table) {
+    $base_table_rows = & dbx::get_table_rows($base_table, TRUE, $overlay_table['columns']);
+    $base_table_rows_count = count($base_table_rows->row);
 
     // if the rows element columns attribute doesnt have a column that the overlay does
-    if (strlen($node['columns']) == 0) {
+    if (strlen($base_table_rows['columns']) == 0) {
       throw new exception("base rows element missing columns attribute - unexpected");
     }
-    if (strlen($child['columns']) == 0) {
+    if (strlen($overlay_table['columns']) == 0) {
       throw new exception("overlay rows element missing columns attribute - unexpected");
     }
-    $base_cols = preg_split("/[\,\s]+/", $node['columns'], -1, PREG_SPLIT_NO_EMPTY);
-    $overlay_cols = preg_split("/[\,\s]+/", $child['columns'], -1, PREG_SPLIT_NO_EMPTY);
+    $base_cols = preg_split("/[\,\s]+/", $base_table_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
+    $overlay_cols = preg_split("/[\,\s]+/", $overlay_table['columns'], -1, PREG_SPLIT_NO_EMPTY);
     $cols_diff = array_diff($overlay_cols, $base_cols);
     // contains any values $overlay_cols does that $base_cols didnt, so add them
     foreach ($cols_diff AS $cols_diff_col) {
       // add the missing column, padding the base's row->col entries with empty col's to match the new size
       $base_cols[] = $cols_diff_col;
-      for ($i = 0; $i < $node_row_count; $i++) {
+      for ($i = 0; $i < $base_table_rows_count; $i++) {
         // need to do it for each row entry, check for default for the column
-        $node_col = $node->row[$i]->addChild('col', self::column_default_value($base, $cols_diff_col, $node_col));
+        $node_col = $base_table_rows->row[$i]->addChild('col', self::column_default_value($base_table, $cols_diff_col, $node_col));
       }
     }
     // put the new columns list back in the node
-    $node['columns'] = implode(', ', $base_cols);
+    $base_table_rows['columns'] = implode(', ', $base_cols);
 
     // merge all row entries for the rows element
-    $base_primary_keys = preg_split("/[\,\s]+/", $base['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
+    $base_primary_keys = preg_split("/[\,\s]+/", $base_table['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
     $primary_key_index = self::data_row_overlay_primary_key_index($base_primary_keys, $base_cols, $overlay_cols);
 
     $base_row_index = 0;
-    foreach ($child->row AS $overlay_row) {
+    foreach ($overlay_table->row AS $overlay_row) {
       // sanity check the overlay's rows columns list against the col count of the row
       $overlay_row_count = count($overlay_row->col);
       if (count($overlay_cols) != $overlay_row_count) {
@@ -506,40 +506,41 @@ class xml_parser {
       // simple optimization:
       // if the node had no ->row's to start
       // don't try to match any of the children we are considering in this loop
-      if ($node_row_count == 0) {
+      if ($base_table_rows_count == 0) {
+        //dbsteward::console_line(7, "DEBUG: skipping " . $base_table['name'] . " overlay -- no base table rows");
         $row_match = FALSE;
       }
       else {
-        $row_match = self::data_row_overlay_key_search($node, $overlay_row, $primary_key_index, $base_row_index);
+        $row_match = self::data_row_overlay_key_search($base_table_rows, $overlay_row, $primary_key_index, $base_row_index);
       }
       
 /* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
-if ( strcasecmp($base['name'], 'app_mode') == 0 ) {
+if ( strcasecmp($base_table['name'], 'ponderoustable') == 0 ) {
   $pkv = '';
   foreach($primary_key_index AS $pki_table => $pki_table_map) {
     $pkv .= $overlay_cols[$pki_table_map['overlay_index']] . ' = ' . $overlay_row->col[$pki_table_map['overlay_index']] . ', ';
   }
   $pkv = substr($pkv, 0, -2);
   $pkv = "(" . $pkv . ")";
-  dbsteward::console_line(4, "DEBUG: " . $base['name'] . " primary key " . $pkv . " match at " . $base_row_index);
+  dbsteward::console_line(4, "DEBUG: " . $base_table['name'] . " primary key " . $pkv . " match at " . $base_row_index);
 }
 /**/
 
       if ($row_match) {
         // $base_row_index is set to $i in _match() when a match is found, so use it to overlay the matched row
-        $node_row = $node->row[$base_row_index];
+        $node_row = $base_table_rows->row[$base_row_index];
       }
       else {
         // not found, add the row and empty col entries
-        $node_row = $node->addChild('row');
+        $node_row = $base_table_rows->addChild('row');
         foreach ($base_cols AS $base_col) {
           $node_col = $node_row->addChild('col');
-          $node_col = self::column_default_value($base, $base_col, $node_col);
+          $node_col = self::column_default_value($base_table, $base_col, $node_col);
         }
         // then overlay the data in the overlay row
       }
 
-      self::data_row_overlay_row($base, $node_row, $overlay_row, $base_cols, $overlay_cols);
+      self::data_row_overlay_row($base_table, $node_row, $overlay_row, $base_cols, $overlay_cols);
     }
   }
 
@@ -548,8 +549,10 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 ) {
     // in the base and overlay column lists
     $primary_key_index = array();
     foreach ($primary_key_cols AS $primary_key) {
-      $primary_key_index[$primary_key] = array('base_index' => array_search($primary_key, $base_cols),
-        'overlay_index' => array_search($primary_key, $overlay_cols));
+      $primary_key_index[$primary_key] = array(
+        'base_index' => array_search($primary_key, $base_cols),
+        'overlay_index' => array_search($primary_key, $overlay_cols)
+      );
       if ($primary_key_index[$primary_key]['base_index'] === FALSE) {
         throw new exception("base primary_key " . $primary_key . " not found in base_cols: " . implode(', ', $base_cols));
       }
@@ -561,7 +564,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 ) {
   }
 
   //public static $data_row_overlay_key_search_count = 0;
-  public static function data_row_overlay_key_search($node_rows, $overlay_row, $primary_keys, &$base_row_index, $table = FALSE) {
+  public static function data_row_overlay_key_search($node_rows, $overlay_row, $primary_key_index, &$base_row_index) {
     $node_row_count = count($node_rows->row);
     //dbsteward::console_line(7, "data_row_overlay_key_search() #" . ++self::$data_row_overlay_key_search_count . " node_row_count = " . $node_row_count . " base_row_index = " . $base_row_index);
     if (!is_object($node_rows)) {
@@ -586,12 +589,8 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 ) {
     if ($node_row_count > 0) {
       // if base had rows
       for ($i = $base_row_index; $i < $node_row_count; $i++) {
-        foreach ($primary_keys AS $primary_key_name => $primary_key) {
-          // base_index here was calculated for table A, which in this method
-          // is called the overlay row
-          // base_index below is used on overlay row despite the confusing name
-          // so that column indexes are correct
-          if (strcmp($node_rows->row[$i]->col[$primary_key['overlay_index']], $overlay_row->col[$primary_key['base_index']]) != 0) {
+        foreach ($primary_key_index AS $primary_key_name => $primary_key) {
+          if (strcmp($node_rows->row[$i]->col[$primary_key['base_index']], $overlay_row->col[$primary_key['overlay_index']]) != 0) {
             // doesn't match, on to the next row
             $row_match = FALSE;
 
@@ -635,7 +634,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 ) {
         throw new exception("failed to find overlay_col " . $overlay_cols[$j] . " in base_cols");
       }
 /* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
-if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j], 'is_turned_on') == 0 ) {
+if ( strcasecmp($base['name'], 'ponderoustable') == 0 && strcasecmp($overlay_cols[$j], 'ponderouscolumn') == 0 ) {
   dbsteward::console_line(6, "DEBUG: " . $base['name'] . " base index match for " . $overlay_cols[$j] . " at " . $base_col_index);
 }
 /**/
@@ -662,7 +661,7 @@ if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j],
         // see the ampersand_magic function docblock for more confusion
         //$node_row->col[$base_col_index] = self::ampersand_magic($overlay_row->col[$j]);
 /* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
-if ( strcasecmp($base['name'], 'app_mode') == 0 && strcasecmp($overlay_cols[$j], 'is_turned_on') == 0 ) {
+if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
   dbsteward::console_line(6, "DEBUG: overwrite " . $overlay_cols[$j] . " value " . $node_row->col[$base_col_index] . " as " . $overlay_row->col[$j]);
 }
 /**/

@@ -775,8 +775,8 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       }
     }
     else {
-      $primary_keys = preg_split("/[\,\s]+/", $table_a['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
-      $primary_key_index = xml_parser::data_row_overlay_primary_key_index($primary_keys, $table_a_data_rows_columns, $table_b_data_rows_columns);
+      $table_b_primary_keys = preg_split("/[\,\s]+/", $table_b['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
+      $primary_key_index = xml_parser::data_row_overlay_primary_key_index($table_b_primary_keys, $table_a_data_rows_columns, $table_b_data_rows_columns);
       $table_b_index = 0;
       foreach($table_a_data_rows->row AS $table_a_data_row) {
 

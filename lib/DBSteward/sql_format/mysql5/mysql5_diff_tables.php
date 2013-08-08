@@ -623,8 +623,8 @@ class mysql5_diff_tables extends sql99_diff_tables {
       }
     }
     else {
-      $primary_keys = mysql5_table::primary_key_columns($table_a);
-      $primary_key_index = xml_parser::data_row_overlay_primary_key_index($primary_keys, $table_a_data_rows_columns, $table_b_data_rows_columns);
+      $table_b_primary_keys = mysql5_table::primary_key_columns($table_b);
+      $primary_key_index = xml_parser::data_row_overlay_primary_key_index($table_b_primary_keys, $table_a_data_rows_columns, $table_b_data_rows_columns);
       $table_b_index = 0;
       foreach($table_a_data_rows->row AS $table_a_data_row) {
 
