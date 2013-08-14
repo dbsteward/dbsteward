@@ -807,8 +807,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
     if (!empty($drop_options)) {
       // if there are any that are dropped, the table must be recreated
       // don't bother adding/changing the other options, since this will include them
-      $names = array_map(function($o){ return $o['name']; }, $drop_options);
-      $sql = "-- Table $fq_name must be recreated to drop options: " . implode(', ', $names) . "\n";
+      $sql = "-- Table $fq_name must be recreated to drop options: " . implode(', ', array_keys($drop_options)) . "\n";
       $sql.= mysql5_diff_tables::get_recreate_table_sql($schema, $table);
       $ofs1->write($sql."\n");
     }
@@ -830,7 +829,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
     // see: http://dev.mysql.com/doc/refman/5.5/en/create-table-select.html
     $sql = "CREATE TABLE $fq_tmp_name";
 
-    $opt_sql = mysql5_table::get_table_options_sql($schema, $table);
+    $opt_sql = mysql5_table::get_table_options_sql(mysql5_table::get_table_options($schema, $table));
     if (!empty($opt_sql)) {
       $sql .= "\n" . $opt_sql;
     }

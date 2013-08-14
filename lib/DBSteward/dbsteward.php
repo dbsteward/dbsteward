@@ -174,6 +174,8 @@ Database definition extraction utilities
   --dbname=<database_name>              for mysql5, specify a comma-separated list of databases. e.g. --dbname=one,two,three
   --dbuser=<username>
   --dbpassword=<password>
+Format-specific options
+  --useautoincrementoptions             mysql5: Apply AUTO_INCREMENT tableOptions. By default these are ignored.
 ";
     return $s;
   }
@@ -217,7 +219,8 @@ Database definition extraction utilities
       "dbdatadiff::",
       "xmlsort::",
       "xmlconvert::",
-      "xmlcollectdataaddendums::"
+      "xmlcollectdataaddendums::",
+      "useautoincrementoptions::"
     );
     $options = getopt($short_opts, $long_opts);
     //var_dump($options); die('dieoptiondump');
@@ -485,6 +488,10 @@ Database definition extraction utilities
       dbsteward::$quote_table_names = TRUE;
       dbsteward::$quote_column_names = TRUE;
       $dbport = '3306';
+      
+      if (isset($options['useautoincrementoptions'])) {
+        mysql5::$use_auto_increment_table_options = TRUE;
+      }
     }
     else if (strcasecmp($sql_format, 'oracle10g') == 0) {
       dbsteward::$quote_schema_names = TRUE;

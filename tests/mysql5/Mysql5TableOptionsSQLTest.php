@@ -35,12 +35,23 @@ XML;
 
     $schema = new SimpleXMLElement($xml);
 
+    mysql5::$use_auto_increment_table_options = TRUE;
+
     $expected = <<<SQL
 AUTO_INCREMENT=5
 ENGINE=InnoDB
 SQL;
     
-    $actual = mysql5_table::get_table_options_sql($schema, $schema->table);
+    $actual = mysql5_table::get_table_options_sql(mysql5_table::get_table_options($schema, $schema->table));
+    $this->assertEquals($expected, $actual);
+
+    mysql5::$use_auto_increment_table_options = FALSE;
+
+        $expected = <<<SQL
+ENGINE=InnoDB
+SQL;
+    
+    $actual = mysql5_table::get_table_options_sql(mysql5_table::get_table_options($schema, $schema->table));
     $this->assertEquals($expected, $actual);
   }
 
@@ -59,12 +70,28 @@ XML;
 
     $schema = new SimpleXMLElement($xml);
 
+
+    mysql5::$use_auto_increment_table_options = TRUE;
+
     $expected = <<<SQL
 CREATE TABLE `public`.`test` (
   `id` int,
   `foo` int
 )
 AUTO_INCREMENT=5
+ENGINE=InnoDB
+COMMENT 'test description';
+SQL;
+    $actual = mysql5_table::get_creation_sql($schema, $schema->table);
+    $this->assertEquals($expected, $actual);
+
+    mysql5::$use_auto_increment_table_options = FALSE;
+
+    $expected = <<<SQL
+CREATE TABLE `public`.`test` (
+  `id` int,
+  `foo` int
+)
 ENGINE=InnoDB
 COMMENT 'test description';
 SQL;
@@ -81,7 +108,7 @@ SQL;
 </schema>
 XML;
     $schema = new SimpleXMLElement($xml);
-    $this->assertEquals('', mysql5_table::get_table_options_sql($schema, $schema->table));
+    $this->assertEquals('', mysql5_table::get_table_options_sql(mysql5_table::get_table_options($schema, $schema->table)));
   }
 
   public function testDuplicates() {
@@ -99,7 +126,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
     
     try {
-      mysql5_table::get_table_options_sql($schema, $schema->table);
+      mysql5_table::get_table_options_sql(mysql5_table::get_table_options($schema, $schema->table));
     }
     catch (Exception $ex) {
       if (strcasecmp($ex->getMessage(), "Duplicate tableOption 'opt_a' in table public.test is not allowed") !== 0) {
@@ -122,7 +149,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
     
     try {
-      mysql5_table::get_table_options_sql($schema, $schema->table);
+      mysql5_table::get_table_options_sql(mysql5_table::get_table_options($schema, $schema->table));
     }
     catch (Exception $ex) {
       if (strcasecmp($ex->getMessage(), "tableOption of table public.test cannot have an empty name") !== 0) {
@@ -133,4 +160,3 @@ XML;
     $this->fail("Was expecting empty tableOption name exception, got nothing");
   }
 }
-?>

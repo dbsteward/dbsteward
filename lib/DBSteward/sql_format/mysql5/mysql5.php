@@ -1,6 +1,6 @@
 <?php
 /**
- * MySQL 4 SQL Server specific compiling and differencing functions
+ * MySQL 5 SQL specific compiling and differencing functions
  *
  * @package DBSteward
  * @subpackage mysql5
@@ -24,6 +24,18 @@ class mysql5 {
    * @todo add command-line flag to toggle this
    */
   public static $swap_function_delimiters = TRUE;
+
+  /**
+   * The original behavior of the AUTO_INCREMENT table option was to rebuild the table
+   * with the new AUTO_INCREMENT value when it changed during a diff, or apply it during
+   * a build. Unfortunately, what we've discovered is that MySQL has some weird rules
+   * governing when it resets this value, and as a result, DBSteward cannot reliably
+   * control this value. So our solution is to default to ignoring this particular table
+   * option, but provide a commandline switch to turn it back on, just in case somebody
+   * REALLY wants to use this behavior.
+   * @var boolean
+   */
+  public static $use_auto_increment_table_options = FALSE;
 
   public static function build($output_prefix, $db_doc) {
     // build full db creation script
@@ -347,6 +359,10 @@ class mysql5 {
         $node_table['primaryKey'] = '';
 
         foreach ( $db->get_table_options($db_table) as $name => $value ) {
+          if (strcasecmp($name, 'auto_increment') === 0 && !static::$use_auto_increment_table_options) {
+            // don't extract auto_increment tableOptions if we're not using them
+            continue;
+          }
           $node_option = $node_table->addChild('tableOption');
           $node_option['sqlFormat'] = 'mysql5';
           $node_option['name'] = $name;

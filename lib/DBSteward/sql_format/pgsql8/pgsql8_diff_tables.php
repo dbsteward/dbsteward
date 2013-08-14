@@ -1178,12 +1178,12 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 
     // create and alter have the same syntax:
     $create_alter = array_merge($create_options, $alter_options);
-    foreach ($create_alter as $opt) {
-      switch (strtolower($opt['name'])) {
+    foreach ($create_alter as $name => $value) {
+      switch (strtolower($name)) {
         case 'with':
           // ALTER TABLE ... SET (params) doesn't accept oids=true/false, unlike CREATE TABLE
           // only WITH OIDS or WITHOUT OIDS
-          $params = pgsql8_table::parse_storage_params($opt['value']);
+          $params = pgsql8_table::parse_storage_params($value);
           if (array_key_exists('oids',$params)) {
             $oids = $params['oids'];
             unset($params['oids']);
@@ -1203,7 +1203,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           $actions[] = "SET $params";
           break;
         case 'tablespace':
-          $tbsp = (string)$opt['value'];
+          $tbsp = (string)$value;
           $actions[] = "SET TABLESPACE " . pgsql8::get_quoted_object_name($tbsp);
           $sql .= <<<SQL
 CREATE FUNCTION __dbsteward_migrate_move_index_tablespace(TEXT,TEXT,TEXT) RETURNS void AS $$
@@ -1225,10 +1225,10 @@ SQL;
       }
     }
 
-    foreach ($drop_options as $opt) {
-      switch (strtolower($opt['name'])) {
+    foreach ($drop_options as $name => $value) {
+      switch (strtolower($name)) {
         case 'with':
-          $params = pgsql8_table::parse_storage_params($opt['value']);
+          $params = pgsql8_table::parse_storage_params($value);
 
           // handle oids separately, since pgsql doesn't recognise it as
           // a storage parameter in an ALTER TABLE statement

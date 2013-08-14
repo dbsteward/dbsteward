@@ -170,7 +170,7 @@ CREATE TABLE `public`.`group` (
   `group_enabled` boolean NOT NULL DEFAULT true
 );
 
-CREATE UNIQUE INDEX `group_group_name_key` ON `public`.`group` (`group_name`) USING BTREE;
+CREATE UNIQUE INDEX `group_name` ON `public`.`group` (`group_name`) USING BTREE;
 
 GRANT SELECT, UPDATE, DELETE ON `public`.`group` TO dbsteward_phpunit_app;
 

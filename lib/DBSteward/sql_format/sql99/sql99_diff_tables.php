@@ -132,27 +132,25 @@ class sql99_diff_tables {
       $alter_options = array();
       $create_options = array();
       $drop_options = array();
-      // look for changed or dropped options
-      foreach ($old_table->tableOption as $old_option) {
-        if (($new_option = format_table::contains_table_option($new_table, $old_option['name']))) {
-          // alter the option. note that options and how they're applied vary wildly between formats
-          if (static::table_option_changed($old_option, $new_option)) {
-            $alter_options[] =$new_option;
-          }
+
+      $old_options = format_table::get_table_options($old_schema, $old_table);
+      $new_options = format_table::get_table_options($new_schema, $new_table);
+
+      // dropped options are those present in the old table, but not in the new
+      $drop_options = array_diff_key($old_options, $new_options);
+
+      // added options are those present in the new table but not in the old
+      $create_options = array_diff_key($new_options, $old_options);
+
+      // altered options are those present in both but with different values
+      $alter_options = array_intersect_ukey($new_options, $old_options, function ($new_key, $old_key) use ($new_options, $old_options) {
+        if ($new_key == $old_key && strcasecmp($new_options[$new_key], $old_options[$old_key]) !== 0) {
+          return 0;
         }
         else {
-          // drop the option
-         $drop_options[] = $old_option;
+          return -1;
         }
-      }
-
-      // look for added options
-      foreach ($new_table->tableOption as $new_option) {
-        if (!format_table::contains_table_option($old_table, $new_option['name'])) {
-          // add the option
-          $create_options[] = $new_option;
-        }
-      }
+      });
 
       static::apply_table_options_diff($ofs1, $ofs3, $new_schema, $new_table, $alter_options, $create_options, $drop_options);
     }

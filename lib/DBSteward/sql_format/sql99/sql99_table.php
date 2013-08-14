@@ -32,7 +32,7 @@ class sql99_table {
     return $found;
   }
 
-  public function contains_table_option($node_table, $name) {
+  public static function contains_table_option($node_table, $name) {
     $format = dbsteward::get_sql_format();
 
     foreach ($node_table->tableOption as $option) {
@@ -339,13 +339,8 @@ class sql99_table {
    * @param  SimpleXMLElement $node_table  The table
    * @return array            Option name => option value
    */
-  public static function get_table_options($node_schema, $node_table=false) {
-    if (is_array($node_schema) && !$node_table) {
-      $nodes = $node_schema;
-    }
-    else {
-      $nodes = $node_table->tableOption;
-    }
+  public static function get_table_options($node_schema, $node_table) {
+    $nodes = $node_table->tableOption;
     $sql_format = dbsteward::get_sql_format();
     $opts = array();
 
@@ -368,14 +363,12 @@ class sql99_table {
 
   /**
    * Returns the SQL to append to a CREATE TABLE expression
-   * @param  SimpleXMLElement $node_schema The schema
-   * @param  SimpleXMLElement $node_table  The table
+   * @param  array            $options     Associative array of option => value
    * @return string           SQL
    */
-  public static function get_table_options_sql($node_schema, $node_table=false) {
-    $opts = static::get_table_options($node_schema, $node_table);
+  public static function get_table_options_sql($options) {
     $opt_sqls = array();
-    foreach ($opts as $name => $val) {
+    foreach ($options as $name => $val) {
       $opt_sqls[] = static::format_table_option($name, $val);
     }
     return static::join_table_option_sql($opt_sqls);
