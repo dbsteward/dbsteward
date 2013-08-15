@@ -25,3 +25,6 @@ env:
 branches:
   only:
     - dev-travis
+
+# by default, travis just runs "phpunit", but our tests are in the tests directory
+script: 'phpunit tests/'
