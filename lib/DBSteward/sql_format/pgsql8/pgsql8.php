@@ -411,7 +411,6 @@ class pgsql8 extends sql99 {
   protected static function slony_ids_required_during_build($replica_set, $db_doc) {
     foreach ($db_doc->schema as $schema) {
       foreach ($schema->table as $table) {
-        dbsteward::console_line(1, $table->name);
         static::slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table);
       }
       foreach ($schema->sequence as $sequence) {
