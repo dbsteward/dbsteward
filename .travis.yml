@@ -1,0 +1,27 @@
+language: php
+php:
+  - 5.3
+  - 5.4
+
+env:
+  # global env vars are injected into the environment of all build configs
+  global:
+    - TRAVIS_MYSQL5_DBHOST=127.0.0.1
+    - TRAVIS_MYSQL5_DBPORT=3306
+    - TRAVIS_MYSQL5_DBUSER=travis
+    - TRAVIS_MYSQL5_DBPASS=
+    - TRAVIS_PGSQL8_DBHOST=127.0.0.1
+    - TRAVIS_PGSQL8_DBPORT=5432
+    - TRAVIS_PGSQL8_DBUSER=postgres
+    - TRAVIS_PGSQL8_DBPASS=
+
+  # matrix env vars generate a new build config per set
+  # we need to run the two test groups separately due to active_sql_format_autoloader
+  matrix:
+    - PHPUNIT_GROUP=pgsql8
+    - PHPUNIT_GROUP=mysql5
+
+# for now, only build the dev-travis branch
+branches:
+  only:
+    - dev-travis
