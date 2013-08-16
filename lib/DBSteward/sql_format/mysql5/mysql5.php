@@ -293,7 +293,7 @@ class mysql5 {
     return $new_db_doc;
   }
 
-  public function extract_schema($host, $port, $database, $user, $password) {
+  public static function extract_schema($host, $port, $database, $user, $password) {
     $databases = explode(',', $database);
 
     dbsteward::console_line(1, "Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
