@@ -111,6 +111,45 @@ XML;
     $this->diff($with_auto_increment, $without_auto_increment, "ALTER TABLE `ImdxTest`.`GbiBatches`\n  MODIFY COLUMN `GbiBatchID` int(11);", '');
   }
 
+  public function testRenameFKIndex() {
+    $a = <<<XML
+<schema name="test" owner="NOBODY">
+<table name="table1" owner="ROLE_OWNER" description="" primaryKey="table1_id">
+  <column name="table1_id" type="int(11) AUTO_INCREMENT" null="false"/>
+  <column name="table2_id" foreignSchema="test" foreignTable="table2" foreignColumn="table2_id" foreignKeyName="table1_ibfk_1"/>
+  <index name="table1_ibfk_1_idx" using="btree" unique="false">
+    <indexDimension name="table2_id_1">table2_id</indexDimension>
+  </index>
+</table>
+<table name="table2" owner="ROLE_OWNER" description="" primaryKey="table2_id">
+  <column name="table2_id" type="int(11) AUTO_INCREMENT" null="false"/>
+</table>
+</schema>
+XML;
+    $b = <<<XML
+<schema name="test" owner="NOBODY">
+<table name="table1" owner="ROLE_OWNER" description="" primaryKey="table1_id">
+  <column name="table1_id" type="int(11) AUTO_INCREMENT" null="false"/>
+  <column name="table2_id" foreignSchema="test" foreignTable="table2" foreignColumn="table2_id" foreignKeyName="table1_ibfk_1"/>
+  <index name="table2_id" using="btree" unique="false">
+    <indexDimension name="table2_id_1">table2_id</indexDimension>
+  </index>
+</table>
+<table name="table2" owner="ROLE_OWNER" description="" primaryKey="table2_id">
+  <column name="table2_id" type="int(11) AUTO_INCREMENT" null="false"/>
+</table>
+</schema>
+XML;
+
+    $expected = <<<SQL
+ALTER TABLE `test`.`table1`
+  DROP INDEX `table1_ibfk_1_idx`,
+  ADD INDEX `table2_id` (`table2_id`);
+SQL;
+
+    $this->diff($a, $b, $expected, '');
+  }
+
 //   public function testLotsOfAlterTables() {
 //     $a = <<<XML
 // <schema name="public" owner="ROLE_OWNER">
