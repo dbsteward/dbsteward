@@ -88,6 +88,33 @@ XML;
     $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=MyISAM;");
   }
 
+  public function testAlterAutoIncrement() {
+    $old = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="a" owner="NOBODY">
+    <tableOption sqlFormat="mysql5" name="auto_increment" value="5"/>
+    <column name="a" type="int"/>
+  </table>
+</schema>
+XML;
+
+    $new = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="a" owner="NOBODY">
+    <tableOption sqlFormat="mysql5" name="auto_increment" value="42"/>
+    <column name="a" type="int"/>
+  </table>
+</schema>
+XML;
+    
+    mysql5::$use_auto_increment_table_options = TRUE;
+    $this->common($old, $new, "ALTER TABLE `public`.`test` AUTO_INCREMENT=42;");
+
+
+    mysql5::$use_auto_increment_table_options = FALSE;
+    $this->common($old, $new, '');
+  }
+
   public function testAddAndAlter() {
     $old = <<<XML
 <schema name="public" owner="NOBODY">
@@ -107,8 +134,12 @@ XML;
   </table>
 </schema>
 XML;
-      
+    
+    mysql5::$use_auto_increment_table_options = TRUE;
     $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=MyISAM\nAUTO_INCREMENT=5;");
+
+    mysql5::$use_auto_increment_table_options = FALSE;
+    $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=MyISAM;");
   }
 
   public function testDrop() {
@@ -140,6 +171,40 @@ SQL;
     $this->common($old, $new, $expected);
   }
 
+  public function testDropAutoIncrement() {
+    $old = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="a" owner="NOBODY">
+    <tableOption sqlFormat="mysql5" name="auto_increment" value="42"/>
+    <column name="a" type="int"/>
+  </table>
+</schema>
+XML;
+
+    $new = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="a" owner="NOBODY">
+    <column name="a" type="int"/>
+  </table>
+</schema>
+XML;
+
+    mysql5::$use_auto_increment_table_options = TRUE;
+    $expected = <<<SQL
+-- Table `public`.`test` must be recreated to drop options: auto_increment
+CREATE TABLE `public`.`test_DBSTEWARD_MIGRATION`
+SELECT * FROM `public`.`test`;
+DROP TABLE `public`.`test`;
+RENAME TABLE `public`.`test_DBSTEWARD_MIGRATION` TO `public`.`test`;
+SQL;
+      
+    $this->common($old, $new, $expected);
+
+    // if we're ignoring auto_increment options, there's nothing to do
+    mysql5::$use_auto_increment_table_options = FALSE;
+    $this->common($old, $new, '');
+  }
+
   public function testDropAddAlter() {
     $old = <<<XML
 <schema name="public" owner="NOBODY">
@@ -161,10 +226,25 @@ XML;
 </schema>
 XML;
 
+    mysql5::$use_auto_increment_table_options = TRUE;
     $expected = <<<SQL
 -- Table `public`.`test` must be recreated to drop options: engine
 CREATE TABLE `public`.`test_DBSTEWARD_MIGRATION`
 AUTO_INCREMENT=10
+ROW_FORMAT=compressed
+SELECT * FROM `public`.`test`;
+DROP TABLE `public`.`test`;
+RENAME TABLE `public`.`test_DBSTEWARD_MIGRATION` TO `public`.`test`;
+SQL;
+      
+    $this->common($old, $new, $expected);
+
+
+    mysql5::$use_auto_increment_table_options = FALSE;
+
+    $expected = <<<SQL
+-- Table `public`.`test` must be recreated to drop options: engine
+CREATE TABLE `public`.`test_DBSTEWARD_MIGRATION`
 ROW_FORMAT=compressed
 SELECT * FROM `public`.`test`;
 DROP TABLE `public`.`test`;
@@ -181,7 +261,7 @@ SQL;
     $old_table = $old_schema->table;
 
     $new_schema = new SimpleXMLElement($new);
-    $new_table =$new_schema->table;
+    $new_table = $new_schema->table;
 
     mysql5_diff_tables::update_table_options($ofs, $ofs, $old_schema, $old_table, $new_schema, $new_table);
 

@@ -10,12 +10,16 @@
 
 class mysql5_column extends sql99_column {
 
+  public static function is_timestamp($node_column) {
+    return stripos($node_column['type'], 'timestamp') === 0;
+  }
+
   public static function null_allowed($node_table, $node_column) {
     if ( static::is_serial($node_column['type']) ) {
       // serial columns are not allowed to be null
       return false;
     }
-    elseif ( strcasecmp($node_column['type'], 'timestamp') === 0 && !isset($node_column['null']) ) {
+    elseif ( static::is_timestamp($node_column) && !isset($node_column['null']) ) {
       return false;
     }
     else {
@@ -43,9 +47,11 @@ class mysql5_column extends sql99_column {
 
     $nullable = static::null_allowed($node_table, $node_column);
 
+    $is_timestamp = static::is_timestamp($node_column);
+
     if ($include_null_definition ) {
       if ( $nullable ) {
-        if ( strcasecmp($node_column['type'], 'timestamp') === 0 ) {
+        if ( $is_timestamp ) {
           $definition .= " NULL";
         }
       }
@@ -67,7 +73,7 @@ class mysql5_column extends sql99_column {
         $definition .= " DEFAULT " . $node_column['default'];
       }
     }
-    else if ( $add_defaults && strcasecmp($node_column['type'], 'timestamp') === 0 ) {
+    else if ( $add_defaults && $is_timestamp ) {
       if ( $nullable ) {
         $definition .= " DEFAULT NULL";
       }

@@ -41,7 +41,7 @@ class pgsql8_table extends sql99_table {
     $sql = trim($sql, ",\n");
     $sql .= "\n)";
     
-    $opt_sql = pgsql8_table::get_table_options_sql($node_schema, $node_table);
+    $opt_sql = pgsql8_table::get_table_options_sql(pgsql8_table::get_table_options($node_schema, $node_table));
     if (!empty($opt_sql)) {
       $sql .= "\n" . $opt_sql;
     }
@@ -212,7 +212,7 @@ class pgsql8_table extends sql99_table {
     return $sql;
   }
 
-  public static function get_table_options($node_schema, $node_table=false) {
+  public static function get_table_options($node_schema, $node_table) {
     $opts = parent::get_table_options($node_schema, $node_table);
 
     uksort($opts, function($a, $b) {

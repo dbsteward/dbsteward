@@ -67,7 +67,7 @@ class mysql5_table extends sql99_table {
     }
 
     $sql .= "  " . implode(",\n  ", $cols) . "\n)";
-    $opt_sql = mysql5_table::get_table_options_sql($node_schema, $node_table);
+    $opt_sql = mysql5_table::get_table_options_sql(mysql5_table::get_table_options($node_schema, $node_table));
     if (!empty($opt_sql)) {
       $sql .= "\n" . $opt_sql;
     }
@@ -132,6 +132,33 @@ class mysql5_table extends sql99_table {
     }
 
     return $sequences;
+  }
+
+  public static function contains_table_option($node_table, $name) {
+    if (!mysql5::$use_auto_increment_table_options && strcasecmp($name, 'auto_increment') === 0) {
+      // these are not the droids you're looking for....
+      return false;
+    }
+
+    return parent::contains_table_option($node_table, $name);
+  }
+
+  /**
+   * Retrieves an associative array of table options defined for a table
+   * @param  SimpleXMLElement $node_schema The schema
+   * @param  SimpleXMLElement $node_table  The table
+   * @return array            Option name => option value
+   */
+  public static function get_table_options($node_schema, $node_table) {
+    $opts = parent::get_table_options($node_schema, $node_table);
+
+    if (!mysql5::$use_auto_increment_table_options && array_key_exists('auto_increment', $opts)) {
+      dbsteward::console_line(1, 'WARNING: Ignoring auto_increment tableOption on table ' . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']));
+      dbsteward::console_line(1, '         Setting the auto_increment value is unreliable. If you want to use it, pass the --useautoincrementoptions commandline flag');
+      unset($opts['auto_increment']);
+    }
+
+    return $opts;
   }
 
   public static function get_triggers_needed($schema, $table) {
