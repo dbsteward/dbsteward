@@ -115,7 +115,11 @@ class mysql5_index extends sql99_index {
    */
   public static function get_alter_add_sql($node_schema, $node_table, $node_index) {
     $dimensions = static::get_dimension_list($node_schema, $node_table, $node_index);
-    return 'ADD INDEX ' . mysql5::get_quoted_object_name($node_index['name']) . ' (' . implode(', ', $dimensions) . ')';
+    $unique = '';
+    if ( isset($node_index['unique']) && strcasecmp($node_index['unique'], 'true') == 0 ) {
+      $unique = 'UNIQUE ';
+    }
+    return 'ADD ' . $unique . 'INDEX ' . mysql5::get_quoted_object_name($node_index['name']) . ' (' . implode(', ', $dimensions) . ')';
   }
 
   /**
