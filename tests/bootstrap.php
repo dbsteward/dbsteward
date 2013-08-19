@@ -74,9 +74,7 @@ if (strtolower(getenv('TRAVIS')) === 'true') {
     'dbpass_mgmt' => getenv('TRAVIS_MYSQL5_DBPASS')
   );
 
-  $db_config->mssql10_conn = function ($c) {
-    throw new Exception('MSSQL10 is not supported on Travis');
-  };
+  $db_config->mssql10_conn = NULL;
 }
 // Otherwise, use constants defined in phpunit.xml
 else {

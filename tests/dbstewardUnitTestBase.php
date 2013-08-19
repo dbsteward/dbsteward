@@ -54,7 +54,9 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected function tearDown() {
     // make sure connection is closed to DB can be dropped
     // when running multiple tests
-    $this->mssql10->close_connection();
+    if ($this->mssql10) {
+      $this->mssql10->close_connection();
+    }
   }
 
   protected function set_xml_content_a($xml) {
@@ -96,7 +98,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
     // build the DDL first, incase dbsteward code wants to throw about something
     pgsql8::build($this->output_prefix, simplexml_load_file($this->xml_file_a));
-    
+
     $this->pgsql8->create_db();
 
     // build initial "A" database
