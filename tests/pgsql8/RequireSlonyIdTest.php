@@ -11,6 +11,9 @@ require_once 'PHPUnit/Framework/TestCase.php';
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
+/**
+ * @group pgsql8
+ */
 class RequireSlonyIdTest extends dbstewardUnitTestBase {
   private $table_with = <<<XML
 <table name="foo" owner="ROLE_OWNER" primaryKey="id" slonyId="1">

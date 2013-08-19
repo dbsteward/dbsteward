@@ -40,10 +40,20 @@ XML;
     $this->dbdoc = new SimpleXMLElement($xml);
   }
 
+  /**
+   * @group pgsql8
+   * @group mysql5
+   * @group mssql10
+   */
   public function testDefaultValue() {
     $this->assertFalse(dbsteward::$ignore_custom_roles);
   }
 
+  /**
+   * @group pgsql8
+   * @group mysql5
+   * @group mssql10
+   */
   public function testWarningWhenTrue() {
     dbsteward::$ignore_custom_roles = TRUE;
 
@@ -56,6 +66,11 @@ XML;
     $this->expectOutputString("[DBSteward-1] Warning: Ignoring custom roles. Role 'invalid' is being overridden by ROLE_OWNER ('deployment').\n");
   }
 
+  /**
+   * @group pgsql8
+   * @group mysql5
+   * @group mssql10
+   */
   public function testThrowWhenFalse() {
     dbsteward::$ignore_custom_roles = FALSE;
 

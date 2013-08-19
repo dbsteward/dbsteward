@@ -75,6 +75,11 @@ XML;
     parent::setUp();
   }
 
+  /**
+   * @group pgsql8
+   * @group mysql5
+   * @group mssql10
+   */
   public function testAddSerialColumn() {
     system(dirname(__FILE__) . "/../dbsteward.php --oldxml=testdata/unit_test_xml_a.xml --newxml=testdata/unit_test_xml_b.xml");
     $this->output_prefix = str_replace('xml_a', 'xml_b', $this->output_prefix);

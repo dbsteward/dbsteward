@@ -10,6 +10,9 @@
 require_once 'PHPUnit/Framework/TestCase.php';
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 
+/**
+ * @group pgsql8
+ */
 class TableOptionsSQLTest extends PHPUnit_Framework_TestCase {
 
   public function setUp() {

@@ -13,15 +13,25 @@ require_once 'PHPUnit/Framework/TestSuite.php';
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 
 class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
+
+  /**
+   * @group pgsql8
+   */
   public function testPgsql8() {
     $this->quoteTestCommon('pgsql8');
   }
 
+  /**
+   * @group mssql10
+   */
   public function testMssql10() {
     $this->quoteTestCommon('mssql10');
   }
 
-  public function testMysql4() {
+  /**
+   * @group mysql5
+   */
+  public function testMysql5() {
     $this->quoteTestCommon('mysql5', array('in ', 'in-', 'in'.mysql5::QUOTE_CHAR, 'in.'));
   }
 

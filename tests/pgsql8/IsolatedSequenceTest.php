@@ -13,6 +13,9 @@ require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 require_once(dirname(__FILE__) . '/../../lib/DBSteward/sql_format/sql99/sql99.php');
 require_once(dirname(__FILE__) . '/../../lib/DBSteward/sql_format/pgsql8/pgsql8.php');
 
+/**
+ * @group pgsql8
+ */
 class IsolatedSequenceTest extends dbstewardUnitTestBase {
 
   protected $xml_content_a =  <<<XML

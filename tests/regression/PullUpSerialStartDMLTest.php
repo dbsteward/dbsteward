@@ -21,16 +21,25 @@ class PullUpSerialStartDMLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_object_names = TRUE;
   }
 
+  /**
+   * @group pgsql8
+   */
   public function testPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     $this->common("SELECT setval(pg_get_serial_sequence('public.table', 'column'), 5, TRUE);");
   }
 
+  /**
+   * @group mssql10
+   */
   public function testMssql10() {
     dbsteward::set_sql_format('mssql10');
     $this->common("SELECT setval(pg_get_serial_sequence('public.table', 'column'), 5, TRUE);");
   }
 
+  /**
+   * @group mysql5
+   */
   public function testMysql5() {
     dbsteward::set_sql_format('mysql5');
     $this->common("SELECT setval('__public_table_column_serial_seq', 5, TRUE);");

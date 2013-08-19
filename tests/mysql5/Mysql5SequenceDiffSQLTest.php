@@ -11,9 +11,11 @@ require_once 'PHPUnit/Framework/TestCase.php';
 require_once 'PHPUnit/Framework/TestSuite.php';
 
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
-
 require_once __DIR__ . '/../mock_output_file_segmenter.php';
 
+/**
+ * @group mysql5
+ */
 class Mysql5SequenceDiffSQLTest extends PHPUnit_Framework_TestCase {
   private $xml_0 = <<<XML
 <schema name="test0" owner="NOBODY">

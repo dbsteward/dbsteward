@@ -11,9 +11,11 @@ require_once 'PHPUnit/Framework/TestCase.php';
 require_once 'PHPUnit/Framework/TestSuite.php';
 
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
-
 require_once __DIR__ . '/../mock_output_file_segmenter.php';
 
+/**
+ * @group mysql5
+ */
 class Mysql5IndexDiffSQLTest extends PHPUnit_Framework_TestCase {
 
   public function setUp() {
