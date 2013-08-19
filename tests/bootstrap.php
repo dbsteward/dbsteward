@@ -50,7 +50,7 @@ $db_config->mysql5_conn = function ($c) {
 };
 
 // If the tests are being executed as part of Travis CI, use different DB config than the default
-if (getenv('TRAVIS') === 'TRUE') {
+if (strtolower(getenv('TRAVIS')) === 'true') {
   echo "Travis CI environment detected - using TRAVIS_* database configuration\n";
   $db_config->pgsql8_config = array(
     'dbname' => 'dbsteward_phpunit',
