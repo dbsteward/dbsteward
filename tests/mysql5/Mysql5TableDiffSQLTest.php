@@ -332,6 +332,62 @@ XML;
     $this->common_diff($one_int, $one, '', '');
   }
 
+
+  /**
+   * Tests that creating a table with a timestamp column applies correct column attributes
+   */
+  public function testAddTimestampColumnTable() {
+    $old = <<<XML
+<schema name="test0" owner="NOBODY">
+</schema>
+XML;
+    $new = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="tscol0" type="timestamp ON UPDATE CURRENT_TIMESTAMP" default="CURRENT_TIMESTAMP" null="true"/>
+    <column name="tscol1" type="timestamp ON UPDATE CURRENT_TIMESTAMP" default="CURRENT_TIMESTAMP" null="false"/>
+  </table>
+</schema>
+XML;
+
+    $expected = <<<SQL
+CREATE TABLE `test0`.`table` (
+  `tscol0` timestamp ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `tscol1` timestamp ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+SQL;
+
+    $this->common_diff($old, $new, $expected, '');
+  }
+
+  /**
+   * Tests that adding timestamp column applies correct column attributes
+   */
+  public function testAddTimestampColumn() {
+    $old = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+  </table>
+</schema>
+XML;
+    $new = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="tscol0" type="timestamp ON UPDATE CURRENT_TIMESTAMP" default="CURRENT_TIMESTAMP" null="true"/>
+    <column name="tscol1" type="timestamp ON UPDATE CURRENT_TIMESTAMP" default="CURRENT_TIMESTAMP" null="false"/>
+  </table>
+</schema>
+XML;
+
+    $expected = <<<SQL
+ALTER TABLE `test0`.`table`
+  ADD COLUMN `tscol0` timestamp ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP FIRST,
+  ADD COLUMN `tscol1` timestamp ON UPDATE CURRENT_TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `tscol0`;
+SQL;
+
+    $this->common_diff($old, $new, $expected, '');
+  }
+
   private function common_diff($xml_a, $xml_b, $expected1, $expected3, $message='') {
     dbsteward::$old_database = new SimpleXMLElement($this->db_doc_xml . $xml_a . '</dbsteward>');
     dbsteward::$new_database = new SimpleXMLElement($this->db_doc_xml . $xml_b . '</dbsteward>');

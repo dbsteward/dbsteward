@@ -58,7 +58,7 @@ class mysql5_permission extends sql99_permission {
         throw new exception("unknown object type encountered: " . $object_type);
     }
 
-    $sql = static::get_sql(strtoupper($action), $object_name, $privileges, $roles, $with) . "\n";
+    $sql = static::get_sql(strtoupper($action), $object_name, $privileges, array_map('mysql5::get_quoted_object_name', $roles), $with) . "\n";
     
     return $sql;
   }

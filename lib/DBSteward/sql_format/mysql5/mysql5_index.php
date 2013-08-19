@@ -90,19 +90,7 @@ class mysql5_index extends sql99_index {
       . " ON "
       . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']);
     
-    $dimensions = array();
-    foreach ( $node_index->indexDimension as $dimension ) {
-      // mysql only supports indexed columns, not indexed expressions like in pgsql or mssql
-      if ( ! mysql5_table::contains_column($node_table, $dimension) ) {
-        throw new Exception("Table " . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']) . " does not contain column '$dimension'");
-      }
-
-      if ( ! empty($dimension['name']) ) {
-        $index_note .= "-- ignoring name '{$dimension['name']}' for dimension '$dimension' on index '{$node_index['name']}'\n";
-      }
-
-      $dimensions[] = mysql5::get_quoted_column_name($dimension);
-    }
+    $dimensions = static::get_dimension_list($node_schema, $node_table, $node_index);
     $sql .= ' (' . implode(', ', $dimensions) . ')';
 
     if ( !empty($node_index['using']) ) {
@@ -116,6 +104,42 @@ class mysql5_index extends sql99_index {
 
   public static function get_drop_sql($node_schema, $node_table, $node_index) {
     return "DROP INDEX " . mysql5::get_quoted_object_name($node_index['name']) . " ON " . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']) . ";";
+  }
+
+  /**
+   * Get creation SQL suitable for use in an ALTER TABLE statement
+   * @param  SimpleXMLElement $node_schema
+   * @param  SimpleXMLElement $node_table
+   * @param  SimpleXMLElement $node_index
+   * @return string
+   */
+  public static function get_alter_add_sql($node_schema, $node_table, $node_index) {
+    $dimensions = static::get_dimension_list($node_schema, $node_table, $node_index);
+    return 'ADD INDEX ' . mysql5::get_quoted_object_name($node_index['name']) . ' (' . implode(', ', $dimensions) . ')';
+  }
+
+  /**
+   * Get drop SQL suitable for use in an ALTER TABLE statement
+   * @param  SimpleXMLElement $node_schema
+   * @param  SimpleXMLElement $node_table
+   * @param  SimpleXMLElement $node_index
+   * @return string
+   */
+  public static function get_alter_drop_sql($node_schema, $node_table, $node_index) {
+    return 'DROP INDEX ' . mysql5::get_quoted_object_name($node_index['name']);
+  }
+
+  protected static function get_dimension_list($node_schema, $node_table, $node_index) {
+    $dimensions = array();
+    foreach ( $node_index->indexDimension as $dimension ) {
+      // mysql only supports indexed columns, not indexed expressions like in pgsql or mssql
+      if ( ! mysql5_table::contains_column($node_table, $dimension) ) {
+        throw new Exception("Table " . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']) . " does not contain column '$dimension'");
+      }
+
+      $dimensions[] = mysql5::get_quoted_column_name($dimension);
+    }
+    return $dimensions;
   }
 
   public static function get_using_option_sql($using) {

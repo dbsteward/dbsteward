@@ -52,6 +52,7 @@
         </row>
       </rows>
     </table>
+    <trigger name="user_audit" sqlFormat="mysql5" table="user" when="before" event="insert" function="EXECUTE xyz"/>
     <table name="user_status_list" owner="ROLE_OWNER" slonyId="30" primaryKey="user_status_list_id">
       <column name="user_status_list_id" type="int" />
       <column name="is_visible" type="boolean" null="false" default="true" />

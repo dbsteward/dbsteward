@@ -293,7 +293,7 @@ class mysql5 {
     return $new_db_doc;
   }
 
-  public function extract_schema($host, $port, $database, $user, $password) {
+  public static function extract_schema($host, $port, $database, $user, $password) {
     $databases = explode(',', $database);
 
     dbsteward::console_line(1, "Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
@@ -401,7 +401,7 @@ class mysql5 {
 
           // @TODO: if there are serial sequences/triggers for the column then convert to serial
 
-          if ( !empty($db_column->column_default) ) {
+          if ( $db_column->column_default !== NULL ) {
             $node_column['default'] = mysql5::escape_default_value($db_column->column_default);
           }
           elseif ( strcasecmp($db_column->is_nullable, 'YES') === 0 ) {
