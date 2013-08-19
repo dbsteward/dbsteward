@@ -24,12 +24,12 @@ class xml_parser {
     foreach ($files as $file) {
       $xml_contents = file_get_contents($file);
       if ($xml_contents === FALSE) {
-        throw new exception("Failed to load XML from disk: " . $file_name);
+        throw new exception("Failed to load XML from disk: " . $file);
       }
 
       $doc = simplexml_load_string($xml_contents);
       if ($doc === FALSE) {
-        throw new Exception("failed to simplexml_load_string() contents of " . $file_name);
+        throw new Exception("failed to simplexml_load_string() contents of " . $file);
       }
 
       if (!empty($doc->database->sqlformat)) {
