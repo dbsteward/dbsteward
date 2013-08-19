@@ -32,28 +32,28 @@ abstract class dbsteward_sql99_connection {
     $this->dbpass_mgmt = array_key_exists('dbpass_mgmt', $config) ? $config['dbpass_mgmt'] : $this->dbpass;
   }
 
-  public static function get_dbhost() {
+  public function get_dbhost() {
     return $this->dbhost;
   }
-  public static function get_dbport() {
+  public function get_dbport() {
     return $this->dbport;
   }
-  public static function get_dbname() {
+  public function get_dbname() {
     return $this->dbname;
   }
-  public static function get_dbuser() {
+  public function get_dbuser() {
     return $this->dbuser;
   }
-  public static function get_dbpass() {
+  public function get_dbpass() {
     return $this->dbpass;
   }
-  public static function get_dbname_management() {
+  public function get_dbname_management() {
     return $this->dbname_mgmt;
   }
-  public static function get_dbuser_management() {
+  public function get_dbuser_management() {
     return $this->dbuser_mgmt;
   }
-  public static function get_dbpass_management() {
+  public function get_dbpass_management() {
     return $this->dbpass_mgmt;
   }
 
