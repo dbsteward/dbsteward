@@ -13,7 +13,7 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
 
   public function query($sql, $throw_on_error = TRUE) {
     dbsteward::cmd(sprintf("echo '%s' | mysql -v --host=%s --port=%s --user=%s --database=%s --password=%s",
-                          $sql, static::get_dbhost(), static::get_dbport(), static::get_dbname(), static::get_dbuser(), static::get_dbpass()));
+                          $sql, $this->dbhost, $this->dbport, $this->dbname, $this->dbuser, $this->dbpass));
   }
 
   /**
@@ -22,13 +22,13 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
    */
   public function create_db() {
     dbsteward::cmd(sprintf("echo '%s' | mysql -v --host=%s --port=%s --user=%s --database=%s --password=%s",
-                          'DROP DATABASE IF EXISTS '.static::get_dbname().'; CREATE DATABASE '.static::get_dbname().';',
-                          static::get_dbhost(), static::get_dbport(), static::get_dbuser_management(), static::get_dbname_management(), static::get_dbpass_management()));
+                          'DROP DATABASE IF EXISTS '.$this->dbname.'; CREATE DATABASE '.$this->dbname.';',
+                          $this->dbhost, $this->dbport, $this->dbuser_mgmt, $this->dbname_mgmt, $this->dbpass_mgmt));
   }
 
   protected function pipe_file_to_client($file_name) {
     dbsteward::cmd(sprintf("mysql -v --host=%s --port=%s --user=%s --database=%s --password=%s < '%s'",
-                           static::get_dbhost(), static::get_dbport(), static::get_dbuser(), static::get_dbname(), static::get_dbpass(), $file_name));
+                           $this->dbhost, $this->dbport, $this->dbuser, $this->dbname, $this->dbpass, $file_name));
   }
 }
 

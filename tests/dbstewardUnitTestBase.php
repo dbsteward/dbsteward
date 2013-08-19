@@ -41,9 +41,9 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->xml_file_b = __DIR__ . '/testdata/unit_test_xml_b.xml';
     file_put_contents($this->xml_file_b, $this->xml_content_b);
     
-    $this->pgsql8 = new dbsteward_pgsql8_connection();
-    $this->mssql10 = new dbsteward_mssql10_connection();
-    $this->mysql5 = new dbsteward_mysql5_connection();
+    $this->pgsql8 = $GLOBALS['db_config']->pgsql8_conn;
+    $this->mssql10 = $GLOBALS['db_config']->mssql10_conn;
+    $this->mysql5 = $GLOBALS['db_config']->mysql5_conn;
     
     // be sure to reset dbsteward runtime tracking variables every time
     pgsql8::$table_slony_ids = array();
