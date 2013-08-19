@@ -22,7 +22,7 @@ class xml_parser {
    */
   public static function get_sql_format($files) {
     foreach ($files as $file) {
-      $xml_contents = file_get_contents($file);
+      $xml_contents = @file_get_contents($file);
       if ($xml_contents === FALSE) {
         throw new exception("Failed to load XML from disk: " . $file);
       }
@@ -60,7 +60,7 @@ class xml_parser {
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
       dbsteward::console_line(1, "Loading XML " . realpath($file_name) . "..");
-      $xml_contents = file_get_contents($file_name);
+      $xml_contents = @file_get_contents($file_name);
       if ($xml_contents === FALSE) {
         throw new exception("Failed to load XML from disk: " . $file_name);
       }
@@ -951,7 +951,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
     foreach ($pgdatafiles AS $file) {
       $file_name = realpath($file);
       dbsteward::console_line(1, "Loading postgres data XML " . $file_name);
-      $xml_contents = file_get_contents($file_name);
+      $xml_contents = @file_get_contents($file_name);
       if ($xml_contents === FALSE) {
         throw new exception("Failed to load postgres data XML from disk: " . $file_name);
       }
