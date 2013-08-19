@@ -12,11 +12,6 @@
 
 require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 
-include_once 'PHPUnit/Extensions/OutputTestCase.php';
-if (!class_exists('PHPUnit_Extensions_OutputTestCase')) {
-  class_alias('PHPUnit_Framework_TestCase', 'PHPUnit_Extensions_OutputTestCase', FALSE);
-}
-
 class WarnOnOverriddenRoleTest extends PHPUnit_Extensions_OutputTestCase {
   public function setUp() {
     // format doesn't really matter
