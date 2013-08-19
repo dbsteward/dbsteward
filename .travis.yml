@@ -27,4 +27,4 @@ branches:
     - dev-travis
 
 # by default, travis just runs "phpunit", but our tests are in the tests directory
-script: 'env; phpunit --group $PHPUNIT_GROUP --bootstrap tests/bootstrap.php --configuration tests/phpunit.xml tests/'
+script: 'phpunit --group $PHPUNIT_GROUP --bootstrap tests/bootstrap.php --configuration tests/phpunit.xml tests/'
