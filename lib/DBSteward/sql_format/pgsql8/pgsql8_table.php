@@ -17,7 +17,7 @@ class pgsql8_table extends sql99_table {
    *
    * @return created SQL command
    */
-  public function get_creation_sql($node_schema, $node_table) {
+  public static function get_creation_sql($node_schema, $node_table) {
     if ( $node_schema->getName() != 'schema' ) {
       throw new exception("node_schema object element name is not schema. check stack for offending caller");
     }
@@ -103,7 +103,7 @@ class pgsql8_table extends sql99_table {
    *
    * @return created SQL command
    */
-  public function get_drop_sql($node_schema, $node_table) {
+  public static function get_drop_sql($node_schema, $node_table) {
     if ( !is_object($node_schema) ) {
       var_dump($node_schema);
       throw new exception("node_schema is not an object");
@@ -126,7 +126,7 @@ class pgsql8_table extends sql99_table {
    *
    * @return string
    */
-  public function get_constraint_sql($constraint) {
+  public static function get_constraint_sql($constraint) {
     if ( !is_array($constraint) ) {
       throw new exception("constraint is not an array?");
     }
@@ -165,7 +165,7 @@ class pgsql8_table extends sql99_table {
         . pgsql8::get_quoted_object_name($constraint['name']);
   }
 
-  public function get_constraint_drop_sql($constraint) {
+  public static function get_constraint_drop_sql($constraint) {
     if ( !is_array($constraint) ) {
       throw new exception("constraint is not an array?");
     }
@@ -185,7 +185,7 @@ class pgsql8_table extends sql99_table {
     return $sql;
   }
   
-  public function has_default_nextval($node_table) {
+  public static function has_default_nextval($node_table) {
     foreach(dbx::get_table_columns($node_table) as $column) {
       if ( pgsql8_column::has_default_nextval($node_table, $column) ) {
         return TRUE;
@@ -194,7 +194,7 @@ class pgsql8_table extends sql99_table {
     return FALSE;
   }
   
-  public function get_default_nextval_sql($node_schema, $node_table) {
+  public static function get_default_nextval_sql($node_schema, $node_table) {
     $sql = '';
     foreach(dbx::get_table_columns($node_table) as $column) {
       if ( pgsql8_column::has_default_nextval($node_table, $column) ) {

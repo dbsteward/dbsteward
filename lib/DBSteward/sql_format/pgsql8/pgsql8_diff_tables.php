@@ -913,7 +913,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     }
   }
 
-  protected function table_data_row_deleted($row) {
+  protected static function table_data_row_deleted($row) {
     if ( isset($row['delete']) && strcasecmp($row['delete'], 'true') == 0 ) {
       return true;
     }
@@ -927,7 +927,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    *
    * @return boolean   there is a difference between old and new data rows
    */
-  public function table_data_row_diff($old_cols, $old_row, $new_cols, $new_row, &$changed_columns) {
+  public static function table_data_row_diff($old_cols, $old_row, $new_cols, $new_row, &$changed_columns) {
     $difference = false;
 
     // compare the columns between the old and new rows
