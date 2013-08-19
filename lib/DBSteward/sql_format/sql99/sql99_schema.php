@@ -17,7 +17,7 @@ class sql99_schema {
    *
    * @return boolean   true if schema contains type with given $name, otherwise false.
    */
-  public function contains_type(&$node_schema, $name) {
+  public static function contains_type(&$node_schema, $name) {
     $found = false;
 
     foreach(dbx::get_types($node_schema) as $type) {
@@ -37,7 +37,7 @@ class sql99_schema {
    *
    * @return true if schema contains function with given $declaration, otherwise false
    */
-  public function contains_function($node_schema, $declaration) {
+  public static function contains_function($node_schema, $declaration) {
     $found = false;
 
     foreach(dbx::get_functions($node_schema) as $node_function) {
@@ -57,7 +57,7 @@ class sql99_schema {
    *
    * @return boolean   true if schema contains sequence with given $name, otherwise false
    */
-  public function contains_sequence($node_schema, $name) {
+  public static function contains_sequence($node_schema, $name) {
     $found = false;
 
     foreach(dbx::get_sequences($node_schema) as $sequence) {
@@ -77,7 +77,7 @@ class sql99_schema {
    *
    * @return boolean   true if schema contains table with given $name, otherwise false.
    */
-  public function contains_table($node_schema, $name) {
+  public static function contains_table($node_schema, $name) {
     $found = false;
 
     if (is_null($node_schema)) {
@@ -105,7 +105,7 @@ class sql99_schema {
    * @return boolean
    * @throws exception
    */
-  public function table_formerly_known_as($db_doc, $old_schema, $old_table, &$prince_schema = NULL, &$prince_table = NULL) {
+  public static function table_formerly_known_as($db_doc, $old_schema, $old_table, &$prince_schema = NULL, &$prince_table = NULL) {
     if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, table_formerly_known_as() should not be getting called");
     }
@@ -145,7 +145,7 @@ class sql99_schema {
    *
    * @return boolean
    */
-  public function contains_view($node_schema, $name) {
+  public static function contains_view($node_schema, $name) {
     $found = false;
 
     foreach(dbx::get_views($node_schema) as $view) {

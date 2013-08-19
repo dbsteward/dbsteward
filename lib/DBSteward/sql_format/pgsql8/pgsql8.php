@@ -2360,7 +2360,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    * @param type $node_id
    * @return SimpleXMLElement
    */
-  protected function &get_slony_node($db_doc, $node_id) {
+  protected static function &get_slony_node($db_doc, $node_id) {
     if ( !isset($db_doc->database->slony->slonyNode) ) {
       throw new exception("no slonyNode elements in database definition");
     }

@@ -9,11 +9,11 @@
  */
 
 class sql99_trigger {
-  public function get_events($node_trigger) {
+  public static function get_events($node_trigger) {
     return preg_split("/[\,\s]+/", $node_trigger['event'], -1, PREG_SPLIT_NO_EMPTY);
   }
 
-  public function equals($trigger_a, $trigger_b) {
+  public static function equals($trigger_a, $trigger_b) {
     if ( strcasecmp($trigger_a['name'], $trigger_b['name']) != 0 ) {
       return false;
     }

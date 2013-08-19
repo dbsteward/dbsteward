@@ -931,7 +931,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    *
    * @return void
    */
-  public function xml_composite_pgdata($output_prefix, &$base, $pgdatafiles) {
+  public static function xml_composite_pgdata($output_prefix, &$base, $pgdatafiles) {
     // psql -U deployment megatrain_nkiraly -c "select database_to_xml(true, false, 'http://dbsteward.org/pgdataxml');"
     /*
     <megatrain_nkiraly xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://dbsteward.org/pgdataxml">
@@ -1021,7 +1021,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    *
    * @return string      string data, with magic applied
    */
-  public function ampersand_magic($s) {
+  public static function ampersand_magic($s) {
     return str_replace('&', '&amp;', (string)$s);
   }
 
@@ -1033,7 +1033,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    *
    * @return string column default value, null if not defined for the $column_name
    */
-  public function column_default_value(&$table_node, $column_name, &$node) {
+  public static function column_default_value(&$table_node, $column_name, &$node) {
     // find the column node in the table
     $xpath = 'column[@name="' . $column_name . '"]';
     $nodes = $table_node->xpath($xpath);
@@ -1069,7 +1069,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    * @param    string    $sorted_file_name   sorted dbsteward definition save as
    * @return   boolean   success
    */
-  public function file_sort($file_name, $sorted_file_name) {
+  public static function file_sort($file_name, $sorted_file_name) {
     $doc = simplexml_load_file($file_name);
 
     // create a list of schemas and tables to get around simplexml iterator nodes - they can't be sorted and/or unset/set like PHP array()s
@@ -1138,7 +1138,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    *
    * @return void
    */
-  protected function file_sort_children(&$node, $child_name, $child_id_attribute, $child_id_map = NULL) {
+  protected static function file_sort_children(&$node, $child_name, $child_id_attribute, $child_id_map = NULL) {
     // this is used to sget around simplexml iterator nodes - they can't be sorted and/or unset/set like PHP array()s
     // get a list of children identified by id_attribute
     $child_ids = array();
@@ -1188,7 +1188,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    *
    * @return void
    */
-  protected function file_sort_reappend_child(&$node, $child_name) {
+  protected static function file_sort_reappend_child(&$node, $child_name) {
     if (isset($node->{$child_name})) {
       $child_nodes = array();
       foreach ($node->{$child_name} AS $child) {
@@ -1210,7 +1210,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    *
    * @return void
    */
-  protected function file_sort_prepend_child(&$node, $child_name, $child_id_attrib, $child_id_attrib_values) {
+  protected static function file_sort_prepend_child(&$node, $child_name, $child_id_attrib, $child_id_attrib_values) {
     if (isset($node->{$child_name})) {
       if (!is_array($child_id_attrib_values)) {
         $child_id_attrib_values = array($child_id_attrib_values);
@@ -1256,7 +1256,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    *
    * @return void
    */
-  protected function file_sort_children_node_merge(&$to_node, &$from_node, $copy_attributes = TRUE) {
+  protected static function file_sort_children_node_merge(&$to_node, &$from_node, $copy_attributes = TRUE) {
     // merge 'from' attributes onto 'to' node
     if ($copy_attributes) {
       foreach ($from_node->attributes() as $attr_key => $attr_value) {

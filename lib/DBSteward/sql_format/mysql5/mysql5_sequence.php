@@ -25,7 +25,7 @@ class mysql5_sequence {
    *
    * @return created SQL command
    */
-  public function get_creation_sql($node_schema, $node_sequences) {
+  public static function get_creation_sql($node_schema, $node_sequences) {
     $values = array();
 
     foreach ( dbx::to_array($node_sequences) as $node_sequence ) {
