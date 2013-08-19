@@ -401,8 +401,8 @@ XML;
     }
     catch(Exception $e) {
       $this->assertEquals(
-        $e->getMessage(),
-        'function lpad with identical parameters is being redefined'
+        'function lpad with identical parameters is being redefined',
+        $e->getMessage()
       );
     }
     
@@ -412,8 +412,8 @@ XML;
     }
     catch(Exception $e) {
       $this->assertEquals(
-        $e->getMessage(),
-        'function lpad with identical parameters is being redefined'
+        'function lpad with identical parameters is being redefined',
+        $e->getMessage()
       );
     }
   }
