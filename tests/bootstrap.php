@@ -50,28 +50,28 @@ $db_config->mysql5_conn = function ($c) {
 };
 
 // If the tests are being executed as part of Travis CI, use different DB config than the default
-if (isset($_ENV['TRAVIS']) && $_ENV['TRAVIS'] == 'TRUE') {
+if (getenv('TRAVIS') === 'TRUE') {
   echo "Travis CI environment detected - using TRAVIS_* database configuration\n";
   $db_config->pgsql8_config = array(
     'dbname' => 'dbsteward_phpunit',
-    'dbhost' => $_ENV['TRAVIS_PGSQL8_DBHOST'],
-    'dbport' => $_ENV['TRAVIS_PGSQL8_DBPORT'],
-    'dbuser' => $_ENV['TRAVIS_PGSQL8_DBUSER'],
-    'dbpass' => $_ENV['TRAVIS_PGSQL8_DBPASS'],
+    'dbhost' => getenv('TRAVIS_PGSQL8_DBHOST'),
+    'dbport' => getenv('TRAVIS_PGSQL8_DBPORT'),
+    'dbuser' => getenv('TRAVIS_PGSQL8_DBUSER'),
+    'dbpass' => getenv('TRAVIS_PGSQL8_DBPASS'),
     'dbname_mgmt' => 'postgres',
-    'dbuser_mgmt' => $_ENV['TRAVIS_PGSQL8_DBUSER'],
-    'dbpass_mgmt' => $_ENV['TRAVIS_PGSQL8_DBPASS']
+    'dbuser_mgmt' => getenv('TRAVIS_PGSQL8_DBUSER'),
+    'dbpass_mgmt' => getenv('TRAVIS_PGSQL8_DBPASS')
   );
 
   $db_config->mysql5_config = array(
     'dbname' => 'dbsteward_phpunit',
-    'dbhost' => $_ENV['TRAVIS_MYSQL5_DBHOST'],
-    'dbport' => $_ENV['TRAVIS_MYSQL5_DBPORT'],
-    'dbuser' => $_ENV['TRAVIS_MYSQL5_DBUSER'],
-    'dbpass' => $_ENV['TRAVIS_MYSQL5_DBPASS'],
+    'dbhost' => getenv('TRAVIS_MYSQL5_DBHOST'),
+    'dbport' => getenv('TRAVIS_MYSQL5_DBPORT'),
+    'dbuser' => getenv('TRAVIS_MYSQL5_DBUSER'),
+    'dbpass' => getenv('TRAVIS_MYSQL5_DBPASS'),
     'dbname_mgmt' => 'information_schema',
-    'dbuser_mgmt' => $_ENV['TRAVIS_MYSQL5_DBUSER'],
-    'dbpass_mgmt' => $_ENV['TRAVIS_MYSQL5_DBPASS']
+    'dbuser_mgmt' => getenv('TRAVIS_MYSQL5_DBUSER'),
+    'dbpass_mgmt' => getenv('TRAVIS_MYSQL5_DBPASS')
   );
 
   $db_config->mssql10_conn = function ($c) {
@@ -80,7 +80,6 @@ if (isset($_ENV['TRAVIS']) && $_ENV['TRAVIS'] == 'TRUE') {
 }
 // Otherwise, use constants defined in phpunit.xml
 else {
-  print_r($_ENV);
   echo "Normal operating environment detected, using phpunit.xml database configuration\n";
 
   $db_config->pgsql8_config = array(
