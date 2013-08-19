@@ -11,12 +11,12 @@ class dbx {
 
   private static $default_schema = NULL;
 
-  public function &set_default_schema(&$node_db, $name) {
+  public static function &set_default_schema(&$node_db, $name) {
     dbx::$default_schema = dbx::get_schema($node_db, $name, TRUE);
     return dbx::$default_schema;
   }
 
-  public function &get_default_schema() {
+  public static function &get_default_schema() {
     return dbx::$default_schema;
   }
 
