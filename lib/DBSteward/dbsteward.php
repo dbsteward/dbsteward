@@ -53,7 +53,7 @@ class dbsteward {
    * @param string $format
    * @return void
    */
-  public function set_sql_format($format) {
+  public static function set_sql_format($format) {
     if ( dbsteward::sql_format_exists($format) ) {
       active_sql_format_autoloader::init($format);
       dbsteward::$sql_format = $format;
@@ -69,7 +69,7 @@ class dbsteward {
    * @param string $format
    * @return void
    */
-  public function get_sql_format() {
+  public static function get_sql_format() {
     return dbsteward::$sql_format;
   }
 
