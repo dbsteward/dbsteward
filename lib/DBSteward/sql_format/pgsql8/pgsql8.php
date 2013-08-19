@@ -62,11 +62,11 @@ class pgsql8 extends sql99 {
    * Return the current context replica set id
    * @return integer
    */
-  public function get_context_replica_set_id() {
+  public static function get_context_replica_set_id() {
     return self::$context_replica_set_id;
   }
   
-  public function set_context_replica_set_to_natural_first($db_doc) {
+  public static function set_context_replica_set_to_natural_first($db_doc) {
     if ( ! dbsteward::$generate_slonik ) {
       // if not generating slonik, don't do anything
       return FALSE;
@@ -79,7 +79,7 @@ class pgsql8 extends sql99 {
     return FALSE;
   }
   
-  public function get_active_replica_set($db_doc) {
+  public static function get_active_replica_set($db_doc) {
     return pgsql8::get_slony_replica_set($db_doc, self::$context_replica_set_id);
   }
 
@@ -421,7 +421,7 @@ class pgsql8 extends sql99 {
   
   
 
-  public function build_schema($db_doc, $ofs, $table_depends) {
+  public static function build_schema($db_doc, $ofs, $table_depends) {
     // schema creation
     foreach ($db_doc->schema AS $schema) {
       $ofs->write(pgsql8_schema::get_creation_sql($schema));
@@ -554,7 +554,7 @@ class pgsql8 extends sql99 {
     pgsql8_diff::update_database_config_parameters($ofs);
   }
 
-  public function build_data($db_doc, $ofs, $tables) {
+  public static function build_data($db_doc, $ofs, $tables) {
     // use the dependency order to then write out the actual data inserts into the data sql file
     $tables_count = count($tables);
     $limit_to_tables_count = count(dbsteward::$limit_to_tables);
@@ -1365,7 +1365,7 @@ SLEEP (SECONDS=60);
    *
    * @return string pulled db schema from database, in dbsteward format
    */
-  public function extract_schema($host, $port, $database, $user, $password) {
+  public static function extract_schema($host, $port, $database, $user, $password) {
     dbsteward::console_line(1, "Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
@@ -2082,7 +2082,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    *
    * @return string
    */
-  public function compare_db_data($host, $port, $database, $user, $password, $files) {
+  public static function compare_db_data($host, $port, $database, $user, $password, $files) {
     if (!is_array($files)) {
       $files = array($files);
     }
