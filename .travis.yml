@@ -29,6 +29,7 @@ branches:
 
 before_script:
   - psql -U travis -d postgres -c "CREATE ROLE deployment; CREATE ROLE dbsteward_phpunit_app;"
+  - mysql -u travis -D information_schema -e "GRANT ALL ON *.* TO 'travis'@'127.0.0.1';"
 
 # by default, travis just runs "phpunit", but our tests are in the tests directory
 script: phpunit --configuration tests/phpunit.xml --group $PHPUNIT_GROUP tests/
