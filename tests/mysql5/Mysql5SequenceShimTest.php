@@ -222,10 +222,12 @@ XML;
   }
 
   private function connect() {
-    $dsn = "mysql:host=".MYSQL5_DBHOST.";port=".MYSQL5_DBPORT.";dbname=".MYSQL5_DBNAME;
+    $config = $GLOBALS['db_config']->mysql5_config;
+
+    $dsn = "mysql:host=".$config['dbhost'].";port=".$config['dbport'].";dbname=".$config['dbname'];
     // echo "Connecting to $dsn\n";
 
-    $this->pdo = new PDO($dsn, MYSQL5_DBUSER, MYSQL5_DBPASS);
+    $this->pdo = new PDO($dsn, $config['dbuser'], $config['dbpass']);
     $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   }
   private function disconnect() {
