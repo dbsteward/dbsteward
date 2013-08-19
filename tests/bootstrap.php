@@ -51,6 +51,7 @@ $db_config->mysql5_conn = function ($c) {
 
 // If the tests are being executed as part of Travis CI, use different DB config than the default
 if (isset($_ENV['TRAVIS']) && $_ENV['TRAVIS'] == 'TRUE') {
+  echo "Travis CI environment detected - using TRAVIS_* database configuration\n";
   $db_config->pgsql8_config = array(
     'dbname' => 'dbsteward_phpunit',
     'dbhost' => $_ENV['TRAVIS_PGSQL8_DBHOST'],
@@ -79,6 +80,9 @@ if (isset($_ENV['TRAVIS']) && $_ENV['TRAVIS'] == 'TRUE') {
 }
 // Otherwise, use constants defined in phpunit.xml
 else {
+  print_r($_ENV);
+  echo "Normal operating environment detected, using phpunit.xml database configuration\n";
+
   $db_config->pgsql8_config = array(
     'dbname' => constant('PGSQL8_DBNAME'),
     'dbhost' => constant('PGSQL8_DBHOST'),
