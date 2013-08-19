@@ -14,6 +14,7 @@ env:
     - TRAVIS_PGSQL8_DBPORT=5432
     - TRAVIS_PGSQL8_DBUSER=postgres
     - TRAVIS_PGSQL8_DBPASS=
+    - TRAVIS_CREATE_ROLES=deployment
 
   # matrix env vars generate a new build config per set
   # we need to run the two test groups separately due to active_sql_format_autoloader
@@ -26,5 +27,8 @@ branches:
   only:
     - dev-travis
 
+before_script:
+  - psql -U travis -c "CREATE ROLE deployment;"
+
 # by default, travis just runs "phpunit", but our tests are in the tests directory
-script: 'phpunit --configuration tests/phpunit.xml --group $PHPUNIT_GROUP tests/'
+script: phpunit --configuration tests/phpunit.xml --group $PHPUNIT_GROUP tests/
