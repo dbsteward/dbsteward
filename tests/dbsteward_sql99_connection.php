@@ -9,32 +9,7 @@
 
 abstract class dbsteward_sql99_connection {
   
-  // protected static $sql_format = 'sql99';
-  
-  // public static function get_dbhost() {
-  //   return constant(strtoupper(static::$sql_format) . '_DBHOST');
-  // }
-  // public static function get_dbport() {
-  //   return constant(strtoupper(static::$sql_format) . '_DBPORT');
-  // }
-  // public static function get_dbname() {
-  //   return constant(strtoupper(static::$sql_format) . '_DBNAME');
-  // }
-  // public static function get_dbuser() {
-  //   return constant(strtoupper(static::$sql_format) . '_DBUSER');
-  // }
-  // public static function get_dbpass() {
-  //   return constant(strtoupper(static::$sql_format) . '_DBPASS');
-  // }
-  // public static function get_dbname_management() {
-  //   return constant(strtoupper(static::$sql_format) . '_DBNAME_MANAGEMENT');
-  // }
-  // public static function get_dbuser_management() {
-  //   return constant(strtoupper(static::$sql_format) . '_DBUSER_MANAGEMENT');
-  // }
-  // public static function get_dbpass_management() {
-  //   return constant(strtoupper(static::$sql_format) . '_DBPASS_MANAGEMENT');
-  // }
+  protected static $sql_format = 'sql99';
 
   protected $dbhost;
   protected $dbport;
@@ -55,6 +30,31 @@ abstract class dbsteward_sql99_connection {
     $this->dbname_mgmt = array_key_exists('dbname_mgmt', $config) ? $config['dbname_mgmt'] : $this->dbname;
     $this->dbuser_mgmt = array_key_exists('dbuser_mgmt', $config) ? $config['dbuser_mgmt'] : $this->dbuser;
     $this->dbpass_mgmt = array_key_exists('dbpass_mgmt', $config) ? $config['dbpass_mgmt'] : $this->dbpass;
+  }
+
+  public static function get_dbhost() {
+    return $this->dbhost;
+  }
+  public static function get_dbport() {
+    return $this->dbport;
+  }
+  public static function get_dbname() {
+    return $this->dbname;
+  }
+  public static function get_dbuser() {
+    return $this->dbuser;
+  }
+  public static function get_dbpass() {
+    return $this->dbpass;
+  }
+  public static function get_dbname_management() {
+    return $this->dbname_mgmt;
+  }
+  public static function get_dbuser_management() {
+    return $this->dbuser_mgmt;
+  }
+  public static function get_dbpass_management() {
+    return $this->dbpass_mgmt;
   }
 
   public function run_file($file_names) {
