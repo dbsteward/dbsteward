@@ -74,13 +74,13 @@ XML;
   }
 
   protected function query_db($sql) {
-    $config = $GLOBALS['db_config']->pgsql8_config;
+    $host = $this->pgsql8->dbhost;
+    $port = $this->pgsql8->dbport;
+    $database = $this->pgsql8->dbname;
+    $user = $this->pgsql8->dbuser;
+    $password = $this->pgsql8->dbpass;
 
-    $host = $config['dbhost'];
-    $port = $config['dbport'];
-    $database = $config['dbname'];
-    $user = $config['dbuser'];
-    $password = $config['dbpass'];
+    $this->pgsql8->create_db();
 
     pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
     $rs = pgsql8_db::query($sql);
@@ -102,11 +102,9 @@ XML;
   }
 
   protected function set_up_sequence_testing($schema_name = 'public') {
-    $config = $GLOBALS['db_config']->pgsql8_config;
-
-    $extracted_xml = pgsql8::extract_schema($config['dbhost'],
-       $config['dbport'], $config['dbname'],
-       $config['dbuser'], $config['dbpass']);
+    $extracted_xml = pgsql8::extract_schema($this->pgsql8->dbhost,
+       $this->pgsql8->dbport, $this->pgsql8->dbname,
+       $this->pgsql8->dbuser, $this->pgsql8->dbpass);
     $rebuilt_db = simplexml_load_string($extracted_xml);
     var_dump($rebuilt_db);
     $schema_node = $rebuilt_db->xpath("schema[@name='" . $schema_name . "']");
@@ -156,11 +154,10 @@ XML;
 
   public function testIntSequencesBecomeSerials() {
     $this->build_db_pgsql8();
-    $config = $GLOBALS['db_config']->pgsql8_config;
 
-    $extracted_xml = pgsql8::extract_schema($config['dbhost'],
-       $config['dbport'], $config['dbname'],
-       $config['dbuser'], $config['dbpass']);
+    $extracted_xml = pgsql8::extract_schema($this->pgsql8->dbhost,
+       $this->pgsql8->dbport, $this->pgsql8->dbname,
+       $this->pgsql8->dbuser, $this->pgsql8->dbpass);
     $rebuilt_db = simplexml_load_string($extracted_xml);
     $public = $rebuilt_db->xpath("schema[@name='public']");
     $table = $public[0]->xpath("table[@name='user']");
@@ -213,11 +210,10 @@ XML;
     file_put_contents($this->xml_file_a, $xml);
 
     $this->build_db_pgsql8();
-    $config = $GLOBALS['db_config']->pgsql8_config;
 
-    $extracted_xml = pgsql8::extract_schema($config['dbhost'],
-       $config['dbport'], $config['dbname'],
-       $config['dbuser'], $config['dbpass']);
+    $extracted_xml = pgsql8::extract_schema($this->pgsql8->dbhost,
+       $this->pgsql8->dbport, $this->pgsql8->dbname,
+       $this->pgsql8->dbuser, $this->pgsql8->dbpass);
 
     // no errors thrown by this point? we should be fine, but let's do some
     // checks to prove DDL integrtiry
