@@ -1,7 +1,7 @@
 language: php
 php:
   - 5.3
-  - 5.4
+  # - 5.4
 
 env:
   # global env vars are injected into the environment of all build configs
@@ -20,7 +20,7 @@ env:
   # we need to run the two test groups separately due to active_sql_format_autoloader
   matrix:
     - PHPUNIT_GROUP=pgsql8
-    - PHPUNIT_GROUP=mysql5
+    # - PHPUNIT_GROUP=mysql5
 
 # for now, only build the dev-travis branch
 branches:
