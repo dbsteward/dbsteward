@@ -61,7 +61,14 @@ abstract class dbsteward_sql99_connection {
     foreach((array)$file_names AS $file_name) {
       echo "Running $file_name..\n";
       if (file_exists($file_name)) {
-        $this->pipe_file_to_client($file_name);
+        try {
+          $this->pipe_file_to_client($file_name);
+        }
+        catch (exception $ex) {
+          dbsteward::console_line(1, "Error with file $file_name:");
+          echo file_get_contents($file_name);
+          throw $ex;
+        }
       }
       else {
         throw new exception("failed to open " . $file_name);
