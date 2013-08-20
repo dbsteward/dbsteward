@@ -65,8 +65,8 @@ abstract class dbsteward_sql99_connection {
           $this->pipe_file_to_client($file_name);
         }
         catch (exception $ex) {
-          dbsteward::console_line(1, "Error with file $file_name:");
-          echo file_get_contents($file_name);
+          // dbsteward::console_line(1, "Error with file $file_name:");
+          // echo file_get_contents($file_name);
           throw $ex;
         }
       }
