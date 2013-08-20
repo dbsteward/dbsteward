@@ -9,7 +9,7 @@
  */
 
 class sql99_index {
-  public function equals($node_index_a, $node_index_b) {
+  public static function equals($node_index_a, $node_index_b) {
     if ( strcasecmp($node_index_a['name'], $node_index_b['name']) != 0 ) {
       $equal = false;
     }
