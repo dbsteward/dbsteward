@@ -33,4 +33,4 @@ before_script:
   - mysql -u root -D mysql -e "GRANT ALL ON *.* TO dbsteward_pu_app@'%' WITH GRANT OPTION;"
 
 # by default, travis just runs "phpunit", but our tests are in the tests directory
-script: phpunit --configuration tests/phpunit.xml --group $PHPUNIT_GROUP tests/
+script: phpunit --configuration tests/phpunit.xml --verbose --debug --group $PHPUNIT_GROUP tests/
