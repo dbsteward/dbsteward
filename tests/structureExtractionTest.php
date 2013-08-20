@@ -89,13 +89,13 @@ XML;
     </role>
     <configurationParameter name="TIME ZONE" value="America/New_York" />
   </database>
-  <schema name="public" owner="ROLE_OWNER">
+  <schema name="dbsteward_phpunit" owner="ROLE_OWNER">
     <grant operation="ALL" role="ROLE_APPLICATION"/>
     <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
       <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
       <column name="rate_id" type="serial" null="false" />
-      <column name="rate_group_id" foreignSchema="public" foreignTable="rate_group" foreignColumn="rate_group_id" null="false" foreignKeyName="rg_blah123" />
+      <column name="rate_group_id" foreignSchema="dbsteward_phpunit" foreignTable="rate_group" foreignColumn="rate_group_id" null="false" foreignKeyName="rg_blah123" />
       <column name="rate_name" type="varchar(120)" />
       <column name="rate_value" type="decimal(10,0)" />
       <index name="RateGrupIdx" using="btree" unique="false">
