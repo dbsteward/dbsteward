@@ -58,22 +58,9 @@ XML;
   public function setUp() {
     $this->output_prefix = dirname(__FILE__) . '/../testdata/unit_test_xml_a';
     parent::setUp();
-    $role_check = "SELECT 1 AS role_check FROM pg_roles WHERE rolname = 'test_user'";
-    $role_results = $this->query_db($role_check);
-    if (empty($role_results)) {
 
-      $role_sql = "CREATE ROLE test_user WITH LOGIN";
-      $this->query_db($role_sql);
+    $this->pgsql8->create_db();
 
-    }
-
-  }
-
-  public function tearDown() {
-    //$this->pgsql8->close_connection();
-  }
-
-  protected function query_db($sql) {
     $host = $this->pgsql8->get_dbhost();
     $port = $this->pgsql8->get_dbport();
     $database = $this->pgsql8->get_dbname();
@@ -81,6 +68,13 @@ XML;
     $password = $this->pgsql8->get_dbpass();
 
     pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
+  }
+
+  public function tearDown() {
+    pgsql8_db::disconnect();
+  }
+
+  protected function query_db($sql) {
     $rs = pgsql8_db::query($sql);
 
     $rows = array();
@@ -92,36 +86,25 @@ XML;
     return $rows;
   }
 
-  protected function assign_grants_setup() {
-    $change_sql = "GRANT SELECT, INSERT, UPDATE ON public.user TO test_user";
-    $this->query_db($change_sql);
-    $change_sql2 = "GRANT SELECT, INSERT ON testschema.testtable TO test_user";
-    $this->query_db($change_sql2);
-  }
-
   protected function set_up_sequence_testing($schema_name = 'public') {
     $extracted_xml = pgsql8::extract_schema($this->pgsql8->get_dbhost(),
        $this->pgsql8->get_dbport(), $this->pgsql8->get_dbname(),
        $this->pgsql8->get_dbuser(), $this->pgsql8->get_dbpass());
     $rebuilt_db = simplexml_load_string($extracted_xml);
-    var_dump($rebuilt_db);
+    // var_dump($rebuilt_db);
     $schema_node = $rebuilt_db->xpath("schema[@name='" . $schema_name . "']");
-    var_dump($schema_node);
+    // var_dump($schema_node);
     $sequence_node = $schema_node[0]->xpath("sequence");
-    var_dump($sequence_node);
+    // var_dump($sequence_node);
     $expected_seq = $sequence_node[0];
     return $expected_seq;
   }
 
   public function testPublicSequencesBuildProperly() {
     $this->build_db_pgsql8();
-    $this->assign_grants_setup();
 
     $sql = "CREATE SEQUENCE blah MINVALUE 3 MAXVALUE 10 CACHE 5";
     $this->pgsql8->query($sql);
-
-    $grant_sql = "GRANT SELECT ON blah TO test_user";
-    $this->pgsql8->query($grant_sql);
 
     $expected_seq = $this->set_up_sequence_testing();
 
@@ -138,8 +121,6 @@ XML;
     $sql = "CREATE SEQUENCE testschema.testseq MINVALUE 3 MAXVALUE 10 CACHE 5";
     $this->pgsql8->query($sql);
 
-    $grant_sql = "GRANT SELECT ON testschema.testseq TO test_user";
-    $this->pgsql8->query($grant_sql);
 
     $expected_seq = $this->set_up_sequence_testing('testschema');
 
