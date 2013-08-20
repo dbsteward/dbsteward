@@ -1197,7 +1197,8 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
       unset($node->{$child_name});
       foreach ($child_nodes AS $child_node) {
         $new_child = $node->addChild($child_name);
-        self::file_sort_children_node_merge($new_child, simplexml_load_string($child_node));
+        $child_node_node = simplexml_load_string($child_node);
+        self::file_sort_children_node_merge($new_child, $child_node_node);
       }
     }
   }
