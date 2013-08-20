@@ -81,7 +81,10 @@ XML;
    * @group mssql10
    */
   public function testAddSerialColumn() {
-    system(dirname(__FILE__) . "/../dbsteward.php --oldxml=testdata/unit_test_xml_a.xml --newxml=testdata/unit_test_xml_b.xml");
+    $dir = __DIR__;
+    $cmd = "$dir/../dbsteward.php --oldxml=$dir/testdata/unit_test_xml_a.xml --newxml=$dir/testdata/unit_test_xml_b.xml";
+    echo "** Running command: $cmd";
+    system($cmd);
     $this->output_prefix = str_replace('xml_a', 'xml_b', $this->output_prefix);
     $sql_file = file_get_contents($this->output_prefix . '_upgrade_stage4_data1.sql');
     $match = stristr($sql_file, "UPDATE dbsteward.serial_test SET test_serial = 1 WHERE (test_string = E'testtest');");
