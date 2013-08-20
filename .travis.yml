@@ -28,7 +28,7 @@ branches:
     - dev-travis
 
 before_script:
-  - psql -U travis -d postgres -c 'CREATE ROLE deployment; CREATE ROLE dbsteward_phpunit_app;''
+  - psql -U travis -d postgres -c 'CREATE ROLE deployment; CREATE ROLE dbsteward_phpunit_app;'
   - psql -U travis -d postgres -c 'CREATE DATABASE dbsteward_phpunit;'
   - mysql -u root -D mysql -e "GRANT ALL ON *.* TO travis@'%' WITH GRANT OPTION;"
 
