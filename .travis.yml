@@ -29,7 +29,7 @@ branches:
 before_script:
   - psql -U postgres -d postgres -c "CREATE USER deployment WITH CREATEDB CREATEROLE PASSWORD 'password1'; CREATE ROLE dbsteward_phpunit_app;"
   - PGPASSWORD=password1 psql -U deployment -d postgres -c 'CREATE DATABASE dbsteward_phpunit;'
-  - mysql -u root -D mysql -e "GRANT ALL ON *.* TO dbsteward_pu_app@'%', deployment@'%' WITH GRANT OPTION;"
+  - mysql -u root -D mysql -e "GRANT ALL ON *.* TO travis@'%', dbsteward_pu_app@'%', deployment@'%' WITH GRANT OPTION;"
 
 # by default, travis just runs "phpunit", but our tests are in the tests directory
 script: phpunit --configuration tests/phpunit.xml --verbose --debug --group $PHPUNIT_GROUP --filter testBuildExtractCompare_mysql5 tests/
