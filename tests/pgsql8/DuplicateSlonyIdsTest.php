@@ -202,12 +202,12 @@ XML;
     foreach($replica_sets AS $replica_set) {
       if ($expected !== false) {
         $this->expect_exception($expected, function() use($doc, $replica_set) {
-          pgsql8::build_slonik_create_set($doc, $replica_set, "php://memory");
+          pgsql8::build_slonik_create_set($doc, $replica_set, 'php://memory');
         });
       }
       else {
         $this->expect_no_exception(function() use($doc, $replica_set) {
-          pgsql8::build_slonik_create_set($doc, $replica_set, "php://memory");
+          pgsql8::build_slonik_create_set($doc, $replica_set, 'php://memory');
         });
       }
     }
@@ -220,14 +220,14 @@ XML;
     if ($expected !== false) {
       $this->expect_exception($expected, function() use($doc, $replica_sets) {
         foreach ($replica_sets as $replica_set) {
-          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, '', 'php://memory');
+          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, __DIR__.'/../testdata/DuplicateSlonyIdsTest');
         }
       });
     }
     else {
       $this->expect_no_exception(function() use($doc, $replica_sets) {
         foreach ($replica_sets as $replica_set) {
-          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, '', 'php://memory');
+          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, __DIR__.'/../testdata/DuplicateSlonyIdsTest');
         }
       });
     }
@@ -273,14 +273,14 @@ XML;
     if ($expected !== false) {
       $this->expect_exception($expected, function() use($adoc, $bdoc, $replica_sets) {
         foreach ($replica_sets as $replica_set) {
-          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, '', 'php://memory');
+          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, __DIR__.'/../testdata/DuplicateSlonyIdsTest');
         }
       });
     }
     else {
       $this->expect_no_exception(function() use($adoc, $bdoc, $replica_sets) {
         foreach ($replica_sets as $replica_set) {
-          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, '', 'php://memory');
+          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, __DIR__.'/../testdata/DuplicateSlonyIdsTest');
         }
       });
     }
