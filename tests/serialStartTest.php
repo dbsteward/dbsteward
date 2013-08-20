@@ -154,7 +154,7 @@ XML;
       <column name="user_id" type="bigserial" serialStart="1234"/>
       <column name="user_name" type="varchar(100)" null="false"/>
       <column name="user_role" type="varchar(100)" null="false"/>
-      <column name="user_create_date" type="timestamp with time zone" null="false" default="NOW()"/>
+      <column name="user_create_date" type="timestamp" null="false" default="NOW()"/>
       <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
       <rows columns="user_id, user_name, user_role">
         <tabrow>1	toor	super_admin</tabrow>
@@ -181,7 +181,7 @@ XML;
       <column name="user_id" type="bigserial" serialStart="1234"/>
       <column name="user_name" type="varchar(100)" null="false"/>
       <column name="user_role" type="varchar(100)" null="false"/>
-      <column name="user_create_date" type="timestamp with time zone" null="false" default="NOW()"/>
+      <column name="user_create_date" type="timestamp" null="false" default="NOW()"/>
       <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
       <rows columns="user_id, user_name, user_role">
         <tabrow>1	toor	super_admin</tabrow>
@@ -192,7 +192,7 @@ XML;
       <column name="user_attribute_id" type="bigserial" serialStart="5678"/>
       <column name="user_attribute_name" type="varchar(200)" null="false"/>
       <column name="user_attribute_value" type="text" null="false"/>
-      <column name="user_attribute_create_date" type="timestamp with time zone" null="false" default="NOW()"/>
+      <column name="user_attribute_create_date" type="timestamp" null="false" default="NOW()"/>
       <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
     </table>
   </schema>
