@@ -47,7 +47,7 @@ class sql99_function {
     return $definition;
   }
 
-  public function equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace) {
+  public static function equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace) {
     if ( strcasecmp($node_function_a['name'], $node_function_b['name']) != 0 ) {
       return false;
     }

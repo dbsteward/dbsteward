@@ -15,7 +15,7 @@ class pgsql8_index extends sql99_index {
    *
    * @return created SQL
    */
-  public function get_creation_sql($node_schema, $node_table, $node_index) {
+  public static function get_creation_sql($node_schema, $node_table, $node_index) {
     $sql = "CREATE ";
 
     if ( isset($node_index['unique']) && strcasecmp($node_index['unique'], 'true') == 0 ) {
@@ -66,12 +66,12 @@ class pgsql8_index extends sql99_index {
     return $sql;
   }
 
-  public function get_drop_sql($node_schema, $node_table, $node_index) {
+  public static function get_drop_sql($node_schema, $node_table, $node_index) {
     $ddl = "DROP INDEX " . pgsql8::get_quoted_schema_name($node_schema['name']) . "." . pgsql8::get_quoted_object_name($node_index['name']) . ";\n";
     return $ddl;
   }
 
-  public function equals($node_index_a, $node_index_b) {
+  public static function equals($node_index_a, $node_index_b) {
     $equal = true;
     if ( strcasecmp($node_index_a['name'], $node_index_b['name']) != 0 ) {
       $equal = false;
