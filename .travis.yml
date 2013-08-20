@@ -8,7 +8,7 @@ env:
   global:
     - TRAVIS_MYSQL5_DBHOST=127.0.0.1
     - TRAVIS_MYSQL5_DBPORT=3306
-    - TRAVIS_MYSQL5_DBUSER=travis
+    - TRAVIS_MYSQL5_DBUSER=root
     - TRAVIS_MYSQL5_DBPASS=
     - TRAVIS_PGSQL8_DBHOST=127.0.0.1
     - TRAVIS_PGSQL8_DBPORT=5432
@@ -30,7 +30,7 @@ branches:
 before_script:
   - psql -U travis -d postgres -c 'CREATE ROLE deployment; CREATE ROLE dbsteward_phpunit_app;'
   - psql -U travis -d postgres -c 'CREATE DATABASE dbsteward_phpunit;'
-  - mysql -u root -D mysql -e "GRANT ALL ON *.* TO travis@'%' WITH GRANT OPTION;"
+  # - mysql -u root -D mysql -e "GRANT ALL ON *.* TO travis@'%' WITH GRANT OPTION;"
 
 # by default, travis just runs "phpunit", but our tests are in the tests directory
 script: phpunit --configuration tests/phpunit.xml --group $PHPUNIT_GROUP tests/
