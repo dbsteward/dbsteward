@@ -156,36 +156,19 @@ XML;
 
     $format::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array());
     
-    $upgrade_stage1_schema1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage1_schema1.sql');
-    $upgrade_stage2_data1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage2_data1.sql');
-    $upgrade_stage3_schema1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage3_schema1.sql');
-    $upgrade_stage4_data1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage4_data1.sql');
+    $upgrade_stage1_schema1_sql = $this->get_script($this->output_prefix . '_upgrade_stage1_schema1.sql');
+    $upgrade_stage2_data1_sql = $this->get_script($this->output_prefix . '_upgrade_stage2_data1.sql');
+    $upgrade_stage3_schema1_sql = $this->get_script($this->output_prefix . '_upgrade_stage3_schema1.sql');
+    $upgrade_stage4_data1_sql = $this->get_script($this->output_prefix . '_upgrade_stage4_data1.sql');
 
     // check for no differences as expressed in DDL / DML
-    $this->assertEquals(
-      0,
-      preg_match('/ALTER TABLE/i', $upgrade_stage1_schema1_sql),
-      "ALTER TABLE token found in upgrade_stage1_schema1_sql"
-    );
+    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage1_schema1_sql);
 
-    $this->assertEquals(
-      0,
-      preg_match('/INSERT INTO/i', $upgrade_stage2_data1_sql),
-      "INSERT INTO token found in upgrade_stage2_data1_sql"
-    );
+    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage2_data1_sql);
 
-    $this->assertEquals(
-      0,
-      preg_match('/ALTER TABLE/i', $upgrade_stage3_schema1_sql),
-      "ALTER TABLE token found in upgrade_stage3_schema1_sql"
-    );
+    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage3_schema1_sql);
     
-    $this->assertEquals(
-      0,
-      preg_match('/DELETE FROM/i', $upgrade_stage4_data1_sql),
-      "DELETE FROM token found in upgrade_stage4_data1_sql"
-    );
-    
+    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage4_data1_sql);
     
     // 4) Check for and validate tables in resultant XML definiton
     $this->compare_xml_definition();
