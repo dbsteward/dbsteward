@@ -11,6 +11,11 @@ require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
 
 class structureExtractionTest extends dbstewardUnitTestBase {
 
+  public function setUp() {
+    parent::setUp();
+    while(ob_get_level()) ob_end_flush();
+  }
+
   /**
    * @group pgsql8
    */
@@ -70,6 +75,7 @@ XML;
 
   /**
    * @group mysql5
+   * @outputBuffering disabled
    */
   public function testBuildExtractCompare_mysql5() {
     // this definition has the following things:
