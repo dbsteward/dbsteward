@@ -23,7 +23,7 @@ class mysql5_diff extends sql99_diff {
    * @param  object  $stage4_ofs  stage 4 output file segmentor
    * @return void
    */
-  protected static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
+  public static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
     if (mysql5_diff::$as_transaction) {
       dbsteward::console_line(1, "Most MySQL DDL implicitly commits transactions, so using them is pointless.");
     }

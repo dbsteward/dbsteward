@@ -88,6 +88,5 @@ XML;
     $sql_file = file_get_contents($this->output_prefix . '_upgrade_stage4_data1.sql');
     $match = stristr($sql_file, "UPDATE dbsteward.serial_test SET test_serial = 1 WHERE (test_string = E'testtest');");
     $this->assertTrue($match !== FALSE);
-    
   }
 }
