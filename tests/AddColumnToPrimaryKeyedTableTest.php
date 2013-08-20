@@ -83,7 +83,6 @@ XML;
   public function testAddSerialColumn() {
     $dir = __DIR__;
     $cmd = "$dir/../dbsteward.php --oldxml=$dir/testdata/unit_test_xml_a.xml --newxml=$dir/testdata/unit_test_xml_b.xml";
-    echo "** Running command: $cmd";
     system($cmd);
     $this->output_prefix = str_replace('xml_a', 'xml_b', $this->output_prefix);
     $sql_file = file_get_contents($this->output_prefix . '_upgrade_stage4_data1.sql');

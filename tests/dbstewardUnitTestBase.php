@@ -32,16 +32,13 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
   protected function setUp() {
     if ( !is_dir(__DIR__ . '/testdata') ) {
-      echo "** testdata dir not found, making dir\n";
       mkdir(__DIR__ . '/testdata');
     }
     $this->output_prefix = dirname(__FILE__) . '/testdata/unit_test_xml_a';
     $this->xml_file_a = __DIR__ . '/testdata/unit_test_xml_a.xml';
-    echo "** writing xml a to $this->xml_file_a\n";
     file_put_contents($this->xml_file_a, $this->xml_content_a);
 
     $this->xml_file_b = __DIR__ . '/testdata/unit_test_xml_b.xml';
-    echo "** writing xml b to $this->xml_file_b\n";
     file_put_contents($this->xml_file_b, $this->xml_content_b);
     
     $this->pgsql8 = $GLOBALS['db_config']->pgsql8_conn;
