@@ -591,11 +591,12 @@ class mysql5 {
       }
 
       foreach ( $db->get_triggers() as $db_trigger ) {
-        dbsteward::console_line(3, "Analyze trigger " . $db_trigger->trigger_name);
+        dbsteward::console_line(3, "Analyze trigger " . $db_trigger->name);
         $node_trigger = $node_schema->addChild('trigger');
         foreach ( (array)$db_trigger as $k => $v ) {
           $node_trigger->addAttribute($k, $v);
         }
+        $node_trigger->addAttribute('sqlFormat', 'mysql5');
       }
 
       foreach ( $db->get_views() as $db_view ) {
