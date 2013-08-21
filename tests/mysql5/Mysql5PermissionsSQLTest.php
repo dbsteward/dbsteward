@@ -50,7 +50,7 @@ XML;
 XML;
   
     // test single operation, single role
-    $this->common($xml, NULL, "GRANT SELECT ON `public`.* TO deployment;");
+    $this->common($xml, NULL, "GRANT SELECT ON `public`.* TO `deployment`;");
 
     $xml = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -59,7 +59,7 @@ XML;
 XML;
     
     // test multiple operations, multiple roles, and potentially invalid permissions
-    $this->common($xml, NULL, "GRANT SELECT, UPDATE, DELETE, INVALID ON `public`.* TO deployment, dbsteward_phpunit_app;");
+    $this->common($xml, NULL, "GRANT SELECT, UPDATE, DELETE, INVALID ON `public`.* TO `deployment`, `dbsteward_phpunit_app`;");
   }
 
   public function testTable() {
@@ -71,7 +71,7 @@ XML;
 </schema>
 XML;
     // note: truncate => drop
-    $this->common($xml, 'table', "GRANT SELECT, DROP ON `public`.`table` TO deployment;");
+    $this->common($xml, 'table', "GRANT SELECT, DROP ON `public`.`table` TO `deployment`;");
   }
 
   public function testView() {
@@ -94,7 +94,7 @@ XML;
 </schema>
 XML;
     // note: alter => alter routine
-    $this->common($xml, 'function', "GRANT EXECUTE, ALTER ROUTINE ON FUNCTION `function` TO deployment;");
+    $this->common($xml, 'function', "GRANT EXECUTE, ALTER ROUTINE ON FUNCTION `function` TO `deployment`;");
   }
 
   public function testSequence() {
@@ -106,7 +106,7 @@ XML;
 </schema>
 XML;
     // note: alter => alter routine
-    $this->common($xml, 'sequence', "GRANT SELECT ON `public`.`__sequences` TO deployment;");
+    $this->common($xml, 'sequence', "GRANT SELECT ON `public`.`__sequences` TO `deployment`;");
   }
 
   public function testPublicMacroRole() {
@@ -116,7 +116,7 @@ XML;
 </schema>
 XML;
     
-    $this->common($xml, NULL, "GRANT SELECT ON `public`.* TO dbsteward_phpunit_app;");
+    $this->common($xml, NULL, "GRANT SELECT ON `public`.* TO `dbsteward_phpunit_app`;");
   }
 
   private function common($schema_xml, $obj=NULL, $expected) {
