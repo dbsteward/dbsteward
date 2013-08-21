@@ -97,75 +97,69 @@ XML;
 
   public function testAddNew() {
     $expected = <<<SQL
-CREATE INDEX `test_idxa` ON `test3`.`test` (`a`);
-
-CREATE INDEX `test_idxb` ON `test3`.`test` (`b`);
-
-CREATE INDEX `test_idxc` ON `test3`.`test` (`c`);
+ALTER TABLE `test3`.`test`
+  ADD INDEX `test_idxa` (`a`),
+  ADD INDEX `test_idxb` (`b`),
+  ADD INDEX `test_idxc` (`c`);
 SQL;
     $this->common($this->xml_0, $this->xml_3, $expected);
   }
 
   public function testAddSome() {
     $expected = <<<SQL
-CREATE INDEX `test_idxb` ON `test3`.`test` (`b`);
-
-CREATE INDEX `test_idxc` ON `test3`.`test` (`c`);
+ALTER TABLE `test3`.`test`
+  ADD INDEX `test_idxb` (`b`),
+  ADD INDEX `test_idxc` (`c`);
 SQL;
     $this->common($this->xml_1, $this->xml_3, $expected);
   }
 
   public function testDropAll() {
     $expected = <<<SQL
-DROP INDEX `test_idxa` ON `test0`.`test`;
-
-DROP INDEX `test_idxb` ON `test0`.`test`;
-
-DROP INDEX `test_idxc` ON `test0`.`test`;
+ALTER TABLE `test0`.`test`
+  DROP INDEX `test_idxa`,
+  DROP INDEX `test_idxb`,
+  DROP INDEX `test_idxc`;
 SQL;
     $this->common($this->xml_3, $this->xml_0, $expected);
   }
 
   public function testDropSome() {
     $expected = <<<SQL
-DROP INDEX `test_idxb` ON `test1`.`test`;
-
-DROP INDEX `test_idxc` ON `test1`.`test`;
+ALTER TABLE `test1`.`test`
+  DROP INDEX `test_idxb`,
+  DROP INDEX `test_idxc`;
 SQL;
     $this->common($this->xml_3, $this->xml_1, $expected);
   }
 
   public function testChangeOne() {
     $expected = <<<SQL
-DROP INDEX `test_idxa` ON `test1b`.`test`;
-
-CREATE UNIQUE INDEX `test_idxa` ON `test1b`.`test` (`a`);
+ALTER TABLE `test1b`.`test`
+  DROP INDEX `test_idxa`,
+  ADD UNIQUE INDEX `test_idxa` (`a`);
 SQL;
     $this->common($this->xml_1a, $this->xml_1b, $expected);
   }
 
   public function testAddSomeAndChange() {
     $expected = <<<SQL
-DROP INDEX `test_idxa` ON `test3`.`test`;
-
-CREATE INDEX `test_idxa` ON `test3`.`test` (`a`);
-
-CREATE INDEX `test_idxb` ON `test3`.`test` (`b`);
-
-CREATE INDEX `test_idxc` ON `test3`.`test` (`c`);
+ALTER TABLE `test3`.`test`
+  DROP INDEX `test_idxa`,
+  ADD INDEX `test_idxa` (`a`),
+  ADD INDEX `test_idxb` (`b`),
+  ADD INDEX `test_idxc` (`c`);
 SQL;
     $this->common($this->xml_1a, $this->xml_3, $expected);
   }
 
   public function testDropSomeAndChange() {
     $expected = <<<SQL
-DROP INDEX `test_idxa` ON `test1a`.`test`;
-
-DROP INDEX `test_idxb` ON `test1a`.`test`;
-
-DROP INDEX `test_idxc` ON `test1a`.`test`;
-
-CREATE INDEX `test_idxa` ON `test1a`.`test` (`a`) USING HASH;
+ALTER TABLE `test1a`.`test`
+  DROP INDEX `test_idxa`,
+  DROP INDEX `test_idxb`,
+  DROP INDEX `test_idxc`,
+  ADD INDEX `test_idxa` (`a`) USING HASH;
 SQL;
     $this->common($this->xml_3, $this->xml_1a, $expected);
   }

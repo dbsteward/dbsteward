@@ -119,7 +119,12 @@ class mysql5_index extends sql99_index {
     if ( isset($node_index['unique']) && strcasecmp($node_index['unique'], 'true') == 0 ) {
       $unique = 'UNIQUE ';
     }
-    return 'ADD ' . $unique . 'INDEX ' . mysql5::get_quoted_object_name($node_index['name']) . ' (' . implode(', ', $dimensions) . ')';
+
+    $using = '';
+    if ( !empty($node_index['using']) ) {
+      $using = ' USING ' . static::get_using_option_sql($node_index['using']);
+    }
+    return 'ADD ' . $unique . 'INDEX ' . mysql5::get_quoted_object_name($node_index['name']) . ' (' . implode(', ', $dimensions) . ')' . $using;
   }
 
   /**
