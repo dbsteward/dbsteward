@@ -210,9 +210,6 @@ XML;
 
     $expected = <<<SQL
 -- note that MySQL does not support indexed expressions or named dimensions
--- ignoring name 'idx_dim_a' for dimension 'a' on index 'compound_idx'
--- ignoring name 'idx_dim_b' for dimension 'b' on index 'compound_idx'
--- ignoring name 'idx_dim_c' for dimension 'c' on index 'compound_idx'
 CREATE INDEX `compound_idx` ON `public`.`test` (`a`, `b`, `c`);
 SQL;
     $actual = mysql5_index::get_creation_sql($schema, $schema->table, $schema->table->index);
