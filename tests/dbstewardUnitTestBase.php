@@ -107,6 +107,11 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
   protected function upgrade_db_pgsql8() {
     $this->apply_options_pgsql8();
+
+    // make sure we clear these in case we ran something else before this
+    pgsql8::$table_slony_ids = array();
+    pgsql8::$sequence_slony_ids = array();
+    pgsql8::$known_pg_identifiers = array();
     
     // build the upgrade DDL first, incase dbsteward code wants to throw about something
     $old_db_doc = simplexml_load_file($this->xml_file_a);
