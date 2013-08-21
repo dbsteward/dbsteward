@@ -1120,6 +1120,19 @@ SLEEP (SECONDS=60);
             }
             self::$sequence_slony_ids[] = dbsteward::string_cast($new_column['slonyId']);
 
+            // resolve $old_table on our own -- the table itself may not be replicated
+            $old_table = NULL;
+            if ( $old_schema ) {
+              $old_table = dbx::get_table($old_schema, $new_table['name']);
+
+              if ($old_table
+               && isset($old_table['slonyId'])
+               && strcasecmp('IGNORE_REQUIRED', $old_table['slonyId']) !== 0
+               && strcasecmp('IGNORE_REQUIRED', $new_table['slonyId']) !== 0
+               && (string)$new_table['slonyId'] != (string)$old_table['slonyId']) {
+                throw new Exception("table slonyId {$new_table['slonyId']} in new does not match slonyId {$old_table['slonyId']} in old");
+              }
+            }
 
             // schema/table/column not present before
             $old_column = NULL;
