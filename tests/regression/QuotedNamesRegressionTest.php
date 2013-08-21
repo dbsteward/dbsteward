@@ -51,7 +51,7 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
         $valid_name = "valid_{$format}_{$object}_" . ($quoted ? 'quoted' : 'unquoted') . "_identifier123";
         $expected = $quoted ? ($format::QUOTE_CHAR . $valid_name . $format::QUOTE_CHAR) : $valid_name;
 
-        $this->assertEquals($expected, call_user_func("$format::get_quoted_{$object}_name",$valid_name));
+        $this->assertEquals($expected, call_user_func("$format::get_quoted_{$object}_name",$valid_name), "During call to $format::get_quoted_{$object}_name");
 
         // attempt invalid identifiers - expect exceptions
         $invalid_names = array_map(function ($prefix) use ($valid_name) { return $prefix . $valid_name; }, $invalid_prefixes);
