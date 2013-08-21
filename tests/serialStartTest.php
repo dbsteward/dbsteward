@@ -25,37 +25,7 @@ class serialStartTest extends PHPUnit_Framework_TestCase {
       <replication/>
       <readonly/>
     </role>
-    <slony clusterName="duplicate_slony_ids_testsuite">
-      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
-      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
-      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
-      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
-        <slonyReplicaSetNode id="2" providerNodeId="1"/>
-        <slonyReplicaSetNode id="3" providerNodeId="2"/>
-      </slonyReplicaSet>
-    </slony>
-    <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
-  <schema name="dbsteward" owner="ROLE_OWNER">
-    <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
-      <functionParameter name="config_parameter" type="text"/>
-      <functionParameter name="config_value" type="text"/>
-      <functionDefinition language="plpgsql" sqlFormat="pgsql8">
-        DECLARE
-          q text;
-          name text;
-          n text;
-        BEGIN
-          SELECT INTO name current_database();
-          q := 'ALTER DATABASE ' || name || ' SET ' || config_parameter || ' ''' || config_value || ''';';
-          n := 'DB CONFIG CHANGE: ' || q;
-          RAISE NOTICE '%', n;
-          EXECUTE q;
-          RETURN n;
-        END;
-      </functionDefinition>
-    </function>
-  </schema>
   <schema name="user_info" owner="ROLE_OWNER">
     <table name="user" owner="ROLE_OWNER" primaryKey="user_id" description="user logins" slonyId="1">
       <column name="user_id" type="bigserial" serialStart="1234" slonyId="1"/>
@@ -73,46 +43,13 @@ XML;
   private $pgsql8_xml_b = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>dbsteward_phpunit_app</application>
       <owner>deployment</owner>
       <replication/>
       <readonly/>
     </role>
-    <slony clusterName="duplicate_slony_ids_testsuite">
-      <slonyNode id="1" comment="DSI - Local Primary"  dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
-      <slonyNode id="2" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
-      <slonyNode id="3" comment="DSI - Local Backup"   dbName="test" dbHost="db-dev1" dbUser="unittest_slony" dbPassword="drowssap1"/>
-      <slonyReplicaSet id="100" originNodeId="1" upgradeSetId="101" comment="common duplicate testing database definition">
-        <slonyReplicaSetNode id="2" providerNodeId="1"/>
-        <slonyReplicaSetNode id="3" providerNodeId="2"/>
-      </slonyReplicaSet>
-    </slony>
-    <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
-
-  <schema name="dbsteward" owner="ROLE_OWNER">
-    <function name="db_config_parameter" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="used to push configurationParameter values permanently into the database configuration">
-      <functionParameter name="config_parameter" type="text"/>
-      <functionParameter name="config_value" type="text"/>
-      <functionDefinition language="plpgsql" sqlFormat="pgsql8">
-        DECLARE
-          q text;
-          name text;
-          n text;
-        BEGIN
-          SELECT INTO name current_database();
-          q := 'ALTER DATABASE ' || name || ' SET ' || config_parameter || ' ''' || config_value || ''';';
-          n := 'DB CONFIG CHANGE: ' || q;
-          RAISE NOTICE '%', n;
-          EXECUTE q;
-          RETURN n;
-        END;
-      </functionDefinition>
-    </function>
-  </schema>
   <schema name="user_info" owner="ROLE_OWNER">
     <table name="user" owner="ROLE_OWNER" primaryKey="user_id" description="user logins" slonyId="1">
       <column name="user_id" type="bigserial" serialStart="1234" slonyId="1"/>
@@ -140,15 +77,12 @@ XML;
   private $mysql5_xml_a = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>dbsteward_pu_app</application>
       <owner>deployment</owner>
       <replication/>
       <readonly/>
     </role>
-    <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
   <schema name="public" owner="ROLE_OWNER">
     <table name="user" owner="ROLE_OWNER" primaryKey="user_id" description="user logins">
@@ -167,15 +101,12 @@ XML;
   private $mysql5_xml_b = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>dbsteward_pu_app</application>
       <owner>deployment</owner>
       <replication/>
       <readonly/>
     </role>
-    <configurationParameter name="TIME ZONE" value="America/New_York"/>
   </database>
   <schema name="public" owner="ROLE_OWNER">
     <table name="user" owner="ROLE_OWNER" primaryKey="user_id" description="user logins">
@@ -208,6 +139,7 @@ XML;
     $table_dependency_a = xml_parser::table_dependency_order($doc_a);
 
     $format::build_schema($doc_a, $ofs, $table_dependency_a);
+    $format::build_data($doc_a, $ofs, $table_dependency_a);
   }
 
   protected function upgrade_db($format, $ofs1, $ofs2, $ofs3, $ofs4) {
@@ -219,7 +151,9 @@ XML;
     dbsteward::$old_database = $doc_a;
     dbsteward::$new_database = $doc_b;
 
-    mysql5_diff::diff_doc_work($ofs1, $ofs2, $ofs3, $ofs4);
+    $diff_class = $format . '_diff';
+
+    $diff_class::diff_doc_work($ofs1, $ofs2, $ofs3, $ofs4);
   }
   
   /**
@@ -252,12 +186,12 @@ XML;
     $this->assertRegExp(
       '/-- serialStart 5678 specified for user_info.user_attribute.user_attribute_id/i',
       $xml_b_upgrade_stage4_data1_sql,
-      "serialStart specification not announced in a comment in testdata/unit_test_xml_a_build.sql"
+      "serialStart specification not announced in a comment in stage 4"
     );
     $this->assertRegExp(
       "/SELECT setval\(pg_get_serial_sequence\('user_info.user_attribute', 'user_attribute_id'\), 5678, TRUE\);/i",
       $xml_b_upgrade_stage4_data1_sql,
-      "sequence start not being set via setval in testdata/unit_test_xml_a_build.sql"
+      "sequence start not being set via setval in stage 4"
     );
   }
 
@@ -274,12 +208,12 @@ XML;
     $this->assertRegExp(
       '/-- serialStart 1234 specified for public.user.user_id/i',
       $xml_a_sql,
-      "serialStart specification not announced in a comment in testdata/unit_test_xml_a_build.sql"
+      "serialStart specification not announced in a comment in build"
     );
     $this->assertRegExp(
-      "/SELECT setval\('__public_user_user_id_serial_seq',1234,TRUE\);/i",
+      "/SELECT setval\('__public_user_user_id_serial_seq', 1234, TRUE\);/i",
       $xml_a_sql,
-      "sequence start not being set via setval in testdata/unit_test_xml_a_build.sql"
+      "sequence start not being set via setval in build"
     );
     
     // diff and apply upgrade
@@ -291,12 +225,12 @@ XML;
     $this->assertRegExp(
       '/-- serialStart 5678 specified for public.user_attribute.user_attribute_id/i',
       $xml_b_upgrade_stage4_data1_sql,
-      "serialStart specification not announced in a comment in testdata/unit_test_xml_a_build.sql"
+      "serialStart specification not announced in a comment in stage 4"
     );
     $this->assertRegExp(
-      "/SELECT setval\('__public_user_attribute_user_attribute_id_serial_seq',5678,TRUE\);/i",
+      "/SELECT setval\('__public_user_attribute_user_attribute_id_serial_seq', 5678, TRUE\);/i",
       $xml_b_upgrade_stage4_data1_sql,
-      "sequence start not being set via setval in testdata/upgrade_stage4_data1.sql"
+      "sequence start not being set via setval in stage 4"
     );
   }
 }
