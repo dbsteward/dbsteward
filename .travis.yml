@@ -28,9 +28,9 @@ env:
     - PHPUNIT_GROUP=mysql5
 
 # for now, only build the dev-travis branch
-branches:
-  only:
-    - dev-travis
+# branches:
+#   only:
+#     - dev-travis
 
 before_script:
   - psql -U postgres -d postgres -c "CREATE USER deployment WITH SUPERUSER CREATEDB CREATEROLE PASSWORD 'password1'; CREATE ROLE dbsteward_phpunit_app;"
