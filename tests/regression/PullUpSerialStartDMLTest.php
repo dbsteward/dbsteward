@@ -25,27 +25,24 @@ class PullUpSerialStartDMLTest extends PHPUnit_Framework_TestCase {
    * @group pgsql8
    */
   public function testPgsql8() {
-    dbsteward::set_sql_format('pgsql8');
-    $this->common("SELECT setval(pg_get_serial_sequence('public.table', 'column'), 5, TRUE);");
+    $this->common('pgsql8', "SELECT setval(pg_get_serial_sequence('public.table', 'column'), 5, TRUE);");
   }
 
   /**
    * @group mssql10
    */
   public function testMssql10() {
-    dbsteward::set_sql_format('mssql10');
-    $this->common("SELECT setval(pg_get_serial_sequence('public.table', 'column'), 5, TRUE);");
+    $this->common('mssql10', "SELECT setval(pg_get_serial_sequence('public.table', 'column'), 5, TRUE);");
   }
 
   /**
    * @group mysql5
    */
   public function testMysql5() {
-    dbsteward::set_sql_format('mysql5');
-    $this->common("SELECT setval('__public_table_column_serial_seq', 5, TRUE);");
+    $this->common('mysql5', "SELECT setval('__public_table_column_serial_seq', 5, TRUE);");
   }
 
-  private function common($expected) {
+  private function common($format, $expected) {
     $xml = <<<XML
 <schema name="public" owner="ROLE_OWNER">
   <table name="table" owner="ROLE_OWNER">
@@ -55,11 +52,11 @@ class PullUpSerialStartDMLTest extends PHPUnit_Framework_TestCase {
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    // sanity check magic format loader
-    $this->assertEquals(dbsteward::get_sql_format().'_column', get_class(new format_column));
+    dbsteward::set_sql_format($format);
+    $colclass = $format . '_column';
 
     $expected = "-- serialStart 5 specified for public.table.column\n$expected\n";
-    $actual = format_column::get_serial_start_dml($schema, $schema->table, $schema->table->column);
+    $actual = $colclass::get_serial_start_dml($schema, $schema->table, $schema->table->column);
 
     $this->assertEquals($expected, $actual);
   }
