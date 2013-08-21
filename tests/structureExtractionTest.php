@@ -80,22 +80,20 @@ XML;
 <?xml version="1.0"?>
 <dbsteward>
   <database>
-    <host>127.0.0.1</host>
-    <name>dbsteward_phpunit</name>
+    <sqlformat>mysql5</sqlformat>
     <role>
       <application>deployment</application>
       <owner>deployment</owner>
       <replication>deployment</replication>
       <readonly>deployment</readonly>
     </role>
-    <configurationParameter name="TIME ZONE" value="America/New_York" />
   </database>
   <schema name="dbsteward_phpunit" owner="ROLE_OWNER">
     <grant operation="ALL" role="ROLE_APPLICATION"/>
     <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
       <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
-      <column name="rate_id" type="serial" null="false" />
+      <column name="rate_id" type="int auto_increment" null="false" />
       <column name="rate_group_id" foreignSchema="dbsteward_phpunit" foreignTable="rate_group" foreignColumn="rate_group_id" null="false" foreignKeyName="rg_blah123" />
       <column name="rate_name" type="varchar(120)" />
       <column name="rate_value" type="decimal(10,0)" />
@@ -145,9 +143,9 @@ XML;
     
     // 2) Extract database schema to definition B
     $conn = $this->get_connection($format);
-    $this->xml_content_b = $format::extract_schema($conn->get_dbhost(), $conn->get_dbport(), $conn->get_dbname(), $conn->get_dbuser(), $conn->get_dbpass());
+    $this->set_xml_content_b($format::extract_schema($conn->get_dbhost(), $conn->get_dbport(), $conn->get_dbname(), $conn->get_dbuser(), $conn->get_dbpass()));
 
-    $this->write_xml_definition_to_disk();
+    // $this->write_xml_definition_to_disk();
 
     // 3) Compare and expect zero differences between A and B
     $this->apply_options($format);
