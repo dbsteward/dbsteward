@@ -126,8 +126,6 @@ class mysql5_diff extends sql99_diff {
    * @param $ofs3  stage3 output file segmenter
    */
   public static function update_structure($ofs1, $ofs3) {
-    $type_modified_columns = array();
-    
     // drop all views in all schemas, regardless whether dependency order is known or not
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
@@ -143,7 +141,7 @@ class mysql5_diff extends sql99_diff {
         //@NOTICE: @TODO: this does not honor old*Name attributes, does it matter?
         $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
         
-        mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
+        mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema);
         mysql5_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
         mysql5_diff_sequences::diff_sequences($ofs1, $ofs3, $old_schema, $new_schema);
         // remove old constraints before table contraints, so the SQL statements succeed
@@ -175,7 +173,7 @@ class mysql5_diff extends sql99_diff {
         // do all types and functions on their own before table creation
         // see next loop for other once per schema work
         if (!in_array(trim($new_schema['name']), $processed_schemas)) {
-          mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema, $type_modified_columns);
+          mysql5_diff_types::apply_changes($ofs1, $old_schema, $new_schema);
           mysql5_diff_functions::diff_functions($ofs1, $ofs3, $old_schema, $new_schema);
           $processed_schemas[] = trim($new_schema['name']);
         }
