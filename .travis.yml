@@ -10,10 +10,16 @@ env:
     - TRAVIS_MYSQL5_DBPORT=3306
     - TRAVIS_MYSQL5_DBUSER=travis
     - TRAVIS_MYSQL5_DBPASS=
+    - TRAVIS_MYSQL5_DBNAME_MGMT=mysql
+    - TRAVIS_MYSQL5_DBUSER_MGMT=root
+    - TRAVIS_MYSQL5_DBPASS_MGMT=
     - TRAVIS_PGSQL8_DBHOST=127.0.0.1
     - TRAVIS_PGSQL8_DBPORT=5432
     - TRAVIS_PGSQL8_DBUSER=deployment
     - TRAVIS_PGSQL8_DBPASS=password1
+    - TRAVIS_PGSQL8_DBNAME_MGMT=postgres
+    - TRAVIS_PGSQL8_DBUSER_MGMT=postgres
+    - TRAVIS_PGSQL8_DBPASS_MGMT=
 
   # matrix env vars generate a new build config per set
   # we need to run the two test groups separately due to active_sql_format_autoloader
