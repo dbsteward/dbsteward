@@ -142,7 +142,7 @@ XML;
     $expected = <<<SQL
 CREATE DATABASE IF NOT EXISTS `public`;
 USE `public`;
-GRANT SELECT, UPDATE, DELETE ON `public`.* TO deployment;
+GRANT SELECT, UPDATE, DELETE ON `public`.* TO `deployment`;
 
 DROP FUNCTION IF EXISTS `a_function`;
 CREATE DEFINER = deployment FUNCTION `a_function` (`config_parameter` text, `config_value` text)
@@ -156,7 +156,7 @@ BEGIN
   RETURN config_parameter;
 END;
 
-GRANT EXECUTE ON FUNCTION `a_function` TO dbsteward_phpunit_app;
+GRANT EXECUTE ON FUNCTION `a_function` TO `dbsteward_phpunit_app`;
 
 CREATE TABLE `public`.`user` (
   `user_id` int NOT NULL,
@@ -164,7 +164,7 @@ CREATE TABLE `public`.`user` (
   `username` varchar(80),
   `user_age` numeric
 );
-GRANT SELECT, UPDATE, DELETE ON `public`.`user` TO dbsteward_phpunit_app;
+GRANT SELECT, UPDATE, DELETE ON `public`.`user` TO `dbsteward_phpunit_app`;
 
 CREATE TABLE `public`.`group` (
   `group_id` int NOT NULL,
@@ -173,9 +173,10 @@ CREATE TABLE `public`.`group` (
   `group_enabled` boolean NOT NULL DEFAULT true
 );
 
-CREATE UNIQUE INDEX `group_name` ON `public`.`group` (`group_name`) USING BTREE;
+ALTER TABLE `public`.`group`
+  ADD UNIQUE INDEX `group_name` (`group_name`) USING BTREE;
 
-GRANT SELECT, UPDATE, DELETE ON `public`.`group` TO dbsteward_phpunit_app;
+GRANT SELECT, UPDATE, DELETE ON `public`.`group` TO `dbsteward_phpunit_app`;
 
 CREATE TABLE IF NOT EXISTS `__sequences` (
   `name` VARCHAR(100) NOT NULL,
@@ -286,7 +287,7 @@ VALUES
   ('__public_group_group_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
   ('a_sequence', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
 
-GRANT SELECT, UPDATE, DELETE ON `public`.`__sequences` TO dbsteward_phpunit_app;
+GRANT SELECT, UPDATE, DELETE ON `public`.`__sequences` TO `dbsteward_phpunit_app`;
 
 DROP TRIGGER IF EXISTS `public`.`__public_user_user_id_serial_trigger`;
 CREATE TRIGGER `public`.`__public_user_user_id_serial_trigger` BEFORE INSERT ON `public`.`user`
@@ -349,7 +350,7 @@ SQL;
     mysql5::build_schema($dbs, $ofs, $table_dependency);
 
     $actual = $ofs->_get_output();
-var_dump($actual);    
+// var_dump($actual);    
     // get rid of comments
     // $expected = preg_replace('/\s*-- .*(\n\s*)?/','',$expected);
     // // get rid of extra whitespace
