@@ -122,7 +122,7 @@ INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (0, 'Pass
 INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (1, 'Incomplete');
 INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (2, 'Failure');
 INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (3, 'Error');
-SELECT setval('__public_result_list_result_list_id_serial_seq',MAX(`result_list_id`),TRUE) FROM `public`.`result_list`;
+SELECT setval('__public_result_list_result_list_id_serial_seq', MAX(`result_list_id`), TRUE) FROM `public`.`result_list`;
 SQL;
 
     $this->common($xml, $expected);
