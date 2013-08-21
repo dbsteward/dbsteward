@@ -147,7 +147,7 @@ XML;
     $expected = <<<SQL
 ALTER TABLE `test`.`table1`
   DROP INDEX `table1_ibfk_1_idx`,
-  ADD INDEX `table2_id` (`table2_id`);
+  ADD INDEX `table2_id` (`table2_id`) USING BTREE;
 SQL;
 
     $this->diff($a, $b, $expected, '');
