@@ -58,16 +58,19 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
         $invalid_names[] = ($format::QUOTE_CHAR . $valid_name . $format::QUOTE_CHAR);
 
         foreach ( $invalid_names as $invalid_name ) {
-          try {
-            call_user_func("$format::get_quoted_{$object}_name",$invalid_name);
+          if ($quoted) {
+            // only expect an exception if not quoted...
           }
-          catch ( Exception $ex ) {
-            if ( stripos($ex->getMessage(), 'Invalid identifier') === FALSE ) {
-              $this->fail("Expected 'Invalid identifier' exception for identifier '$invalid_name', got '" . $ex->getMessage() . "'");
+          else {
+            try {
+              call_user_func("$format::get_quoted_{$object}_name",$invalid_name);
             }
-            continue;
+            catch ( Exception $ex ) {
+              $this->assertContains('Invalid identifier', $ex->getMessage());
+              continue;
+            }
+            $this->fail("Expected 'Invalid identifier' exception, but no exception was thrown for identifier '$invalid_name'");
           }
-          $this->fail("Expected 'Invalid identifier' exception, but no exception was thrown for identifier '$invalid_name'");
         }
 
       }
