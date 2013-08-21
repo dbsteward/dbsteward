@@ -93,10 +93,10 @@ XML;
     <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
       <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
-      <column name="rate_id" type="int auto_increment" null="false" />
+      <column name="rate_id" type="int(11) auto_increment" null="false" />
       <column name="rate_group_id" foreignSchema="dbsteward_phpunit" foreignTable="rate_group" foreignColumn="rate_group_id" null="false" foreignKeyName="rg_blah123" />
-      <column name="rate_name" type="varchar(120)" />
-      <column name="rate_value" type="decimal(10,0)" />
+      <column name="rate_name" type="varchar(120)" default="NULL" null="true" />
+      <column name="rate_value" type="decimal(10,0)" default="NULL" null="true" />
       <index name="RateGrupIdx" using="btree" unique="false">
         <indexDimension name="rate_group_id_1">rate_group_id</indexDimension>
       </index>
@@ -105,7 +105,7 @@ XML;
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
       <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
       <column name="rate_group_id" type="int(11)" null="false" />
-      <column name="rate_group_name" type="varchar(100)" />
+      <column name="rate_group_name" type="varchar(100)" default="null" null="true" />
       <column name="rate_group_enabled" type="tinyint(1)" null="false" default="1" />
     </table>
     <function name="test_concat" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="a test function that concats strings">
@@ -161,13 +161,13 @@ XML;
     $upgrade_stage4_data1_sql = $this->get_script($this->output_prefix . '_upgrade_stage4_data1.sql');
 
     // check for no differences as expressed in DDL / DML
-    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage1_schema1_sql);
+    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/i', $upgrade_stage1_schema1_sql);
 
-    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage2_data1_sql);
+    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/i', $upgrade_stage2_data1_sql);
 
-    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage3_schema1_sql);
+    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/i', $upgrade_stage3_schema1_sql);
     
-    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage4_data1_sql);
+    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/i', $upgrade_stage4_data1_sql);
     
     // 4) Check for and validate tables in resultant XML definiton
     $this->compare_xml_definition();
