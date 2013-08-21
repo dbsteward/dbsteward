@@ -58,9 +58,9 @@ if (strtolower(getenv('TRAVIS')) === 'true') {
     'dbport' => getenv('TRAVIS_PGSQL8_DBPORT'),
     'dbuser' => getenv('TRAVIS_PGSQL8_DBUSER'),
     'dbpass' => getenv('TRAVIS_PGSQL8_DBPASS'),
-    'dbname_mgmt' => 'postgres',
-    'dbuser_mgmt' => getenv('TRAVIS_PGSQL8_DBUSER'),
-    'dbpass_mgmt' => getenv('TRAVIS_PGSQL8_DBPASS')
+    'dbname_mgmt' => getenv('TRAVIS_PGSQL8_DBNAME_MGMT'),
+    'dbuser_mgmt' => getenv('TRAVIS_PGSQL8_DBUSER_MGMT'),
+    'dbpass_mgmt' => getenv('TRAVIS_PGSQL8_DBPASS_MGMT')
   );
 
   $db_config->mysql5_config = array(
@@ -69,9 +69,9 @@ if (strtolower(getenv('TRAVIS')) === 'true') {
     'dbport' => getenv('TRAVIS_MYSQL5_DBPORT'),
     'dbuser' => getenv('TRAVIS_MYSQL5_DBUSER'),
     'dbpass' => getenv('TRAVIS_MYSQL5_DBPASS'),
-    'dbname_mgmt' => 'information_schema',
-    'dbuser_mgmt' => getenv('TRAVIS_MYSQL5_DBUSER'),
-    'dbpass_mgmt' => getenv('TRAVIS_MYSQL5_DBPASS')
+    'dbname_mgmt' => getenv('TRAVIS_MYSQL5_DBNAME_MGMT'),
+    'dbuser_mgmt' => getenv('TRAVIS_MYSQL5_DBUSER_MGMT'),
+    'dbpass_mgmt' => getenv('TRAVIS_MYSQL5_DBPASS_MGMT')
   );
 
   $db_config->mssql10_conn = NULL;
