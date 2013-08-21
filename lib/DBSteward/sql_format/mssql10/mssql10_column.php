@@ -18,7 +18,7 @@ class mssql10_column extends pgsql8_column {
    *
    * @return full definition of the column
    */
-  public function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = TRUE) {
+  public static function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = TRUE) {
     $column_type = mssql10_column::column_type($db_doc, $node_schema, $node_table, $node_column, $foreign);
     $definition = mssql10::get_quoted_column_name($node_column['name']) . ' ' . $column_type;
 
