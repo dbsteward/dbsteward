@@ -12,6 +12,7 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
   protected static $sql_format = 'mysql5';
 
   public function query($sql, $throw_on_error = TRUE) {
+    echo "*** run query as $this->dbuser against $this->dbname with password $this->dbpass\n";
     dbsteward::cmd(sprintf("mysql -v --host=%s --port=%s --user=%s --database=%s --password=%s -e %s",
                           $this->dbhost, $this->dbport, $this->dbuser, $this->dbname, $this->dbpass, escapeshellarg($sql)));
   }
@@ -21,6 +22,7 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
    * @return void
    */
   public function create_db() {
+    echo "*** create_db $this->dbname as $this->dbuser_mgmt against $this->dbname_mgmt with password $this->dbpass_mgmt\n";
     $sql = sprintf('DROP DATABASE IF EXISTS %1$s; CREATE DATABASE %1$s; GRANT ALL ON %1$s.* to %2$s WITH GRANT OPTION;', 
             $this->dbname, $this->dbuser);
     dbsteward::cmd(sprintf("mysql -v --host=%s --port=%s --user=%s --database=%s --password=%s -e %s",
@@ -28,6 +30,7 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
   }
 
   protected function pipe_file_to_client($file_name) {
+    echo "*** pipe file $file_name as $this->dbuser against $this->dbname with password $this->dbpass\n";
     dbsteward::cmd(sprintf("mysql -v --host=%s --port=%s --user=%s --database=%s --password=%s < '%s'",
                            $this->dbhost, $this->dbport, $this->dbuser, $this->dbname, $this->dbpass, $file_name));
   }
