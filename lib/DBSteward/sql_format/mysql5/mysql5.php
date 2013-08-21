@@ -706,6 +706,11 @@ class mysql5 {
     if (strcasecmp($value,'CURRENT_TIMESTAMP') === 0) {
       return strtoupper($value);
     }
+    // if $value is numeric, it doesn't need to be quoted, although it can be
+    // if we do, though, diffing barfs because "'1'" !== "1"
+    if (is_numeric($value)) {
+      return $value;
+    }
     return mysql5::quote_string_value($value);
   }
 
