@@ -138,7 +138,7 @@ class pgsql8_diff extends sql99_diff {
    * @param  object  $stage4_ofs  stage 4 output file segmentor
    * @return void
    */
-  protected static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
+  public static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
     // this shouldn't be called if we're not generating slonik, it looks for
     // a slony element in <database> which most likely won't be there if
     // we're not interested in slony replication
