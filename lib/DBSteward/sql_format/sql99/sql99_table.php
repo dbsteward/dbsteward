@@ -19,7 +19,7 @@ class sql99_table {
    *
    * @return boolean   true if table contains given column $name, otherwise false
    */
-  public function contains_column($node_table, $name) {
+  public static function contains_column($node_table, $name) {
     $found = false;
 
     foreach(dbx::get_table_columns($node_table) as $column) {
@@ -62,7 +62,7 @@ class sql99_table {
    *
    * @return true  if table contains given index $name, otherwise false
    */
-  public function contains_index($node_schema, $node_table, $name) {
+  public static function contains_index($node_schema, $node_table, $name) {
     $found = false;
     $indexes = format_index::get_table_indexes($node_schema, $node_table);
 
@@ -77,7 +77,7 @@ class sql99_table {
   }
 
   // map data row into the accumulated data the table has in the dump
-  public function add_data_row(&$node_table, $row) {
+  public static function add_data_row(&$node_table, $row) {
     // sanity check alpha keys this table expects
     $data_columns = self::get_column_list($node_table);
     $row_data_columns = array_keys($row);
@@ -136,7 +136,7 @@ class sql99_table {
   /**
   * @TODO: this needs rewritten to delete the XML document row instead
   */
-  public function delete_data_row(&$node_table, $where) {
+  public static function delete_data_row(&$node_table, $where) {
     // break up the clause by its parenthetical () and logical AND OR segmentation
     $clause = sql_parser::clause_explode($where);
     if ( !is_array($clause) ) {
@@ -223,7 +223,7 @@ class sql99_table {
     return $result;
   }
 
-  public function constraint_equals($constraint_a, $constraint_b) {
+  public static function constraint_equals($constraint_a, $constraint_b) {
     if ( strcasecmp($constraint_a['name'], $constraint_b['name']) != 0 ) {
       return false;
     }
@@ -316,7 +316,7 @@ class sql99_table {
    *
    * @return  string
    */
-  public function column_name_by_old_name($node_table, $old_column_name) {
+  public static function column_name_by_old_name($node_table, $old_column_name) {
     if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, column_name_by_old_name() should not be getting called");
     }

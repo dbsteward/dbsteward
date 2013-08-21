@@ -1,4 +1,7 @@
-<phpunit verbose="true">
+<phpunit
+    verbose="true"
+    backupGlobals="false"
+    bootstrap="bootstrap.php">
   <php>
     <const name="PGSQL8_DBHOST" value="db-pgsql8.dev"/>
     <const name="PGSQL8_DBPORT" value="5432"/>

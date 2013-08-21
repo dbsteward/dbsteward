@@ -19,7 +19,7 @@ class pgsql8_db {
     }
   }
 
-  public function query($sql) {
+  public static function query($sql) {
     $rs = pg_query(self::$db_conn, $sql);
     if ($rs === FALSE) {
       throw new exception("query error: " . pg_last_error(self::$db_conn) . "\nquery = " . $sql);
@@ -27,7 +27,7 @@ class pgsql8_db {
     return $rs;
   }
 
-  public function query_str($sql) {
+  public static function query_str($sql) {
     $rs = self::query($sql);
     if (pg_num_rows($rs) > 1) {
       throw new exception("query returned more than one row: " . $sql);
@@ -37,7 +37,7 @@ class pgsql8_db {
     return $s;
   }
 
-  public function disconnect() {
+  public static function disconnect() {
     self::$db_conn = pg_close(self::$db_conn);
   }  
 

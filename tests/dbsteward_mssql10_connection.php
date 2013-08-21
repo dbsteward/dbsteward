@@ -113,10 +113,10 @@ class dbsteward_mssql10_connection extends dbsteward_sql99_connection {
    * @return void
    */
   public function create_db() {
-    $this->conn = mssql_connect(static::get_dbhost(), static::get_dbuser(), static::get_dbpass());
-    @mssql_query('DROP DATABASE ' . static::get_dbname(), $this->conn);
-    mssql_query('CREATE DATABASE ' . static::get_dbname(), $this->conn);
-    mssql_select_db(static::get_dbname(), $this->conn);
+    $this->conn = mssql_connect($this->dbhost, $this->dbuser, $this->dbpass);
+    @mssql_query('DROP DATABASE ' . $this->dbname, $this->conn);
+    mssql_query('CREATE DATABASE ' . $this->dbname, $this->conn);
+    mssql_select_db($this->dbname, $this->conn);
     //@TODO: why won't these run? this is supposed to make the matching application role defined in the XML definition
     $this->query("CREATE USER dbsteward_phpunit_app FROM LOGIN dbsteward;");
     $this->query("EXEC sp_addrolemember 'dbsteward_phpunit_app', 'dbsteward_phpunit_app';");

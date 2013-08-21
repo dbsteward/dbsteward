@@ -12,6 +12,9 @@ require_once 'PHPUnit/Framework/TestSuite.php';
 
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 
+/**
+ * @group mysql5
+ */
 class Mysql5TableSQLTest extends PHPUnit_Framework_TestCase {
 
   public function setUp() {

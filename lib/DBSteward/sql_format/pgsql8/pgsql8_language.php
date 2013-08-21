@@ -15,7 +15,7 @@ class pgsql8_language {
    *
    * @return created SQL
    */
-  public function get_creation_sql($node_language) {
+  public static function get_creation_sql($node_language) {
     /*
     CREATE [ PROCEDURAL ] LANGUAGE name
     CREATE [ TRUSTED ] [ PROCEDURAL ] LANGUAGE name
@@ -47,7 +47,7 @@ class pgsql8_language {
    *
    * @return string
    */
-  public function get_drop_sql($node_language) {
+  public static function get_drop_sql($node_language) {
     $ddl = "DROP "
       . ( strcasecmp(dbsteward::string_cast($node_language['procedural']), 'true') == 0 ? "PROCEDURAL " : "" )
       . " LANGUAGE "
@@ -56,7 +56,7 @@ class pgsql8_language {
     return $ddl;
   }
 
-  public function equals($lang_a, $lang_b) {
+  public static function equals($lang_a, $lang_b) {
     if ( strcasecmp($lang_a['name'], $lang_b['name']) != 0 ) {
       return false;
     }

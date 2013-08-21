@@ -1,0 +1,41 @@
+language: php
+php:
+  - 5.3
+  - 5.4
+
+env:
+  # global env vars are injected into the environment of all build configs
+  global:
+    - TRAVIS_MYSQL5_DBHOST=127.0.0.1
+    - TRAVIS_MYSQL5_DBPORT=3306
+    - TRAVIS_MYSQL5_DBUSER=travis
+    - TRAVIS_MYSQL5_DBPASS=
+    - TRAVIS_MYSQL5_DBNAME_MGMT=mysql
+    - TRAVIS_MYSQL5_DBUSER_MGMT=root
+    - TRAVIS_MYSQL5_DBPASS_MGMT=
+    - TRAVIS_PGSQL8_DBHOST=127.0.0.1
+    - TRAVIS_PGSQL8_DBPORT=5432
+    - TRAVIS_PGSQL8_DBUSER=deployment
+    - TRAVIS_PGSQL8_DBPASS=password1
+    - TRAVIS_PGSQL8_DBNAME_MGMT=postgres
+    - TRAVIS_PGSQL8_DBUSER_MGMT=postgres
+    - TRAVIS_PGSQL8_DBPASS_MGMT=
+
+  # matrix env vars generate a new build config per set
+  # we need to run the two test groups separately due to active_sql_format_autoloader
+  matrix:
+    - PHPUNIT_GROUP=pgsql8
+    - PHPUNIT_GROUP=mysql5
+
+# for now, only build the dev-travis branch
+# branches:
+#   only:
+#     - dev-travis
+
+before_script:
+  - psql -U postgres -d postgres -c "CREATE USER deployment WITH SUPERUSER CREATEDB CREATEROLE PASSWORD 'password1'; CREATE ROLE dbsteward_phpunit_app;"
+  - PGPASSWORD=password1 psql -U deployment -d postgres -c 'CREATE DATABASE dbsteward_phpunit;'
+  - mysql -u root -D mysql -e "GRANT ALL ON *.* TO travis@'%', dbsteward_pu_app@'%', deployment@'%' WITH GRANT OPTION;"
+
+# by default, travis just runs "phpunit", but our tests are in the tests directory
+script: phpunit --configuration tests/phpunit.xml --verbose --debug --group $PHPUNIT_GROUP tests/

@@ -219,7 +219,7 @@ class sql99_constraint {
     return $constraints;
   }
 
-  public function equals($constraint_a, $constraint_b) {
+  public static function equals($constraint_a, $constraint_b) {
     if ( strcasecmp($constraint_a['name'], $constraint_b['name']) != 0 ) {
       return false;
     }

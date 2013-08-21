@@ -13,6 +13,9 @@ require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 require_once(dirname(__FILE__) . '/../../lib/DBSteward/sql_format/sql99/sql99.php');
 require_once(dirname(__FILE__) . '/../../lib/DBSteward/sql_format/pgsql8/pgsql8.php');
 
+/**
+ * @group pgsql8
+ */
 class IsolatedSequenceTest extends dbstewardUnitTestBase {
 
   protected $xml_content_a =  <<<XML
@@ -55,29 +58,23 @@ XML;
   public function setUp() {
     $this->output_prefix = dirname(__FILE__) . '/../testdata/unit_test_xml_a';
     parent::setUp();
-    $role_check = "SELECT 1 AS role_check FROM pg_roles WHERE rolname = 'test_user'";
-    $role_results = $this->query_db($role_check);
-    if (empty($role_results)) {
 
-      $role_sql = "CREATE ROLE test_user WITH LOGIN";
-      $this->query_db($role_sql);
+    $this->pgsql8->create_db();
 
-    }
+    $host = $this->pgsql8->get_dbhost();
+    $port = $this->pgsql8->get_dbport();
+    $database = $this->pgsql8->get_dbname();
+    $user = $this->pgsql8->get_dbuser();
+    $password = $this->pgsql8->get_dbpass();
 
+    pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
   }
 
   public function tearDown() {
-    //$this->pgsql8->close_connection();
+    pgsql8_db::disconnect();
   }
 
   protected function query_db($sql) {
-    $host = dbsteward_pgsql8_connection::get_dbhost();
-    $port = dbsteward_pgsql8_connection::get_dbport();
-    $database = dbsteward_pgsql8_connection::get_dbname();
-    $user = dbsteward_pgsql8_connection::get_dbuser();
-    $password = dbsteward_pgsql8_connection::get_dbpass();
-
-    pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
     $rs = pgsql8_db::query($sql);
 
     $rows = array();
@@ -89,37 +86,25 @@ XML;
     return $rows;
   }
 
-  protected function assign_grants_setup() {
-    $change_sql = "GRANT SELECT, INSERT, UPDATE ON public.user TO test_user";
-    $this->query_db($change_sql);
-    $change_sql2 = "GRANT SELECT, INSERT ON testschema.testtable TO test_user";
-    $this->query_db($change_sql2);
-  }
-
   protected function set_up_sequence_testing($schema_name = 'public') {
-    $pgsql_parser = new pgsql8();
-    $extracted_xml = $pgsql_parser->extract_schema(dbsteward_pgsql8_connection::get_dbhost(),
-       dbsteward_pgsql8_connection::get_dbport(), dbsteward_pgsql8_connection::get_dbname(),
-       dbsteward_pgsql8_connection::get_dbuser(), dbsteward_pgsql8_connection::get_dbpass());
+    $extracted_xml = pgsql8::extract_schema($this->pgsql8->get_dbhost(),
+       $this->pgsql8->get_dbport(), $this->pgsql8->get_dbname(),
+       $this->pgsql8->get_dbuser(), $this->pgsql8->get_dbpass());
     $rebuilt_db = simplexml_load_string($extracted_xml);
-    var_dump($rebuilt_db);
+    // var_dump($rebuilt_db);
     $schema_node = $rebuilt_db->xpath("schema[@name='" . $schema_name . "']");
-    var_dump($schema_node);
+    // var_dump($schema_node);
     $sequence_node = $schema_node[0]->xpath("sequence");
-    var_dump($sequence_node);
+    // var_dump($sequence_node);
     $expected_seq = $sequence_node[0];
     return $expected_seq;
   }
 
   public function testPublicSequencesBuildProperly() {
     $this->build_db_pgsql8();
-    $this->assign_grants_setup();
 
     $sql = "CREATE SEQUENCE blah MINVALUE 3 MAXVALUE 10 CACHE 5";
     $this->pgsql8->query($sql);
-
-    $grant_sql = "GRANT SELECT ON blah TO test_user";
-    $this->pgsql8->query($grant_sql);
 
     $expected_seq = $this->set_up_sequence_testing();
 
@@ -136,8 +121,6 @@ XML;
     $sql = "CREATE SEQUENCE testschema.testseq MINVALUE 3 MAXVALUE 10 CACHE 5";
     $this->pgsql8->query($sql);
 
-    $grant_sql = "GRANT SELECT ON testschema.testseq TO test_user";
-    $this->pgsql8->query($grant_sql);
 
     $expected_seq = $this->set_up_sequence_testing('testschema');
 
@@ -150,10 +133,10 @@ XML;
 
   public function testIntSequencesBecomeSerials() {
     $this->build_db_pgsql8();
-    $pgsql_parser = new pgsql8();
-    $extracted_xml = $pgsql_parser->extract_schema(dbsteward_pgsql8_connection::get_dbhost(),
-       dbsteward_pgsql8_connection::get_dbport(), dbsteward_pgsql8_connection::get_dbname(),
-       dbsteward_pgsql8_connection::get_dbuser(), dbsteward_pgsql8_connection::get_dbpass());
+
+    $extracted_xml = pgsql8::extract_schema($this->pgsql8->get_dbhost(),
+       $this->pgsql8->get_dbport(), $this->pgsql8->get_dbname(),
+       $this->pgsql8->get_dbuser(), $this->pgsql8->get_dbpass());
     $rebuilt_db = simplexml_load_string($extracted_xml);
     $public = $rebuilt_db->xpath("schema[@name='public']");
     $table = $public[0]->xpath("table[@name='user']");
@@ -206,10 +189,10 @@ XML;
     file_put_contents($this->xml_file_a, $xml);
 
     $this->build_db_pgsql8();
-    $pgsql_parser = new pgsql8();
-    $extracted_xml = $pgsql_parser->extract_schema(dbsteward_pgsql8_connection::get_dbhost(),
-       dbsteward_pgsql8_connection::get_dbport(), dbsteward_pgsql8_connection::get_dbname(),
-       dbsteward_pgsql8_connection::get_dbuser(), dbsteward_pgsql8_connection::get_dbpass());
+
+    $extracted_xml = pgsql8::extract_schema($this->pgsql8->get_dbhost(),
+       $this->pgsql8->get_dbport(), $this->pgsql8->get_dbname(),
+       $this->pgsql8->get_dbuser(), $this->pgsql8->get_dbpass());
 
     // no errors thrown by this point? we should be fine, but let's do some
     // checks to prove DDL integrtiry

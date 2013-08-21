@@ -41,6 +41,9 @@ XML;
     dbsteward::$old_database = $db;
   }
 
+  /**
+   * @group pgsql8
+   */
   public function testThrowWhenChangedToSerial() {
     $none = <<<XML
 <schema name="public" owner="ROLE_OWNER">

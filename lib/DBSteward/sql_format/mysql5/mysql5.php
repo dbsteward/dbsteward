@@ -81,7 +81,7 @@ class mysql5 {
     return $db_doc;
   }
 
-  public function build_schema($db_doc, $ofs, $table_depends) {
+  public static function build_schema($db_doc, $ofs, $table_depends) {
     // schema creation
     dbsteward::console_line(1, 'MySQL understands a "database" to be a server and a "schema" to be a database.');
     dbsteward::console_line(1, '  Interpreting all XML schemas to be databases with the same name');
@@ -211,7 +211,7 @@ class mysql5 {
     // @TODO: database configurationParameter support
   }
 
-  public function build_data($db_doc, $ofs, $tables) {
+  public static function build_data($db_doc, $ofs, $tables) {
     // use the dependency order to then write out the actual data inserts into the data sql file
     $limit_to_tables_count = count(dbsteward::$limit_to_tables);
     foreach ( $tables as $dep_table ) {
@@ -278,7 +278,7 @@ class mysql5 {
     $ofs->write("\n");
   }
 
-  public function build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $old_files, $new_output_prefix, $new_composite_file, $new_db_doc, $new_files) {
+  public static function build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $old_files, $new_output_prefix, $new_composite_file, $new_db_doc, $new_files) {
     // place the upgrade files with the new_files set
     $upgrade_prefix = $new_output_prefix . '_upgrade';
 
@@ -296,7 +296,7 @@ class mysql5 {
   public static function extract_schema($host, $port, $database, $user, $password) {
     $databases = explode(',', $database);
 
-    dbsteward::console_line(1, "Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
+    dbsteward::console_line(1, "Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user . ' with password ' . var_export($password, TRUE));
     // if not supplied, ask for the password
     if ( $password === FALSE ) {
       echo "Password: ";
@@ -591,11 +591,12 @@ class mysql5 {
       }
 
       foreach ( $db->get_triggers() as $db_trigger ) {
-        dbsteward::console_line(3, "Analyze trigger " . $db_trigger->trigger_name);
+        dbsteward::console_line(3, "Analyze trigger " . $db_trigger->name);
         $node_trigger = $node_schema->addChild('trigger');
         foreach ( (array)$db_trigger as $k => $v ) {
           $node_trigger->addAttribute($k, $v);
         }
+        $node_trigger->addAttribute('sqlFormat', 'mysql5');
       }
 
       foreach ( $db->get_views() as $db_view ) {

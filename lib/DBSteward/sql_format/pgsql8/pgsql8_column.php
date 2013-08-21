@@ -40,7 +40,7 @@ class pgsql8_column extends sql99_column {
    *
    * @return full definition of the column
    */
-  public function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true, $include_default_nextval = TRUE) {
+  public static function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true, $include_default_nextval = TRUE) {
     $column_type = pgsql8_column::column_type($db_doc, $node_schema, $node_table, $node_column, $foreign);
     $definition = pgsql8::get_quoted_column_name($node_column['name']) . ' ' . $column_type;
 

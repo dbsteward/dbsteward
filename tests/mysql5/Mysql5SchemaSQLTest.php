@@ -11,6 +11,9 @@ require_once 'PHPUnit/Framework/TestCase.php';
 
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 
+/**
+ * @group mysql5
+ */
 class Mysql5SchemaSQLTest extends PHPUnit_Framework_TestCase {
   public function setUp() {
     dbsteward::set_sql_format('mysql5');

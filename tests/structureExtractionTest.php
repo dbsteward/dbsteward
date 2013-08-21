@@ -70,6 +70,7 @@ XML;
 
   /**
    * @group mysql5
+   * @outputBuffering disabled
    */
   public function testBuildExtractCompare_mysql5() {
     // this definition has the following things:
@@ -89,13 +90,13 @@ XML;
     </role>
     <configurationParameter name="TIME ZONE" value="America/New_York" />
   </database>
-  <schema name="public" owner="ROLE_OWNER">
+  <schema name="dbsteward_phpunit" owner="ROLE_OWNER">
     <grant operation="ALL" role="ROLE_APPLICATION"/>
     <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
       <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
       <column name="rate_id" type="serial" null="false" />
-      <column name="rate_group_id" foreignSchema="public" foreignTable="rate_group" foreignColumn="rate_group_id" null="false" foreignKeyName="rg_blah123" />
+      <column name="rate_group_id" foreignSchema="dbsteward_phpunit" foreignTable="rate_group" foreignColumn="rate_group_id" null="false" foreignKeyName="rg_blah123" />
       <column name="rate_name" type="varchar(120)" />
       <column name="rate_value" type="decimal(10,0)" />
       <index name="RateGrupIdx" using="btree" unique="false">
@@ -150,42 +151,25 @@ XML;
 
     // 3) Compare and expect zero differences between A and B
     $this->apply_options($format);
+    dbsteward::$single_stage_upgrade = FALSE;
     
     $old_db_doc = simplexml_load_file($this->xml_file_a);
     $new_db_doc = simplexml_load_file($this->xml_file_b);
-
     $format::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array());
     
-    $upgrade_stage1_schema1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage1_schema1.sql');
-    $upgrade_stage2_data1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage2_data1.sql');
-    $upgrade_stage3_schema1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage3_schema1.sql');
-    $upgrade_stage4_data1_sql = $this->get_script_compress($this->output_prefix . '_upgrade_stage4_data1.sql');
+    $upgrade_stage1_schema1_sql = $this->get_script($this->output_prefix . '_upgrade_stage1_schema1.sql');
+    $upgrade_stage2_data1_sql = $this->get_script($this->output_prefix . '_upgrade_stage2_data1.sql');
+    $upgrade_stage3_schema1_sql = $this->get_script($this->output_prefix . '_upgrade_stage3_schema1.sql');
+    $upgrade_stage4_data1_sql = $this->get_script($this->output_prefix . '_upgrade_stage4_data1.sql');
 
     // check for no differences as expressed in DDL / DML
-    $this->assertEquals(
-      0,
-      preg_match('/ALTER TABLE/i', $upgrade_stage1_schema1_sql),
-      "ALTER TABLE token found in upgrade_stage1_schema1_sql"
-    );
+    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage1_schema1_sql);
 
-    $this->assertEquals(
-      0,
-      preg_match('/INSERT INTO/i', $upgrade_stage2_data1_sql),
-      "INSERT INTO token found in upgrade_stage2_data1_sql"
-    );
+    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage2_data1_sql);
 
-    $this->assertEquals(
-      0,
-      preg_match('/ALTER TABLE/i', $upgrade_stage3_schema1_sql),
-      "ALTER TABLE token found in upgrade_stage3_schema1_sql"
-    );
+    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage3_schema1_sql);
     
-    $this->assertEquals(
-      0,
-      preg_match('/DELETE FROM/i', $upgrade_stage4_data1_sql),
-      "DELETE FROM token found in upgrade_stage4_data1_sql"
-    );
-    
+    $this->assertNotRegExp('/ALTER|CREATE|DROP|UPDATE|DROP|INSERT/i', $upgrade_stage4_data1_sql);
     
     // 4) Check for and validate tables in resultant XML definiton
     $this->compare_xml_definition();

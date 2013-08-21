@@ -15,7 +15,7 @@ class pgsql8_type {
    *
    * @return string
    */
-  public function get_creation_sql($node_schema, $node_type) {
+  public static function get_creation_sql($node_schema, $node_type) {
     if ( strcasecmp($node_type['type'], 'enum') == 0 ) {
       if ( !isset($node_type->enum) ) {
         throw new exception("type of type enum contains no enum children");

@@ -18,7 +18,7 @@ class pgsql8_function {
    *
    * @return string
    */
-  public function get_creation_sql($node_schema, $node_function) {
+  public static function get_creation_sql($node_schema, $node_function) {
     pgsql8::set_context_replica_set_id($node_function);
     $definition = static::get_definition($node_function);
 
@@ -127,7 +127,7 @@ class pgsql8_function {
     return $r;
   }
 
-  public function set_definition(&$node_function, $definition) {
+  public static function set_definition(&$node_function, $definition) {
     $node_function->addChild('functionDefinition', $definition);
   }
   public static function has_definition($node_function) {
@@ -170,7 +170,7 @@ class pgsql8_function {
    *
    * @return created SQL
    */
-  public function get_drop_sql($node_schema, $node_function) {
+  public static function get_drop_sql($node_schema, $node_function) {
     pgsql8::set_context_replica_set_id($node_function);
     $declaration = self::get_declaration($node_schema, $node_function);
     $declaration = str_ireplace("character varying", "varchar", $declaration);
@@ -178,7 +178,7 @@ class pgsql8_function {
     return "DROP FUNCTION IF EXISTS " . $declaration . ";";
   }
 
-  public function equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace) {
+  public static function equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace) {
     if ( strcasecmp($node_function_a['name'], $node_function_b['name']) != 0 ) {
       return false;
     }

@@ -15,7 +15,7 @@ class pgsql8_schema extends sql99_schema {
    *
    * @return created SQL
    */
-  public function get_creation_sql($node_schema) {
+  public static function get_creation_sql($node_schema) {
     if ( strcasecmp('public', $node_schema['name']) == 0 ) {
       // don't create the public schema
       $ddl = '';
@@ -45,7 +45,7 @@ class pgsql8_schema extends sql99_schema {
    *
    * @return string
    */
-  public function get_drop_sql($node_schema) {
+  public static function get_drop_sql($node_schema) {
     $ddl = "DROP SCHEMA " . pgsql8::get_quoted_schema_name($node_schema['name']) . " CASCADE;\n";
     return $ddl;
   }

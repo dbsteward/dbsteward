@@ -699,7 +699,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
    * @return boolean   there is a difference between old and new data rows
    */
   // @TODO: pull up
-  public function table_data_row_diff($old_cols, $old_row, $new_cols, $new_row, &$changed_columns) {
+  public static function table_data_row_diff($old_cols, $old_row, $new_cols, $new_row, &$changed_columns) {
     $difference = false;
 
     // compare the columns between the old and new rows
@@ -739,7 +739,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
   }
 
   // @TODO: pull up
-  protected function table_data_row_deleted($row) {
+  protected static function table_data_row_deleted($row) {
     if ( isset($row['delete']) && strcasecmp($row['delete'], 'true') == 0 ) {
       return true;
     }

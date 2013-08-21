@@ -41,9 +41,9 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->xml_file_b = __DIR__ . '/testdata/unit_test_xml_b.xml';
     file_put_contents($this->xml_file_b, $this->xml_content_b);
     
-    $this->pgsql8 = new dbsteward_pgsql8_connection();
-    $this->mssql10 = new dbsteward_mssql10_connection();
-    $this->mysql5 = new dbsteward_mysql5_connection();
+    $this->pgsql8 = $GLOBALS['db_config']->pgsql8_conn;
+    $this->mssql10 = $GLOBALS['db_config']->mssql10_conn;
+    $this->mysql5 = $GLOBALS['db_config']->mysql5_conn;
     
     // be sure to reset dbsteward runtime tracking variables every time
     pgsql8::$table_slony_ids = array();
@@ -54,7 +54,9 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected function tearDown() {
     // make sure connection is closed to DB can be dropped
     // when running multiple tests
-    $this->mssql10->close_connection();
+    if ($this->mssql10) {
+      $this->mssql10->close_connection();
+    }
   }
 
   protected function set_xml_content_a($xml) {
@@ -96,7 +98,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
     // build the DDL first, incase dbsteward code wants to throw about something
     pgsql8::build($this->output_prefix, simplexml_load_file($this->xml_file_a));
-    
+
     $this->pgsql8->create_db();
 
     // build initial "A" database
@@ -169,6 +171,8 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
+    dbsteward::$quote_all_names = TRUE;
+    mysql5::$swap_function_delimiters = TRUE;
   }
   
   protected function build_db_mysql5() {

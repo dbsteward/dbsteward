@@ -9,7 +9,7 @@
  */
 
 class sql99_view {
-  public function get_view_query($node_view) {
+  public static function get_view_query($node_view) {
     $q = '';
     foreach($node_view->viewQuery AS $query) {
       if ( !isset($query['sqlFormat']) || strcasecmp($query['sqlFormat'], dbsteward::get_sql_format()) == 0 ) {

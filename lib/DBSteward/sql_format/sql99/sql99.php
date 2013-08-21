@@ -20,7 +20,7 @@ class sql99 {
    *
    * @return string         translated ROLE_ enumeration
    */
-  public function translate_role_name($role) {
+  public static function translate_role_name($role) {
     switch (strtolower($role)) {
       /* examples for extraction extensions:
       case 'pgsql':

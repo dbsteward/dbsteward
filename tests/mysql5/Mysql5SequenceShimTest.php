@@ -12,8 +12,12 @@ require_once 'PHPUnit/Framework/TestSuite.php';
 
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 
+/**
+ * @group mysql5
+ */
 class Mysql5SequenceShimTest extends PHPUnit_Framework_TestCase {
   private $pdo;
+  private $config;
 
   public function setUp() {
     dbsteward::set_sql_format('mysql5');
@@ -21,6 +25,8 @@ class Mysql5SequenceShimTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
     mysql5::$swap_function_delimiters = FALSE;
+
+    $this->config = $GLOBALS['db_config']->mysql5_config;
 
     $this->connect();
     $this->setup_shim();
@@ -219,11 +225,13 @@ XML;
   }
 
   private function connect() {
-    $dsn = "mysql:host=".MYSQL5_DBHOST.";port=".MYSQL5_DBPORT.";dbname=".MYSQL5_DBNAME;
+    $dsn = "mysql:host=".$this->config['dbhost'].";port=".$this->config['dbport'].";dbname=mysql";
     // echo "Connecting to $dsn\n";
 
-    $this->pdo = new PDO($dsn, MYSQL5_DBUSER, MYSQL5_DBPASS);
+    $this->pdo = new PDO($dsn, $this->config['dbuser'], $this->config['dbpass']);
     $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $this->pdo->exec('CREATE DATABASE IF NOT EXISTS ' . $this->config['dbname']);
+    $this->pdo->exec('USE ' . $this->config['dbname']);
   }
   private function disconnect() {
     $this->pdo = NULL;

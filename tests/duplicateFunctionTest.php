@@ -11,9 +11,10 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
+require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/mock_output_file_segmenter.php';
 
-class duplicateFunctionTest extends dbstewardUnitTestBase {
+class duplicateFunctionTest extends PHPUnit_Framework_TestCase {
 
   private $pgsql8_xml_a = <<<XML
 <dbsteward>
@@ -334,8 +335,6 @@ XML;
   protected function setUp() {
     $this->mssql10_xml_a = $this->pgsql8_xml_a;
     $this->mssql10_xml_b = $this->pgsql8_xml_b;
-
-    parent::setUp();
   }
   
   /**
@@ -380,11 +379,32 @@ XML;
     $this->do_not_allowed('mysql5');
   }
 
+  protected function build_db($format) {
+    dbsteward::set_sql_format($format);
+    $ofs = new mock_output_file_segmenter();
+
+    $doc_a = new SimpleXMLElement($this->{$format.'_xml_a'});
+    dbsteward::$new_database = $doc_a;
+    $table_dependency_a = xml_parser::table_dependency_order($doc_a);
+
+    $format::build_schema($doc_a, $ofs, $table_dependency_a);
+  }
+
+  protected function upgrade_db($format) {
+    dbsteward::set_sql_format($format);
+    $ofs = new mock_output_file_segmenter();
+
+    $doc_a = new SimpleXMLElement($this->{$format.'_xml_a'});
+    $doc_b = new SimpleXMLElement($this->{$format.'_xml_b'});
+
+    dbsteward::$old_database = $doc_a;
+    dbsteward::$new_database = $doc_b;
+
+    mysql5_diff::diff_doc_work($ofs, $ofs, $ofs, $ofs);
+  }
+
   private function do_allowed($format) {
     dbsteward::$allow_function_redefinition = true;
-
-    $this->set_xml_content_a($this->{$format.'_xml_a'});
-    $this->set_xml_content_b($this->{$format.'_xml_b'});
 
     $this->build_db($format);
     $this->upgrade_db($format);
@@ -392,17 +412,14 @@ XML;
 
   private function do_not_allowed($format) {
     dbsteward::$allow_function_redefinition = false;
-    
-    $this->set_xml_content_a($this->{$format.'_xml_a'});
-    $this->set_xml_content_b($this->{$format.'_xml_b'});
 
     try {
       $this->build_db($format);
     }
     catch(Exception $e) {
       $this->assertEquals(
-        $e->getMessage(),
-        'function lpad with identical parameters is being redefined'
+        'function lpad with identical parameters is being redefined',
+        $e->getMessage()
       );
     }
     
@@ -412,8 +429,8 @@ XML;
     }
     catch(Exception $e) {
       $this->assertEquals(
-        $e->getMessage(),
-        'function lpad with identical parameters is being redefined'
+        'function lpad with identical parameters is being redefined',
+        $e->getMessage()
       );
     }
   }

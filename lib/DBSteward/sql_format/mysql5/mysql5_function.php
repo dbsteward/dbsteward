@@ -109,7 +109,7 @@ class mysql5_function extends sql99_function {
     return mysql5::get_quoted_function_name($node_function['name']);
   }
 
-  public function equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace) {
+  public static function equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace) {
     $everything_but_args_equal = parent::equals($node_schema_a, $node_function_a, $node_function_b, $ignore_function_whitespace);
 
     if ( ! $everything_but_args_equal ) {
