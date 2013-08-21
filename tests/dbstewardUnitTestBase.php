@@ -31,7 +31,6 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected $mysql5;
 
   protected function setUp() {
-    echo "*** setUp\n";
     if ( !is_dir(__DIR__ . '/testdata') ) {
       mkdir(__DIR__ . '/testdata');
     }

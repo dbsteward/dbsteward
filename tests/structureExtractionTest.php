@@ -11,11 +11,6 @@ require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
 
 class structureExtractionTest extends dbstewardUnitTestBase {
 
-  public function setUp() {
-    parent::setUp();
-    while(ob_get_level()) ob_end_flush();
-  }
-
   /**
    * @group pgsql8
    */
@@ -142,7 +137,6 @@ XML;
     $this->set_xml_content_a($xml);
 
     // 1) Build a database from definition A
-    echo "*** building database\n";
     $this->build_db($format);
     // test db built above most likely will not have slony; test will fail if 
     // this is not set false because it will look for slony definitions 
@@ -151,7 +145,6 @@ XML;
     
     // 2) Extract database schema to definition B
     $conn = $this->get_connection($format);
-    echo "*** extracting schema\n";
     $this->xml_content_b = $format::extract_schema($conn->get_dbhost(), $conn->get_dbport(), $conn->get_dbname(), $conn->get_dbuser(), $conn->get_dbpass());
 
     $this->write_xml_definition_to_disk();
@@ -161,7 +154,6 @@ XML;
     
     $old_db_doc = simplexml_load_file($this->xml_file_a);
     $new_db_doc = simplexml_load_file($this->xml_file_b);
-    echo "*** building upgrade\n";
     $format::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array());
     
     $upgrade_stage1_schema1_sql = $this->get_script($this->output_prefix . '_upgrade_stage1_schema1.sql');
