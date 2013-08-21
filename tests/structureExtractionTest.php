@@ -151,6 +151,7 @@ XML;
 
     // 3) Compare and expect zero differences between A and B
     $this->apply_options($format);
+    dbsteward::$single_stage_upgrade = FALSE;
     
     $old_db_doc = simplexml_load_file($this->xml_file_a);
     $new_db_doc = simplexml_load_file($this->xml_file_b);
