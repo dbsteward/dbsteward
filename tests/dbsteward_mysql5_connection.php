@@ -21,9 +21,8 @@ class dbsteward_mysql5_connection extends dbsteward_sql99_connection {
    * @return void
    */
   public function create_db() {
-    dbsteward::cmd(sprintf("echo '%s' | mysql -v --host=%s --port=%s --user=%s --database=%s --password=%s",
-                          'DROP DATABASE IF EXISTS '.$this->dbname.'; CREATE DATABASE '.$this->dbname.';',
-                          $this->dbhost, $this->dbport, $this->dbuser_mgmt, $this->dbname_mgmt, $this->dbpass_mgmt));
+    $this->query(sprintf('DROP DATABASE IF EXISTS %1$s; CREATE DATABASE %1$s; GRANT ALL ON %1$s.* to %2$s WITH GRANT OPTION;',
+                          $this->dbname, $this->dbuser));
   }
 
   protected function pipe_file_to_client($file_name) {
