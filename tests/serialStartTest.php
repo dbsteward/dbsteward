@@ -153,6 +153,9 @@ XML;
 
     $diff_class = $format . '_diff';
 
+    $diff_class::$old_table_dependency = xml_parser::table_dependency_order($doc_a);
+    $diff_class::$new_table_dependency = xml_parser::table_dependency_order($doc_b);
+
     $diff_class::diff_doc_work($ofs1, $ofs2, $ofs3, $ofs4);
   }
   
