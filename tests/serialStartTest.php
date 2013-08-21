@@ -163,6 +163,7 @@ XML;
    * @group pgsql8
    */
   public function testSerialStartPGSQL8() {
+    dbsteward::$generate_slonik = FALSE;
     // build version a
     $ofs = new mock_output_file_segmenter();
     $this->build_db('pgsql8', $ofs);
