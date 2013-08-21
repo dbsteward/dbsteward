@@ -51,7 +51,7 @@ class mysql5_diff extends sql99_diff {
 
     dbsteward::console_line(1, "Update Data");
     self::update_data($stage2_ofs, TRUE);
-    self::update_data($stage2_ofs, FALSE);
+    self::update_data($stage4_ofs, FALSE);
 
     // append any literal SQL in new not in old at the end of data stage 1
     $old_sql = dbx::get_sql(dbsteward::$old_database);
