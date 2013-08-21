@@ -296,7 +296,7 @@ class mysql5 {
   public static function extract_schema($host, $port, $database, $user, $password) {
     $databases = explode(',', $database);
 
-    dbsteward::console_line(1, "Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
+    dbsteward::console_line(1, "Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user . ' with password ' . var_export($password, TRUE));
     // if not supplied, ask for the password
     if ( $password === FALSE ) {
       echo "Password: ";
