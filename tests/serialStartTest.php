@@ -84,7 +84,7 @@ XML;
       <readonly/>
     </role>
   </database>
-  <schema name="public" owner="ROLE_OWNER">
+  <schema name="user_info" owner="ROLE_OWNER">
     <table name="user" owner="ROLE_OWNER" primaryKey="user_id" description="user logins">
       <column name="user_id" type="bigserial" serialStart="1234"/>
       <column name="user_name" type="varchar(100)" null="false"/>
@@ -108,7 +108,7 @@ XML;
       <readonly/>
     </role>
   </database>
-  <schema name="public" owner="ROLE_OWNER">
+  <schema name="user_info" owner="ROLE_OWNER">
     <table name="user" owner="ROLE_OWNER" primaryKey="user_id" description="user logins">
       <column name="user_id" type="bigserial" serialStart="1234"/>
       <column name="user_name" type="varchar(100)" null="false"/>
@@ -120,7 +120,7 @@ XML;
       </rows>
     </table>
     <table name="user_attribute" owner="ROLE_OWNER" primaryKey="user_id" description="user attribute data">
-      <column name="user_id" foreignSchema="public" foreignTable="user" foreignColumn="user_id"/>
+      <column name="user_id" foreignSchema="user_info" foreignTable="user" foreignColumn="user_id"/>
       <column name="user_attribute_id" type="bigserial" serialStart="5678"/>
       <column name="user_attribute_name" type="varchar(200)" null="false"/>
       <column name="user_attribute_value" type="text" null="false"/>
@@ -206,12 +206,12 @@ XML;
 
     // 1) Confirm serial starts are applied when creating new tables
     $this->assertRegExp(
-      '/-- serialStart 1234 specified for public.user.user_id/i',
+      '/-- serialStart 1234 specified for user_info.user.user_id/i',
       $xml_a_sql,
       "serialStart specification not announced in a comment in build"
     );
     $this->assertRegExp(
-      "/SELECT setval\('__public_user_user_id_serial_seq', 1234, TRUE\);/i",
+      "/SELECT setval\('__user_info_user_user_id_serial_seq', 1234, TRUE\);/i",
       $xml_a_sql,
       "sequence start not being set via setval in build"
     );
@@ -223,12 +223,12 @@ XML;
 
     // 2) Confirm when adding new tables with serial columns that serial starts are applied in stage 4
     $this->assertRegExp(
-      '/-- serialStart 5678 specified for public.user_attribute.user_attribute_id/i',
+      '/-- serialStart 5678 specified for user_info.user_attribute.user_attribute_id/i',
       $xml_b_upgrade_stage4_data1_sql,
       "serialStart specification not announced in a comment in stage 4"
     );
     $this->assertRegExp(
-      "/SELECT setval\('__public_user_attribute_user_attribute_id_serial_seq', 5678, TRUE\);/i",
+      "/SELECT setval\('__user_info_user_attribute_user_attribute_id_serial_seq', 5678, TRUE\);/i",
       $xml_b_upgrade_stage4_data1_sql,
       "sequence start not being set via setval in stage 4"
     );
