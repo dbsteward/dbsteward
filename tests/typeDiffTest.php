@@ -237,6 +237,7 @@ XML;
    * @group pgsql8
    */
   public function testAddEnumMemberPGSQL8() {
+    $this->markTestSkipped('testAddEnumMember does not actually test anything');
     $this->set_xml_content_a($this->pgsql8_xml_a);
     $this->set_xml_content_b($this->pgsql8_xml_b);
 
@@ -248,6 +249,7 @@ XML;
    * @group mssql10
    */
   public function testAddEnumMemberMSSQL10() {
+    $this->markTestSkipped('testAddEnumMember does not actually test anything');
     $this->set_xml_content_a($this->pgsql8_xml_a);
     $this->set_xml_content_b($this->pgsql8_xml_b);
     
