@@ -87,6 +87,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   
   protected function apply_options_pgsql8() {
     dbsteward::set_sql_format('pgsql8');
+    dbsteward::$quote_all_names = TRUE;
     dbsteward::$create_languages = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;

@@ -224,7 +224,7 @@ XML;
     $upgrade_stage3_schema1_sql = file_get_contents($this->output_prefix . '_upgrade_slony_replica_set_100_stage3_schema1.sql');
     $upgrade_stage3_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage3_schema1_sql);
     $this->assertTrue(
-      (boolean)preg_match('/DROP SEQUENCE IF EXISTS dbsteward."serial_test_test_id_seq"/i', $upgrade_stage3_schema1_sql),
+      (boolean)preg_match('/DROP SEQUENCE IF EXISTS "dbsteward"."serial_test_test_id_seq"/i', $upgrade_stage3_schema1_sql),
       "Serial drop was not found in upgrade_slony_replica_set_100_stage3_schema1.sql:\n$upgrade_stage3_schema1_sql"
       );
 
@@ -302,7 +302,7 @@ XML;
     );
 
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote('UPDATE dbsteward."user" SET "user_name" = E\'Administrator\' WHERE ("user_id" = \'1\');','/').'/i', $upgrade_single_stage_sql),
+      (boolean)preg_match('/'.preg_quote('UPDATE "dbsteward"."user" SET "user_name" = E\'Administrator\' WHERE ("user_id" = \'1\');','/').'/i', $upgrade_single_stage_sql),
       "Update of user_name column static value not found in upgrade_single_stage.sql:\n$upgrade_single_stage_sql"
     );
   }
