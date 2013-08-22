@@ -1,4 +1,6 @@
-Build Status: [![Build Status](https://travis-ci.org/austinhyde/DBSteward.png)](https://travis-ci.org/austinhyde/DBSteward)
+nkiraly/DBSteward/master Build Status: [![nkiraly/DBSteward/master Build Status](https://travis-ci.org/nkiraly/DBSteward.png?branch=master)](https://travis-ci.org/nkiraly/DBSteward)
+austinhyde/DBSteward/master Build Status: [![austinhyde/DBSteward/master Build Status](https://travis-ci.org/austinhyde/DBSteward.png?branch=master)](https://travis-ci.org/austinhyde/DBSteward)
+
 
 # What / who is DBSteward for?
 DBSteward is a database definition differencing tool. Database structure and data is defined in a DTD-enforced, human-readable XML format.
