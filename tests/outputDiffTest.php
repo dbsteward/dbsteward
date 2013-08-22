@@ -213,7 +213,7 @@ XML;
     $upgrade_stage1_schema1_sql = file_get_contents($this->output_prefix . '_upgrade_slony_replica_set_100_stage1_schema1.sql');
     $upgrade_stage1_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage1_schema1_sql);
     $this->assertTrue(
-      (boolean)preg_match('/ALTER TABLE dbsteward."serial_test" ALTER COLUMN "test_id" TYPE int/i', $upgrade_stage1_schema1_sql),
+      (boolean)preg_match('/ALTER COLUMN "test_id" TYPE int/i', $upgrade_stage1_schema1_sql),
       "Column type change was not found in upgrade_slony_replica_set_100_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
     $this->assertTrue(
@@ -297,7 +297,7 @@ XML;
     $upgrade_single_stage_sql = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
     $upgrade_single_stage_sql = preg_replace('/\s+/', ' ', $upgrade_single_stage_sql);
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote('ALTER TABLE dbsteward."user" ALTER COLUMN "user_name" TYPE varchar(64)','/').'/i', $upgrade_single_stage_sql),
+      (boolean)preg_match('/'.preg_quote('ALTER COLUMN "user_name" TYPE varchar(64)','/').'/i', $upgrade_single_stage_sql),
       "user_name column type change was not found in upgrade_single_stage.sql:\n$upgrade_single_stage_sql"
     );
 
