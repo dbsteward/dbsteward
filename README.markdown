@@ -1,4 +1,5 @@
 nkiraly/DBSteward/master Build Status: [![nkiraly/DBSteward/master Build Status](https://travis-ci.org/nkiraly/DBSteward.png?branch=master)](https://travis-ci.org/nkiraly/DBSteward)
+
 austinhyde/DBSteward/master Build Status: [![austinhyde/DBSteward/master Build Status](https://travis-ci.org/austinhyde/DBSteward.png?branch=master)](https://travis-ci.org/austinhyde/DBSteward)
 
 
