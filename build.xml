@@ -109,6 +109,7 @@ DBSteward 1.3.4 Release
 
 Changes
 * Fix false negative sequence replication detection when pgsql8 table is partitioned
+* pgsql8 composite type definition support
 
 Supported Platform DDL Generation and Differencing:
 * pgsql8    - PostgreSQL 8

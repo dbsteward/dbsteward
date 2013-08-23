@@ -18,7 +18,7 @@ class pgsql8_type {
   public static function get_creation_sql($node_schema, $node_type) {
     if ( strcasecmp($node_type['type'], 'enum') == 0 ) {
       if ( !isset($node_type->enum) ) {
-        throw new exception("type of type enum contains no enum children");
+        throw new exception("enum type contains no enum children");
       }
       $values = '';
       for($i=0; $i < count($node_type->enum); $i++) {
@@ -30,6 +30,23 @@ class pgsql8_type {
       }
       $type_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_type['name']);
       $ddl = "CREATE TYPE " . $type_name . " AS ENUM (" . $values . ");";
+    }
+    else if ( strcasecmp($node_type['type'], 'composite') == 0 ) {
+      if ( !isset($node_type->typeCompositeElement) ) {
+        throw new exception("composite type contains no typeCompositeElement children");
+      }
+      $type_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_type['name']);
+      $ddl = "CREATE TYPE " . $type_name . " AS (\n";
+      for($i=0; $i < count($node_type->typeCompositeElement); $i++) {
+        $tce_name = $node_type->typeCompositeElement[$i]['name'];
+        $tce_value = $node_type->typeCompositeElement[$i]['type'];
+        $ddl .= "  " . $tce_name . " " . $tce_value;
+        if ( $i < count($node_type->typeCompositeElement) - 1 ) {
+          $ddl .= ",";
+        }
+        $ddl .= "\n";
+      }
+      $ddl .= ");";
     }
     else {
       throw new exception("unknown type " . $node_type['name'] . ' type ' . $node_type['type']);
