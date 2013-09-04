@@ -176,6 +176,8 @@ Database definition extraction utilities
   --dbpassword=<password>
 Format-specific options
   --useautoincrementoptions             mysql5: Apply AUTO_INCREMENT tableOptions. By default these are ignored.
+  --useschemaprefix                     mysql5: Instead of merging schemas together (mysql5 default behavior),
+                                                prefix each database object with the schema name.
 ";
     return $s;
   }
@@ -220,7 +222,8 @@ Format-specific options
       "xmlsort::",
       "xmlconvert::",
       "xmlcollectdataaddendums::",
-      "useautoincrementoptions::"
+      "useautoincrementoptions::",
+      "useschemaprefix::"
     );
     $options = getopt($short_opts, $long_opts);
     //var_dump($options); die('dieoptiondump');
@@ -491,6 +494,10 @@ Format-specific options
       
       if (isset($options['useautoincrementoptions'])) {
         mysql5::$use_auto_increment_table_options = TRUE;
+      }
+
+      if (isset($options['useschemaprefix'])) {
+        mysql5::$use_schema_name_prefix = TRUE;
       }
     }
     else if (strcasecmp($sql_format, 'oracle10g') == 0) {

@@ -25,6 +25,8 @@ class Mysql5BuildDataTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
   }
 
   public function testSimple() {
@@ -68,10 +70,10 @@ class Mysql5BuildDataTest extends PHPUnit_Framework_TestCase {
 XML;
     
     $expected = <<<SQL
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (0, 'Passed');
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (1, 'Incomplete');
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (2, 'Failure');
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (3, 'Error');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (0, 'Passed');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (1, 'Incomplete');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (2, 'Failure');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (3, 'Error');
 SQL;
 
     $this->common($xml, $expected);
@@ -118,11 +120,11 @@ SQL;
 XML;
     
     $expected = <<<SQL
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (0, 'Passed');
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (1, 'Incomplete');
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (2, 'Failure');
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (3, 'Error');
-SELECT setval('__public_result_list_result_list_id_serial_seq', MAX(`result_list_id`), TRUE) FROM `public`.`result_list`;
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (0, 'Passed');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (1, 'Incomplete');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (2, 'Failure');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (3, 'Error');
+SELECT setval('__public_result_list_result_list_id_serial_seq', MAX(`result_list_id`), TRUE) FROM `result_list`;
 SQL;
 
     $this->common($xml, $expected);
@@ -165,9 +167,9 @@ SQL;
 XML;
     
     $expected = <<<SQL
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (0, 'xyz');
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (1, NULL);
-INSERT INTO `public`.`result_list` (`result_list_id`, `result`) VALUES (2, '');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (0, 'xyz');
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (1, NULL);
+INSERT INTO `result_list` (`result_list_id`, `result`) VALUES (2, '');
 SQL;
 
     $this->common($xml, $expected);

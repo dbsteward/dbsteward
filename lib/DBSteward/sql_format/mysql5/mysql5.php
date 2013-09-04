@@ -37,6 +37,19 @@ class mysql5 {
    */
   public static $use_auto_increment_table_options = FALSE;
 
+  /**
+   * Once upon a time, DBSteward treated mysql5 schemas as equivalent to databases, since
+   * MySQL doesn't have an equivalent to a "schema". This causes problems in common use though
+   * because often you only have a single server, and you can only have one database by a name
+   * per server. Meaning that you'd have to replace all references to the schema name with a
+   * different one to build the same "database" on the same server.
+   *
+   * Instead, we're now going to treat schemas as non-existent, unless the user passes a flag
+   * to prefix the table names with the schema name. This seems to be the predominant way to
+   * achieve namespacing in the MySQL ecosystem.
+   */
+  public static $use_schema_name_prefix = FALSE;
+
   public static function build($output_prefix, $db_doc) {
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';
@@ -83,13 +96,19 @@ class mysql5 {
 
   public static function build_schema($db_doc, $ofs, $table_depends) {
     // schema creation
-    dbsteward::console_line(1, 'MySQL understands a "database" to be a server and a "schema" to be a database.');
-    dbsteward::console_line(1, '  Interpreting all XML schemas to be databases with the same name');
+    if (static::$use_schema_name_prefix) {
+      dbsteward::console_line(1, "MySQL schema name prefixing mode turned on");
+    }
+    else {
+      dbsteward::console_line(1, "Merging all schemas together - MySQL does not support them.");
+
+      if (($count = count($db_doc->schema)) > 1) {
+        dbsteward::console_line(3, "WARNING: There were $count schemas found - Unpredictable behavior may be found for duplicate names between schemas.");
+      }
+    }
+
 
     foreach ( $db_doc->schema as $schema ) {
-      $ofs->write(mysql5_schema::get_creation_sql($schema)."\n");
-      $ofs->write(mysql5_schema::get_use_sql($schema)."\n");
-
       // database grants
       foreach ( $schema->grant AS $grant ) {
         $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $schema, $grant) . "\n");
@@ -172,7 +191,6 @@ class mysql5 {
     }
 
     foreach ( $db_doc->schema as $schema ) {
-      $ofs->write(mysql5_schema::get_use_sql($schema)."\n");
       // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
       foreach ($schema->table AS $table) {
         mysql5_diff_constraints::diff_constraints_table($ofs, NULL, NULL, $schema, $table, 'primaryKey', FALSE);
@@ -194,7 +212,6 @@ class mysql5 {
     $ofs->write("\n");
 
     foreach ( $db_doc->schema as $schema ) {
-      $ofs->write(mysql5_schema::get_use_sql($schema)."\n");
       // view creation
       foreach ($schema->view AS $view) {
         $ofs->write(mysql5_view::get_creation_sql($schema, $view)."\n");
@@ -846,8 +863,19 @@ class mysql5 {
     return sql99::get_quoted_name($name, dbsteward::$quote_object_names, self::QUOTE_CHAR);
   }
 
+  public static function get_fully_qualified_object_name($schema_name, $object_name, $type = 'object') {
+    if (static::$use_schema_name_prefix) {
+      $object_name = $schema_name . '_' . $object_name;
+    }
+    $f = 'get_quoted_' . $type . '_name';
+    return self::$f($object_name);
+  }
+
   public static function get_fully_qualified_table_name($schema_name, $table_name) {
-    return self::get_quoted_schema_name($schema_name) . '.' . self::get_quoted_table_name($table_name);
+    if (static::$use_schema_name_prefix) {
+      $table_name = $schema_name . '_' . $table_name;
+    }
+    return self::get_quoted_table_name($table_name);
   }
 
   public static function get_fully_qualified_column_name($schema_name, $table_name, $column_name) {

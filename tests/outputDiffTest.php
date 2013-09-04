@@ -268,7 +268,7 @@ XML;
       );
     
     $this->assertTrue(
-      (boolean)preg_match('/DROP TRIGGER IF EXISTS `dbsteward`.`__dbsteward_serial_test_test_id_serial_trigger`;/i', $upgrade_stage1_schema1_sql),
+      (boolean)preg_match('/DROP TRIGGER IF EXISTS `__dbsteward_serial_test_test_id_serial_trigger`;/i', $upgrade_stage1_schema1_sql),
       "Serial trigger drop was not found in upgrade_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
   }
@@ -331,12 +331,12 @@ XML;
     $upgrade_single_stage_sql = preg_replace('/\s+/', ' ', $upgrade_single_stage_sql);
 
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote("ALTER TABLE `dbsteward`.`user` MODIFY COLUMN `user_name` varchar(64)",'/').'/i', $upgrade_single_stage_sql, $matches),
+      (boolean)preg_match('/'.preg_quote("ALTER TABLE `user` MODIFY COLUMN `user_name` varchar(64)",'/').'/i', $upgrade_single_stage_sql, $matches),
       "user_name column type change was not found in upgrade_single_stage_sql.sql:\n$upgrade_single_stage_sql"
       );
 
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote("UPDATE `dbsteward`.`user` SET `user_name` = 'Administrator' WHERE (`user_id` = 1);",'/').'/i', $upgrade_single_stage_sql),
+      (boolean)preg_match('/'.preg_quote("UPDATE `user` SET `user_name` = 'Administrator' WHERE (`user_id` = 1);",'/').'/i', $upgrade_single_stage_sql),
       "Update of user_name column static value not found in upgrade_single_stage.sql:\n$upgrade_single_stage_sql"
       );
   }
