@@ -236,5 +236,33 @@ XML;
     $actual = mysql5_index::get_drop_sql($schema, $schema->table, $schema->table->index);
     $this->assertEquals("DROP INDEX `default_idx` ON `test`;", $actual);
   }
+
+  public function testDuplicateIndexNamesThrowException() {
+    $xml = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table1" owner="ROLE_OWNER" primaryKey="col1">
+    <column name="col1" type="int"/>
+    <index name="index1">
+      <indexDimension name="index1_1">col1</indexDimension>
+    </index>
+    <index name="index1">
+      <indexDimension name="index1_1">col1</indexDimension>
+    </index>
+  </table>
+</schema>
+XML;
+    
+    $schema = simplexml_load_string($xml);
+    $table = $schema->table;
+
+    try {
+      mysql5_index::get_table_indexes($schema, $table);
+    }
+    catch (Exception $ex) {
+      $this->assertContains('Duplicate index name', $ex->getMessage());
+      return;
+    }
+    $this->fail("Expected an exception because a table had duplicate index names");
+  }
 }
 ?>

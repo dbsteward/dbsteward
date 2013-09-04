@@ -45,6 +45,16 @@ class mysql5_index extends sql99_index {
         $nodes[] = $unique_index;
       }
     }
+
+    $names = array();
+    foreach ($nodes as $node) {
+      if (in_array((string)$node['name'], $names)) {
+        throw new Exception("Duplicate index name {$node['name']} on table {$node_schema['name']}.{$node_table['name']}");
+      }
+      else {
+        $names[] = (string)$node['name'];
+      }
+    }
     return $nodes;
   }
 
