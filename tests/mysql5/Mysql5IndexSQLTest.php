@@ -53,10 +53,10 @@ XML;
     $btree = trim(preg_replace('/--.*/','',mysql5_index::get_creation_sql($schema, $schema->table, $schema->table->index[2])));
     $gin = trim(preg_replace('/--.*/','',mysql5_index::get_creation_sql($schema, $schema->table, $schema->table->index[3])));
 
-    $this->assertEquals("CREATE INDEX `default_idx` ON `public`.`test` (`a`);", $default);
-    $this->assertEquals("CREATE INDEX `hash_idx` ON `public`.`test` (`a`) USING HASH;", $hash);
-    $this->assertEquals("CREATE INDEX `btree_idx` ON `public`.`test` (`a`) USING BTREE;", $btree);
-    $this->assertEquals("CREATE INDEX `gin_idx` ON `public`.`test` (`a`) USING BTREE;", $gin);
+    $this->assertEquals("CREATE INDEX `default_idx` ON `test` (`a`);", $default);
+    $this->assertEquals("CREATE INDEX `hash_idx` ON `test` (`a`) USING HASH;", $hash);
+    $this->assertEquals("CREATE INDEX `btree_idx` ON `test` (`a`) USING BTREE;", $btree);
+    $this->assertEquals("CREATE INDEX `gin_idx` ON `test` (`a`) USING BTREE;", $gin);
   }
 
   public function testUnique() {
@@ -76,9 +76,9 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = array(
-      "CREATE UNIQUE INDEX `unique_idx` ON `public`.`test` (`a`);",
-      "CREATE INDEX `not_unique_idx` ON `public`.`test` (`a`);",
-      "CREATE UNIQUE INDEX `a` ON `public`.`test` (`a`) USING BTREE;"
+      "CREATE UNIQUE INDEX `unique_idx` ON `test` (`a`);",
+      "CREATE INDEX `not_unique_idx` ON `test` (`a`);",
+      "CREATE UNIQUE INDEX `a` ON `test` (`a`) USING BTREE;"
     );
 
     $actual = array_map(function ($index) use (&$schema) {
@@ -132,33 +132,33 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = array(
-      "CREATE UNIQUE INDEX `a` ON `public`.`test` (`a`);",
-      "CREATE UNIQUE INDEX `b_2` ON `public`.`test` (`b`);",
-      "CREATE UNIQUE INDEX `c` ON `public`.`test` (`c`);",
-      "CREATE UNIQUE INDEX `c_2` ON `public`.`test` (`c`, `b`);",
-      "CREATE UNIQUE INDEX `d_3` ON `public`.`test` (`d`);",
-      "CREATE UNIQUE INDEX `d_2` ON `public`.`test` (`d`);",
-      "CREATE UNIQUE INDEX `d_1` ON `public`.`test` (`d`);",
-      "CREATE UNIQUE INDEX `d` ON `public`.`test` (`d`);",
-      "CREATE UNIQUE INDEX `e_2` ON `public`.`test` (`e_2`);",
+      "CREATE UNIQUE INDEX `a` ON `test` (`a`);",
+      "CREATE UNIQUE INDEX `b_2` ON `test` (`b`);",
+      "CREATE UNIQUE INDEX `c` ON `test` (`c`);",
+      "CREATE UNIQUE INDEX `c_2` ON `test` (`c`, `b`);",
+      "CREATE UNIQUE INDEX `d_3` ON `test` (`d`);",
+      "CREATE UNIQUE INDEX `d_2` ON `test` (`d`);",
+      "CREATE UNIQUE INDEX `d_1` ON `test` (`d`);",
+      "CREATE UNIQUE INDEX `d` ON `test` (`d`);",
+      "CREATE UNIQUE INDEX `e_2` ON `test` (`e_2`);",
 
       // column indexes
       // column a should get named 'a_2', because there's already an index called 'a'
-      "CREATE UNIQUE INDEX `a_2` ON `public`.`test` (`a`) USING BTREE;",
+      "CREATE UNIQUE INDEX `a_2` ON `test` (`a`) USING BTREE;",
 
       // column b should get named 'b', because there's no other column called 'b'
-      "CREATE UNIQUE INDEX `b` ON `public`.`test` (`b`) USING BTREE;",
+      "CREATE UNIQUE INDEX `b` ON `test` (`b`) USING BTREE;",
 
       // column c should get named 'c_3', because there's already index 'c' and 'c_2'
-      "CREATE UNIQUE INDEX `c_3` ON `public`.`test` (`c`) USING BTREE;",
+      "CREATE UNIQUE INDEX `c_3` ON `test` (`c`) USING BTREE;",
 
       // column d should get named 'd_4', because there's already indexes 'd', 'd_2', and 'd_3'
       // d_1 shouldn't matter.
-      "CREATE UNIQUE INDEX `d_4` ON `public`.`test` (`d`) USING BTREE;",
+      "CREATE UNIQUE INDEX `d_4` ON `test` (`d`) USING BTREE;",
 
       // get ready for this: creating an index on a column that already has a numeric suffix 
       // actually ignores the suffix and adds ANOTHER ONE!
-      "CREATE UNIQUE INDEX `e_2_2` ON `public`.`test` (`e_2`) USING BTREE;",
+      "CREATE UNIQUE INDEX `e_2_2` ON `test` (`e_2`) USING BTREE;",
     );
 
     $actual = array_map(function ($index) use (&$schema) {
@@ -185,7 +185,7 @@ XML;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $expected = "CREATE INDEX `compound_idx` ON `public`.`test` (`a`, `b`, `c`);";
+    $expected = "CREATE INDEX `compound_idx` ON `test` (`a`, `b`, `c`);";
     $actual = trim(preg_replace('/--.*/','',mysql5_index::get_creation_sql($schema, $schema->table, $schema->table->index)));
 
     $this->assertEquals($expected, $actual);
@@ -210,7 +210,7 @@ XML;
 
     $expected = <<<SQL
 -- note that MySQL does not support indexed expressions or named dimensions
-CREATE INDEX `compound_idx` ON `public`.`test` (`a`, `b`, `c`);
+CREATE INDEX `compound_idx` ON `test` (`a`, `b`, `c`);
 SQL;
     $actual = mysql5_index::get_creation_sql($schema, $schema->table, $schema->table->index);
 
@@ -232,7 +232,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $actual = mysql5_index::get_drop_sql($schema, $schema->table, $schema->table->index);
-    $this->assertEquals("DROP INDEX `default_idx` ON `public`.`test`;", $actual);
+    $this->assertEquals("DROP INDEX `default_idx` ON `test`;", $actual);
   }
 }
 ?>

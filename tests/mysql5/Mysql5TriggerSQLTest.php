@@ -36,15 +36,15 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-DROP TRIGGER IF EXISTS `public`.`trigger`;
-CREATE TRIGGER `public`.`trigger` BEFORE INSERT ON `public`.`table`
+DROP TRIGGER IF EXISTS `trigger`;
+CREATE TRIGGER `trigger` BEFORE INSERT ON `table`
 FOR EACH ROW EXECUTE xyz;
 SQL;
 
     $actual = trim(mysql5_trigger::get_creation_sql($schema, $schema->trigger));
     $this->assertEquals($expected, $actual);
 
-    $expected = "DROP TRIGGER IF EXISTS `public`.`trigger`;";
+    $expected = "DROP TRIGGER IF EXISTS `trigger`;";
     $actual = trim(mysql5_trigger::get_drop_sql($schema, $schema->trigger));
     $this->assertEquals($expected, $actual);
   }
@@ -59,23 +59,23 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-DROP TRIGGER IF EXISTS `public`.`trigger_INSERT`;
-DROP TRIGGER IF EXISTS `public`.`trigger_UPDATE`;
-DROP TRIGGER IF EXISTS `public`.`trigger_DELETE`;
-CREATE TRIGGER `public`.`trigger_INSERT` BEFORE INSERT ON `public`.`table`
+DROP TRIGGER IF EXISTS `trigger_INSERT`;
+DROP TRIGGER IF EXISTS `trigger_UPDATE`;
+DROP TRIGGER IF EXISTS `trigger_DELETE`;
+CREATE TRIGGER `trigger_INSERT` BEFORE INSERT ON `table`
 FOR EACH ROW EXECUTE xyz;
-CREATE TRIGGER `public`.`trigger_UPDATE` BEFORE UPDATE ON `public`.`table`
+CREATE TRIGGER `trigger_UPDATE` BEFORE UPDATE ON `table`
 FOR EACH ROW EXECUTE xyz;
-CREATE TRIGGER `public`.`trigger_DELETE` BEFORE DELETE ON `public`.`table`
+CREATE TRIGGER `trigger_DELETE` BEFORE DELETE ON `table`
 FOR EACH ROW EXECUTE xyz;
 SQL;
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_trigger::get_creation_sql($schema, $schema->trigger)));
     $this->assertEquals($expected, $actual);
 
     $expected = <<<SQL
-DROP TRIGGER IF EXISTS `public`.`trigger_INSERT`;
-DROP TRIGGER IF EXISTS `public`.`trigger_UPDATE`;
-DROP TRIGGER IF EXISTS `public`.`trigger_DELETE`;
+DROP TRIGGER IF EXISTS `trigger_INSERT`;
+DROP TRIGGER IF EXISTS `trigger_UPDATE`;
+DROP TRIGGER IF EXISTS `trigger_DELETE`;
 SQL;
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_trigger::get_drop_sql($schema, $schema->trigger)));
     $this->assertEquals($expected, $actual);

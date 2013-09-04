@@ -51,7 +51,7 @@ XML;
 XML;
 
     $this->common($old, $new, "-- found enum type enum_type. references to type enum_type will be replaced by ENUM('a','b','c')
-ALTER TABLE `public`.`table`
+ALTER TABLE `table`
   MODIFY COLUMN `enum_col` ENUM('a','b','c');");
   }
 
@@ -78,7 +78,7 @@ XML;
 </schema>
 XML;
     $this->common($old, $new, "-- dropping enum type enum_type. references to type enum_type will be replaced with the type 'text'
-ALTER TABLE `public`.`table`
+ALTER TABLE `table`
   MODIFY COLUMN `enum_col` text;");
   }
 
@@ -129,7 +129,7 @@ XML;
 XML;
 
     // change values in the enum. this should cause column modifications
-    $this->common($old, $new, "ALTER TABLE `public`.`table`
+    $this->common($old, $new, "ALTER TABLE `table`
   MODIFY COLUMN `enum_col` ENUM('x','y','z');");
   }
 

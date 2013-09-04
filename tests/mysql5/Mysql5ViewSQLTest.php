@@ -49,13 +49,13 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `public`.`view`
+CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `view`
   AS SELECT * FROM sometable;
 SQL;
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql($schema, $schema->view)));
     $this->assertEquals($expected, $actual);
 
-    $expected = "DROP VIEW IF EXISTS `public`.`view`;";
+    $expected = "DROP VIEW IF EXISTS `view`;";
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_drop_sql($schema, $schema->view)));
     $this->assertEquals($expected, $actual);
   }
@@ -72,13 +72,13 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `public`.`view`
+CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `view`
   AS SELECT * FROM mysql5table;
 SQL;
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql($schema, $schema->view)));
     $this->assertEquals($expected, $actual);
 
-    $expected = "DROP VIEW IF EXISTS `public`.`view`;";
+    $expected = "DROP VIEW IF EXISTS `view`;";
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_drop_sql($schema, $schema->view)));
     $this->assertEquals($expected, $actual);
 

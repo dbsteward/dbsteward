@@ -20,23 +20,7 @@ class Mysql5SchemaSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_all_names = true;
   }
 
-  public function testCreation() {
-    $schema = new SimpleXMLElement('<schema name="foo" owner="ROLE_OWNER" comment="this is a comment"></schema>');
-
-    // MySQL doesn't allow comments on its databases
-    $expected = "CREATE DATABASE IF NOT EXISTS `foo`;";
-    $actual = trim(mysql5_schema::get_creation_sql($schema));
-
-    $this->assertEquals($expected, $actual);
-  }
-
-  public function testDeletion() {
-    $schema = new SimpleXMLElement('<schema name="foo" owner="ROLE_OWNER" comment="this is a comment"></schema>');
-    
-    $expected = "DROP DATABASE IF EXISTS `foo`;";
-    $actual = trim(mysql5_schema::get_drop_sql($schema));
-
-    $this->assertEquals($expected, $actual);
-  }
+  // @NOTICE: Tests removed due to changing schema support
+  // @TODO: Add tests to verify schema prefixing
 }
 ?>

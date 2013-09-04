@@ -77,7 +77,7 @@ XML;
     mysql5::$use_auto_increment_table_options = TRUE;
 
     $expected = <<<SQL
-CREATE TABLE `public`.`test` (
+CREATE TABLE `test` (
   `id` int,
   `foo` int
 )
@@ -91,7 +91,7 @@ SQL;
     mysql5::$use_auto_increment_table_options = FALSE;
 
     $expected = <<<SQL
-CREATE TABLE `public`.`test` (
+CREATE TABLE `test` (
   `id` int,
   `foo` int
 )

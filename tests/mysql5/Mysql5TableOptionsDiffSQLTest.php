@@ -66,7 +66,7 @@ XML;
 </schema>
 XML;
     
-    $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=InnoDB;");
+    $this->common($old, $new, "ALTER TABLE `test` ENGINE=InnoDB;");
   }
 
   public function testAlter() {
@@ -88,7 +88,7 @@ XML;
 </schema>
 XML;
     
-    $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=MyISAM;");
+    $this->common($old, $new, "ALTER TABLE `test` ENGINE=MyISAM;");
   }
 
   public function testAlterAutoIncrement() {
@@ -111,7 +111,7 @@ XML;
 XML;
     
     mysql5::$use_auto_increment_table_options = TRUE;
-    $this->common($old, $new, "ALTER TABLE `public`.`test` AUTO_INCREMENT=42;");
+    $this->common($old, $new, "ALTER TABLE `test` AUTO_INCREMENT=42;");
 
 
     mysql5::$use_auto_increment_table_options = FALSE;
@@ -139,10 +139,10 @@ XML;
 XML;
     
     mysql5::$use_auto_increment_table_options = TRUE;
-    $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=MyISAM\nAUTO_INCREMENT=5;");
+    $this->common($old, $new, "ALTER TABLE `test` ENGINE=MyISAM\nAUTO_INCREMENT=5;");
 
     mysql5::$use_auto_increment_table_options = FALSE;
-    $this->common($old, $new, "ALTER TABLE `public`.`test` ENGINE=MyISAM;");
+    $this->common($old, $new, "ALTER TABLE `test` ENGINE=MyISAM;");
   }
 
   public function testDrop() {
@@ -164,11 +164,11 @@ XML;
 XML;
 
     $expected = <<<SQL
--- Table `public`.`test` must be recreated to drop options: engine
-CREATE TABLE `public`.`test_DBSTEWARD_MIGRATION`
-SELECT * FROM `public`.`test`;
-DROP TABLE `public`.`test`;
-RENAME TABLE `public`.`test_DBSTEWARD_MIGRATION` TO `public`.`test`;
+-- Table `test` must be recreated to drop options: engine
+CREATE TABLE `test_DBSTEWARD_MIGRATION`
+SELECT * FROM `test`;
+DROP TABLE `test`;
+RENAME TABLE `test_DBSTEWARD_MIGRATION` TO `test`;
 SQL;
       
     $this->common($old, $new, $expected);
@@ -194,11 +194,11 @@ XML;
 
     mysql5::$use_auto_increment_table_options = TRUE;
     $expected = <<<SQL
--- Table `public`.`test` must be recreated to drop options: auto_increment
-CREATE TABLE `public`.`test_DBSTEWARD_MIGRATION`
-SELECT * FROM `public`.`test`;
-DROP TABLE `public`.`test`;
-RENAME TABLE `public`.`test_DBSTEWARD_MIGRATION` TO `public`.`test`;
+-- Table `test` must be recreated to drop options: auto_increment
+CREATE TABLE `test_DBSTEWARD_MIGRATION`
+SELECT * FROM `test`;
+DROP TABLE `test`;
+RENAME TABLE `test_DBSTEWARD_MIGRATION` TO `test`;
 SQL;
       
     $this->common($old, $new, $expected);
@@ -231,13 +231,13 @@ XML;
 
     mysql5::$use_auto_increment_table_options = TRUE;
     $expected = <<<SQL
--- Table `public`.`test` must be recreated to drop options: engine
-CREATE TABLE `public`.`test_DBSTEWARD_MIGRATION`
+-- Table `test` must be recreated to drop options: engine
+CREATE TABLE `test_DBSTEWARD_MIGRATION`
 AUTO_INCREMENT=10
 ROW_FORMAT=compressed
-SELECT * FROM `public`.`test`;
-DROP TABLE `public`.`test`;
-RENAME TABLE `public`.`test_DBSTEWARD_MIGRATION` TO `public`.`test`;
+SELECT * FROM `test`;
+DROP TABLE `test`;
+RENAME TABLE `test_DBSTEWARD_MIGRATION` TO `test`;
 SQL;
       
     $this->common($old, $new, $expected);
@@ -246,12 +246,12 @@ SQL;
     mysql5::$use_auto_increment_table_options = FALSE;
 
     $expected = <<<SQL
--- Table `public`.`test` must be recreated to drop options: engine
-CREATE TABLE `public`.`test_DBSTEWARD_MIGRATION`
+-- Table `test` must be recreated to drop options: engine
+CREATE TABLE `test_DBSTEWARD_MIGRATION`
 ROW_FORMAT=compressed
-SELECT * FROM `public`.`test`;
-DROP TABLE `public`.`test`;
-RENAME TABLE `public`.`test_DBSTEWARD_MIGRATION` TO `public`.`test`;
+SELECT * FROM `test`;
+DROP TABLE `test`;
+RENAME TABLE `test_DBSTEWARD_MIGRATION` TO `test`;
 SQL;
       
     $this->common($old, $new, $expected);
