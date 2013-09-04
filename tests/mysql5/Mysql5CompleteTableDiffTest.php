@@ -28,6 +28,8 @@ class Mysql5CompleteTableDiffTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
     dbsteward::$ignore_oldnames = FALSE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
   }
 
   private $db_doc_xml = <<<XML

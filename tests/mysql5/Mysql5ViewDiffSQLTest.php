@@ -27,6 +27,8 @@ class Mysql5ViewDiffSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_object_names = TRUE;
 
     dbsteward::$always_recreate_views = FALSE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
 
     $db_doc_xml = <<<XML
 <dbsteward>

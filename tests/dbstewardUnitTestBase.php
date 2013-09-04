@@ -179,6 +179,8 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_all_names = TRUE;
     mysql5::$swap_function_delimiters = TRUE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
   }
   
   protected function build_db_mysql5() {

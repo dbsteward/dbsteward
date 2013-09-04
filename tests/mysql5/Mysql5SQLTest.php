@@ -26,6 +26,8 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
     mysql5::$swap_function_delimiters = FALSE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
   }
 
   public function testBuildSchema() {
