@@ -48,7 +48,7 @@ class mysql5_permission extends sql99_permission {
         $object_name = mysql5::get_fully_qualified_table_name($node_schema['name'],$node_object['name']);
         break;
       case 'FUNCTION':
-        $object_name = "FUNCTION " . mysql5::get_quoted_function_name($node_object['name']);
+        $object_name = "FUNCTION " . mysql5::get_fully_qualified_object_name($node_schema['name'], $node_object['name'], 'function');
         break;
       case 'SEQUENCE':
         // sequences exist as rows in a table for mysql

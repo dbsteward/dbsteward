@@ -863,6 +863,14 @@ class mysql5 {
     return sql99::get_quoted_name($name, dbsteward::$quote_object_names, self::QUOTE_CHAR);
   }
 
+  public static function get_fully_qualified_object_name($schema_name, $object_name, $type = 'object') {
+    if (static::$use_schema_name_prefix) {
+      $object_name = $schema_name . '_' . $object_name;
+    }
+    $f = 'get_quoted_' . $type . '_name';
+    return self::$f($object_name);
+  }
+
   public static function get_fully_qualified_table_name($schema_name, $table_name) {
     if (static::$use_schema_name_prefix) {
       $table_name = $schema_name . '_' . $table_name;
