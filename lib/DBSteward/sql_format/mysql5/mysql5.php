@@ -101,7 +101,12 @@ class mysql5 {
     }
     else {
       dbsteward::console_line(1, "Merging all schemas together - MySQL does not support them.");
+
+      if (($count = count($db_doc->schema)) > 1) {
+        dbsteward::console_line(3, "WARNING: There were $count schemas found - Unpredictable behavior may be found for duplicate names between schemas.");
+      }
     }
+
 
     foreach ( $db_doc->schema as $schema ) {
       // database grants
