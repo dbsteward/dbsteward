@@ -65,6 +65,40 @@ class ExtractionTest extends PHPUnit_Framework_TestCase {
     $this->assertEquals("\"overlay\"(btrim(col2), 'x'::text, 2)", (string)$dims[4]);
   }
 
+  public function testIndexesExtractInCorrectOrder() {
+    $sql = <<<SQL
+CREATE TABLE i_test (
+  id SERIAL PRIMARY KEY,
+  col1 int,
+  col2 int,
+  col3 int,
+  col4 int,
+  col5 int
+);
+CREATE INDEX idx1 ON i_test(col5, col4, col3, col2);
+CREATE INDEX idx2 ON i_test(col1, col4, col5, col2);
+CREATE INDEX idx3 ON i_test(col1, col2, col3, col4);
+SQL;
+    $schema = $this->extract($sql);
+
+    function getDims($node_index) {
+      $dims = array();
+      foreach ($node_index->indexDimension as $node_dim) {
+        $dims[] = (string)$node_dim;
+      }
+      return $dims;
+    }
+
+    $idx1 = $schema->table->xpath('index[@name="idx1"]');
+    $this->assertEquals(array('col5','col4','col3','col2'), getDims($idx1[0]));
+
+    $idx2 = $schema->table->xpath('index[@name="idx2"]');
+    $this->assertEquals(array('col1','col4','col5','col2'), getDims($idx2[0]));
+
+    $idx3 = $schema->table->xpath('index[@name="idx3"]');
+    $this->assertEquals(array('col1','col2','col3','col4'), getDims($idx3[0]));
+  }
+
   protected function extract($sql, $in_schema = TRUE) {
     $schemaname = __CLASS__;
     
