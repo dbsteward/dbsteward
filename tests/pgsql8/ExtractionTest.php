@@ -123,6 +123,23 @@ SQL;
     $this->assertEquals('("col2", "col3", "col4")', (string)$schema->table->constraint['definition']);
   }
 
+  public function testExtractTableColumnComments() {
+    $table_description = 'A description of the test table';
+    $column_description = 'A description of col1 on the test table';
+    $sql = <<<SQL
+CREATE TABLE test (
+  col1 text PRIMARY KEY
+);
+COMMENT ON TABLE test IS '$table_description';
+COMMENT ON COLUMN test.col1 IS '$column_description';
+SQL;
+    
+    $schema = $this->extract($sql);
+
+    $this->assertEquals($table_description, (string)$schema->table['description']);
+    $this->assertEquals($column_description, (string)$schema->table->column['description']);
+  }
+
   protected function extract($sql, $in_schema = TRUE) {
     $schemaname = __CLASS__;
     
