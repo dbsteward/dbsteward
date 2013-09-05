@@ -1625,14 +1625,15 @@ SLEEP (SECONDS=60);
       $node_query->addAttribute('sqlFormat', 'pgsql8');
     }
 
-    // for all schemas, all tables - get table constraints that are not typoe 'FOREIGN KEY'
+    // for all schemas, all tables - get table constraints that are not type 'FOREIGN KEY'
     dbsteward::console_line(3, "Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
-    $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name, tc.is_deferrable, tc.initially_deferred, kcu.ordinal_position
+    $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, array_agg(kcu.column_name::text ORDER BY kcu.ordinal_position) AS columns
       FROM information_schema.table_constraints tc
       LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_catalog = kcu.constraint_catalog AND tc.constraint_schema = kcu.constraint_schema AND tc.constraint_name = kcu.constraint_name
       WHERE tc.table_schema NOT IN ('information_schema', 'pg_catalog')
         AND tc.constraint_type != 'FOREIGN KEY'
-      ORDER BY tc.table_schema, tc.table_name, kcu.ordinal_position;";
+      GROUP BY tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name
+      ORDER BY tc.table_schema, tc.table_name;";
     $rc_constraint = pgsql8_db::query($sql);
     while (($constraint_row = pg_fetch_assoc($rc_constraint)) !== FALSE) {
       $nodes = $doc->xpath("schema[@name='" . $constraint_row['table_schema'] . "']");
@@ -1651,41 +1652,18 @@ SLEEP (SECONDS=60);
         $node_table = $nodes[0];
       }
 
-      $node_column = NULL;
-      if (strlen($constraint_row['column_name']) > 0) {
-        $nodes = $node_table->xpath("column[@name='" . $constraint_row['column_name'] . "']");
-        if (count($nodes) != 1) {
-          throw new exception("failed to find constraint analysis column " . $constraint_row['table_schema'] . " table '" . $constraint_row['table_name'] . "' column '" . $constraint_row['column_name']);
-        }
-        else {
-          $node_column = $nodes[0];
-        }
-      }
+      $column_names = self::parse_sql_array($constraint_row['columns']);
 
       if (strcasecmp('PRIMARY KEY', $constraint_row['constraint_type']) == 0) {
-        if (!isset($node_table['primaryKey'])) {
-          $node_table->addAttribute('primaryKey', '');
-        }
+        $node_table['primaryKey'] = implode(', ', $column_names);
 
-        if (strlen($node_table['primaryKey']) == 0) {
-          $node_table['primaryKey'] = $constraint_row['column_name'];
-        }
-        else {
-          // the results are ordered by ordinal_position so suffix appending is the deterministic thing to do here
-          $node_table['primaryKey'] .= ', ' . $constraint_row['column_name'];
-        }
-
-        if (!isset($node_table['primaryKeyName'])) {
-          $node_table->addAttribute('primaryKeyName', $constraint_row['constraint_name']);
-        } else {
-          $node_table['primaryKeyName'] = $constraint_row['constraint_name'];
-        }
+        $node_table['primaryKeyName'] = $constraint_row['constraint_name'];
       }
       else if (strcasecmp('UNIQUE', $constraint_row['constraint_type']) == 0) {
-        if (!isset($node_column['unique'])) {
-          $node_column->addAttribute('unique', 'true');
-        }
-        $node_column['unique'] = 'true';
+        $node_constraint = $node_table->addChild('constraint');
+        $node_constraint['name'] = $constraint_row['constraint_name'];
+        $node_constraint['type'] = 'UNIQUE';
+        $node_constraint['definition'] = '("' . implode('", "', $column_names) . '")';
       }
       else if (strcasecmp('CHECK', $constraint_row['constraint_type']) == 0) {
         // @TODO: implement CHECK constraints

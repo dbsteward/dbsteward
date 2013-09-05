@@ -99,6 +99,30 @@ SQL;
     $this->assertEquals(array('col1','col2','col3','col4'), getDims($idx3[0]));
   }
 
+  /**
+   * Tests that pgsql8 extracts compound unique constraints correctly */
+  public function testExtractCompoundUniqueConstraint() {
+    $sql = <<<SQL
+CREATE TABLE test (
+  col1 bigint NOT NULL PRIMARY KEY,
+  col2 bigint NOT NULL,
+  col3 character varying(20) NOT NULL,
+  col4 character varying(20),
+  CONSTRAINT test_constraint UNIQUE (col2, col3, col4)
+);
+SQL;
+
+    $schema = $this->extract($sql);
+
+    $this->assertNotEquals('true', (string)$schema->table->column[1]['unique']);
+    $this->assertNotEquals('true', (string)$schema->table->column[2]['unique']);
+    $this->assertNotEquals('true', (string)$schema->table->column[3]['unique']);
+
+    $this->assertEquals('test_constraint', (string)$schema->table->constraint['name']);
+    $this->assertEquals('UNIQUE', strtoupper($schema->table->constraint['type']));
+    $this->assertEquals('("col2", "col3", "col4")', (string)$schema->table->constraint['definition']);
+  }
+
   protected function extract($sql, $in_schema = TRUE) {
     $schemaname = __CLASS__;
     
