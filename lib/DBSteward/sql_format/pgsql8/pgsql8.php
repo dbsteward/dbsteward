@@ -1572,7 +1572,7 @@ SLEEP (SECONDS=60);
 
       while (($seq_list_row = pg_fetch_assoc($seq_list_rs)) !== FALSE) {
         $seq_sql = "SELECT cache_value, start_value, min_value, max_value,
-                    increment_by, is_cycled FROM " . $schema['name'] . "." . $seq_list_row['relname'] . ";";
+                    increment_by, is_cycled FROM \"" . $schema['name'] . "\"." . $seq_list_row['relname'] . ";";
         $seq_rs = pgsql8_db::query($seq_sql);
         while (($seq_row = pg_fetch_assoc($seq_rs)) !== FALSE) {
           $nodes = $schema->xpath("sequence[@name='" . $seq_list_row['relname'] . "']");
