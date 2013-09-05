@@ -1510,11 +1510,11 @@ SLEEP (SECONDS=60);
 
         dbsteward::console_line(3, "Analyze table indexes " . $row['schemaname'] . "." . $row['tablename']);
         // get table INDEXs
-        $sql = "SELECT ic.relname, i.indisunique, array_to_string((
-                  SELECT array_agg(attname)
-                  FROM unnest(i.indkey) AS key
-                  LEFT JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = key
-                ), ' ') AS dimensions
+        $sql = "SELECT ic.relname, i.indisunique, (
+                  -- get the n'th dimension's definition
+                  SELECT array_agg(pg_catalog.pg_get_indexdef(i.indexrelid, n, true))
+                  FROM generate_series(1, i.indnatts) AS n
+                ) AS dimensions
                 FROM pg_index i
                 LEFT JOIN pg_class ic ON ic.oid = i.indexrelid
                 LEFT JOIN pg_class tc ON tc.oid = i.indrelid
@@ -1527,7 +1527,7 @@ SLEEP (SECONDS=60);
                       AND table_name = '{$node_table['name']}');";
         $index_rs = pgsql8_db::query($sql);
         while (($index_row = pg_fetch_assoc($index_rs)) !== FALSE) {
-          $dimensions = explode(' ', $index_row['dimensions']);
+          $dimensions = self::parse_sql_array($index_row['dimensions']);
 
           // only add a unique index if the column was
           $index_name = $index_row['relname'];
@@ -1538,7 +1538,7 @@ SLEEP (SECONDS=60);
           $dim_i = 1;
           foreach ($dimensions as $dim) {
             $node_index->addChild('indexDimension', $dim)
-              ->addAttribute('name', $dim . '_' . $dim_i++);
+              ->addAttribute('name', $index_name . '_' . $dim_i++);
           }
         }
       }
@@ -2024,6 +2024,52 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
     xml_parser::validate_xml($doc->asXML());
     return xml_parser::format_xml($doc->saveXML());
+  }
+
+  public static function parse_sql_array($sql_arr) {
+    $input = trim($sql_arr, "{}");
+   
+    // {} signifies an empty array
+    if (strlen($input) === 0) {
+      return array();
+    }
+    
+    $rv = array();
+    $nextval = '';
+    $inquote = FALSE;
+    for ($i = 0; $i < strlen($input); $i++) {
+      //echo "$i, $inquote, $nextval\n";
+      if ($inquote) {
+        if ($input{$i} == '"') {
+          $inquote = FALSE;
+        }
+        else {
+          if ($input{$i} == "\\") {
+            $i++;
+            $nextval .= $input{$i};
+          }
+          else {
+            $nextval .= $input{$i};
+          }
+        }
+      }
+      else {
+        if ($input{$i} == ',') {
+          $rv[] = $nextval;
+          $nextval = '';
+        }
+        else {
+          if ($input{$i} == '"') {
+            $inquote = TRUE;
+          }
+          else {
+            $nextval .= $input{$i};
+          }
+        }
+      }
+    }
+    $rv[] = $nextval;
+    return $rv;
   }
 
   /**
