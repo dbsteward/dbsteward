@@ -392,6 +392,44 @@ SQL;
     $this->common_diff($old, $new, $expected, '');
   }
 
+  /** Tests that changing the case of a column results in renaming the column */
+  public function testColumnCaseRename() {
+    $old = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="userid" type="int" />
+  </table>
+</schema>
+XML;
+    $new = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="userID" type="int" oldColumnName="userid" />
+  </table>
+</schema>
+XML;
+    
+    $this->common_diff($old, $new, "ALTER TABLE `table`\n  CHANGE COLUMN `userid` `userID` int;", '');
+
+    // Now do it without oldColumnName
+    $new = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="userID" type="int" />
+  </table>
+</schema>
+XML;
+
+    try {
+      $this->common_diff($old, $new, 'NO EXPECTED OUTPUT', 'NO EXPECTED OUTPUT');
+    }
+    catch (Exception $e) {
+      $this->assertContains('ambiguous operation', strtolower($e->getMessage()));
+      return;
+    }
+    $this->fail("Expected an 'ambiguous operation' exception due to column case change, got nothing.");
+  }
+
   private function common_diff($xml_a, $xml_b, $expected1, $expected3, $message='') {
     dbsteward::$old_database = new SimpleXMLElement($this->db_doc_xml . $xml_a . '</dbsteward>');
     dbsteward::$new_database = new SimpleXMLElement($this->db_doc_xml . $xml_b . '</dbsteward>');
