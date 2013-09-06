@@ -193,7 +193,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
         'auto_increment' => FALSE
       );
 
-      if (!mysql5_table::contains_column($old_table, $new_column['name'])) {
+      if (!mysql5_table::contains_column($old_table, $new_column['name'], TRUE)) {
         // column not present in old table, is either renamed or new
         if (!dbsteward::$ignore_oldnames && mysql5_diff_tables::is_renamed_column($old_table, $new_table, $new_column)) {
           // renamed

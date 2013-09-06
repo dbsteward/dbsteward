@@ -19,17 +19,28 @@ class sql99_table {
    *
    * @return boolean   true if table contains given column $name, otherwise false
    */
-  public static function contains_column($node_table, $name) {
-    $found = false;
+  public static function contains_column($node_table, $name, $case_sensitive = false) {
+    $f = $case_sensitive? 'strcmp' : 'strcasecmp';
 
-    foreach(dbx::get_table_columns($node_table) as $column) {
-      if (strcasecmp($column['name'], $name) == 0) {
-        $found = true;
-        break;
+    foreach($node_table->column as $column) {
+      if ($f($column['name'], $name) == 0) {
+        return true;
       }
     }
 
-    return $found;
+    return false;
+  }
+
+  public static function get_column_by_name($node_table, $name, $case_sensitive = false) {
+    $f = $case_sensitive? 'strcmp' : 'strcasecmp';
+
+    foreach($node_table->column as $column) {
+      if ($f($column['name'], $name) == 0) {
+        return $column;
+      }
+    }
+
+    return NULL;
   }
 
   public static function contains_table_option($node_table, $name) {
