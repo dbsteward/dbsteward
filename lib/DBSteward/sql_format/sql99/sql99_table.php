@@ -22,13 +22,25 @@ class sql99_table {
   public static function contains_column($node_table, $name, $case_sensitive = false) {
     $f = $case_sensitive? 'strcmp' : 'strcasecmp';
 
-    foreach(dbx::get_table_columns($node_table) as $column) {
+    foreach($node_table->column as $column) {
       if ($f($column['name'], $name) == 0) {
         return true;
       }
     }
 
     return false;
+  }
+
+  public static function get_column_by_name($node_table, $name, $case_sensitive = false) {
+    $f = $case_sensitive? 'strcmp' : 'strcasecmp';
+
+    foreach($node_table->column as $column) {
+      if ($f($column['name'], $name) == 0) {
+        return $column;
+      }
+    }
+
+    return NULL;
   }
 
   public static function contains_table_option($node_table, $name) {

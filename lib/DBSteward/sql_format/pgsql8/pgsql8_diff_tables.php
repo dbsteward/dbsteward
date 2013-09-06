@@ -150,8 +150,10 @@ class pgsql8_diff_tables extends sql99_diff_tables {
    * @param drop_defaults_columns list for storing columns for which default value should be dropped
    */
   private static function add_create_table_columns(&$commands, $old_table, $new_schema, $new_table, &$drop_defaults_columns) {
+    $case_sensitive = dbsteward::$quote_all_names || dbsteward::$quote_column_names;
+
     foreach(dbx::get_table_columns($new_table) as $new_column) {
-      if (!pgsql8_table::contains_column($old_table, $new_column['name'])) {
+      if (!pgsql8_table::contains_column($old_table, $new_column['name'], $case_sensitive)) {
         if ( !dbsteward::$ignore_oldnames && pgsql8_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
           // oldColumnName renamed column ? rename column instead of create new one
           $old_column_name = pgsql8::get_quoted_column_name($new_column['oldColumnName']);
@@ -302,8 +304,10 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    * @param drop_defaults_columns list for storing columns for which default value should be dropped
    */
   private static function add_modify_table_columns(&$commands, $old_table, $new_schema, $new_table, &$drop_defaults_columns) {
+    $case_sensitive = dbsteward::$quote_all_names || dbsteward::$quote_column_names;
+
     foreach(dbx::get_table_columns($new_table) as $new_column) {
-      if (!pgsql8_table::contains_column($old_table, $new_column['name'])) {
+      if (!pgsql8_table::contains_column($old_table, $new_column['name'], $case_sensitive)) {
         continue;
       }
       if ( !dbsteward::$ignore_oldnames && pgsql8_diff_tables::is_renamed_column($old_table, $new_table, $new_column) ) {
@@ -311,7 +315,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         continue;
       }
 
-      $old_column = dbx::get_table_column($old_table, $new_column['name']);
+      $old_column = pgsql8_table::get_column_by_name($old_table, $new_column['name'], $case_sensitive);
       $new_column_name = pgsql8::get_quoted_column_name($new_column['name']);
 
       $old_column_type = null;
