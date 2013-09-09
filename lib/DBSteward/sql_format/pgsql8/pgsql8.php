@@ -1651,13 +1651,16 @@ SLEEP (SECONDS=60);
 
     // for all schemas, all tables - get table constraints that are not type 'FOREIGN KEY'
     dbsteward::console_line(3, "Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
-    $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, array_agg(kcu.column_name::text ORDER BY kcu.ordinal_position) AS columns
+    $sql = "SELECT constraint_name, constraint_type, table_schema, table_name, array_agg(columns) AS columns
+      FROM (
+      SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name::text AS columns
       FROM information_schema.table_constraints tc
       LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_catalog = kcu.constraint_catalog AND tc.constraint_schema = kcu.constraint_schema AND tc.constraint_name = kcu.constraint_name
       WHERE tc.table_schema NOT IN ('information_schema', 'pg_catalog')
         AND tc.constraint_type != 'FOREIGN KEY'
-      GROUP BY tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name
-      ORDER BY tc.table_schema, tc.table_name;";
+      GROUP BY tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name
+      ORDER BY kcu.column_name, tc.table_schema, tc.table_name) AS results
+      GROUP BY results.constraint_name, results.constraint_type, results.table_schema, results.table_name;";
     $rc_constraint = pgsql8_db::query($sql);
     while (($constraint_row = pg_fetch_assoc($rc_constraint)) !== FALSE) {
       $nodes = $doc->xpath("schema[@name='" . $constraint_row['table_schema'] . "']");
