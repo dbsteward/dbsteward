@@ -1542,7 +1542,9 @@ SLEEP (SECONDS=60);
                 FROM pg_index i
                 LEFT JOIN pg_class ic ON ic.oid = i.indexrelid
                 LEFT JOIN pg_class tc ON tc.oid = i.indrelid
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = tc.relnamespace
                 WHERE tc.relname = '{$node_table['name']}'
+                  AND n.nspname = '{$node_schema['name']}'
                   AND i.indisprimary != 't'
                   AND ic.relname NOT IN (
                     SELECT constraint_name
