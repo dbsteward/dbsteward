@@ -90,6 +90,15 @@ XML;
   </database>
   <schema name="dbsteward_phpunit" owner="ROLE_OWNER">
     <grant operation="ALL" role="ROLE_APPLICATION"/>
+    <table name="invoice" owner="ROLE_OWNER" primaryKey="invoice_id">
+      <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
+      <column name="invoice_id" type="int auto_increment" null="false"/>
+    </table>
+    <table name="invoice_line" owner="ROLE_OWNER" primaryKey="invoice_line_id">
+      <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
+      <column name="invoice_line_id" type="int auto_increment" null="false"/>
+      <column name="invoice_id" foreignSchema="dbsteward_phpunit" foreignTable="invoice" foreignColumn="invoice_id" null="false" foreignKeyName="iv_id_fk"/>
+    </table>
     <table name="rate" owner="ROLE_OWNER" primaryKey="rate_id">
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
       <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
@@ -161,13 +170,13 @@ XML;
     $upgrade_stage4_data1_sql = $this->get_script($this->output_prefix . '_upgrade_stage4_data1.sql');
 
     // check for no differences as expressed in DDL / DML
-    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/i', $upgrade_stage1_schema1_sql);
+    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage1_schema1_sql);
 
-    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/i', $upgrade_stage2_data1_sql);
+    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage2_data1_sql);
 
-    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/i', $upgrade_stage3_schema1_sql);
+    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage3_schema1_sql);
     
-    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/i', $upgrade_stage4_data1_sql);
+    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage4_data1_sql);
     
     // 4) Check for and validate tables in resultant XML definiton
     $this->compare_xml_definition();
