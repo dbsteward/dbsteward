@@ -534,7 +534,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
         // what columns in matching rows between old and new are different?
         if ( $old_table_rows && $new_table_rows ) {
           $new_table_primary_keys = mysql5_table::primary_key_columns($new_table);
-          $primary_key_index = xml_parser::data_row_overlay_primary_key_index($new_table_primary_keys, $old_table_row_columns, $new_table_row_columns);
 
           static::table_data_rows_compare($old_table, $new_table, true, $old_rows, $new_rows, $changes);
           $count_old_rows = count($old_rows);
@@ -544,7 +543,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
             if ( count($changes[$i]) > 0 ) {
               // changes were found between primary key matched old_table_row and new_table_row
               // get the sql to make that happen
-              $sql .= static::get_data_row_update($new_schema, $new_table, $primary_key_index, $old_table_row_columns, $old_rows[$i], $new_table_row_columns, $new_rows[$i], $changes[$i]);
+              $sql .= static::get_data_row_update($new_schema, $new_table, $old_table_row_columns, $old_rows[$i], $new_table_row_columns, $new_rows[$i], $changes[$i]);
             }
           }
         }
@@ -628,11 +627,34 @@ class mysql5_diff_tables extends sql99_diff_tables {
       // but the table B and A columns are reversed compared to data_rows_overlay() as the comparison is B vs A not base vs overlay (AvB)
       // so the columns to match as base and overlay are reversed, comared to other calls to data_row_overlay_primary_key_index()
       $primary_key_index = xml_parser::data_row_overlay_primary_key_index($table_b_primary_keys, $table_b_data_rows_columns, $table_a_data_rows_columns);
+      $base_pklookup = array();
+      $i = 0;
+      if (count($primary_key_index['base'])) {
+        foreach ($table_b_data_rows as $base_row) {
+          $s = '';
+          foreach ($primary_key_index['base'] as $index) {
+            $s .= ':'.$base_row->col[$index];
+          }
+          $base_pklookup[$s] = $i;
+        }
+      }
+
       $table_b_index = 0;
       foreach($table_a_data_rows->row AS $table_a_data_row) {
 
-        $match = xml_parser::data_row_overlay_key_search($table_b_data_rows, $table_a_data_row, $primary_key_index, $table_b_index);
+        $s = '';
+        foreach ($primary_key_index['overlay'] as $index) {
+          $s .= ':'.$table_a_data_row->col[$index];
+        }
 
+        if (array_key_exists($s, $base_pklookup)) {
+          $match = TRUE;
+          $table_b_index = $base_pklookup[$s];
+        }
+        else {
+          $match = FALSE;
+        }
+        
         if ( $match ) {
           // we found a match
 //echo "rows match\n";  var_dump($table_a_data_row);  var_dump($table_b_data_row);
@@ -756,7 +778,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
   }
 
   // @TODO: pull up
-  protected static function get_data_row_update($node_schema, $node_table, $primary_key_index, $old_data_row_columns, $old_data_row, $new_data_row_columns, $new_data_row, $changed_columns) {
+  protected static function get_data_row_update($node_schema, $node_table, $old_data_row_columns, $old_data_row, $new_data_row_columns, $new_data_row, $changed_columns) {
     if ( count($changed_columns) == 0 ) {
       throw new exception("empty changed_columns passed");
     }

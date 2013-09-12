@@ -853,7 +853,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       // but the table B and A columns are reversed compared to data_rows_overlay() as the comparison is B vs A not base vs overlay (AvB)
       // so the columns to match as base and overlay are reversed, comared to other calls to data_row_overlay_primary_key_index()
       $primary_key_index = xml_parser::data_row_overlay_primary_key_index($table_b_primary_keys, $table_b_data_rows_columns, $table_a_data_rows_columns);
-      // var_dump($primary_key_index);
+      
       // @TODO: Find some way to merge this with the algorithm in xml_parser::data_rows_overlay?
       
       $base_pklookup = array();
@@ -867,7 +867,6 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           $base_pklookup[$s] = $i;
         }
       }
-      // var_dump('base_pklookup', $base_pklookup);
 
       $table_b_index = 0;
       foreach($table_a_data_rows->row AS $table_a_data_row) {
@@ -876,7 +875,6 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         foreach ($primary_key_index['overlay'] as $index) {
           $s .= ':'.$table_a_data_row->col[$index];
         }
-        // var_dump('overlay_pk', $s);
 
         if (array_key_exists($s, $base_pklookup)) {
           $match = TRUE;
@@ -886,8 +884,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           $match = FALSE;
         }
 
-        // $match = xml_parser::data_row_overlay_key_search($table_b_data_rows, $table_a_data_row, $primary_key_index, $table_b_index);
-          $table_b_data_row = &$table_b_data_rows->row[$table_b_index];
+        $table_b_data_row = &$table_b_data_rows->row[$table_b_index];
 
         if ( $match ) {
           // we found a match
