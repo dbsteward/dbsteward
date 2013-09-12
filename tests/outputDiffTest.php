@@ -295,15 +295,17 @@ XML;
     //pgsql8::build_upgrade($this->xml_file_a, $this->xml_file_b);
 
     $upgrade_single_stage_sql = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
-    $upgrade_single_stage_sql = preg_replace('/\s+/', ' ', $upgrade_single_stage_sql);
-    $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote('ALTER COLUMN "user_name" TYPE varchar(64)','/').'/i', $upgrade_single_stage_sql),
-      "user_name column type change was not found in upgrade_single_stage.sql:\n$upgrade_single_stage_sql"
+    // $upgrade_single_stage_sql = preg_replace('/\s+/', ' ', $upgrade_single_stage_sql);
+    $this->assertRegExp(
+      '/'.preg_quote('ALTER COLUMN "user_name" TYPE varchar(64)','/').'/i',
+      $upgrade_single_stage_sql,
+      "user_name column type change was not found in upgrade_single_stage.sql"
     );
 
-    $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote('UPDATE "dbsteward"."user" SET "user_name" = E\'Administrator\' WHERE ("user_id" = \'1\');','/').'/i', $upgrade_single_stage_sql),
-      "Update of user_name column static value not found in upgrade_single_stage.sql:\n$upgrade_single_stage_sql"
+    $this->assertRegExp(
+      '/'.preg_quote('UPDATE "dbsteward"."user" SET "user_name" = E\'Administrator\' WHERE ("user_id" = \'1\');','/').'/i',
+      $upgrade_single_stage_sql,
+      "Update of user_name column static value not found in upgrade_single_stage.sql"
     );
   }
 

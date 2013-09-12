@@ -577,17 +577,17 @@ if ( strcasecmp($base_table['name'], 'ponderoustable') == 0 ) {
       if ($base_idx === FALSE) {
         throw new exception("base primary_key " . $primary_key . " not found in base_cols: " . implode(', ', $base_cols));
       }
-      $primary_key_index['base'][] = $base_idx;
+      $primary_key_index['base'][$primary_key] = $base_idx;
 
       $overlay_idx = array_search($primary_key, $overlay_cols);
       if ($overlay_idx === FALSE) {
         throw new exception("overlay primary_key " . $primary_key . " not found in overlay_cols: " . implode(', ', $overlay_cols));
       }
-      $primary_key_index['overlay'][] = $overlay_idx;
+      $primary_key_index['overlay'][$primary_key] = $overlay_idx;
     }
 
-    sort($primary_key_index['overlay']);
-    sort($primary_key_index['base']);
+    asort($primary_key_index['base']);
+    asort($primary_key_index['overlay']);
 
     return $primary_key_index;
   }
