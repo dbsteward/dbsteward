@@ -69,6 +69,7 @@ class xml_parser {
         throw new Exception("failed to simplexml_load_string() contents of " . $file_name);
       }
       $doc = xml_parser::expand_tabrow_data($doc);
+      $doc = xml_parser::sql_format_convert($doc);
       $xml_contents = $doc->saveXML();
 
       // only validate the first composite in the chain before composite has been completed
@@ -1502,6 +1503,10 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
         break; // boolean
       case 'inet':
         $type = 'varchar(16)';
+        break;
+      case 'int':
+      case 'integer':
+        $type = 'int(11)';
         break;
       case 'interval':
         $type = 'varchar(3500)';

@@ -160,8 +160,8 @@ XML;
     $this->apply_options($format);
     dbsteward::$single_stage_upgrade = FALSE;
     
-    $old_db_doc = simplexml_load_file($this->xml_file_a);
-    $new_db_doc = simplexml_load_file($this->xml_file_b);
+    $old_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
+    $new_db_doc = xml_parser::xml_composite(array($this->xml_file_b));
     $format::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array());
     
     $upgrade_stage1_schema1_sql = $this->get_script($this->output_prefix . '_upgrade_stage1_schema1.sql');
