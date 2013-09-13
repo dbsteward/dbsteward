@@ -153,8 +153,6 @@ XML;
     $xml = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>deployment</application>
       <owner>deployment</owner>
