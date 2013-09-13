@@ -30,10 +30,10 @@ class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
     ob_start();
   }
 
-  public function testSchema() {
-    $schema = $this->extract('--');
-    $this->assertEquals('ExtractionTest', (string)$schema['name']);
-  }
+  // public function testSchema() {
+  //   $schema = $this->extract('--');
+  //   $this->assertEquals('ExtractionTest', (string)$schema['name']);
+  // }
 
 
   protected function extract($sql) {
