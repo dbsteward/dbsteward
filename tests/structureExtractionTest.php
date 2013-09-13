@@ -92,10 +92,12 @@ XML;
     <grant operation="ALL" role="ROLE_APPLICATION"/>
     <table name="invoice" owner="ROLE_OWNER" primaryKey="invoice_id">
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
+      <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
       <column name="invoice_id" type="int auto_increment" null="false"/>
     </table>
     <table name="invoice_line" owner="ROLE_OWNER" primaryKey="invoice_line_id">
       <tableOption name="engine" sqlFormat="mysql5" value="InnoDB" />
+      <tableOption name="default charset" sqlFormat="mysql5" value="latin1" />
       <column name="invoice_line_id" type="int auto_increment" null="false"/>
       <column name="invoice_id" foreignSchema="dbsteward_phpunit" foreignTable="invoice" foreignColumn="invoice_id" null="false" foreignKeyName="iv_id_fk"/>
     </table>

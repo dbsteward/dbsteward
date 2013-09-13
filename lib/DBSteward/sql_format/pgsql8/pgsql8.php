@@ -1862,7 +1862,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
       $node_function['returns'] = $row_fxn['return_type'];
       $node_function['cachePolicy'] = $row_fxn['volatility'];
-      $node_function['owner'] = $row_fxn['owner'];
+      $node_function['owner'] = self::translate_role_name($row_fxn['owner']);
       // @TODO: how is / figure out how to express securityDefiner attribute in the functions query
       $node_function['description'] = $row_fxn['description'];
       $node_definition = $node_function->addChild('functionDefinition', $row_fxn['source']);

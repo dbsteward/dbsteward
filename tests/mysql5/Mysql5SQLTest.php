@@ -164,6 +164,10 @@ CREATE TABLE `user` (
   `username` varchar(80),
   `user_age` numeric
 );
+
+ALTER TABLE `user`
+  ADD INDEX `group_id` (`group_id`) USING BTREE;
+
 GRANT SELECT, UPDATE, DELETE ON `user` TO `dbsteward_phpunit_app`;
 
 CREATE TABLE `group` (
@@ -307,6 +311,10 @@ CREATE TABLE `rate` (
   `rate_name` character varying(120),
   `rate_value` numeric
 );
+
+ALTER TABLE `rate`
+  ADD INDEX `rate_group_id` (`rate_group_id`) USING BTREE;
+
 CREATE TABLE `rate_group` (
   `rate_group_id` integer NOT NULL,
   `rate_group_name` character varying(100),

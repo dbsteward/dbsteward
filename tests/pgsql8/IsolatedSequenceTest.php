@@ -21,8 +21,6 @@ class IsolatedSequenceTest extends dbstewardUnitTestBase {
   protected $xml_content_a =  <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>deployment</application>
       <owner>deployment</owner>
@@ -155,8 +153,6 @@ XML;
     $xml = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>deployment</application>
       <owner>deployment</owner>
@@ -171,7 +167,7 @@ XML;
     <sequence name="test_seq" start="1" inc="1" max="15" cycle="false" cache="1" owner="ROLE_OWNER">
       <grant operation="USAGE,SELECT,UPDATE" role="ROLE_APPLICATION"/>
     </sequence>
-    <table name="user" owner="ROLE_OWNER" description="user logins">
+    <table name="user" owner="ROLE_OWNER" description="user logins" primaryKey="user_name">
       <column name="user_name" type="varchar(100)" null="false"/>
       <column name="user_role" type="varchar(100)" null="false"/>
       <column name="user_create_date" type="timestamp with time zone" null="false" default="NOW()"/>

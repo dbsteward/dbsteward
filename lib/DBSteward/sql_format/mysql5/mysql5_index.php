@@ -31,7 +31,8 @@ class mysql5_index extends sql99_index {
 
   public static function get_table_indexes($node_schema, $node_table) {
     $nodes = $node_table->xpath("index");
-    // add column unique indexes to the list
+
+    // add column unique indexes and column fkeys to the list
     foreach ($node_table->column AS $column) {
       if (isset($column['unique']) && strcasecmp($column['unique'], 'true') == 0) {
         $unique_index = new SimpleXMLElement('<index/>');
@@ -43,6 +44,31 @@ class mysql5_index extends sql99_index {
         $unique_index->addChild('indexDimension', $column['name'])
           ->addAttribute('name', $column['name'] . '_unq');
         $nodes[] = $unique_index;
+      }
+      elseif (isset($column['foreignColumn'])) {
+        // mysql automatically creates indexes for foreign keys if there isn't one already,
+        // so we need to create one as well to avoid invalid diffs
+
+        // first, see if there's already an index of JUST this column
+        $found = false;
+        foreach ($nodes as $node) {
+          if (count($node->indexDimension) == 1 && (string)$node->indexDimension[0] == (string)$column['name']) {
+            $found = true;
+            break;
+          }
+        }
+        if (!$found) {
+          // no? then create one
+          $fkey_index = new SimpleXMLElement('<index/>');
+          $fkey_index['name'] = (string)$column['foreignIndexName'] 
+                              ?: (string)$column['foreignKeyName']
+                              ?: static::get_index_name((string)$column['name'], $nodes);
+          $fkey_index['unique'] = 'false';
+          $fkey_index['using'] = 'btree';
+          $fkey_index->addChild('indexDimension', (string)$column['name'])
+                     ->addAttribute('name', $column['name'].'_1');
+          $nodes[] = $fkey_index;
+        }
       }
     }
 

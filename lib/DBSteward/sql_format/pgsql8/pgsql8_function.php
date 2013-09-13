@@ -191,11 +191,15 @@ class pgsql8_function {
       $b_definition = preg_replace("/\\s+/", " ", $b_definition);
     }
 
+    $db_doc = $node_schema_a->xpath('..');
+    $a_owner = xml_parser::role_enum($db_doc[0], $node_function_a['owner']);
+    $b_owner = xml_parser::role_enum($db_doc[0], $node_function_b['owner']);
+
     $equals =
       strcasecmp(pgsql8_function::get_declaration($node_schema_a, $node_function_a),
                  pgsql8_function::get_declaration($node_schema_a, $node_function_b)) == 0
       && strcasecmp($a_definition, $b_definition) == 0
-      && strcasecmp($node_function_a['owner'], $node_function_b['owner']) == 0
+      && strcasecmp($a_owner, $b_owner) == 0
       && strcasecmp($node_function_a['type'], $node_function_b['type']) == 0;
 
     return $equals;
