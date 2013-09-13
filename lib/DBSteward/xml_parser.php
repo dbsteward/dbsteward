@@ -487,10 +487,22 @@ class xml_parser {
     // put the new columns list back in the node
     $base_table_rows['columns'] = implode(', ', $base_cols);
 
-    // merge all row entries for the rows element
+    // determine the "natural" ordering of primary key columns, so that we can deterministically create a primary key key
     $base_primary_keys = preg_split("/[\,\s]+/", $base_table['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
     $primary_key_index = self::data_row_overlay_primary_key_index($base_primary_keys, $base_cols, $overlay_cols);
 
+    // primary key key => row index
+    $base_pklookup = array();
+    $i = 0;
+    foreach ($base_table->row as $base_row) {
+      $s = '';
+      foreach ($primary_key_index['base'] as $index) {
+        $s .= ':'.$base_row->col[$index];
+      }
+      $base_pklookup[$s] = $i;
+    }
+
+    // merge all row entries for the rows element
     $base_row_index = 0;
     foreach ($overlay_table->row AS $overlay_row) {
       // sanity check the overlay's rows columns list against the col count of the row
@@ -512,7 +524,18 @@ class xml_parser {
         $row_match = FALSE;
       }
       else {
-        $row_match = self::data_row_overlay_key_search($base_table_rows, $overlay_row, $primary_key_index, $base_row_index);
+        $s = '';
+        foreach ($primary_key_index['overlay'] as $index) {
+          $s .= ':'.$overlay_row->col[$index];
+        }
+        if (array_key_exists($s, $base_pklookup)) {
+          $row_match = TRUE;
+          $base_row_index = $base_pklookup[$s];
+        }
+        else {
+          $row_match = FALSE;
+        }
+        // $row_match = self::data_row_overlay_key_search($base_table_rows, $overlay_row, $primary_key_index, $base_row_index);
       }
       
 /* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
@@ -548,79 +571,26 @@ if ( strcasecmp($base_table['name'], 'ponderoustable') == 0 ) {
   public static function data_row_overlay_primary_key_index($primary_key_cols, $base_cols, $overlay_cols) {
     // create a map to  find the numeric column index of each primary key
     // in the base and overlay column lists
-    $primary_key_index = array();
+    $primary_key_index = array('overlay' => array(), 'base' => array());
+
     foreach ($primary_key_cols AS $primary_key) {
-      $primary_key_index[$primary_key] = array(
-        'base_index' => array_search($primary_key, $base_cols),
-        'overlay_index' => array_search($primary_key, $overlay_cols)
-      );
-      if ($primary_key_index[$primary_key]['base_index'] === FALSE) {
+      $base_idx = array_search($primary_key, $base_cols);
+      if ($base_idx === FALSE) {
         throw new exception("base primary_key " . $primary_key . " not found in base_cols: " . implode(', ', $base_cols));
       }
-      if ($primary_key_index[$primary_key]['overlay_index'] === FALSE) {
+      $primary_key_index['base'][$primary_key] = $base_idx;
+
+      $overlay_idx = array_search($primary_key, $overlay_cols);
+      if ($overlay_idx === FALSE) {
         throw new exception("overlay primary_key " . $primary_key . " not found in overlay_cols: " . implode(', ', $overlay_cols));
       }
+      $primary_key_index['overlay'][$primary_key] = $overlay_idx;
     }
+
+    asort($primary_key_index['base']);
+    asort($primary_key_index['overlay']);
+
     return $primary_key_index;
-  }
-
-  //public static $data_row_overlay_key_search_count = 0;
-  public static function data_row_overlay_key_search($node_rows, $overlay_row, $primary_key_index, &$base_row_index) {
-    $node_row_count = count($node_rows->row);
-    //dbsteward::console_line(7, "data_row_overlay_key_search() #" . ++self::$data_row_overlay_key_search_count . " node_row_count = " . $node_row_count . " base_row_index = " . $base_row_index);
-    if (!is_object($node_rows)) {
-      var_dump($node_rows);
-      throw new exception("node_rows is not an object, check caller");
-    }
-    if (!is_object($overlay_row)) {
-      var_dump($overlay_row);
-      throw new exception("overlay_row is not an object, check caller");
-    }
-
-    // base_row_index is at max? reset to 0
-    if ($base_row_index == $node_row_count - 1) {
-      $base_row_index = 0;
-    }
-
-    // look for an existing row that is using the same primary keys in its cols
-    // only if there were some rows to start with
-    // otherwise the search algorithm primalizes into always search everything from the beginning and makes baby seals cry
-    // start out with no match
-    $row_match = FALSE;
-    if ($node_row_count > 0) {
-      // if base had rows
-      for ($i = $base_row_index; $i < $node_row_count; $i++) {
-        foreach ($primary_key_index AS $primary_key_name => $primary_key) {
-          if (strcmp($node_rows->row[$i]->col[$primary_key['base_index']], $overlay_row->col[$primary_key['overlay_index']]) != 0) {
-            // doesn't match, on to the next row
-            $row_match = FALSE;
-
-            // base_row_index cached offset is > 0 ?
-            if ($base_row_index > 0) {
-              // i about to hit base_row_index ?
-              if ($i == $base_row_index - 1) {
-                // stop the primary_key match search for this child row's match
-                break 2;
-                // break out of the for i loop
-              }
-              // i is about to max? reset i to -1 so 0 index wraps back around to 0 after the b++
-              if ($i == $node_row_count - 1) {
-                $i = -1;
-              }
-            }
-            continue 2; // continue looking in the for i loop
-          }
-          $row_match = TRUE;
-        }
-
-        if ($row_match) {
-          $base_row_index = $i;
-          // remember where we left off, to optimize the search for primary key matches
-          break; // matching row was found, so we can break out of the for i node->row loop
-        }
-      }
-    }
-    return $row_match;
   }
 
   public static function data_row_overlay_row(&$base, &$node_row, &$overlay_row, $base_cols, $overlay_cols) {
