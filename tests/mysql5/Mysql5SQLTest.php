@@ -164,6 +164,11 @@ CREATE TABLE `user` (
   `username` varchar(80),
   `user_age` numeric
 );
+
+-- this is needed because of the primary key on group_id => group.group_id
+ALTER TABLE `group`
+  ADD INDEX `group_id` (`group_id`) USING BTREE;
+
 GRANT SELECT, UPDATE, DELETE ON `user` TO `dbsteward_phpunit_app`;
 
 CREATE TABLE `group` (
@@ -307,6 +312,11 @@ CREATE TABLE `rate` (
   `rate_name` character varying(120),
   `rate_value` numeric
 );
+
+-- this is needed because of the primary key on rate_group_id => rate_group.rate_group_id
+ALTER TABLE `rate`
+  ADD INDEX `rate_group_id` (`rate_group_id`) USING BTREE;
+
 CREATE TABLE `rate_group` (
   `rate_group_id` integer NOT NULL,
   `rate_group_name` character varying(100),
