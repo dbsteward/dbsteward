@@ -14,7 +14,7 @@ require_once __DIR__ . '/../mock_output_file_segmenter.php';
 /**
  * @group mysql5
  */
-class ExtractionTest extends PHPUnit_Framework_TestCase {
+class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
 
   public function setUp() {
     // disable pesky output buffering
