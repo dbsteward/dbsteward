@@ -726,17 +726,16 @@ class dbx {
   public static function primary_key_expression($db_doc, $node_schema, $node_table, $data_row_columns, $data_row) {
     $primary_keys = format_table::primary_key_columns($node_table);
     $primary_key_index = xml_parser::data_row_overlay_primary_key_index($primary_keys, $data_row_columns, $data_row_columns);
+    $primary_key_index = $primary_key_index['base'];
 
     // figure out the primary key expression
     $primary_key_expression = array();
-    for ($i = 0; $i < count($primary_keys); $i++) {
-      if (!isset($primary_key_index[$primary_keys[$i]])) {
-        throw new exception("primar key column named " . $primary_keys[$i] . " not found in primary_key_index");
+    foreach ($primary_keys as $primary_column_name) {
+      if (!isset($primary_key_index[$primary_column_name])) {
+        throw new exception("primary key column named $primary_column_name not found in primary_key_index");
       }
 
-      $primary_column_name = $primary_keys[$i];
-
-      $column_index = $primary_key_index[$primary_column_name]['base_index'];
+      $column_index = $primary_key_index[$primary_column_name];
 
       // get the type of the column, chasing foreign keys if necessary
       $node_column = dbx::get_table_column($node_table, $primary_column_name);

@@ -85,12 +85,22 @@ class sql99_index {
     foreach ($node_table->column AS $column) {
       if (isset($column['unique']) && strcasecmp($column['unique'], 'true') == 0) {
         $unique_index = new SimpleXMLElement('<index/>');
-        $unique_index['name'] = format_index::index_name($node_table['name'], $column['name'], 'key');
+        $unique_index['name'] = static::index_name($node_table['name'], $column['name'], 'key');
         $unique_index['unique'] = 'true';
         $unique_index['using'] = 'btree';
         $unique_index->addChild('indexDimension', $column['name'])
           ->addAttribute('name', $column['name'] . '_unq');
         $nodes[] = $unique_index;
+      }
+    }
+
+    $names = array();
+    foreach ($nodes as $node) {
+      if (in_array((string)$node['name'], $names)) {
+        throw new Exception("Duplicate index name {$node['name']} on table {$node_schema['name']}.{$node_table['name']}");
+      }
+      else {
+        $names[] = (string)$node['name'];
       }
     }
     return $nodes;

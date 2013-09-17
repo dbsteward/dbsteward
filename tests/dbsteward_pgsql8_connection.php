@@ -12,8 +12,8 @@ class dbsteward_pgsql8_connection extends dbsteward_sql99_connection {
   // protected static $sql_format = 'pgsql8';
 
   public function query($sql, $throw_on_error = TRUE) {
-    dbsteward::cmd(sprintf("echo '%s' | PGPASSWORD='%s' psql --host=%s --port=%s --username=%s --dbname=%s --file -",
-                          $sql, $this->dbpass_mgmt, $this->dbhost, $this->dbport, $this->dbuser, $this->dbname));
+    dbsteward::cmd(sprintf("PGPASSWORD='%s' psql --host=%s --port=%s --username=%s --dbname=%s -c %s",
+                          $this->dbpass, $this->dbhost, $this->dbport, $this->dbuser, $this->dbname, escapeshellarg($sql)));
   }
 
   /**
@@ -21,8 +21,8 @@ class dbsteward_pgsql8_connection extends dbsteward_sql99_connection {
    * @return void
    */
   public function create_db() {
-    dbsteward::cmd(sprintf("echo '%s' | PGPASSWORD='%s' psql --host=%s --port=%s --username=%s --dbname=%s --file -",
-                          'DROP DATABASE IF EXISTS '.$this->dbname.'; CREATE DATABASE '.$this->dbname.';',
+    dbsteward::cmd(sprintf("echo %s | PGPASSWORD='%s' psql --host=%s --port=%s --username=%s --dbname=%s --file -",
+                          escapeshellarg('DROP DATABASE IF EXISTS '.$this->dbname.'; CREATE DATABASE '.$this->dbname.';'),
                           $this->dbpass_mgmt, $this->dbhost, $this->dbport, $this->dbuser_mgmt, $this->dbname_mgmt));
   }
 

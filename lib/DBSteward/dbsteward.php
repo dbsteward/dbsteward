@@ -176,6 +176,8 @@ Database definition extraction utilities
   --dbpassword=<password>
 Format-specific options
   --useautoincrementoptions             mysql5: Apply AUTO_INCREMENT tableOptions. By default these are ignored.
+  --useschemaprefix                     mysql5: Instead of merging schemas together (mysql5 default behavior),
+                                                prefix each database object with the schema name.
 ";
     return $s;
   }
@@ -220,7 +222,8 @@ Format-specific options
       "xmlsort::",
       "xmlconvert::",
       "xmlcollectdataaddendums::",
-      "useautoincrementoptions::"
+      "useautoincrementoptions::",
+      "useschemaprefix::"
     );
     $options = getopt($short_opts, $long_opts);
     //var_dump($options); die('dieoptiondump');
@@ -347,20 +350,6 @@ Format-specific options
       dbsteward::$generate_slonik = TRUE;
     }
 
-    // user-specified overrides for identifier quoting
-    if (isset($options["quoteschemanames"])) {
-      dbsteward::$quote_schema_names = TRUE;
-    }
-    if (isset($options["quotetablenames"])) {
-      dbsteward::$quote_table_names = TRUE;
-    }
-    if (isset($options["quotecolumnnames"])) {
-      dbsteward::$quote_column_names = TRUE;
-    }
-    if (isset($options["quoteallnames"])) {
-      dbsteward::$quote_all_names = TRUE;
-    }
-
     ///// determine the operation and check arguments for each
     $mode = dbsteward::MODE_UNKNOWN;
     if (isset($options['xmldatainsert'])) {
@@ -467,45 +456,22 @@ Format-specific options
     dbsteward::console_line(1, "Using sqlformat=$sql_format");
     dbsteward::set_sql_format($sql_format);
 
-
-    ///// sql_format-specific default options
-    $dbport = FALSE;
-    if (strcasecmp($sql_format, 'pgsql8') == 0) {
-      dbsteward::$create_languages = TRUE;
-      dbsteward::$quote_schema_names = FALSE;
-      dbsteward::$quote_table_names = FALSE;
-      dbsteward::$quote_column_names = FALSE;
-      $dbport = '5432';
-    }
-    else if (strcasecmp($sql_format, 'mssql10') == 0) {
-      // needed for MSSQL keyword-named-columns like system_user
-      dbsteward::$quote_table_names = TRUE;
-      dbsteward::$quote_column_names = TRUE;
-      $dbport = '1433';
-    }
-    else if (strcasecmp($sql_format, 'mysql5') == 0) {
-      dbsteward::$quote_schema_names = TRUE;
-      dbsteward::$quote_table_names = TRUE;
-      dbsteward::$quote_column_names = TRUE;
-      $dbport = '3306';
-      
-      if (isset($options['useautoincrementoptions'])) {
-        mysql5::$use_auto_increment_table_options = TRUE;
-      }
-    }
-    else if (strcasecmp($sql_format, 'oracle10g') == 0) {
-      dbsteward::$quote_schema_names = TRUE;
-      dbsteward::$quote_table_names = TRUE;
-      dbsteward::$quote_column_names = TRUE;
-    }
+    $dbport = dbsteward::define_sql_format_default_values($sql_format, $options);
     
-    if (strcasecmp($sql_format, 'pgsql8') != 0) {
-      if (isset($options['pgdataxml'])) {
-        dbsteward::console_line(0, "pgdataxml parameter is not supported by " . dbsteward::get_sql_format() . " driver");
-        exit(1);
-      }
+    // user-specified overrides for identifier quoting
+    if (isset($options["quoteschemanames"])) {
+      dbsteward::$quote_schema_names = TRUE;
     }
-
+    if (isset($options["quotetablenames"])) {
+      dbsteward::$quote_table_names = TRUE;
+    }
+    if (isset($options["quotecolumnnames"])) {
+      dbsteward::$quote_column_names = TRUE;
+    }
+    if (isset($options["quoteallnames"])) {
+      dbsteward::$quote_all_names = TRUE;
+    }    
+    
     switch ($mode) {
       case dbsteward::MODE_XML_DATA_INSERT:
         dbsteward::xml_data_insert($options['xml'], $options['xmldatainsert']);
@@ -633,6 +599,51 @@ Format-specific options
     }
   }
 
+  protected static function define_sql_format_default_values($sql_format, $options) {
+///// sql_format-specific default options
+    $dbport = FALSE;
+    if (strcasecmp($sql_format, 'pgsql8') == 0) {
+      dbsteward::$create_languages = TRUE;
+      dbsteward::$quote_schema_names = FALSE;
+      dbsteward::$quote_table_names = FALSE;
+      dbsteward::$quote_column_names = FALSE;
+      $dbport = '5432';
+    }
+    else if (strcasecmp($sql_format, 'mssql10') == 0) {
+      // needed for MSSQL keyword-named-columns like system_user
+      dbsteward::$quote_table_names = TRUE;
+      dbsteward::$quote_column_names = TRUE;
+      $dbport = '1433';
+    }
+    else if (strcasecmp($sql_format, 'mysql5') == 0) {
+      dbsteward::$quote_schema_names = TRUE;
+      dbsteward::$quote_table_names = TRUE;
+      dbsteward::$quote_column_names = TRUE;
+      $dbport = '3306';
+      
+      if (isset($options['useautoincrementoptions'])) {
+        mysql5::$use_auto_increment_table_options = TRUE;
+      }
+
+      if (isset($options['useschemaprefix'])) {
+        mysql5::$use_schema_name_prefix = TRUE;
+      }
+    }
+    else if (strcasecmp($sql_format, 'oracle10g') == 0) {
+      dbsteward::$quote_schema_names = TRUE;
+      dbsteward::$quote_table_names = TRUE;
+      dbsteward::$quote_column_names = TRUE;
+    }
+    
+    if (strcasecmp($sql_format, 'pgsql8') != 0) {
+      if (isset($options['pgdataxml'])) {
+        dbsteward::console_line(0, "pgdataxml parameter is not supported by " . dbsteward::get_sql_format() . " driver");
+        exit(1);
+      }
+    }
+    return $dbport;
+  }
+  
   /**
    * Convenience function to get the directory and extensionless basename of the first of a list of files
    *

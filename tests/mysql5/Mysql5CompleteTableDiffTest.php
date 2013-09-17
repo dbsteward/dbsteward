@@ -28,6 +28,8 @@ class Mysql5CompleteTableDiffTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
     dbsteward::$ignore_oldnames = FALSE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
   }
 
   private $db_doc_xml = <<<XML
@@ -66,22 +68,22 @@ XML;
     
     // drop the PK with the auto-increment, then make the other column the PK
     $expected = <<<SQL
-ALTER TABLE `public`.`foo`
+ALTER TABLE `foo`
   MODIFY `fooID` int NOT NULL,
   DROP PRIMARY KEY;
-ALTER TABLE `public`.`foo`
+ALTER TABLE `foo`
   ADD PRIMARY KEY (`barID`);
 SQL;
-    $this->diff($a, $b, $expected, "ALTER TABLE `public`.`foo`\n  DROP COLUMN `fooID`;");
+    $this->diff($a, $b, $expected, "ALTER TABLE `foo`\n  DROP COLUMN `fooID`;");
 
     // add a new column, and make it PK with auto-increment
     $expected = <<<SQL
-ALTER TABLE `public`.`foo`
+ALTER TABLE `foo`
   DROP PRIMARY KEY;
-ALTER TABLE `public`.`foo`
+ALTER TABLE `foo`
   ADD COLUMN `fooID` int NOT NULL FIRST;
 
-ALTER TABLE `public`.`foo`
+ALTER TABLE `foo`
   ADD PRIMARY KEY (`fooID`),
   MODIFY `fooID` int NOT NULL AUTO_INCREMENT;
 SQL;
@@ -108,10 +110,10 @@ XML;
 XML;
     
     // no AI -> with AI: add AI flag via redefinition in stage 1
-    $this->diff($without_auto_increment, $with_auto_increment, "ALTER TABLE `ImdxTest`.`GbiBatches`\n  MODIFY COLUMN `GbiBatchID` int(11) AUTO_INCREMENT;", '');
+    $this->diff($without_auto_increment, $with_auto_increment, "ALTER TABLE `GbiBatches`\n  MODIFY COLUMN `GbiBatchID` int(11) AUTO_INCREMENT;", '');
 
     // with AI -> without AI: remove AI flag via redefinition in stage 1
-    $this->diff($with_auto_increment, $without_auto_increment, "ALTER TABLE `ImdxTest`.`GbiBatches`\n  MODIFY COLUMN `GbiBatchID` int(11);", '');
+    $this->diff($with_auto_increment, $without_auto_increment, "ALTER TABLE `GbiBatches`\n  MODIFY COLUMN `GbiBatchID` int(11);", '');
   }
 
   public function testRenameFKIndex() {
@@ -145,7 +147,7 @@ XML;
 XML;
 
     $expected = <<<SQL
-ALTER TABLE `test`.`table1`
+ALTER TABLE `table1`
   DROP INDEX `table1_ibfk_1_idx`,
   ADD INDEX `table2_id` (`table2_id`) USING BTREE;
 SQL;

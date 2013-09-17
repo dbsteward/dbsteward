@@ -24,6 +24,8 @@ class Mysql5TableSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
   }
 
   public function testSimple() {
@@ -38,7 +40,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-CREATE TABLE `public`.`test` (
+CREATE TABLE `test` (
   `id` int,
   `foo` int
 )
@@ -47,7 +49,7 @@ SQL;
     
     $this->assertEquals($expected, mysql5_table::get_creation_sql($schema, $schema->table));
 
-    $this->assertEquals("DROP TABLE `public`.`test`;", mysql5_table::get_drop_sql($schema, $schema->table));
+    $this->assertEquals("DROP TABLE `test`;", mysql5_table::get_drop_sql($schema, $schema->table));
   }
 
   public function testSerials() {
@@ -62,7 +64,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-CREATE TABLE `public`.`test` (
+CREATE TABLE `test` (
   `id` int NOT NULL,
   `other` bigint NOT NULL
 )
@@ -94,7 +96,7 @@ XML;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $this->assertEquals("CREATE TABLE `public`.`test` (\n  `id` int\n);", mysql5_table::get_creation_sql($schema, $schema->table));
+    $this->assertEquals("CREATE TABLE `test` (\n  `id` int\n);", mysql5_table::get_creation_sql($schema, $schema->table));
 
     // ensure that foreign auto_increment flags aren't transferred to the table definition
     $xml = <<<XML
@@ -113,7 +115,7 @@ XML;
 XML;
     $dbs = new SimpleXMLElement($xml);
     dbsteward::$new_database = $dbs;
-    $this->assertEquals("CREATE TABLE `public`.`test` (\n  `id` int,\n  `fk` int\n);", mysql5_table::get_creation_sql($dbs->schema, $dbs->schema->table[0]));
+    $this->assertEquals("CREATE TABLE `test` (\n  `id` int,\n  `fk` int\n);", mysql5_table::get_creation_sql($dbs->schema, $dbs->schema->table[0]));
   }
 }
 ?>

@@ -25,6 +25,8 @@ class Mysql5IndexDiffSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
   }
 
   private $xml_0 = <<<XML
@@ -97,7 +99,7 @@ XML;
 
   public function testAddNew() {
     $expected = <<<SQL
-ALTER TABLE `test3`.`test`
+ALTER TABLE `test`
   ADD INDEX `test_idxa` (`a`),
   ADD INDEX `test_idxb` (`b`),
   ADD INDEX `test_idxc` (`c`);
@@ -107,7 +109,7 @@ SQL;
 
   public function testAddSome() {
     $expected = <<<SQL
-ALTER TABLE `test3`.`test`
+ALTER TABLE `test`
   ADD INDEX `test_idxb` (`b`),
   ADD INDEX `test_idxc` (`c`);
 SQL;
@@ -116,7 +118,7 @@ SQL;
 
   public function testDropAll() {
     $expected = <<<SQL
-ALTER TABLE `test0`.`test`
+ALTER TABLE `test`
   DROP INDEX `test_idxa`,
   DROP INDEX `test_idxb`,
   DROP INDEX `test_idxc`;
@@ -126,7 +128,7 @@ SQL;
 
   public function testDropSome() {
     $expected = <<<SQL
-ALTER TABLE `test1`.`test`
+ALTER TABLE `test`
   DROP INDEX `test_idxb`,
   DROP INDEX `test_idxc`;
 SQL;
@@ -135,7 +137,7 @@ SQL;
 
   public function testChangeOne() {
     $expected = <<<SQL
-ALTER TABLE `test1b`.`test`
+ALTER TABLE `test`
   DROP INDEX `test_idxa`,
   ADD UNIQUE INDEX `test_idxa` (`a`);
 SQL;
@@ -144,7 +146,7 @@ SQL;
 
   public function testAddSomeAndChange() {
     $expected = <<<SQL
-ALTER TABLE `test3`.`test`
+ALTER TABLE `test`
   DROP INDEX `test_idxa`,
   ADD INDEX `test_idxa` (`a`),
   ADD INDEX `test_idxb` (`b`),
@@ -155,7 +157,7 @@ SQL;
 
   public function testDropSomeAndChange() {
     $expected = <<<SQL
-ALTER TABLE `test1a`.`test`
+ALTER TABLE `test`
   DROP INDEX `test_idxa`,
   DROP INDEX `test_idxb`,
   DROP INDEX `test_idxc`,

@@ -37,7 +37,7 @@ class sql99_diff_tables {
     
     // definition sanity checks
     if ( sql99_schema::contains_table($schema, $table['oldTableName']) ) {
-      throw new Exception("oldTableName panic - schema " . $schema['name'] . " still contains table named " . $table['oldTableName']);
+      throw new Exception("oldTableName panic - new_schema " . $schema['name'] . " still contains table named " . $table['oldTableName']);
     }
 
     $old_schema = sql99_table::get_old_table_schema($schema, $table);
@@ -94,24 +94,40 @@ class sql99_diff_tables {
       throw new exception("dbsteward::ignore_oldname option is on, is_renamed_column() should not be getting called");
     }
 
+    $case_sensitive = FALSE;
+    if ( dbsteward::$quote_column_names || dbsteward::$quote_all_names || strcasecmp('mysql5', dbsteward::get_sql_format()) == 0 ) {
+      // do case-sensitive check
+      $new_colname = (string)$new_column['name'];
+      foreach ($old_table->column as $old_column) {
+        $old_colname = (string)$old_column['name'];
+        if (strcasecmp($old_colname, $new_colname) === 0) {
+          if ($old_colname != $new_colname && !isset($new_column['oldColumnName'])) {
+            throw new Exception("Ambiguous operation! It looks like column name case changed between old_column {$old_table['name']}.{$old_colname} and new_column {$new_table['name']}.{$new_colname}");
+          }
+          break;
+        }
+      }
+      $case_sensitive = TRUE;
+    }
+
     // if new_column['oldColumnName'] is not defined, abort checks
     if ( ! isset($new_column['oldColumnName']) ) {
       return false;
     }
     
     // definition sanity checks
-    if ( sql99_table::contains_column($new_table, $new_column['oldColumnName']) ) {
+    if ( sql99_table::contains_column($new_table, $new_column['oldColumnName'], $case_sensitive) ) {
       throw new Exception("oldColumnName panic - table " . $new_table['name'] . " still contains column named " . $new_column['oldColumnName']);
     }
-    if ( !sql99_table::contains_column($old_table, $new_column['oldColumnName']) ) {
+    if ( !sql99_table::contains_column($old_table, $new_column['oldColumnName'], $case_sensitive) ) {
       throw new Exception("oldColumnName panic - table " . $old_table['name'] . " does not contain column named " . $new_column['oldColumnName']);
     }
     
     // it is a new old named table rename if:
     // new_column['oldColumnName'] exists in old schema
     // new_column['oldColumnName'] does not exist in new schema
-    if ( sql99_table::contains_column($old_table, $new_column['oldColumnName'])
-        && !sql99_table::contains_column($new_table, $new_column['oldColumnName']) ) {
+    if ( sql99_table::contains_column($old_table, $new_column['oldColumnName'], $case_sensitive)
+        && !sql99_table::contains_column($new_table, $new_column['oldColumnName'], $case_sensitive) ) {
       return true;
     }
 

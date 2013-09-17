@@ -24,6 +24,8 @@ class Mysql5ViewSQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
     
     $db_doc_xml = <<<XML
 <dbsteward>
@@ -49,13 +51,13 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `public`.`view`
+CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `view`
   AS SELECT * FROM sometable;
 SQL;
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql($schema, $schema->view)));
     $this->assertEquals($expected, $actual);
 
-    $expected = "DROP VIEW IF EXISTS `public`.`view`;";
+    $expected = "DROP VIEW IF EXISTS `view`;";
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_drop_sql($schema, $schema->view)));
     $this->assertEquals($expected, $actual);
   }
@@ -72,13 +74,13 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     $expected = <<<SQL
-CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `public`.`view`
+CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `view`
   AS SELECT * FROM mysql5table;
 SQL;
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql($schema, $schema->view)));
     $this->assertEquals($expected, $actual);
 
-    $expected = "DROP VIEW IF EXISTS `public`.`view`;";
+    $expected = "DROP VIEW IF EXISTS `view`;";
     $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_drop_sql($schema, $schema->view)));
     $this->assertEquals($expected, $actual);
 

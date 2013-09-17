@@ -98,7 +98,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->apply_options_pgsql8();
 
     // build the DDL first, incase dbsteward code wants to throw about something
-    pgsql8::build($this->output_prefix, simplexml_load_file($this->xml_file_a));
+    pgsql8::build($this->output_prefix, xml_parser::xml_composite(array($this->xml_file_a)));
 
     $this->pgsql8->create_db();
 
@@ -115,8 +115,8 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     pgsql8::$known_pg_identifiers = array();
     
     // build the upgrade DDL first, incase dbsteward code wants to throw about something
-    $old_db_doc = simplexml_load_file($this->xml_file_a);
-    $new_db_doc = simplexml_load_file($this->xml_file_b);
+    $old_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
+    $new_db_doc = xml_parser::xml_composite(array($this->xml_file_b));
     pgsql8::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array()); 
 
     // upgrade database to "B" with each stage file
@@ -141,7 +141,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->apply_options_mssql10();
     
     // build the DDL first, incase dbsteward code wants to throw about something
-    mssql10::build($this->output_prefix, simplexml_load_file($this->xml_file_a));
+    mssql10::build($this->output_prefix, xml_parser::xml_composite(array($this->xml_file_a)));
     
     $this->mssql10->create_db();
 
@@ -161,8 +161,8 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
     $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
     $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
-    $old_db_doc = simplexml_load_file($this->xml_file_a);
-    $new_db_doc = simplexml_load_file($this->xml_file_b);
+    $old_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
+    $new_db_doc = xml_parser::xml_composite(array($this->xml_file_b));
     mssql10::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array()); 
 
     $this->mssql10->run_file($this->output_prefix . '_upgrade_stage1_schema1.sql');
@@ -179,13 +179,15 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_all_names = TRUE;
     mysql5::$swap_function_delimiters = TRUE;
+    mysql5::$use_auto_increment_table_options = FALSE;
+    mysql5::$use_schema_name_prefix = FALSE;
   }
   
   protected function build_db_mysql5() {
     $this->apply_options_mysql5();
     
     // build the DDL first, incase dbsteward code wants to throw about something
-    mysql5::build($this->output_prefix, simplexml_load_file($this->xml_file_a));
+    mysql5::build($this->output_prefix, xml_parser::xml_composite(array($this->xml_file_a)));
     
     $this->mysql5->create_db();
 
@@ -196,8 +198,8 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected function upgrade_db_mysql5() {
     $this->apply_options_mysql5();
     // build the upgrade DDL first, incase dbsteward code wants to throw about something
-    $old_db_doc = simplexml_load_file($this->xml_file_a);
-    $new_db_doc = simplexml_load_file($this->xml_file_b);
+    $old_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
+    $new_db_doc = xml_parser::xml_composite(array($this->xml_file_b));
     mysql5::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array()); 
 
     // upgrade database to "B" with each stage file

@@ -279,12 +279,12 @@ class pgsql8 extends sql99 {
       }
 
       // data types that should be quoted
-      if (preg_match("/^bool.*|^character.*|^string|^text|^date|^time.*|^varchar.*|^interval|^money.*|^inet|uuid" . $enum_regex . "/i", $type) > 0) {
+      if (preg_match("/^bool.*|^character.*|^string|^text|^date|^time.*|^(?:var)?char.*|^interval|^money.*|^inet|uuid" . $enum_regex . "/i", $type) > 0) {
         $value = "'" . pg_escape_string($value) . "'";
 
         // data types that should have E prefix to their quotes
         if (pgsql8::E_ESCAPE
-          && preg_match("/^character.*|^string|^text|^varchar.*/", $type) > 0) {
+          && preg_match("/^character.*|^string|^text|^(?:var)?char.*/", $type) > 0) {
           $value = 'E' . $value;
         }
       }
@@ -1400,10 +1400,18 @@ SLEEP (SECONDS=60);
     $node_role->addChild('readonly', $user);
 
     // find all tables in the schema that aren't in the built-in schemas
-    $sql = "SELECT *
-      FROM pg_catalog.pg_tables
-      WHERE schemaname NOT IN ('information_schema', 'pg_catalog')
-      ORDER BY schemaname, tablename;";
+    $sql = "SELECT t.schemaname, t.tablename, t.tableowner, t.tablespace,
+                   sd.description as schema_description, td.description as table_description,
+                   ( SELECT array_agg(cd.objsubid::text || ';' ||cd.description)
+                     FROM pg_catalog.pg_description cd
+                     WHERE cd.objoid = c.oid AND cd.classoid = c.tableoid AND cd.objsubid > 0 ) AS column_descriptions
+            FROM pg_catalog.pg_tables t
+            LEFT JOIN pg_catalog.pg_namespace n ON (n.nspname = t.schemaname)
+            LEFT JOIN pg_catalog.pg_class c ON (c.relname = t.tablename AND c.relnamespace = n.oid)
+            LEFT JOIN pg_catalog.pg_description td ON (td.objoid = c.oid AND td.classoid = c.tableoid AND td.objsubid = 0)
+            LEFT JOIN pg_catalog.pg_description sd ON (sd.objoid = n.oid)
+            WHERE schemaname NOT IN ('information_schema', 'pg_catalog')
+            ORDER BY schemaname, tablename;";
     $rs = pgsql8_db::query($sql);
     $sequence_cols = array();
     while (($row = pg_fetch_assoc($rs)) !== FALSE) {
@@ -1415,10 +1423,15 @@ SLEEP (SECONDS=60);
       $nodes = $doc->xpath("schema[@name='" . $row['schemaname'] . "']");
       if (count($nodes) == 0) {
         $node_schema = $doc->addChild('schema');
-        $node_schema->addAttribute('name', $row['schemaname']);
+        $node_schema['name'] = $row['schemaname'];
+
         $sql = "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = '" . $row['schemaname'] . "'";
         $schema_owner = pgsql8_db::query_str($sql);
-        $node_schema->addAttribute('owner', self::translate_role_name($schema_owner));
+        $node_schema['owner'] = self::translate_role_name($schema_owner);
+
+        if ($row['schema_description']) {
+          $node_schema['description'] = $row['schema_description'];
+        }
       }
       else {
         $node_schema = $nodes[0];
@@ -1428,8 +1441,9 @@ SLEEP (SECONDS=60);
       $nodes = $node_schema->xpath("table[@name='" . $row['tablename'] . "']");
       if (count($nodes) == 0) {
         $node_table = $node_schema->addChild('table');
-        $node_table->addAttribute('name', $row['tablename']);
-        $node_table->addAttribute('owner', self::translate_role_name($row['tableowner']));
+        $node_table['name'] = $row['tablename'];
+        $node_table['owner'] = self::translate_role_name($row['tableowner']);
+        $node_table['description'] = $row['table_description'];
 
         // extract tablespace as a tableOption
         if (!empty($row['tablespace'])) {
@@ -1459,6 +1473,14 @@ SLEEP (SECONDS=60);
         $node_option->addAttribute('value', '('.implode(',',$params).')');
 
         dbsteward::console_line(3, "Analyze table columns " . $row['schemaname'] . "." . $row['tablename']);
+
+        $column_descriptions_raw = self::parse_sql_array($row['column_descriptions']);
+        $column_descriptions = array();
+        foreach ($column_descriptions_raw as $desc) {
+          list($idx, $description) = explode(';', $desc, 2);
+          $column_descriptions[$idx] = $description;
+        }
+
         //hasindexes | hasrules | hastriggers  handled later
         // get columns for the table
         $sql = "SELECT
@@ -1472,6 +1494,11 @@ SLEEP (SECONDS=60);
         while (($col_row = pg_fetch_assoc($col_rs)) !== FALSE) {
           $node_column = $node_table->addChild('column');
           $node_column->addAttribute('name', $col_row['column_name']);
+
+          if (array_key_exists($col_row['ordinal_position'], $column_descriptions)) {
+            $node_column['description'] = $column_descriptions[$col_row['ordinal_position']];
+          }
+
           // look for serial columns that are primary keys and collapse them down from integers with sequence defualts into serials
           // type int or bigint
           // is_nullable = NO
@@ -1487,9 +1514,6 @@ SLEEP (SECONDS=60);
 
             $seq_name = explode("'", $col_row['column_default']);
             $sequence_cols[] = $seq_name[1];
-
-            // hmm, this is taken care of by the constraint iterator
-            //$node_table->addAttribute('primaryKey', $col_row['column_name']);
           }
           // not serial column
           else {
@@ -1510,15 +1534,17 @@ SLEEP (SECONDS=60);
 
         dbsteward::console_line(3, "Analyze table indexes " . $row['schemaname'] . "." . $row['tablename']);
         // get table INDEXs
-        $sql = "SELECT ic.relname, i.indisunique, array_to_string((
-                  SELECT array_agg(attname)
-                  FROM unnest(i.indkey) AS key
-                  LEFT JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = key
-                ), ' ') AS dimensions
+        $sql = "SELECT ic.relname, i.indisunique, (
+                  -- get the n'th dimension's definition
+                  SELECT array_agg(pg_catalog.pg_get_indexdef(i.indexrelid, n, true))
+                  FROM generate_series(1, i.indnatts) AS n
+                ) AS dimensions
                 FROM pg_index i
                 LEFT JOIN pg_class ic ON ic.oid = i.indexrelid
                 LEFT JOIN pg_class tc ON tc.oid = i.indrelid
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = tc.relnamespace
                 WHERE tc.relname = '{$node_table['name']}'
+                  AND n.nspname = '{$node_schema['name']}'
                   AND i.indisprimary != 't'
                   AND ic.relname NOT IN (
                     SELECT constraint_name
@@ -1527,7 +1553,7 @@ SLEEP (SECONDS=60);
                       AND table_name = '{$node_table['name']}');";
         $index_rs = pgsql8_db::query($sql);
         while (($index_row = pg_fetch_assoc($index_rs)) !== FALSE) {
-          $dimensions = explode(' ', $index_row['dimensions']);
+          $dimensions = self::parse_sql_array($index_row['dimensions']);
 
           // only add a unique index if the column was
           $index_name = $index_row['relname'];
@@ -1538,7 +1564,7 @@ SLEEP (SECONDS=60);
           $dim_i = 1;
           foreach ($dimensions as $dim) {
             $node_index->addChild('indexDimension', $dim)
-              ->addAttribute('name', $dim . '_' . $dim_i++);
+              ->addAttribute('name', $index_name . '_' . $dim_i++);
           }
         }
       }
@@ -1572,7 +1598,7 @@ SLEEP (SECONDS=60);
 
       while (($seq_list_row = pg_fetch_assoc($seq_list_rs)) !== FALSE) {
         $seq_sql = "SELECT cache_value, start_value, min_value, max_value,
-                    increment_by, is_cycled FROM " . $schema['name'] . "." . $seq_list_row['relname'] . ";";
+                    increment_by, is_cycled FROM \"" . $schema['name'] . "\"." . $seq_list_row['relname'] . ";";
         $seq_rs = pgsql8_db::query($seq_sql);
         while (($seq_row = pg_fetch_assoc($seq_rs)) !== FALSE) {
           $nodes = $schema->xpath("sequence[@name='" . $seq_list_row['relname'] . "']");
@@ -1625,14 +1651,18 @@ SLEEP (SECONDS=60);
       $node_query->addAttribute('sqlFormat', 'pgsql8');
     }
 
-    // for all schemas, all tables - get table constraints that are not typoe 'FOREIGN KEY'
+    // for all schemas, all tables - get table constraints that are not type 'FOREIGN KEY'
     dbsteward::console_line(3, "Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
-    $sql = "SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name, tc.is_deferrable, tc.initially_deferred, kcu.ordinal_position
+    $sql = "SELECT constraint_name, constraint_type, table_schema, table_name, array_agg(columns) AS columns
+      FROM (
+      SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name::text AS columns
       FROM information_schema.table_constraints tc
       LEFT JOIN information_schema.key_column_usage kcu ON tc.constraint_catalog = kcu.constraint_catalog AND tc.constraint_schema = kcu.constraint_schema AND tc.constraint_name = kcu.constraint_name
       WHERE tc.table_schema NOT IN ('information_schema', 'pg_catalog')
         AND tc.constraint_type != 'FOREIGN KEY'
-      ORDER BY tc.table_schema, tc.table_name, kcu.ordinal_position;";
+      GROUP BY tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name
+      ORDER BY kcu.column_name, tc.table_schema, tc.table_name) AS results
+      GROUP BY results.constraint_name, results.constraint_type, results.table_schema, results.table_name;";
     $rc_constraint = pgsql8_db::query($sql);
     while (($constraint_row = pg_fetch_assoc($rc_constraint)) !== FALSE) {
       $nodes = $doc->xpath("schema[@name='" . $constraint_row['table_schema'] . "']");
@@ -1651,41 +1681,18 @@ SLEEP (SECONDS=60);
         $node_table = $nodes[0];
       }
 
-      $node_column = NULL;
-      if (strlen($constraint_row['column_name']) > 0) {
-        $nodes = $node_table->xpath("column[@name='" . $constraint_row['column_name'] . "']");
-        if (count($nodes) != 1) {
-          throw new exception("failed to find constraint analysis column " . $constraint_row['table_schema'] . " table '" . $constraint_row['table_name'] . "' column '" . $constraint_row['column_name']);
-        }
-        else {
-          $node_column = $nodes[0];
-        }
-      }
+      $column_names = self::parse_sql_array($constraint_row['columns']);
 
       if (strcasecmp('PRIMARY KEY', $constraint_row['constraint_type']) == 0) {
-        if (!isset($node_table['primaryKey'])) {
-          $node_table->addAttribute('primaryKey', '');
-        }
+        $node_table['primaryKey'] = implode(', ', $column_names);
 
-        if (strlen($node_table['primaryKey']) == 0) {
-          $node_table['primaryKey'] = $constraint_row['column_name'];
-        }
-        else {
-          // the results are ordered by ordinal_position so suffix appending is the deterministic thing to do here
-          $node_table['primaryKey'] .= ', ' . $constraint_row['column_name'];
-        }
-
-        if (!isset($node_table['primaryKeyName'])) {
-          $node_table->addAttribute('primaryKeyName', $constraint_row['constraint_name']);
-        } else {
-          $node_table['primaryKeyName'] = $constraint_row['constraint_name'];
-        }
+        $node_table['primaryKeyName'] = $constraint_row['constraint_name'];
       }
       else if (strcasecmp('UNIQUE', $constraint_row['constraint_type']) == 0) {
-        if (!isset($node_column['unique'])) {
-          $node_column->addAttribute('unique', 'true');
-        }
-        $node_column['unique'] = 'true';
+        $node_constraint = $node_table->addChild('constraint');
+        $node_constraint['name'] = $constraint_row['constraint_name'];
+        $node_constraint['type'] = 'UNIQUE';
+        $node_constraint['definition'] = '("' . implode('", "', $column_names) . '")';
       }
       else if (strcasecmp('CHECK', $constraint_row['constraint_type']) == 0) {
         // @TODO: implement CHECK constraints
@@ -1855,7 +1862,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
       $node_function['returns'] = $row_fxn['return_type'];
       $node_function['cachePolicy'] = $row_fxn['volatility'];
-      $node_function['owner'] = $row_fxn['owner'];
+      $node_function['owner'] = self::translate_role_name($row_fxn['owner']);
       // @TODO: how is / figure out how to express securityDefiner attribute in the functions query
       $node_function['description'] = $row_fxn['description'];
       $node_definition = $node_function->addChild('functionDefinition', $row_fxn['source']);
@@ -2004,7 +2011,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
             $table['description'] = $table_notice_desc;
           }
           else {
-            $table['description'] .= $table_notice_desc;
+            $table['description'] .= '; ' . $table_notice_desc;
           }
         }
 
@@ -2024,6 +2031,52 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
     xml_parser::validate_xml($doc->asXML());
     return xml_parser::format_xml($doc->saveXML());
+  }
+
+  public static function parse_sql_array($sql_arr) {
+    $input = trim($sql_arr, "{}");
+   
+    // {} signifies an empty array
+    if (strlen($input) === 0) {
+      return array();
+    }
+    
+    $rv = array();
+    $nextval = '';
+    $inquote = FALSE;
+    for ($i = 0; $i < strlen($input); $i++) {
+      //echo "$i, $inquote, $nextval\n";
+      if ($inquote) {
+        if ($input{$i} == '"') {
+          $inquote = FALSE;
+        }
+        else {
+          if ($input{$i} == "\\") {
+            $i++;
+            $nextval .= $input{$i};
+          }
+          else {
+            $nextval .= $input{$i};
+          }
+        }
+      }
+      else {
+        if ($input{$i} == ',') {
+          $rv[] = $nextval;
+          $nextval = '';
+        }
+        else {
+          if ($input{$i} == '"') {
+            $inquote = TRUE;
+          }
+          else {
+            $nextval .= $input{$i};
+          }
+        }
+      }
+    }
+    $rv[] = $nextval;
+    return $rv;
   }
 
   /**
