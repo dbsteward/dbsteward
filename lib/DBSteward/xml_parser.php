@@ -926,12 +926,12 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
   /**
    * composite postgresql schema_to_xml() database_to_xml() data outputs onto a dbsteward database definition
    *
-   * @param SimpleXMLElement base        full definition element to add data to
-   * @param SimpleXMLElement pgoverlay   postgres-style data output xml data to add
+   * @param SimpleXMLElement $base          full definition element to add data to
+   * @param SimpleXMLElement $pgdatafiles   postgres table data XML from database_to_xml() to overlay in
    *
    * @return void
    */
-  public static function xml_composite_pgdata($output_prefix, &$base, $pgdatafiles) {
+  public static function xml_composite_pgdata(&$base, $pgdatafiles) {
     // psql -U deployment megatrain_nkiraly -c "select database_to_xml(true, false, 'http://dbsteward.org/pgdataxml');"
     /*
     <megatrain_nkiraly xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://dbsteward.org/pgdataxml">
@@ -967,7 +967,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
           $nodes = $base->xpath($table_xpath);
           if (count($nodes) != 1 || $nodes === FALSE) {
             var_dump($nodes);
-            throw new exception("xpath did not yield one table match: " . $table_xpath);
+            throw new exception("xpath did not yield one table match: " . $table_xpath . " - do the schema and table exist in your DBSteward XML?");
           }
           $node = $nodes[0];
 
