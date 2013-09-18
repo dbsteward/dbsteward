@@ -34,7 +34,7 @@ class pgsql8_table extends sql99_table {
 
     foreach(dbx::get_table_columns($node_table) as $column) {
       $sql .= "\t"
-        . pgsql8_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, FALSE, TRUE, pgsql8_table::$include_column_default_nextval_in_create_sql)
+        . pgsql8_column::get_reduced_definition(dbsteward::$new_database, $node_schema, $node_table, $column)
         . ",\n";
     }
 
@@ -72,7 +72,7 @@ class pgsql8_table extends sql99_table {
         $sql .= "\nCOMMENT ON COLUMN " . $table_name . '.' . pgsql8::get_quoted_column_name($column['name'])
           . " IS '" . pg_escape_string(dbsteward::string_cast($column['description'])) . "';\n";
       }
-    }
+    }   
 
     // table ownership
     if (isset($node_table['owner']) && strlen($node_table['owner']) > 0) {
@@ -95,6 +95,28 @@ class pgsql8_table extends sql99_table {
       }
     }
 
+    return $sql;
+  }
+  
+  /**
+   * For each column in the specified table, check if it has defaults and
+   * generate ALTER TABLE (schema.table) ALTER COLUMN (column) SET (default)
+   * statements for it.
+   * 
+   * We do this after the fact so that we can define function return values
+   * as defaults even if said functions contain %TYPE declarations.
+   * @param type $node_schema
+   * @param type $node_table
+   * @return type
+   */
+  public static function define_table_column_defaults($node_schema, $node_table) {
+    $sql = '';
+    foreach (dbx::get_table_columns($node_table) AS $column) {
+      $column_sql = pgsql8_column::set_column_defaults($node_schema, $node_table, $column, FALSE, TRUE, pgsql8_table::$include_column_default_nextval_in_create_sql);
+      if ($column_sql) {
+        $sql .= $column_sql;
+      }
+    }
     return $sql;
   }
 

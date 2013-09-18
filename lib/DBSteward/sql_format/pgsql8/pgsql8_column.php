@@ -33,6 +33,22 @@ class pgsql8_column extends sql99_column {
   const PATTERN_NEXTVAL = "/^nextval\((.+)\)$/i";
 
   /**
+   * Returns only the column name and type as the definition. Column defaults
+   * are to be defined later.
+   * 
+   * @param type $db_doc
+   * @param type $node_schema
+   * @param type $node_table
+   * @param type $node_column
+   * @return string
+   */
+  public static function get_reduced_definition($db_doc, $node_schema, $node_table, $node_column) {
+    $column_type = pgsql8_column::column_type($db_doc, $node_schema, $node_table, $node_column, $foreign);
+    $definition = pgsql8::get_quoted_column_name($node_column['name']) . ' ' . $column_type;  
+    return $definition;
+  }
+  
+  /**
    * Returns full definition of the column.
    *
    * @param add_defaults whether default value should be added in case NOT
@@ -66,6 +82,72 @@ class pgsql8_column extends sql99_column {
     }
 
     return $definition;
+  }
+  
+  /**
+   * Generate column defaults from column definitions, returns FALSE if
+   * no defaults were defined, otherwise return the
+   * ALTER TABLE ALTER COLUMN SET statements needed.
+   * 
+   * Don't know if this would work with functions referenced as function(argument1 ... argumentN)
+   * 
+   * @param type $node_schema
+   * @param type $node_table
+   * @param type $node_column
+   * @param type $add_defaults
+   * @param type $include_null_definition
+   * @param type $include_default_nextval
+   * @return boolean|string
+   */
+  public static function set_column_defaults($node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true, $include_default_nextval = TRUE) {
+    $fq_table_name = $node_schema['name'] . '.' . $node_table['name'];
+    $sql = 'ALTER TABLE ' . $fq_table_name . " ALTER COLUMN " . $node_column['name'] . " SET";
+    $changes = FALSE;
+    if (strlen($node_column['default']) > 0) {
+      if (! $include_default_nextval && static::has_default_nextval($node_table, $node_column)) {
+        // if the default is a nextval expression, don't specify it in the regular full definition
+        // because if the sequence has not been defined yet,
+        // the nextval expression will be evaluated inline and fail
+        dbsteward::console_line(5, "Skipping " . $node_column['name'] . " default expression \"" . $node_column['default'] . "\" - this default expression will be applied after all sequences have been created");
+        return $changes;
+      }
+      else {
+        $sql .= " DEFAULT " . $node_column['default'];
+        $changes = TRUE;
+      }
+    } else if ( !pgsql8_column::null_allowed($node_table, $node_column) && $add_defaults) {
+      $default_col_value = pgsql8_column::get_default_value($node_column['type']);
+      if ($default_col_value != null) {
+        $sql .= " DEFAULT " . $default_col_value;
+        $changes = TRUE;
+      }
+    }
+
+    if ($include_null_definition && !pgsql8_column::null_allowed($node_table, $node_column) ) {
+      if (!pgsql8_column::default_is_function($node_column['default'])) {
+        $sql .= " NOT NULL";
+      }
+      $changes = TRUE;
+    }
+    // no changes? we don't have a default for this column... keep going pls
+    if (!$changes) {
+      return $changes;
+    }
+    
+    $sql .= ";\n";
+    return $sql;
+  }
+  
+  /**
+   * Check if a default definition refers to a function.
+   * In theory it shouldn't matter if the function is defined as
+   * function() or function(argument) but I'm not sure how Postgres would
+   * deal with a function with arguments in certain cases.
+   * @param type $default_column
+   * @return type
+   */
+  public static function default_is_function($default_column) {
+    return preg_match('/\([a-z0-9A-Z]*\)/', $default_column) === 1;
   }
 
   /**

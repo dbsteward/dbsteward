@@ -441,21 +441,6 @@ class pgsql8 extends sql99 {
       }
     }
 
-    // function definitions
-    foreach ($db_doc->schema AS $schema) {
-      foreach ($schema->function AS $function) {
-        if (pgsql8_function::has_definition($function)) {
-          $ofs->write(pgsql8_function::get_creation_sql($schema, $function));
-          // when pg:build_schema() is doing its thing for straight builds, include function permissions
-          // they are not included in pg_function::get_creation_sql()
-          foreach(dbx::get_permissions($function) AS $function_permission) {
-            $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $function, $function_permission) . "\n");
-          }
-        }
-      }
-    }
-    $ofs->write("\n");
-
     // table structure creation
     foreach ($db_doc->schema AS $schema) {
 
@@ -500,7 +485,29 @@ class pgsql8 extends sql99 {
         }
       }
     }
+    $ofs->write("\n");    
+    
+    // function definitions
+    foreach ($db_doc->schema AS $schema) {
+      foreach ($schema->function AS $function) {
+        if (pgsql8_function::has_definition($function)) {
+          $ofs->write(pgsql8_function::get_creation_sql($schema, $function));
+          // when pg:build_schema() is doing its thing for straight builds, include function permissions
+          // they are not included in pg_function::get_creation_sql()
+          foreach(dbx::get_permissions($function) AS $function_permission) {
+            $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $function, $function_permission) . "\n");
+          }
+        }
+      }
+    }
     $ofs->write("\n");
+
+    // maybe move this but here we're defining column defaults fo realz
+    foreach ($db_doc->schema AS $schema) {
+      foreach ($schema->table AS $table) {
+        $ofs->write(pgsql8_table::define_table_column_defaults($schema, $table));
+      }
+    }
 
     // define table primary keys before foreign keys so unique requirements are always met for FOREIGN KEY constraints
     foreach ($db_doc->schema AS $schema) {
