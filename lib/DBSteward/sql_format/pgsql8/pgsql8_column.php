@@ -101,7 +101,8 @@ class pgsql8_column extends sql99_column {
    */
   public static function set_column_defaults($node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true, $include_default_nextval = TRUE) {
     $fq_table_name = $node_schema['name'] . '.' . $node_table['name'];
-    $sql = 'ALTER TABLE ' . $fq_table_name . " ALTER COLUMN " . $node_column['name'] . " SET";
+    $base_sql = "ALTER TABLE " . $fq_table_name . " ALTER COLUMN " . $node_column['name'] . " SET";
+    $sql = $base_sql;
     $changes = FALSE;
     if (strlen($node_column['default']) > 0) {
       if (! $include_default_nextval && static::has_default_nextval($node_table, $node_column)) {
@@ -124,10 +125,15 @@ class pgsql8_column extends sql99_column {
     }
 
     if ($include_null_definition && !pgsql8_column::null_allowed($node_table, $node_column) ) {
-      if (!pgsql8_column::default_is_function($node_column['default'])) {
-        $sql .= " NOT NULL";
+      if ($changes) {
+        $sql .= ";\n";
+        $sql .= $base_sql . " NOT NULL";
       }
-      $changes = TRUE;
+      else {
+        $sql .= " NOT NULL";
+        $changes = TRUE;
+      }
+      
     }
     // no changes? we don't have a default for this column... keep going pls
     if (!$changes) {
@@ -143,6 +149,9 @@ class pgsql8_column extends sql99_column {
    * In theory it shouldn't matter if the function is defined as
    * function() or function(argument) but I'm not sure how Postgres would
    * deal with a function with arguments in certain cases.
+   * 
+   * I was using this in the above function, but it's here for later use if
+   * needed.
    * @param type $default_column
    * @return type
    */
