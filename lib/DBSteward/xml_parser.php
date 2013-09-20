@@ -499,7 +499,7 @@ class xml_parser {
       foreach ($primary_key_index['base'] as $index) {
         $s .= ':'.$base_row->col[$index];
       }
-      $base_pklookup[$s] = $i;
+      $base_pklookup[$s] = $i++;
     }
 
     // merge all row entries for the rows element

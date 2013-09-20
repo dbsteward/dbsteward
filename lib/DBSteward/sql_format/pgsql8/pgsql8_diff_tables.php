@@ -855,16 +855,16 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       $primary_key_index = xml_parser::data_row_overlay_primary_key_index($table_b_primary_keys, $table_b_data_rows_columns, $table_a_data_rows_columns);
       
       // @TODO: Find some way to merge this with the algorithm in xml_parser::data_rows_overlay?
-      
+
       $base_pklookup = array();
       $i = 0;
       if (count($primary_key_index['base'])) {
-        foreach ($table_b_data_rows as $base_row) {
+        foreach ($table_b_data_rows->row as $base_row) {
           $s = '';
           foreach ($primary_key_index['base'] as $index) {
             $s .= ':'.$base_row->col[$index];
           }
-          $base_pklookup[$s] = $i;
+          $base_pklookup[$s] = $i++;
         }
       }
 

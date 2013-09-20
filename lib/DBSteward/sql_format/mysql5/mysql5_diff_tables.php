@@ -630,12 +630,12 @@ class mysql5_diff_tables extends sql99_diff_tables {
       $base_pklookup = array();
       $i = 0;
       if (count($primary_key_index['base'])) {
-        foreach ($table_b_data_rows as $base_row) {
+        foreach ($table_b_data_rows->row as $base_row) {
           $s = '';
           foreach ($primary_key_index['base'] as $index) {
             $s .= ':'.$base_row->col[$index];
           }
-          $base_pklookup[$s] = $i;
+          $base_pklookup[$s] = $i++;
         }
       }
 
