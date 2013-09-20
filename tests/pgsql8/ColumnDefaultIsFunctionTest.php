@@ -2,8 +2,10 @@
 
 require_once dirname(__FILE__) . '/../dbstewardUnitTestBase.php';
 
-class ColumnDefaultIsFunctionTest extends dbstewardUnitTestBase
-{
+/**
+ * @group pgsql8
+ */
+class ColumnDefaultIsFunctionTest extends dbstewardUnitTestBase {
   
   /**
    * Tests that functions referenced as default values for columns
