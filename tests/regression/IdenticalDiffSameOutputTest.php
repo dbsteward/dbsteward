@@ -63,8 +63,8 @@ class IdenticalDiffSameOutputTest extends dbstewardUnitTestBase
   </schema>
 </dbsteward>
 XML;
-    $this->xml_file_a = '../testdata/pgsql8_unit_test_xml_a.xml';
-    $this->xml_file_b = '../testdata/pgsql8_unit_test_xml_b.xml';        
+    $this->xml_file_a = dirname(__FILE__) . '/../testdata/pgsql8_unit_test_xml_a.xml';
+    $this->xml_file_b = dirname(__FILE__) . '/../testdata/pgsql8_unit_test_xml_b.xml';        
         
     $this->set_xml_content_a($xml);
     $this->set_xml_content_b($xml);
@@ -117,8 +117,8 @@ XML;
   </schema>
 </dbsteward>
 XML;
-    $this->xml_file_a = '../testdata/mysql5_unit_test_xml_a.xml';
-    $this->xml_file_b = '../testdata/mysql5_unit_test_xml_b.xml';        
+    $this->xml_file_a = dirname(__FILE__) . '/../testdata/mysql5_unit_test_xml_a.xml';
+    $this->xml_file_b = dirname(__FILE__) . '/../testdata/mysql5_unit_test_xml_b.xml';        
         
     $this->set_xml_content_a($xml);
     $this->set_xml_content_b($xml);
