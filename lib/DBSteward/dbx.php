@@ -163,6 +163,15 @@ class dbx {
     return $node_table;
   }
 
+  /** Finds the old version of the table */
+  public static function find_old_table($old_doc, $new_schema, $new_table) {
+    $old_schema = self::get_schema($old_doc, $new_table['oldSchemaName'] ?: $new_schema['name']);
+    if (!$old_schema) {
+      return NULL;
+    }
+    return array($old_schema, self::get_table($old_schema, $new_table['oldTableName'] ?: $new_table['name']));
+  }
+
   public static function &get_tables(&$node_schema) {
     if ( !is_object($node_schema) ) {
       var_dump($node_schema);
