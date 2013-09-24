@@ -72,6 +72,7 @@ XML;
     $new_db_doc = simplexml_load_file($this->xml_file_b);
     $this->output_prefix = dirname(__FILE__) . '/../testdata/pgsql8_unit_test_xml_a';
     dbsteward::$single_stage_upgrade = TRUE;
+    dbsteward::$generate_slonik = FALSE;
     pgsql8::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array());
   }
   
