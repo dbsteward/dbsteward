@@ -33,10 +33,10 @@ class mysql5_diff extends sql99_diff {
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
     dbsteward::console_line(1, "Drop Old Schemas");
-    self::drop_old_schemas($stage3_ofs);
+    // self::drop_old_schemas($stage3_ofs);
 
     dbsteward::console_line(1, "Create New Schemas");
-    self::create_new_schemas($stage1_ofs);
+    // self::create_new_schemas($stage1_ofs);
 
     dbsteward::console_line(1, "Revoke Permissions");
     self::revoke_permissions($stage1_ofs, $stage3_ofs);
