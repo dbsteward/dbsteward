@@ -323,22 +323,7 @@ XML;
     $ofs1 = new mock_output_file_segmenter();
     $ofs3 = new mock_output_file_segmenter();
 
-    // same structure as mysql5_diff::update_structure
-    foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-
-      mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', TRUE);
-      mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', TRUE);
-      mysql5_diff_tables::drop_tables($ofs3, $old_schema, $new_schema);
-      mysql5_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema);
-      mysql5_diff_indexes::diff_indexes($ofs1, $old_schema, $new_schema);
-      mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', FALSE);
-    }
-
-    foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'constraint', FALSE);
-    }
+    mysql5_diff::update_structure($ofs1, $ofs3);
 
     $actual1 = trim($ofs1->_get_output());
     $actual3 = trim($ofs3->_get_output());
