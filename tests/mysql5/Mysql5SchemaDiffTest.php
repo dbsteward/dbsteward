@@ -61,7 +61,7 @@ XML;
 ALTER TABLE `s2_t2` RENAME TO `s1_t2`;
 SQL;
     
-    $this->diff($old, $new, $expected1, '', 'Moving a table between schemas while using schema prefixing should result in a rename');
+    $this->diff($old, $new, $expected1, '-- DROP TABLE `s2_t2` omitted: new table `s1_t2` indicates it is her replacement', 'Moving a table between schemas while using schema prefixing should result in a rename');
   }
 
   public function testMergeSchemasWithOldSchemaNameWithoutSchemaPrefix() {
@@ -192,7 +192,7 @@ XML;
 ALTER TABLE `s1_t2` RENAME TO `s2_t2`;
 SQL;
     
-    $this->diff($old, $new, $expected1, '', 'Splitting a schema and using oldSchemaName while in schema prefixing mode should be a rename');
+    $this->diff($old, $new, $expected1, '-- DROP TABLE `s1_t2` omitted: new table `s2_t2` indicates it is her replacement', 'Splitting a schema and using oldSchemaName while in schema prefixing mode should be a rename');
   }
 
   public function testSplitSchemasWithOldSchemaNameWithoutSchemaPrefix() {
@@ -322,6 +322,9 @@ XML;
 
     $ofs1 = new mock_output_file_segmenter();
     $ofs3 = new mock_output_file_segmenter();
+
+    mysql5_diff::$old_table_dependency = xml_parser::table_dependency_order(dbsteward::$old_database);
+    mysql5_diff::$new_table_dependency = xml_parser::table_dependency_order(dbsteward::$new_database);
 
     mysql5_diff::update_structure($ofs1, $ofs3);
 

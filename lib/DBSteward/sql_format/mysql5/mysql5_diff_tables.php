@@ -472,23 +472,22 @@ class mysql5_diff_tables extends sql99_diff_tables {
    * @param type $new_table
    */
   public static function drop_tables($ofs, $old_schema, $new_schema, $old_table = null, $new_table = null) {
-    if ($old_schema != null && $new_schema != null ) {
-      foreach(dbx::get_tables($old_schema) as $table) {
-        // if old table was defined
-        if ( $old_table != null ) {
-          // is this the right old table?
-          if ( strcasecmp($table['name'], $old_table['name']) != 0 ) {
-            continue;
-          }
-        }
+    if ($old_schema != null ) {
+      if ($old_table != null) {
+        $tables = array($old_table);
+      }
+      else {
+        $tables = dbx::get_tables($old_schema);
+      }
 
+      foreach($tables as $table) {
         // does the new schema contain the old table?
         if (!mysql5_schema::contains_table($new_schema, $table['name'])) {
           // if the table was renamed, don't drop it
           if ( !dbsteward::$ignore_oldnames
-            && mysql5_schema::table_formerly_known_as(dbsteward::$new_database, $new_schema, $table, $reformed_schema, $reformed_table) ) {
-            $old_table_name = mysql5::get_quoted_schema_name($new_schema['name']) . '.' . mysql5::get_quoted_table_name($table['name']);
-            $reformed_table_name = mysql5::get_quoted_schema_name($reformed_schema['name']) . '.' . mysql5::get_quoted_table_name($reformed_table['name']);
+            && mysql5_schema::table_formerly_known_as(dbsteward::$new_database, $old_schema, $table, $reformed_schema, $reformed_table) ) {
+            $old_table_name = mysql5::get_fully_qualified_table_name($old_schema['name'], $table['name']);
+            $reformed_table_name = mysql5::get_fully_qualified_table_name($reformed_schema['name'], $reformed_table['name']);
             $ofs->write("-- DROP TABLE $old_table_name omitted: new table $reformed_table_name indicates it is her replacement\n");
           }
           else {
