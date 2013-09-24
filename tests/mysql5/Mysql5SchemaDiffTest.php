@@ -161,6 +161,137 @@ XML;
     $this->should_throw($old, $new, 'you cannot use more than one schema in mysql5 without schema name prefixing');
   }
 
+  public function testSplitSchemasWithOldSchemaNameWithSchemaPrefix() {
+    mysql5::$use_schema_name_prefix = TRUE;
+
+    $old = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+  <table name="t2" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+XML;
+    $new = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+<schema name="s2" owner="NOBODY">
+  <table name="t2" owner="NOBODY" primaryKey="col1" oldSchemaName="s1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+XML;
+
+    $expected1 = <<<SQL
+-- table rename from oldTableName specification
+ALTER TABLE `s1_t2` RENAME TO `s2_t2`;
+SQL;
+    
+    $this->diff($old, $new, $expected1, '', 'Splitting a schema and using oldSchemaName while in schema prefixing mode should be a rename');
+  }
+
+  public function testSplitSchemasWithOldSchemaNameWithoutSchemaPrefix() {
+    mysql5::$use_schema_name_prefix = FALSE;
+
+    $old = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+  <table name="t2" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+XML;
+    $new = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+<schema name="s2" owner="NOBODY">
+  <table name="t2" owner="NOBODY" primaryKey="col1" oldSchemaName="s1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+XML;
+    
+    $this->should_throw($old, $new, 'you cannot use more than one schema in mysql5 without schema name prefixing');
+  }
+
+  public function testSplitSchemasWithoutOldSchemaNameWithSchemaPrefix() {
+    mysql5::$use_schema_name_prefix = TRUE;
+
+    $old = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+  <table name="t2" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+XML;
+    $new = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+<schema name="s2" owner="NOBODY">
+  <table name="t2" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+XML;
+
+    $expected1 = <<<SQL
+CREATE TABLE `s2_t2` (
+  `col1` int(11)
+);
+ALTER TABLE `s2_t2`
+  ADD PRIMARY KEY (`col1`);
+SQL;
+
+    $expected3 = 'DROP TABLE `s1_t2`;';
+    
+    $this->diff($old, $new, $expected1, $expected3, 'Splitting a schema and not using oldSchemaName while in schema prefixing mode should be a recreate');
+  }
+
+  public function testSplitSchemasWithoutOldSchemaNameWithoutSchemaPrefix() {
+    mysql5::$use_schema_name_prefix = FALSE;
+
+    $old = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+  <table name="t2" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+XML;
+    $new = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+<schema name="s2" owner="NOBODY">
+  <table name="t2" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+XML;
+
+    $this->should_throw($old, $new, 'you cannot use more than one schema in mysql5 without schema name prefixing');
+  }
+
   private $db_doc_xml = <<<XML
 <dbsteward>
   <database>
