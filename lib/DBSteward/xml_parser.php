@@ -56,6 +56,10 @@ class xml_parser {
       $addendums_doc = new SimpleXMLElement('<dbsteward></dbsteward>');
       $start_addendums_idx = count($files) - $xml_collect_data_addendums;
     }
+    else {
+      $addendums_doc = NULL;
+      $start_addendums_idx = FALSE;
+    }
 
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
@@ -64,104 +68,124 @@ class xml_parser {
       if ($xml_contents === FALSE) {
         throw new exception("Failed to load XML from disk: " . $file_name);
       }
+
       $doc = simplexml_load_string($xml_contents);
       if ($doc === FALSE) {
         throw new Exception("failed to simplexml_load_string() contents of " . $file_name);
       }
-      $doc = xml_parser::expand_tabrow_data($doc);
-      $doc = xml_parser::sql_format_convert($doc);
-      $xml_contents = $doc->saveXML();
-
-      // only validate the first composite in the chain before composite has been completed
-      if ($i == 0) {
-        self::validate_xml($xml_contents);
-      }
 
       dbsteward::console_line(1, "Compositing XML File " . $file_name);
-      
-      // if doc defines the database element
-      // composite it first, to adhere to the DTD
-      $doc_clone = NULL;
-      if ( isset($doc->database) ) {
-        $doc_clone = clone $doc;
-        $doc_clone_child_nodes = $doc_clone->children();
-        foreach ($doc_clone_child_nodes AS $doc_clone_child_node) {
-          $doc_clone_child_names[] = $doc_clone_child_node->getName();
-        }
-        foreach ($doc_clone_child_names AS $doc_clone_child_name) {
-          if ( strcasecmp($doc_clone_child_name, 'inlineAssembly') == 0 ) {
-            // need to keep this definition at the top for DTD compliance
-            // this is for MSSQL assembly support
-          }
-          else if ( strcasecmp($doc_clone_child_name, 'database') == 0 ) {
-            // include database element and it's children first, to maintain adherence to the DTD
-          }
-          else {
-            unset($doc_clone->{$doc_clone_child_name});
-          }
-        }
-        // these elements do not need mainline overlaid from $doc
-        unset($doc->inlineAssembly);
-        unset($doc->database);
-      }
-      
-      // if doc_clone is defined, $doc->database was found, add it after inlineAssembly entries
-      // and if there were inlineAssembly elements included,
-      // composite these inlineAssembly elements in very first
-      if ( $doc_clone ) {
-        if ( isset($doc_clone->inlineAssembly) ) {
-          $doc_clone_ila = clone $doc_clone;
-          unset($doc_clone_ila->database);
-          self::xml_composite_children($composite, $doc_clone_ila);
-        }
-        
-        // if not defined in the composite yet
-        if ( !isset($composite->database) ) {
-          //add database node to the composite so it will be in the right natural order position
-          $composite->addChild('database');
-        }
-      }
 
-      // do doc includes first, to allow definer to overwrite included file values at the same level
-      while (isset($doc->includeFile)) {
-        foreach ($doc->includeFile AS $includeFile) {
-          $include_file_name = (string)($includeFile['name']);
-          // if include_file_name does not appear to be absolute, make it relative to its parent
-          if (substr($include_file_name, 0, 1) != '/') {
-            $include_file_name = dirname($file_name) . '/' . $include_file_name;
-          }
-          dbsteward::console_line(1, "Compositing XML includeFile " . $include_file_name);
-          $include_doc = simplexml_load_file($include_file_name);
-          if ($include_doc === FALSE) {
-            throw new Exception("failed to simplexml_load_file() includeFile " . $include_file_name);
-          }
-          $include_doc = xml_parser::expand_tabrow_data($include_doc);
-          $include_doc = xml_parser::sql_format_convert($include_doc);
-          self::xml_composite_children($composite, $include_doc);
-        }
-        unset($doc->includeFile);
-        unset($composite->includeFile);
-      }
-      
-      // if doc_clone is defined, there were database element values to overlay.
-      // now that includeFile has been processed, put these values overlaid "last"
-      if ( $doc_clone ) {
-        self::xml_composite_children($composite->database, $doc_clone->database);
-      }
-
-      // includes done, now put $doc values in, to allow definer to overwrite included file values at the same level
-      if ($addendums_doc != NULL && $i >= $start_addendums_idx) {
-        self::xml_composite_children($composite, $doc, $addendums_doc);
-      }
-      else {
-        self::xml_composite_children($composite, $doc);
-      }
-
-      // revalidate composited xml
-      self::validate_xml(self::format_xml($composite->saveXML()));
+      $composite = self::composite_doc($composite, $doc, $i, $start_addendums_idx, $addendums_doc);
     }
 
     return $composite;
+  }
+
+  /**
+   * Does the heavy lifting of compsiting two xml documents
+   * @param  SimpleXMLElement  $base          The base document we are merging into. If null, uses an empty dbsteward document
+   * @param  SimpleXMLElement  $overlay       The document we are merging
+   * @param  int               $idx           The index of the overlay in the layering
+   * @param  SimpleXMLElement  $addendums_doc The addendums document
+   * @return $base
+   */
+  public static function composite_doc($base, $overlay, $idx = 0, $start_addendums_idx = FALSE, $addendums_doc = NULL) {
+    if (!$base) {
+      $base = new SimpleXMLElement('<dbsteward></dbsteward>');
+    }
+
+    $overlay = xml_parser::expand_tabrow_data($overlay);
+    $overlay = xml_parser::sql_format_convert($overlay);
+    $xml_contents = $overlay->saveXML();
+
+    // only validate the first composite in the chain before composite has been completed
+    if ($idx == 0) {
+      self::validate_xml($xml_contents);
+    }
+    
+    // if overlay defines the database element
+    // composite it first, to adhere to the DTD
+    $doc_clone = NULL;
+    if ( isset($overlay->database) ) {
+      $doc_clone = clone $overlay;
+      $doc_clone_child_nodes = $doc_clone->children();
+      foreach ($doc_clone_child_nodes AS $doc_clone_child_node) {
+        $doc_clone_child_names[] = $doc_clone_child_node->getName();
+      }
+      foreach ($doc_clone_child_names AS $doc_clone_child_name) {
+        if ( strcasecmp($doc_clone_child_name, 'inlineAssembly') == 0 ) {
+          // need to keep this definition at the top for DTD compliance
+          // this is for MSSQL assembly support
+        }
+        else if ( strcasecmp($doc_clone_child_name, 'database') == 0 ) {
+          // include database element and it's children first, to maintain adherence to the DTD
+        }
+        else {
+          unset($doc_clone->{$doc_clone_child_name});
+        }
+      }
+      // these elements do not need mainline overlaid from $overlay
+      unset($overlay->inlineAssembly);
+      unset($overlay->database);
+    }
+    
+    // if doc_clone is defined, $overlay->database was found, add it after inlineAssembly entries
+    // and if there were inlineAssembly elements included,
+    // composite these inlineAssembly elements in very first
+    if ( $doc_clone ) {
+      if ( isset($doc_clone->inlineAssembly) ) {
+        $doc_clone_ila = clone $doc_clone;
+        unset($doc_clone_ila->database);
+        self::xml_composite_children($base, $doc_clone_ila);
+      }
+      
+      // if not defined in the base yet
+      if ( !isset($base->database) ) {
+        //add database node to the base so it will be in the right natural order position
+        $base->addChild('database');
+      }
+    }
+
+    // do overlay includes first, to allow definer to overwrite included file values at the same level
+    while (isset($overlay->includeFile)) {
+      foreach ($overlay->includeFile AS $includeFile) {
+        $include_file_name = (string)($includeFile['name']);
+        // if include_file_name does not appear to be absolute, make it relative to its parent
+        if (substr($include_file_name, 0, 1) != '/') {
+          $include_file_name = dirname($file_name) . '/' . $include_file_name;
+        }
+        dbsteward::console_line(1, "Compositing XML includeFile " . $include_file_name);
+        $include_doc = simplexml_load_file($include_file_name);
+        if ($include_doc === FALSE) {
+          throw new Exception("failed to simplexml_load_file() includeFile " . $include_file_name);
+        }
+        $include_doc = xml_parser::expand_tabrow_data($include_doc);
+        $include_doc = xml_parser::sql_format_convert($include_doc);
+        self::xml_composite_children($base, $include_doc);
+      }
+      unset($overlay->includeFile);
+      unset($base->includeFile);
+    }
+    
+    // if doc_clone is defined, there were database element values to overlay.
+    // now that includeFile has been processed, put these values overlaid "last"
+    if ( $doc_clone ) {
+      self::xml_composite_children($base->database, $doc_clone->database);
+    }
+
+    // includes done, now put $overlay values in, to allow definer to overwrite included file values at the same level
+    if ($addendums_doc != NULL && $i >= $start_addendums_idx) {
+      self::xml_composite_children($base, $overlay, $addendums_doc);
+    }
+    else {
+      self::xml_composite_children($base, $overlay);
+    }
+
+    // revalidate composited xml
+    self::validate_xml(self::format_xml($base->saveXML()));
+
+    return $base;
   }
 
   /**
