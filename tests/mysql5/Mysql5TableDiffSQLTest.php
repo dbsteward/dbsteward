@@ -73,7 +73,7 @@ XML;
     
 
     // don't drop a renamed table
-    $this->common_drop($old, $new, '-- DROP TABLE `public`.`table` omitted: new table `public`.`newtable` indicates it is her replacement');
+    $this->common_drop($old, $new, '-- DROP TABLE `table` omitted: new table `newtable` indicates it is her replacement');
 
     // going backwards, it should look like we dropped newtable and added table
     $this->common_drop($new, $old, 'DROP TABLE `newtable`;');
