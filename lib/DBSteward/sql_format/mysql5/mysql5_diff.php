@@ -124,6 +124,15 @@ class mysql5_diff extends sql99_diff {
    * @param $ofs3  stage3 output file segmenter
    */
   public static function update_structure($ofs1, $ofs3) {
+    if (!mysql5::$use_schema_name_prefix) {
+      if (count(dbsteward::$new_database->schema) > 1) {
+        throw new Exception("You cannot use more than one schema in mysql5 without schema name prefixing\nPass the --useschemaprefix flag to turn this on");
+      }
+      if (count(dbsteward::$old_database->schema) > 1) {
+        throw new Exception("You cannot use more than one schema in mysql5 without schema name prefixing\nPass the --useschemaprefix flag to turn this on");
+      }
+    }
+
     // drop all views in all schemas, regardless whether dependency order is known or not
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);

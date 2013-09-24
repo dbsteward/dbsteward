@@ -100,10 +100,8 @@ class mysql5 {
       dbsteward::console_line(1, "MySQL schema name prefixing mode turned on");
     }
     else {
-      dbsteward::console_line(1, "Merging all schemas together - MySQL does not support them.");
-
-      if (($count = count($db_doc->schema)) > 1) {
-        dbsteward::console_line(3, "WARNING: There were $count schemas found - Unpredictable behavior may be found for duplicate names between schemas.");
+      if (count($db_doc->schema) > 1) {
+        throw new Exception("You cannot use more than one schema in mysql5 without schema name prefixing\nPass the --useschemaprefix flag to turn this on");
       }
     }
 
