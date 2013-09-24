@@ -61,7 +61,13 @@ XML;
 ALTER TABLE `s2_t2` RENAME TO `s1_t2`;
 SQL;
     
-    $this->diff($old, $new, $expected1, '-- DROP TABLE `s2_t2` omitted: new table `s1_t2` indicates it is her replacement', 'Moving a table between schemas while using schema prefixing should result in a rename');
+    $expected3 = <<<SQL
+-- `s2_t2` triggers, indexes, constraints will be implicitly dropped when the table is dropped
+-- `s2_t2` will be dropped later according to table dependency order
+-- DROP TABLE `s2_t2` omitted: new table `s1_t2` indicates it is her replacement
+SQL;
+    
+    $this->diff($old, $new, $expected1, $expected3, 'Moving a table between schemas while using schema prefixing should result in a rename');
   }
 
   public function testMergeSchemasWithOldSchemaNameWithoutSchemaPrefix() {
@@ -127,7 +133,11 @@ ALTER TABLE `s1_t2`
   ADD PRIMARY KEY (`col1`);
 SQL;
     
-    $expected3 = 'DROP TABLE `s2_t2`;';
+    $expected3 = <<<SQL
+-- `s2_t2` triggers, indexes, constraints will be implicitly dropped when the table is dropped
+-- `s2_t2` will be dropped later according to table dependency order
+DROP TABLE `s2_t2`;
+SQL;
 
     $this->diff($old, $new, $expected1, $expected3, 'Moving a table without oldSchemaName with schema prefixes should result in a drop+create');
   }
@@ -290,6 +300,59 @@ XML;
 XML;
 
     $this->should_throw($old, $new, 'you cannot use more than one schema in mysql5 without schema name prefixing');
+  }
+
+  public function testDropSchemaWithObjects() {
+    mysql5::$use_schema_name_prefix = TRUE;
+
+    $old = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="table1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+<schema name="s2" owner="NOBODY">
+  <table name="table2" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+  <type name="yesno" type="enum">
+    <enum name="yes"/>
+    <enum name="no"/>
+  </type>
+  <function name="test_concat" returns="text" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="a test function that concats strings">
+    <functionParameter name="param1" type="text" />
+    <functionParameter name="param2" type="text" />
+    <functionDefinition language="sql" sqlFormat="mysql5">
+      RETURN CONCAT(param1, param2);
+    </functionDefinition>
+  </function>
+  <sequence name="the_sequence" owner="NOBODY" max="10" cycle="true" inc="3" start="2"/>
+  <trigger name="trigger" sqlFormat="mysql5" table="table2" when="BEFORE" event="insert" function="EXECUTE xyz"/>
+  <view name="view" owner="NOBODY" description="Description goes here">
+    <viewQuery sqlFormat="mysql5">SELECT * FROM table2</viewQuery>
+  </view>
+</schema>
+XML;
+
+    $new = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="table1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" />
+  </table>
+</schema>
+XML;
+    
+    $expected3 = <<<SQL
+DROP VIEW IF EXISTS `s2_view`;
+-- dropping enum type yesno. references to type yesno will be replaced with the type 'text'
+DROP FUNCTION IF EXISTS `s2_test_concat`;
+DELETE FROM `__sequences` WHERE `name` IN ('the_sequence');
+-- `s2_table2` triggers, indexes, constraints will be implicitly dropped when the table is dropped
+-- `s2_table2` will be dropped later according to table dependency order
+DROP TABLE `s2_table2`;
+SQL;
+
+    $this->diff($old, $new, '', $expected3);
   }
 
   private $db_doc_xml = <<<XML

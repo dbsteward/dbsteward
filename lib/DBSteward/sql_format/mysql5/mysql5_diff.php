@@ -150,7 +150,11 @@ class mysql5_diff extends sql99_diff {
           }
 
           // constraints, indexes, triggers will be deleted along with the tables they're attached to
-          $ofs->write(mysql5_table::get_drop_sql($old_schema, $dep['table']) . "\n");
+          // tables will drop themselves later on
+          // $ofs->write(mysql5_table::get_drop_sql($old_schema, $dep['table']) . "\n");
+          $table_name = mysql5::get_fully_qualified_table_name($dep['schema']['name'], $dep['table']['name']);
+          $ofs->write("-- $table_name triggers, indexes, constraints will be implicitly dropped when the table is dropped\n");
+          $ofs->write("-- $table_name will be dropped later according to table dependency order\n");
 
           // table sequences need dropped separately
           foreach (mysql5_table::get_sequences_needed($old_schema, $dep['table']) as $node_sequence) {
@@ -175,7 +179,11 @@ class mysql5_diff extends sql99_diff {
             $ofs->write(mysql5_sequence::get_drop_sql($old_schema, $node_sequence) . "\n");
           }
           foreach ($old_schema->table as $node_table) {
-            $ofs->write(mysql5_table::get_drop_sql($old_schema, $node_table) . "\n");
+            // tables will drop themselves later on
+            // $ofs->write(mysql5_table::get_drop_sql($old_schema, $node_table) . "\n");
+            $table_name = mysql5::get_fully_qualified_table_name($old_schema['name'], $node_table['name']);
+            $ofs->write("-- $table_name triggers, indexes, constraints will be implicitly dropped when the table is dropped\n");
+            $ofs->write("-- $table_name will be dropped later according to table dependency order\n");
             foreach (mysql5_table::get_sequences_needed($old_schema, $node_table) as $node_sequence) {
               $ofs->write(mysql5_sequence::get_drop_sql($old_schema, $node_sequence) . "\n");
             }
@@ -202,7 +210,7 @@ class mysql5_diff extends sql99_diff {
     }
     else {
       dbsteward::console_line(1, "Drop Old Schemas");
-      // self::drop_old_schemas($ofs3);
+      self::drop_old_schemas($ofs3);
     }
 
     // drop all views in all schemas, regardless whether dependency order is known or not

@@ -810,8 +810,8 @@ class dbx {
   }
 
   public static function to_array($thing, $key=false) {
-    if (!($thing instanceof SimpleXMLElement)) {
-      $thing = (array)$thing;
+    if (!is_array($thing)) {
+      $thing = array($thing);
     }
 
     $arr = array();
@@ -825,7 +825,6 @@ class dbx {
         $arr[] = $child[$key];
       }
     }
-
     return $arr;
   }
   
