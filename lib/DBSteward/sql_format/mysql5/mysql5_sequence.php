@@ -292,13 +292,18 @@ SQL;
   public static function get_drop_sql($node_schema, $node_sequences) {
     $table_name = mysql5::get_quoted_table_name(self::TABLE_NAME);
     $seq_col = mysql5::get_quoted_column_name(self::SEQ_COL);
+    $sequences = dbx::to_array($node_sequences);
+
+    if (count($sequences) === 0) {
+      return '';
+    }
 
     $sequence_names = "('" . implode("', '", array_map(function($n) {
       if ($n instanceof SimpleXMLElement) {
         return $n['name'];
       }
       return $n;
-    }, dbx::to_array($node_sequences))) . "')";
+    }, $sequences)) . "')";
     return "DELETE FROM $table_name WHERE $seq_col IN $sequence_names;";
   }
 }

@@ -36,13 +36,13 @@ class sql99_diff_tables {
     }
     
     // definition sanity checks
-    if ( sql99_schema::contains_table($schema, $table['oldTableName']) ) {
+    if ( format_schema::contains_table($schema, $table['oldTableName']) ) {
       throw new Exception("oldTableName panic - new_schema " . $schema['name'] . " still contains table named " . $table['oldTableName']);
     }
 
     $old_schema = sql99_table::get_old_table_schema($schema, $table);
     if (!is_null($old_schema)) {
-      if ( !sql99_schema::contains_table($old_schema, $table['oldTableName']) ) {
+      if ( !format_schema::contains_table($old_schema, $table['oldTableName']) ) {
         throw new Exception("oldTableName panic - old_schema " . $old_schema['name'] . " does not contain table named " . $table['oldTableName']);
       }
     }
@@ -50,8 +50,8 @@ class sql99_diff_tables {
     // it is a new old named table rename if:
     // table['oldTableName'] exists in old schema
     // table['oldTableName'] does not exist in new schema
-    if ( sql99_schema::contains_table($old_schema, $table['oldTableName'])
-        && !sql99_schema::contains_table($schema, $table['oldTableName']) ) {
+    if ( format_schema::contains_table($old_schema, $table['oldTableName'])
+        && !format_schema::contains_table($schema, $table['oldTableName']) ) {
       dbsteward::console_line(7, "NOTICE: " . $table['name'] . " used to be called " . $table['oldTableName']);
       return true;
     }

@@ -27,7 +27,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_object_names = TRUE;
     mysql5::$swap_function_delimiters = FALSE;
     mysql5::$use_auto_increment_table_options = FALSE;
-    mysql5::$use_schema_name_prefix = FALSE;
+    mysql5::$use_schema_name_prefix = TRUE;
   }
 
   public function testBuildSchema() {
@@ -92,7 +92,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
     </function>
 
     <table name="user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="1">
-      <column name="user_id" type="serial" null="false"/>
+      <column name="user_id" type="int auto_increment" null="false"/>
       <column name="group_id" foreignSchema="public" foreignTable="group" foreignColumn="group_id" null="false"/>
       <column name="username" type="varchar(80)"/>
       <column name="user_age" type="numeric"/>
@@ -101,7 +101,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
     </table>
 
     <table name="group" owner="ROLE_OWNER" primaryKey="group_id" slonyId="2">
-      <column name="group_id" type="serial" null="false"/>
+      <column name="group_id" type="int auto_increment" null="false"/>
       <column name="permission_level" type="permission_level"/> <!-- enum type -->
       <column name="group_name" type="character varying(100)" unique="true"/>
       <column name="group_enabled" type="boolean" null="false" default="true"/>
@@ -144,8 +144,8 @@ XML;
     $expected = <<<SQL
 GRANT SELECT, UPDATE, DELETE ON * TO `deployment`;
 
-DROP FUNCTION IF EXISTS `a_function`;
-CREATE DEFINER = deployment FUNCTION `a_function` (`config_parameter` text, `config_value` text)
+DROP FUNCTION IF EXISTS `public_a_function`;
+CREATE DEFINER = deployment FUNCTION `public_a_function` (`config_parameter` text, `config_value` text)
 RETURNS text
 LANGUAGE SQL
 MODIFIES SQL DATA
@@ -156,31 +156,31 @@ BEGIN
   RETURN config_parameter;
 END;
 
-GRANT EXECUTE ON FUNCTION `a_function` TO `dbsteward_phpunit_app`;
+GRANT EXECUTE ON FUNCTION `public_a_function` TO `dbsteward_phpunit_app`;
 
-CREATE TABLE `user` (
+CREATE TABLE `public_user` (
   `user_id` int NOT NULL,
   `group_id` int NOT NULL,
   `username` varchar(80),
   `user_age` numeric
 );
 
-ALTER TABLE `user`
+ALTER TABLE `public_user`
   ADD INDEX `group_id` (`group_id`) USING BTREE;
 
-GRANT SELECT, UPDATE, DELETE ON `user` TO `dbsteward_phpunit_app`;
+GRANT SELECT, UPDATE, DELETE ON `public_user` TO `dbsteward_phpunit_app`;
 
-CREATE TABLE `group` (
+CREATE TABLE `public_group` (
   `group_id` int NOT NULL,
   `permission_level` ENUM('guest','user','admin'),
   `group_name` character varying(100),
   `group_enabled` boolean NOT NULL DEFAULT true
 );
 
-ALTER TABLE `group`
+ALTER TABLE `public_group`
   ADD UNIQUE INDEX `group_name` (`group_name`) USING BTREE;
 
-GRANT SELECT, UPDATE, DELETE ON `group` TO `dbsteward_phpunit_app`;
+GRANT SELECT, UPDATE, DELETE ON `public_group` TO `dbsteward_phpunit_app`;
 
 CREATE TABLE IF NOT EXISTS `__sequences` (
   `name` VARCHAR(100) NOT NULL,
@@ -287,58 +287,50 @@ END;
 INSERT INTO `__sequences`
   (`name`, `increment`, `min_value`, `max_value`, `cur_value`, `start_value`, `cycle`)
 VALUES
-  ('__public_user_user_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
-  ('__public_group_group_id_serial_seq', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT),
   ('a_sequence', DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
 
 GRANT SELECT, UPDATE, DELETE ON `__sequences` TO `dbsteward_phpunit_app`;
 
-DROP TRIGGER IF EXISTS `__public_user_user_id_serial_trigger`;
-CREATE TRIGGER `__public_user_user_id_serial_trigger` BEFORE INSERT ON `user`
-FOR EACH ROW SET NEW.`user_id` = COALESCE(NEW.`user_id`, nextval('__public_user_user_id_serial_seq'));
-
-DROP TRIGGER IF EXISTS `__public_group_group_id_serial_trigger`;
-CREATE TRIGGER `__public_group_group_id_serial_trigger` BEFORE INSERT ON `group`
-FOR EACH ROW SET NEW.`group_id` = COALESCE(NEW.`group_id`, nextval('__public_group_group_id_serial_seq'));
-
-DROP TRIGGER IF EXISTS `a_trigger`;
-CREATE TRIGGER `a_trigger` BEFORE INSERT ON `user`
+DROP TRIGGER IF EXISTS `public_a_trigger`;
+CREATE TRIGGER `public_a_trigger` BEFORE INSERT ON `public_user`
 FOR EACH ROW EXECUTE xyz;
 
-CREATE TABLE `rate` (
+CREATE TABLE `hotel_rate` (
   `rate_id` integer NOT NULL,
   `rate_group_id` integer NOT NULL,
   `rate_name` character varying(120),
   `rate_value` numeric
 );
 
-ALTER TABLE `rate`
+ALTER TABLE `hotel_rate`
   ADD INDEX `rate_group_id` (`rate_group_id`) USING BTREE;
 
-CREATE TABLE `rate_group` (
+CREATE TABLE `hotel_rate_group` (
   `rate_group_id` integer NOT NULL,
   `rate_group_name` character varying(100),
   `rate_group_enabled` boolean NOT NULL DEFAULT true
 );
 
-ALTER TABLE `user`
-  ADD PRIMARY KEY (`user_id`);
-ALTER TABLE `group`
-  ADD PRIMARY KEY (`group_id`);
+ALTER TABLE `public_user`
+  ADD PRIMARY KEY (`user_id`),
+  MODIFY `user_id` int NOT NULL AUTO_INCREMENT;
+ALTER TABLE `public_group`
+  ADD PRIMARY KEY (`group_id`),
+  MODIFY `group_id` int NOT NULL AUTO_INCREMENT;
 
-ALTER TABLE `rate`
+ALTER TABLE `hotel_rate`
   ADD PRIMARY KEY (`rate_id`);
-ALTER TABLE `rate_group`
+ALTER TABLE `hotel_rate_group`
   ADD PRIMARY KEY (`rate_group_id`);
 
-ALTER TABLE `user`
+ALTER TABLE `public_user`
   ADD UNIQUE INDEX `username_unq` (`username`),
-  ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `group` (`group_id`);
+  ADD CONSTRAINT `user_group_id_fkey` FOREIGN KEY `user_group_id_fkey` (`group_id`) REFERENCES `public_group` (`group_id`);
 
-ALTER TABLE `rate`
-  ADD CONSTRAINT `rate_rate_group_id_fkey` FOREIGN KEY `rate_rate_group_id_fkey` (`rate_group_id`) REFERENCES `rate_group` (`rate_group_id`);
+ALTER TABLE `hotel_rate`
+  ADD CONSTRAINT `rate_rate_group_id_fkey` FOREIGN KEY `rate_rate_group_id_fkey` (`rate_group_id`) REFERENCES `hotel_rate_group` (`rate_group_id`);
 
-CREATE OR REPLACE DEFINER = deployment SQL SECURITY DEFINER VIEW `a_view`
+CREATE OR REPLACE DEFINER = deployment SQL SECURITY DEFINER VIEW `public_a_view`
 AS SELECT * FROM user, group;
 SQL;
 

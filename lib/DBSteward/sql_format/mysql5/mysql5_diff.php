@@ -32,11 +32,6 @@ class mysql5_diff extends sql99_diff {
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1BEFORE');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
-    dbsteward::console_line(1, "Drop Old Schemas");
-    // self::drop_old_schemas($stage3_ofs);
-
-    dbsteward::console_line(1, "Create New Schemas");
-    // self::create_new_schemas($stage1_ofs);
 
     dbsteward::console_line(1, "Revoke Permissions");
     self::revoke_permissions($stage1_ofs, $stage3_ofs);
@@ -117,6 +112,87 @@ class mysql5_diff extends sql99_diff {
     }
   }
 
+  protected static function drop_old_schemas($ofs) {
+    $drop_sequences = array();
+
+    if (is_array(mysql5_diff::$old_table_dependency)) {
+      $deps = mysql5_diff::$old_table_dependency;
+      $processed_schemas = array();
+
+      foreach ($deps as $dep) {
+        $old_schema = $dep['schema'];
+
+        if (!dbx::get_schema(dbsteward::$new_database, $old_schema['name'])) {
+          // this schema is being dropped, drop all children objects in it
+          
+          if (!in_array(trim($old_schema['name']), $processed_schemas)) {
+            // this schema hasn't been processed yet, go ahead and drop views, types, functions, sequences
+            // only do it once per schema
+            foreach ($old_schema->view as $node_view) {
+              $ofs->write(mysql5_view::get_drop_sql($old_schema, $node_view) . "\n");
+            }
+            foreach ($old_schema->type as $node_type) {
+              $ofs->write(mysql5_type::get_drop_sql($old_schema, $node_type) . "\n");
+            }
+            foreach ($old_schema->function as $node_function) {
+              $ofs->write(mysql5_function::get_drop_sql($old_schema, $node_function) . "\n");
+            }
+            foreach ($old_schema->sequence as $node_sequence) {
+              $ofs->write(mysql5_sequence::get_drop_sql($old_schema, $node_sequence) . "\n");
+            }
+
+            $processed_schemas[] = trim($old_schema['name']);
+          }
+
+          if ( $dep['table']['name'] === dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME ) {
+            // don't do anything with this table, it is a magic internal DBSteward value
+            continue;
+          }
+
+          // constraints, indexes, triggers will be deleted along with the tables they're attached to
+          // tables will drop themselves later on
+          // $ofs->write(mysql5_table::get_drop_sql($old_schema, $dep['table']) . "\n");
+          $table_name = mysql5::get_fully_qualified_table_name($dep['schema']['name'], $dep['table']['name']);
+          $ofs->write("-- $table_name triggers, indexes, constraints will be implicitly dropped when the table is dropped\n");
+          $ofs->write("-- $table_name will be dropped later according to table dependency order\n");
+
+          // table sequences need dropped separately
+          foreach (mysql5_table::get_sequences_needed($old_schema, $dep['table']) as $node_sequence) {
+            $ofs->write(mysql5_sequence::get_drop_sql($old_schema, $node_sequence) . "\n");
+          }
+        }
+      }
+    }
+    else {
+      foreach (dbsteward::$old_database->schema as $old_schema) {
+        if (!dbx::get_schema(dbsteward::$new_database, $old_schema['name'])) {
+          foreach ($old_schema->view as $node_view) {
+            $ofs->write(mysql5_view::get_drop_sql($old_schema, $node_view) . "\n");
+          }
+          foreach ($old_schema->type as $node_type) {
+            $ofs->write(mysql5_type::get_drop_sql($old_schema, $node_type) . "\n");
+          }
+          foreach ($old_schema->function as $node_function) {
+            $ofs->write(mysql5_function::get_drop_sql($old_schema, $node_function) . "\n");
+          }
+          foreach ($old_schema->sequence as $node_sequence) {
+            $ofs->write(mysql5_sequence::get_drop_sql($old_schema, $node_sequence) . "\n");
+          }
+          foreach ($old_schema->table as $node_table) {
+            // tables will drop themselves later on
+            // $ofs->write(mysql5_table::get_drop_sql($old_schema, $node_table) . "\n");
+            $table_name = mysql5::get_fully_qualified_table_name($old_schema['name'], $node_table['name']);
+            $ofs->write("-- $table_name triggers, indexes, constraints will be implicitly dropped when the table is dropped\n");
+            $ofs->write("-- $table_name will be dropped later according to table dependency order\n");
+            foreach (mysql5_table::get_sequences_needed($old_schema, $node_table) as $node_sequence) {
+              $ofs->write(mysql5_sequence::get_drop_sql($old_schema, $node_sequence) . "\n");
+            }
+          }
+        }
+      }
+    }
+  }
+
   /**
    * Updates objects in schemas.
    *
@@ -124,6 +200,19 @@ class mysql5_diff extends sql99_diff {
    * @param $ofs3  stage3 output file segmenter
    */
   public static function update_structure($ofs1, $ofs3) {
+    if (!mysql5::$use_schema_name_prefix) {
+      if (count(dbsteward::$new_database->schema) > 1) {
+        throw new Exception("You cannot use more than one schema in mysql5 without schema name prefixing\nPass the --useschemaprefix flag to turn this on");
+      }
+      if (count(dbsteward::$old_database->schema) > 1) {
+        throw new Exception("You cannot use more than one schema in mysql5 without schema name prefixing\nPass the --useschemaprefix flag to turn this on");
+      }
+    }
+    else {
+      dbsteward::console_line(1, "Drop Old Schemas");
+      self::drop_old_schemas($ofs3);
+    }
+
     // drop all views in all schemas, regardless whether dependency order is known or not
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);

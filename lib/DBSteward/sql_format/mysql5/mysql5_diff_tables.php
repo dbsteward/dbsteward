@@ -94,17 +94,36 @@ class mysql5_diff_tables extends sql99_diff_tables {
       if (($old_schema == null) || !mysql5_schema::contains_table($old_schema, $table['name'])) {
         if ( !dbsteward::$ignore_oldnames && mysql5_diff_tables::is_renamed_table($new_schema, $table) ) {
           // oldTableName renamed table ? rename table instead of create new one
-          $old_table_name = mysql5::get_fully_qualified_table_name($new_schema['name'], $table['oldTableName']);
-          // 
-          $new_table_name = mysql5::get_quoted_table_name($table['name']);
-          $ofs->write("-- table rename from oldTableName specification" . "\n"
-            . "ALTER TABLE $old_table_name RENAME TO $new_table_name ;" . "\n");
+          $old_table_name = mysql5::get_fully_qualified_table_name($table['oldSchemaName'] ?: $old_schema['name'], $table['oldTableName'] ?: $table['name']);
+          $new_table_name = mysql5::get_fully_qualified_table_name($new_schema['name'], $table['name']);
+          $ofs->write("-- table rename from oldTableName specification\n");
+          $ofs->write("ALTER TABLE $old_table_name RENAME TO $new_table_name;\n");
         }
         else {
           $ofs->write(mysql5_table::get_creation_sql($new_schema, $table) . "\n");
         }
       }
     }
+  }
+
+  public static function is_renamed_table($schema, $table) {
+    // a table is also considered renamed if it was moved
+    return parent::is_renamed_table($schema, $table) || self::is_moved_table($schema, $table);
+  }
+
+  /** Did the table change schemas? */
+  protected static function is_moved_table($schema, $table) {
+    if (!isset($table['oldSchemaName']) || !mysql5::$use_schema_name_prefix) {
+      // no oldSchemaName means it didn't move
+      // or, if we're not using prefixes, everything should be in the same "schema", so no
+      return false;
+    }
+
+    $old_schema = format_table::get_old_table_schema($schema, $table);
+    if (is_null($old_schema)) {
+      throw new Exception("Table {$schema['name']}.{$table['name']} indicates it was moved from schema {$table['oldSchemaName']}, but no such schema was found!");
+    }
+    return true;
   }
 
   /**
@@ -453,23 +472,22 @@ class mysql5_diff_tables extends sql99_diff_tables {
    * @param type $new_table
    */
   public static function drop_tables($ofs, $old_schema, $new_schema, $old_table = null, $new_table = null) {
-    if ($old_schema != null && $new_schema != null ) {
-      foreach(dbx::get_tables($old_schema) as $table) {
-        // if old table was defined
-        if ( $old_table != null ) {
-          // is this the right old table?
-          if ( strcasecmp($table['name'], $old_table['name']) != 0 ) {
-            continue;
-          }
-        }
+    if ($old_schema != null ) {
+      if ($old_table != null) {
+        $tables = array($old_table);
+      }
+      else {
+        $tables = dbx::get_tables($old_schema);
+      }
 
+      foreach($tables as $table) {
         // does the new schema contain the old table?
         if (!mysql5_schema::contains_table($new_schema, $table['name'])) {
           // if the table was renamed, don't drop it
           if ( !dbsteward::$ignore_oldnames
-            && mysql5_schema::table_formerly_known_as(dbsteward::$new_database, $new_schema, $table, $reformed_schema, $reformed_table) ) {
-            $old_table_name = mysql5::get_quoted_schema_name($new_schema['name']) . '.' . mysql5::get_quoted_table_name($table['name']);
-            $reformed_table_name = mysql5::get_quoted_schema_name($reformed_schema['name']) . '.' . mysql5::get_quoted_table_name($reformed_table['name']);
+            && mysql5_schema::table_formerly_known_as(dbsteward::$new_database, $old_schema, $table, $reformed_schema, $reformed_table) ) {
+            $old_table_name = mysql5::get_fully_qualified_table_name($old_schema['name'], $table['name']);
+            $reformed_table_name = mysql5::get_fully_qualified_table_name($reformed_schema['name'], $reformed_table['name']);
             $ofs->write("-- DROP TABLE $old_table_name omitted: new table $reformed_table_name indicates it is her replacement\n");
           }
           else {

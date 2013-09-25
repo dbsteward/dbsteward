@@ -39,7 +39,11 @@ class sql99_diff_constraints {
       }
     }
     else {
-      if ( $old_schema === NULL || $old_table === NULL || (!dbsteward::$ignore_oldnames && format_diff_tables::is_renamed_table($old_schema, $new_schema, $new_table)) ) {
+      if (dbsteward::$old_database != NULL) {
+        list($old_schema, $old_table) = dbx::find_old_table(dbsteward::$old_database, $new_schema, $new_table);
+      }
+
+      if ( $old_schema === NULL || $old_table === NULL ) {
         $new_constraints = format_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type);
       }
       else {

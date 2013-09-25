@@ -105,31 +105,17 @@ class sql99_schema {
    * @return boolean
    * @throws exception
    */
-  public static function table_formerly_known_as($db_doc, $old_schema, $old_table, &$prince_schema = NULL, &$prince_table = NULL) {
+  public static function table_formerly_known_as($new_doc, $old_schema, $old_table, &$prince_schema = NULL, &$prince_table = NULL) {
     if ( dbsteward::$ignore_oldnames ) {
       throw new exception("dbsteward::ignore_oldname option is on, table_formerly_known_as() should not be getting called");
     }
 
-    foreach(dbx::get_schemas($db_doc) as $doc_schema) {
-      foreach(dbx::get_tables($doc_schema) as $doc_table) {
-        // does doc_table claim to be old_table in a former life?
-        if (strcasecmp($old_table['name'], $doc_table['oldTableName']) == 0) {
-          // does doc_table define an old schema?
-          if ( isset($doc_table['oldSchemaName']) ) {
-            // is the table referring to it having the current old_schema?
-            if (strcasecmp($doc_table['oldSchemaName'], $old_schema['name']) != 0) {
-              // keep looking
-              continue;
-            }
-            // schema is the same
-            // fall into pointering
-          }
-          else if (strcasecmp($doc_schema['name'], $old_schema['name']) != 0) {
-            // this is not the right schema, continue
-            continue;
-          }
-          $prince_schema = $doc_schema;
-          $prince_table = $doc_table;
+    foreach(dbx::get_schemas($new_doc) as $new_schema) {
+      foreach(dbx::get_tables($new_schema) as $new_table) {
+        if (strcasecmp($old_table['name'], $new_table['oldTableName'] ?: $new_table['name']) == 0
+            && strcasecmp($old_schema['name'], $new_table['oldSchemaName'] ?: $new_schema['name']) == 0) {
+          $prince_schema = $new_schema;
+          $prince_table = $new_table;
           return TRUE;
         }
       }

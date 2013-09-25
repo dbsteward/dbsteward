@@ -163,6 +163,15 @@ class dbx {
     return $node_table;
   }
 
+  /** Finds the old version of the table */
+  public static function find_old_table($old_doc, $new_schema, $new_table) {
+    $old_schema = self::get_schema($old_doc, $new_table['oldSchemaName'] ?: $new_schema['name']);
+    if (!$old_schema) {
+      return NULL;
+    }
+    return array($old_schema, self::get_table($old_schema, $new_table['oldTableName'] ?: $new_table['name']));
+  }
+
   public static function &get_tables(&$node_schema) {
     if ( !is_object($node_schema) ) {
       var_dump($node_schema);
@@ -801,8 +810,21 @@ class dbx {
   }
 
   public static function to_array($thing, $key=false) {
-    if (!($thing instanceof SimpleXMLElement)) {
-      $thing = (array)$thing;
+    // screw you, SimpleXML
+    if (!is_array($thing)) {
+      if ($thing instanceof SimpleXMLElement) {
+        if (count($thing) == 0) {
+          if (empty($thing)) {
+            $thing = array();
+          }
+          else {
+            $thing = array($thing);
+          }
+        }
+      }
+      else {
+        $thing = array($thing);
+      }
     }
 
     $arr = array();
@@ -816,10 +838,7 @@ class dbx {
         $arr[] = $child[$key];
       }
     }
-
     return $arr;
   }
   
 }
-
-?>
