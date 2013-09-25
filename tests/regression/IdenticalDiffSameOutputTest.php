@@ -132,22 +132,27 @@ XML;
   
   /**
    * @group pgsql8
-   * @group mysql5
    */
-  public function testBuildIdenticalDDL() {
+  public function testBuildIdenticalDDLPostgres() {
     $this->apply_options_pgsql8();
     $this->setup_pgsql8();
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
     $success = preg_match('/ALTER/', $text);
-    $this->assertEquals(0, $success);
+    $this->assertEquals(0, $success, $text);
+  }
 
-    
+  
+  /**
+   * @group mysql5
+   */
+  public function testBuildIdenticalDDLMysql() {
     // now do the same thing, but with mysql5
     $this->apply_options_mysql5();
     $this->setup_mysql5();
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
     $success = preg_match('/ALTER/', $text);
-    $this->assertEquals(0, $success);    
+    $this->assertEquals(0, $success);      
   }
+
   
 }
