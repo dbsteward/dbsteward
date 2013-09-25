@@ -862,7 +862,7 @@ class mysql5 {
   }
 
   public static function get_fully_qualified_object_name($schema_name, $object_name, $type = 'object') {
-    if (static::$use_schema_name_prefix) {
+    if (static::$use_schema_name_prefix && strcasecmp($object_name, mysql5_sequence::TABLE_NAME) !== 0) {
       $object_name = $schema_name . '_' . $object_name;
     }
     $f = 'get_quoted_' . $type . '_name';
@@ -870,7 +870,7 @@ class mysql5 {
   }
 
   public static function get_fully_qualified_table_name($schema_name, $table_name) {
-    if (static::$use_schema_name_prefix) {
+    if (static::$use_schema_name_prefix && strcasecmp($table_name, mysql5_sequence::TABLE_NAME) !== 0) {
       $table_name = $schema_name . '_' . $table_name;
     }
     return self::get_quoted_table_name($table_name);
