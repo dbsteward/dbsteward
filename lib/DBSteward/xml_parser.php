@@ -76,7 +76,7 @@ class xml_parser {
 
       dbsteward::console_line(1, "Compositing XML File " . $file_name);
 
-      $composite = self::composite_doc($composite, $doc, $i, $start_addendums_idx, $addendums_doc);
+      $composite = self::composite_doc($composite, $doc, $i, $file_name, $start_addendums_idx, $addendums_doc);
     }
 
     return $composite;
@@ -90,7 +90,7 @@ class xml_parser {
    * @param  SimpleXMLElement  $addendums_doc The addendums document
    * @return $base
    */
-  public static function composite_doc($base, $overlay, $idx = 0, $start_addendums_idx = FALSE, $addendums_doc = NULL) {
+  public static function composite_doc($base, $overlay, $idx = 0, $file_name = '', $start_addendums_idx = FALSE, $addendums_doc = NULL) {
     if (!$base) {
       $base = new SimpleXMLElement('<dbsteward></dbsteward>');
     }
