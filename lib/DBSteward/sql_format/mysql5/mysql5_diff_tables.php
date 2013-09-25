@@ -172,7 +172,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
       '3' => array()
     );
 
-    // what to do with 
     $defaults = array(
       'set' => array(),    // in stage 1, ALTER TABLE new_table ALTER COLUMN new_column SET DEFAULT new_column[default] ?: getDefaultValue(type)
       'update' => array(), // after stage 1, UPDATE new_table SET new_column = DEFAULT WHERE new_column = DEFAULT
@@ -309,7 +308,12 @@ class mysql5_diff_tables extends sql99_diff_tables {
                 // if the default changed or was added (but not dropped),
                 // we need to set the new default. however, if the type did change,
                 // the column will be redefined, so we don't need to set the default
-                $defaults['set'][] = $new_column;
+                if (mysql5_column::is_timestamp($new_column)) {
+                  $cmd1['command'] = 'modify';
+                }
+                else {
+                  $defaults['set'][] = $new_column;
+                }
               }
 
               // regardless of type change or default change, NULLs are no longer allowed, 
@@ -326,7 +330,12 @@ class mysql5_diff_tables extends sql99_diff_tables {
           if (!$type_changed && $default_changed) {
             // if the type was changed, the column will be redefined, so don't bother here
             if ($new_default) {
-              $defaults['set'][] = $new_column;
+              if (mysql5_column::is_timestamp($new_column)) {
+                $cmd1['command'] = 'modify';
+              }
+              else {
+                $defaults['set'][] = $new_column;
+              }
             }
             else {
               $defaults['drop'][] = $new_column;

@@ -392,6 +392,57 @@ SQL;
     $this->common_diff($old, $new, $expected, '');
   }
 
+  /** Tests that adding or changing a timestmap default results in a MODIFY COLUMN command, not an ALTER COLUMN command */
+  public function testTimestampDefaults() {
+    $a = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="col0" type="timestamp" default="CURRENT_TIMESTAMP" null="false"/>
+    <column name="col1" type="timestamp" default="'0000-00-00 00:00:00'" null="false"/>
+    <column name="col2" type="int" default="5" null="false"/>
+  </table>
+</schema>
+XML;
+
+    $b = <<<XML
+<schema name="test0" owner="NOBODY">
+  <table name="table" owner="NOBODY">
+    <column name="col0" type="timestamp" default="'0000-00-00 00:00:00'" null="false"/>
+    <column name="col1" type="timestamp" null="false"/>
+    <column name="col2" type="int" default="3" null="false"/>
+  </table>
+</schema>
+XML;
+
+    // from a->b:
+    // change col0 default from CURRENT_TIMESTAMP to constant
+    // drop col1 default
+    // change col2 default from 5 to 3
+    // note: default drop happens last
+
+    $expected_ab = <<<SQL
+ALTER TABLE `table`
+  MODIFY COLUMN `col0` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  ALTER COLUMN `col2` SET DEFAULT 3,
+  ALTER COLUMN `col1` DROP DEFAULT;
+SQL;
+
+    // from b->a
+    // change col0 default from constant to CURRENT_TIMESTAMP
+    // add col1 default
+    // change col2 default from 3 to 5
+
+    $expected_ba = <<<SQL
+ALTER TABLE `table`
+  MODIFY COLUMN `col0` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  MODIFY COLUMN `col1` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  ALTER COLUMN `col2` SET DEFAULT 5;
+SQL;
+
+    $this->common_diff($a, $b, $expected_ab, '');
+    $this->common_diff($b, $a, $expected_ba, '');
+  }
+
   /** Tests that changing the case of a column results in renaming the column */
   public function testColumnCaseRename() {
     $old = <<<XML
