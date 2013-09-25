@@ -434,6 +434,19 @@ class mysql5_diff_tables extends sql99_diff_tables {
       $ofs1->write($sql);
     }
 
+    // update defaults, if any
+    foreach ($defaults['update'] as $column) {
+      $name = mysql5::get_quoted_column_name($column['name']);
+      if (strlen($column['default']) > 0) {
+        $default = (string)$column['default'];
+      }
+      else {
+        $type = mysql5_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $column);
+        $default = mysql5_column::get_default_value($type);
+      }
+      $ofs1->write("UPDATE $table_name SET $name = $default WHERE $name IS NULL;\n\n");
+    }
+
     // output stage 3 sql
     $stage3_commands = array();
     foreach ($commands['3'] as $column_name => $command) {
@@ -446,19 +459,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
       $sql .= implode(",\n  ", $stage3_commands);
       $sql .= ";\n\n";
       $ofs3->write($sql);
-    }
-
-    // update defaults, if any
-    foreach ($defaults['update'] as $column) {
-      $name = mysql5::get_quoted_column_name($column['name']);
-      if (strlen($column['default']) > 0) {
-        $default = (string)$column['default'];
-      }
-      else {
-        $type = mysql5_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $column);
-        $default = mysql5_column::get_default_value($type);
-      }
-      $ofs1->write("UPDATE $table_name SET $name = $default WHERE $name IS NULL;\n\n");
     }
 
     // post-stage SQL
