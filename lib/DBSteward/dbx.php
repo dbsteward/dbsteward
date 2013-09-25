@@ -810,9 +810,17 @@ class dbx {
   }
 
   public static function to_array($thing, $key=false) {
+    // screw you, SimpleXML
     if (!is_array($thing)) {
-      if ($thing instanceof SimpleXMLElement && count($thing) == 0) {
-        $thing = array();
+      if ($thing instanceof SimpleXMLElement) {
+        if (count($thing) == 0) {
+          if (empty($thing)) {
+            $thing = array();
+          }
+          else {
+            $thing = array($thing);
+          }
+        }
       }
       else {
         $thing = array($thing);
@@ -834,5 +842,3 @@ class dbx {
   }
   
 }
-
-?>

@@ -32,9 +32,7 @@ class mysql5_type extends sql99_type {
   }
 
   public static function get_enum_type_declaration($node_type) {
-    return "ENUM('" . implode("','", array_map(function($e){
-      return $e['name'];
-    }, dbx::to_array($node_type->enum))) . "')";
+    return "ENUM('" . implode("','", dbx::to_array($node_type->enum, 'name')) . "')";
   }
 
   /**
