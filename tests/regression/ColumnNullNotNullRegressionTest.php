@@ -136,6 +136,7 @@ XML;
     $this->set_xml_content_b($strict_overlay_xml);
     $this->set_xml_content_c($new_table_xml);
     $this->output_prefix = dirname(__FILE__) . '/../testdata/pgsql8_test_column_nulls';
+    dbsteward::$quote_column_names = TRUE;
     dbsteward::$single_stage_upgrade = TRUE;
     dbsteward::$generate_slonik = FALSE;
   }
@@ -154,6 +155,7 @@ XML;
     $this->set_xml_content_b($strict_overlay_xml);
     $this->set_xml_content_c($new_table_xml);
     $this->output_prefix = dirname(__FILE__) . '/../testdata/mysql5_unit_test_column_nulls';
+    dbsteward::$quote_column_names = TRUE;
     dbsteward::$single_stage_upgrade = TRUE;    
   }
   
@@ -232,27 +234,27 @@ XML;
     pgsql8::build($this->output_prefix, $base_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure SET NOT NULL is specified for action column
-    $this->assertContains('ALTER TABLE app.action ALTER COLUMN action SET NOT NULL', $text);
+    $this->assertContains('ALTER COLUMN action SET NOT NULL', $text);
     // make sure SET NOT NULL is NOT specified for description column
-    $this->assertNotContains('ALTER TABLE app.action ALTER COLUMN description SET NOT NULL', $text);
+    $this->assertNotContains('ALTER COLUMN description SET NOT NULL', $text);
     
     // build base + strict, check contents
     $strict_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b));
     pgsql8::build($this->output_prefix, $strict_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure SET NOT NULL is specified for action column
-    $this->assertContains('ALTER TABLE app.action ALTER COLUMN action SET NOT NULL', $text);
+    $this->assertContains('ALTER COLUMN action SET NOT NULL', $text);
     // make sure SET NOT NULL is specified for description column
-    $this->assertContains('ALTER TABLE app.action ALTER COLUMN description SET NOT NULL', $text);
+    $this->assertContains('ALTER COLUMN description SET NOT NULL', $text);
     
     // build base + strict + new table, check contents
     $addtable_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b, $this->xml_file_c));
     pgsql8::build($this->output_prefix, $addtable_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure NOT NULL is specified for resolution column
-    $this->assertContains('ALTER TABLE app.resolution ALTER COLUMN resolution SET NOT NULL', $text);
+    $this->assertContains('ALTER COLUMN resolution SET NOT NULL', $text);
     // make sure NOT NULL is NOT specified for points column
-    $this->assertNotContains('ALTER TABLE app.resolution ALTER COLUMN points SET NOT NULL', $text);
+    $this->assertNotContains('ALTER COLUMN points SET NOT NULL', $text);
   }
   
   /**
@@ -304,12 +306,12 @@ XML;
     $newtable_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b, $this->xml_file_c));
     pgsql8::build_upgrade('', 'newtable_upgrade_test_pgsql8_base', $base_db_doc, array(), $this->output_prefix, 'newtable_upgrade_test_pgsql8_newtable', $newtable_db_doc, array());
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
-    // make sure NOT NULL is specified for resolution column
-    $this->assertContains('ALTER TABLE app.resolution ALTER COLUMN resolution SET NOT NULL', $text);
     // make sure SET NOT NULL is specified for description column for the upgrade
-    $this->assertContains('ALTER COLUMN description SET NOT NULL', $text);
+    $this->assertContains('ALTER COLUMN "description" SET NOT NULL', $text);
+    // make sure NOT NULL is specified for resolution column
+    $this->assertContains('ALTER COLUMN "resolution" SET NOT NULL', $text);
     // make sure NOT NULL is NOT specified for points column
-    $this->assertNotContains('ALTER TABLE app.resolution ALTER COLUMN points SET NOT NULL', $text);
+    $this->assertNotContains('ALTER COLUMN "points" SET NOT NULL', $text);
   }
 
   
