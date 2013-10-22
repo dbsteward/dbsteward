@@ -488,19 +488,26 @@ class xml_parser {
     }
   }
 
-  public static function data_rows_overlay(&$base_table, &$overlay_table) {
-    $base_table_rows = & dbx::get_table_rows($base_table, TRUE, $overlay_table['columns']);
+  /**
+   * Overlay table rows from an overlay file onto a base table element
+   * 
+   * @param type $base_table          base table element to put overlay into
+   * @param type $overlay_table_rows  overlay table rows element
+   * @throws exception
+   */
+  public static function data_rows_overlay(&$base_table, &$overlay_table_rows) {
+    $base_table_rows = & dbx::get_table_rows($base_table, TRUE, $overlay_table_rows['columns']);
     $base_table_rows_count = count($base_table_rows->row);
 
     // if the rows element columns attribute doesnt have a column that the overlay does
     if (strlen($base_table_rows['columns']) == 0) {
       throw new exception("base rows element missing columns attribute - unexpected");
     }
-    if (strlen($overlay_table['columns']) == 0) {
+    if (strlen($overlay_table_rows['columns']) == 0) {
       throw new exception("overlay rows element missing columns attribute - unexpected");
     }
     $base_cols = preg_split("/[\,\s]+/", $base_table_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
-    $overlay_cols = preg_split("/[\,\s]+/", $overlay_table['columns'], -1, PREG_SPLIT_NO_EMPTY);
+    $overlay_cols = preg_split("/[\,\s]+/", $overlay_table_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
     $cols_diff = array_diff($overlay_cols, $base_cols);
     // contains any values $overlay_cols does that $base_cols didnt, so add them
     foreach ($cols_diff AS $cols_diff_col) {
@@ -521,7 +528,7 @@ class xml_parser {
     // primary key key => row index
     $base_pklookup = array();
     $i = 0;
-    foreach ($base_table->row as $base_row) {
+    foreach ($base_table_rows->row as $base_row) {
       $s = '';
       foreach ($primary_key_index['base'] as $index) {
         $s .= ':'.$base_row->col[$index];
@@ -531,7 +538,7 @@ class xml_parser {
 
     // merge all row entries for the rows element
     $base_row_index = 0;
-    foreach ($overlay_table->row AS $overlay_row) {
+    foreach ($overlay_table_rows->row AS $overlay_row) {
       // sanity check the overlay's rows columns list against the col count of the row
       $overlay_row_count = count($overlay_row->col);
       if (count($overlay_cols) != $overlay_row_count) {

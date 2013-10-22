@@ -22,9 +22,11 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   // test cases need to define $this->xml_content_a and $this->xml_content_b for their scenarios
   protected $xml_content_a = "XML_CONTENT_A_UNDEFINED";
   protected $xml_content_b = "XML_CONTENT_B_UNDEFINED";
+  protected $xml_content_c = "XML_CONTENT_C_UNDEFINED";
 
   protected $xml_file_a;
   protected $xml_file_b;
+  protected $xml_file_c;
 
   protected $pgsql8;
   protected $mssql10;
@@ -67,6 +69,11 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected function set_xml_content_b($xml) {
     $this->xml_content_b = $xml;
     file_put_contents($this->xml_file_b, $xml);
+  }
+
+  protected function set_xml_content_c($xml) {
+    $this->xml_content_c = $xml;
+    file_put_contents($this->xml_file_c, $xml);
   }
 
   protected function build_db($format) {
