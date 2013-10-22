@@ -306,7 +306,7 @@ XML;
     $newtable_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b, $this->xml_file_c));
     pgsql8::build_upgrade('', 'newtable_upgrade_test_pgsql8_base', $base_db_doc, array(), $this->output_prefix, 'newtable_upgrade_test_pgsql8_newtable', $newtable_db_doc, array());
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
-    // make sure SET NOT NULL is specified for description column for the upgrade
+    // make sure NOT NULL is specified for description column
     $this->assertContains('ALTER COLUMN "description" SET NOT NULL', $text);
     // make sure NOT NULL is specified for resolution column
     $this->assertContains('ALTER COLUMN "resolution" SET NOT NULL', $text);
@@ -314,5 +314,26 @@ XML;
     $this->assertNotContains('ALTER COLUMN "points" SET NOT NULL', $text);
   }
 
+  /**
+   * @group mysql5
+   */
+  public function testUpgradeNewTableMysql5() {
+    $this->apply_options_mysql5();
+    $this->setup_mysql5();
+    
+    // upgrade from base 
+    // to base + strict action table + new resolution table
+    // check null specificity
+    $base_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
+    $newtable_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b, $this->xml_file_c));
+    mysql5::build_upgrade('', 'newtable_upgrade_test_pgsql8_base', $base_db_doc, array(), $this->output_prefix, 'newtable_upgrade_test_pgsql8_newtable', $newtable_db_doc, array());
+    $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
+    // make sure NOT NULL is specified for description column
+    $this->assertContains('`description` character varying(200) NOT NULL', $text);
+    // make sure NOT NULL is specified for resolution column
+    $this->assertContains('`resolution` character varying(16) NOT NULL', $text);
+    // make sure NOT NULL is NOT specified for points column
+    $this->assertNotContains('`points` int NOT NULL', $text);
+  }
   
 }
