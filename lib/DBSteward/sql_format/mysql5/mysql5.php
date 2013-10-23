@@ -142,7 +142,8 @@ class mysql5 {
         $ofs->write(mysql5_table::get_creation_sql($schema, $table) . "\n\n");
 
         // table indexes
-        mysql5_diff_indexes::diff_indexes_table($ofs, NULL, NULL, $schema, $table);
+        $fq = mysql5::get_fully_qualified_table_name($schema['name'], $table['name']);
+        $ofs->write("ALTER TABLE $fq\n  " . implode(",  \n", mysql5_diff_indexes::diff_indexes_table(NULL, NULL, $schema, $table)) . ";\n");
 
         // table grants
         if (isset($table->grant)) {

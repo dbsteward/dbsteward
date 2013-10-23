@@ -67,16 +67,19 @@ XML;
 XML;
     
     // drop the PK with the auto-increment, then make the other column the PK
+    // we also drop the barID index, because it was necessary for the foreign key in $a, but in $b it uses the primary key
     $expected = <<<SQL
 ALTER TABLE `foo`
   MODIFY `fooID` int NOT NULL,
   DROP PRIMARY KEY;
 ALTER TABLE `foo`
+  DROP INDEX `barID`,
   ADD PRIMARY KEY (`barID`);
 SQL;
     $this->diff($a, $b, $expected, "ALTER TABLE `foo`\n  DROP COLUMN `fooID`;");
 
     // add a new column, and make it PK with auto-increment
+    // add barID index for the foreign key, since it's no longer using the PK index
     $expected = <<<SQL
 ALTER TABLE `foo`
   DROP PRIMARY KEY;
@@ -84,6 +87,7 @@ ALTER TABLE `foo`
   ADD COLUMN `fooID` int NOT NULL FIRST;
 
 ALTER TABLE `foo`
+  ADD INDEX `barID` (`barID`) USING BTREE,
   ADD PRIMARY KEY (`fooID`),
   MODIFY `fooID` int NOT NULL AUTO_INCREMENT;
 SQL;
@@ -212,7 +216,7 @@ SQL;
       mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', TRUE);
       mysql5_diff_tables::drop_tables($ofs3, $old_schema, $new_schema);
       mysql5_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema);
-      mysql5_diff_indexes::diff_indexes($ofs1, $old_schema, $new_schema);
+      // mysql5_diff_indexes::diff_indexes($ofs1, $old_schema, $new_schema);
       mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', FALSE);
     }
 

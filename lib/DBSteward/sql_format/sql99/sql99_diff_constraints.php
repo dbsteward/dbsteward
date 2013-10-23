@@ -85,7 +85,7 @@ class sql99_diff_constraints {
    * @todo Constraints that are depending on a removed field should not be
    *       added to drop because they are already removed.
   */
-  private static function get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) {
+  protected static function get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) {
     $list = array();
 
     if (($new_table != null) && ($old_table != null)) {
@@ -114,7 +114,7 @@ class sql99_diff_constraints {
    *
    * @return list of constraints that should be added
    */
-  private static function get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type) {
+  protected static function get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type) {
     $list = array();
 
     if ($new_table != null) {
