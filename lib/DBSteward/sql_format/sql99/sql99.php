@@ -84,7 +84,7 @@ class sql99 {
     
     // only verify identifier correctness if we aren't quoting it
     if ( !$quoted && preg_match('/^[a-zA-Z_]\w*$/', $name) == 0 ) {
-      throw new exception("Invalid identifier: '$name' - You will need to quote this schema/table/column/type identifier with --quotecolumnnames etc");
+      throw new exception("Invalid identifier: '$name' - To use it, you will need to quote it with --quoteallnames");
     }
 
     if ( $quoted ) {
