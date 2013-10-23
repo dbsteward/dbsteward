@@ -143,7 +143,10 @@ class mysql5 {
 
         // table indexes
         $fq = mysql5::get_fully_qualified_table_name($schema['name'], $table['name']);
-        $ofs->write("ALTER TABLE $fq\n  " . implode(",  \n", mysql5_diff_indexes::diff_indexes_table(NULL, NULL, $schema, $table)) . ";\n");
+        $bits = mysql5_diff_indexes::diff_indexes_table(NULL, NULL, $schema, $table);
+        if (count($bits) > 0) {
+          $ofs->write("ALTER TABLE $fq\n  " . implode(",  \n", $bits) . ";\n");
+        }
 
         // table grants
         if (isset($table->grant)) {
