@@ -47,8 +47,8 @@ class ColumnDefaultIsFunctionTest extends dbstewardUnitTestBase {
       <column name="rate_group_name" type="character varying(100)"/>
       <column name="rate_group_enabled" type="boolean" null="false" default="true"/>
     </table>
-  </schema>            
-</dbsteward>    
+  </schema>
+</dbsteward>
 XML;
     
     $expected = <<<EXP
@@ -63,6 +63,6 @@ EXP;
     $this->set_xml_content_a($xml);
     $this->build_db('pgsql8');
     $actual = file_get_contents(dirname(__FILE__) . '/../testdata/unit_test_xml_a_build.sql');
-    $this->assertTrue(stripos($actual, $expected) !== FALSE);
+    $this->assertContains($actual, $expected);
   }
 }
