@@ -234,27 +234,27 @@ XML;
     pgsql8::build($this->output_prefix, $base_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure SET NOT NULL is specified for action column
-    $this->assertContains('ALTER COLUMN action SET NOT NULL', $text);
+    $this->assertContains('ALTER COLUMN "action" SET NOT NULL', $text);
     // make sure SET NOT NULL is NOT specified for description column
-    $this->assertNotContains('ALTER COLUMN description SET NOT NULL', $text);
+    $this->assertNotContains('ALTER COLUMN "description" SET NOT NULL', $text);
     
     // build base + strict, check contents
     $strict_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b));
     pgsql8::build($this->output_prefix, $strict_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure SET NOT NULL is specified for action column
-    $this->assertContains('ALTER COLUMN action SET NOT NULL', $text);
+    $this->assertContains('ALTER COLUMN "action" SET NOT NULL', $text);
     // make sure SET NOT NULL is specified for description column
-    $this->assertContains('ALTER COLUMN description SET NOT NULL', $text);
+    $this->assertContains('ALTER COLUMN "description" SET NOT NULL', $text);
     
     // build base + strict + new table, check contents
     $addtable_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b, $this->xml_file_c));
     pgsql8::build($this->output_prefix, $addtable_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure NOT NULL is specified for resolution column
-    $this->assertContains('ALTER COLUMN resolution SET NOT NULL', $text);
+    $this->assertContains('ALTER COLUMN "resolution" SET NOT NULL', $text);
     // make sure NOT NULL is NOT specified for points column
-    $this->assertNotContains('ALTER COLUMN points SET NOT NULL', $text);
+    $this->assertNotContains('ALTER COLUMN "points" SET NOT NULL', $text);
   }
   
   /**

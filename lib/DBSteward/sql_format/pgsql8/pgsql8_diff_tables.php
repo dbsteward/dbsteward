@@ -520,6 +520,9 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         }
         else {
           $ofs->write(pgsql8_table::get_creation_sql($new_schema, $table) . "\n");
+          // the table is getting added in an upgrade diff.
+          // need to apply column defaults and not nulls
+          $ofs->write(pgsql8_table::define_table_column_defaults($new_schema, $table) . "\n");
         }
       }
     }

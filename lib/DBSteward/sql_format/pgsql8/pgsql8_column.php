@@ -101,7 +101,7 @@ class pgsql8_column extends sql99_column {
    */
   public static function set_column_defaults($node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true, $include_default_nextval = TRUE) {
     $fq_table_name = $node_schema['name'] . '.' . $node_table['name'];
-    $base_sql = "ALTER TABLE " . $fq_table_name . " ALTER COLUMN " . $node_column['name'] . " SET";
+    $base_sql = "ALTER TABLE " . $fq_table_name . " ALTER COLUMN " . pgsql8::get_quoted_column_name($node_column['name']) . " SET";
     $sql = $base_sql;
     $changes = FALSE;
     if (strlen($node_column['default']) > 0) {
