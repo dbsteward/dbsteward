@@ -52,17 +52,19 @@ class ColumnDefaultIsFunctionTest extends dbstewardUnitTestBase {
 XML;
     
     $expected = <<<EXP
-ALTER TABLE hotel.rate ALTER COLUMN rate_id SET NOT NULL;
-ALTER TABLE hotel.rate ALTER COLUMN rate_group_id SET NOT NULL;
-ALTER TABLE hotel.rate_group ALTER COLUMN rate_group_id SET DEFAULT dbsteward.test();
-ALTER TABLE hotel.rate_group ALTER COLUMN rate_group_id SET NOT NULL;
-ALTER TABLE hotel.rate_group ALTER COLUMN rate_group_enabled SET DEFAULT true;
-ALTER TABLE hotel.rate_group ALTER COLUMN rate_group_enabled SET NOT NULL;
+ALTER TABLE "hotel"."rate" ALTER COLUMN "rate_id" SET NOT NULL;
+ALTER TABLE "hotel"."rate" ALTER COLUMN "rate_group_id" SET NOT NULL;
+ALTER TABLE "hotel"."rate_group" ALTER COLUMN "rate_group_id" SET DEFAULT dbsteward.test();
+ALTER TABLE "hotel"."rate_group" ALTER COLUMN "rate_group_id" SET NOT NULL;
+ALTER TABLE "hotel"."rate_group" ALTER COLUMN "rate_group_enabled" SET DEFAULT true;
+ALTER TABLE "hotel"."rate_group" ALTER COLUMN "rate_group_enabled" SET NOT NULL;
 EXP;
+
+    dbsteward::$quote_all_names = TRUE;
     
     $this->set_xml_content_a($xml);
     $this->build_db('pgsql8');
     $actual = file_get_contents(dirname(__FILE__) . '/../testdata/unit_test_xml_a_build.sql');
-    $this->assertContains($actual, $expected);
+    $this->assertContains($expected, $actual);
   }
 }
