@@ -50,11 +50,13 @@ class mysql5_index extends sql99_index {
         // so we need to create one as well to avoid invalid diffs
 
         // first, see if there's already an index of JUST this column
-        $found = false;
-        foreach ($nodes as $node) {
-          if (count($node->indexDimension) == 1 && (string)$node->indexDimension[0] == (string)$column['name']) {
-            $found = true;
-            break;
+        $found = (string)$node_table['primaryKey'] == (string)$column['name'];
+        if (!$found) {
+          foreach ($nodes as $node) {
+            if (count($node->indexDimension) == 1 && (string)$node->indexDimension[0] == (string)$column['name']) {
+              $found = true;
+              break;
+            }
           }
         }
         if (!$found) {

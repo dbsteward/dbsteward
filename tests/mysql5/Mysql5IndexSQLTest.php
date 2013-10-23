@@ -264,5 +264,25 @@ XML;
     }
     $this->fail("Expected an exception because a table had duplicate index names");
   }
+
+  public function testForeignKeyOnPrimaryKeyDoesntCreateIndex() {
+    $xml = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table1" owner="ROLE_OWNER" primaryKey="col1">
+    <column name="col1" foreignSchema="public" foreignTable="table2" foreignColumn="col2"/>
+  </table>
+  <table name="table2" owner="ROLE_OWNER" primaryKey="col1">
+    <column name="col1" type="int"/>
+  </table>
+</schema>
+XML;
+    
+    $schema = simplexml_load_string($xml);
+    $table = $schema->table;
+
+    $indexes = mysql5_index::get_table_indexes($schema, $table);
+
+    $this->assertEquals(array(), $indexes, "There should be no indexes created when the fkey is on the pkey");
+  }
 }
 ?>
