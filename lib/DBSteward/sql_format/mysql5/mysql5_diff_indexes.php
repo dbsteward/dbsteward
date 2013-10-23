@@ -20,7 +20,15 @@ class mysql5_diff_indexes extends sql99_diff_indexes {
    * relies on that index. If you DROP and CREATE in the same statement, though, MySQL is happy.
    * So, just mash all the index changes for each table into a single ALTER TABLE and be done with it.
    */
-  public static function diff_indexes_table($old_schema, $old_table, $new_schema, $new_table) {
+  public static function diff_indexes_table($ofs, $old_schema, $old_table, $new_schema, $new_table) {
+    $bits = self::diff_indexes_table_bits($old_schema, $old_table, $new_schema, $new_table);
+
+    if (!empty($bits)) {
+      $ofs->write('ALTER TABLE ' . mysql5::get_fully_qualified_table_name($new_schema['name'], $new_table['name']) . "\n  " . implode(",\n  ", $bits) . ";\n\n");
+    }
+  }
+
+  public static function diff_indexes_table_bits($old_schema, $old_table, $new_schema, $new_table) {
     $bits = array();
 
     // Drop indexes that do not exist in new schema or are modified

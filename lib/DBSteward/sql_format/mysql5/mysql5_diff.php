@@ -236,7 +236,7 @@ class mysql5_diff extends sql99_diff {
         mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', TRUE);
         mysql5_diff_tables::drop_tables($ofs3, $old_schema, $new_schema);
         mysql5_diff_tables::diff_tables($ofs1, $ofs3, $old_schema, $new_schema);
-        mysql5_diff_indexes::diff_indexes($ofs1, $old_schema, $new_schema);
+        // mysql5_diff_indexes::diff_indexes($ofs1, $old_schema, $new_schema);
         mysql5_diff_constraints::diff_constraints($ofs1, $old_schema, $new_schema, 'primaryKey', FALSE);
         mysql5_diff_triggers::diff_triggers($ofs1, $old_schema, $new_schema);
       }

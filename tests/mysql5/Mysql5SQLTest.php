@@ -165,9 +165,6 @@ CREATE TABLE `public_user` (
   `user_age` numeric
 );
 
-ALTER TABLE `public_user`
-  ADD INDEX `group_id` (`group_id`) USING BTREE;
-
 GRANT SELECT, UPDATE, DELETE ON `public_user` TO `dbsteward_phpunit_app`;
 
 CREATE TABLE `public_group` (
@@ -176,9 +173,6 @@ CREATE TABLE `public_group` (
   `group_name` character varying(100),
   `group_enabled` boolean NOT NULL DEFAULT true
 );
-
-ALTER TABLE `public_group`
-  ADD UNIQUE INDEX `group_name` (`group_name`) USING BTREE;
 
 GRANT SELECT, UPDATE, DELETE ON `public_group` TO `dbsteward_phpunit_app`;
 
@@ -302,9 +296,6 @@ CREATE TABLE `hotel_rate` (
   `rate_value` numeric
 );
 
-ALTER TABLE `hotel_rate`
-  ADD INDEX `rate_group_id` (`rate_group_id`) USING BTREE;
-
 CREATE TABLE `hotel_rate_group` (
   `rate_group_id` integer NOT NULL,
   `rate_group_name` character varying(100),
@@ -312,13 +303,16 @@ CREATE TABLE `hotel_rate_group` (
 );
 
 ALTER TABLE `public_user`
+  ADD INDEX `group_id` (`group_id`) USING BTREE,
   ADD PRIMARY KEY (`user_id`),
   MODIFY `user_id` int NOT NULL AUTO_INCREMENT;
 ALTER TABLE `public_group`
+  ADD UNIQUE INDEX `group_name` (`group_name`) USING BTREE,
   ADD PRIMARY KEY (`group_id`),
   MODIFY `group_id` int NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `hotel_rate`
+  ADD INDEX `rate_group_id` (`rate_group_id`) USING BTREE,
   ADD PRIMARY KEY (`rate_id`);
 ALTER TABLE `hotel_rate_group`
   ADD PRIMARY KEY (`rate_group_id`);

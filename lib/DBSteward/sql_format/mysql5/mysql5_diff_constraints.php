@@ -32,7 +32,8 @@ class mysql5_diff_constraints extends sql99_diff_constraints {
 
       $bits = self::get_multiple_create_bits($new_schema, $new_table, $new_constraints);
       if ($type == 'primaryKey') {
-        $bits = array_merge(mysql5_diff_indexes::diff_indexes_table($ofs, $old_schema, $old_table, $new_schema, $new_table), $bits);
+        $index_bits = mysql5_diff_indexes::diff_indexes_table_bits($old_schema, $old_table, $new_schema, $new_table);
+        $bits = array_merge($index_bits, $bits);
       }
 
       // add new constraints
