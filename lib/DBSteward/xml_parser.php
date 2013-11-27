@@ -729,7 +729,8 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
 
     // which will return 1 on failure to find executable, so dbsteward::cmd will throw an exception
     try {
-      dbsteward::cmd("which xmllint");
+      $whereIsCommand = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? 'where' : 'which';
+      dbsteward::cmd("$whereIsCommand xmllint");
     } catch (Exception $ex) {
       throw new Exception("Could not locate xmllint executable. Please ensure it is in your PATH, or install libxml2 from http://xmlsoft.org");
     }
@@ -743,7 +744,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
     if ($echo_status) {
       dbsteward::console_line(1, "Validating XML (size = " . strlen($xml) . ") against $dtd_file");
     }
-    $tmp_file = tempnam('/var/tmp/', 'dbsteward_validate_');
+    $tmp_file = tempnam(sys_get_temp_dir, 'dbsteward_validate_');
     if (file_put_contents($tmp_file, $xml) === FALSE) {
       throw new exception("Failed to write to temporary validation file: " . $tmp_file);
     }
