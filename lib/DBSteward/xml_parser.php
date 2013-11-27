@@ -729,7 +729,8 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
 
     // which will return 1 on failure to find executable, so dbsteward::cmd will throw an exception
     try {
-      dbsteward::cmd("which xmllint");
+        $whereIsCommand = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? 'where' : 'which';
+        dbsteward::cmd("$whereIsCommand xmllint");
     } catch (Exception $ex) {
       throw new Exception("Could not locate xmllint executable. Please ensure it is in your PATH, or install libxml2 from http://xmlsoft.org");
     }
