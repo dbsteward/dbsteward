@@ -744,7 +744,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
     if ($echo_status) {
       dbsteward::console_line(1, "Validating XML (size = " . strlen($xml) . ") against $dtd_file");
     }
-    $tmp_file = tempnam(sys_get_temp_dir, 'dbsteward_validate_');
+    $tmp_file = tempnam(sys_get_temp_dir(), 'dbsteward_validate_');
     if (file_put_contents($tmp_file, $xml) === FALSE) {
       throw new exception("Failed to write to temporary validation file: " . $tmp_file);
     }
