@@ -618,7 +618,7 @@ class dbx {
     if (!is_object($node_schema)) {
       throw new exception("node_schema is not an object");
     }
-    $nodes = $node_schema->xpath("type[@name='" . $name . "']");
+    $nodes = $node_schema->xpath("type[@name='" . str_replace('\'', '"', $name) . "']");
     if (count($nodes) == 0) {
       if ($create_if_not_exist) {
         // type not found, caller wants the type created in the schema
