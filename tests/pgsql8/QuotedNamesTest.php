@@ -38,4 +38,26 @@ XML;
 
     $this->assertEquals('CREATE INDEX "idx" ON "test"."test" USING btree ("col1", "col2");', $sql);
   }
+
+  public function testQuoteFKeyTable() {
+    $xml = <<<XML
+<dbsteward>
+<schema name="test">
+  <table name="test1">
+    <column name="col1" type="int" />
+  </table>
+  <table name="test2">
+    <column name="col1" foreignSchema="test" foreignTable="test1" foreignColumn="col1"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+    $db_doc = simplexml_load_string($xml);
+
+    $constraints = dbx::get_table_constraints($db_doc, $db_doc->schema, $db_doc->schema->table[1], 'foreignKey');
+
+    $sql = trim(pgsql8_table::get_constraint_sql_change_statement($constraints[0]));
+    $expected = 'ADD CONSTRAINT "test2_col1_fkey" FOREIGN KEY ("col1") REFERENCES "test"."test1"("col1")';
+    $this->assertEquals($expected, $sql);
+  }
 }

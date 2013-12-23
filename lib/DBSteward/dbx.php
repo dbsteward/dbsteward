@@ -724,7 +724,9 @@ class dbx {
     }
 
     $foreign['name'] = pgsql8::index_name($node_table['name'], $column['name'], 'fkey');
-    $foreign['references'] = dbsteward::string_cast($foreign['schema']['name']) . "." . dbsteward::string_cast($foreign['table']['name']) . "(" . dbsteward::quote_column_name(dbsteward::string_cast($foreign['column']['name'])) . ")";
+    $table_name = format::get_fully_qualified_table_name($foreign['schema']['name'], $foreign['table']['name']);
+    $column_name = format::get_quoted_column_name($foreign['column']['name']);
+    $foreign['references'] = "{$table_name}({$column_name})";
   }
 
   /**
