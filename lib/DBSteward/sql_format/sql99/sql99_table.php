@@ -10,7 +10,7 @@
 
 class sql99_table {
   
-  const PATTERN_CONSTRAINT_REFERENCES_TABLE = "/^.+\s+REFERENCES\s+(\w+)\.(\w+)\s*\(\s*(.*)\s*\)$/i";
+  const PATTERN_CONSTRAINT_REFERENCES_TABLE = "/^.+\s+REFERENCES\s+\"?(\w+)\"?\.\"?(\w+)\"?\s*\(\s*\"?(.*)\"?\s*\)$/i";
 
   /**
    * Returns true if table contains given column $name, otherwise false.
