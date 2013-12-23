@@ -33,7 +33,7 @@ class pgsql8_index extends sql99_index {
     $sql .= ' (';
     foreach($node_index->indexDimension AS $dimension) {
       // if the index dimension is an expression and not a column, don't try to column quote it
-      if ( preg_match('/[\(\,]+$/', $dimension) == 0 ) {
+      if ( preg_match('/[\(\,]+$/', $dimension) > 0 ) {
         $sql .= $dimension . ', ';
       }
       else {
