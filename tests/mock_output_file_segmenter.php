@@ -30,4 +30,9 @@ class mock_output_file_segmenter {
     $this->output = '';
     $this->footer = '';
   }
+  
+  public function set_header($text) {
+    // mock set_header by appending it to the output buffer
+    $this->output .= $text;
+  }
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * DBSteward unit test for pgsql8 tableOption diffing
+ * DBSteward unit test for pgsql8 character escaping during data diffing
  *
  * @package DBSteward
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License

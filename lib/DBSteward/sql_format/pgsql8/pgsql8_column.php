@@ -234,6 +234,10 @@ class pgsql8_column extends sql99_column {
         throw new Exception("column missing type -- " . $schema['name'] . "." . $table['name'] . "." . $column['name']);
       }
       $column_type = $column['type'];
+      if (dbx::get_type($schema, $column_type) != NULL) {
+        // this is a user defined type or enum, enforce quoting if set
+        $column_type = pgsql8::get_quoted_object_name($column_type);
+      }
     }
     return $column_type;
   }
