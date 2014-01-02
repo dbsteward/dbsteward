@@ -24,9 +24,6 @@ class TypeQuotingTest extends PHPUnit_Framework_TestCase {
     </role>
   </database>
   <schema name="schema1" owner="ROLE_OWNER">
-    <table name="table_mable" owner="ROLE_OWNER" primaryKey="table_mable_id">
-      <column name="table_mable_id" type="int"/>
-    </table>
   </schema>
 </dbsteward>
 XML_EMPTY;
@@ -47,9 +44,6 @@ XML_EMPTY;
       <enum name="Write"/>
       <enum name="Delete"/>
     </type>
-    <table name="table_mable" owner="ROLE_OWNER" primaryKey="table_mable_id">
-      <column name="table_mable_id" type="int"/>
-    </table>
     <table name="table_shable" owner="ROLE_OWNER" primaryKey="table_shable_id">
       <column name="table_shable_id" type="int"/>
       <column name="table_shable_value" type="char(10)"/>
@@ -97,22 +91,20 @@ XML_NEW;
     $schema = $doc->schema;
     $table = $schema->table;
     
-    // make sure the type is referred to with quoting during type creation
+    // make sure the type is named with quoting as part of a definition build
     $expected = "CREATE TYPE \"schema1\".\"enumCamelCaseType\" AS ENUM ('Read','Write','Delete');";
     $mofs = new mock_output_file_segmenter();
     pgsql8::build_schema($doc, $mofs, $table_dependency);
     $actual = trim($mofs->_get_output());
     $this->assertContains($expected, $actual);
-    // make sure the type is referred to with quoting during table creation
+    // make sure the type is referred to with quoting in a table creation as part of a definition build
     $expected_column = '"table_shable_mode" "enumCamelCaseType"';
     $this->assertContains($expected_column, $actual);
     
-    // make sure the type is referred to with quoting during diffing
+    // make sure the type is referred to with quoting when generating table create statements
     $expected = '"table_shable_mode" "enumCamelCaseType"';
-    $mofs = new mock_output_file_segmenter();
-    pgsql8_diff::diff_doc_work($mofs, $mofs, $mofs, $mofs);
-    $actual = trim($mofs->_get_output());
-    $this->assertContains($expected, $actual);
+    $sql = pgsql8_table::get_creation_sql($schema, $table);
+    $this->assertContains($expected, $sql);
     
     // make sure create table quotes the type name
     $expected = '"table_shable_mode" "enumCamelCaseType"';
@@ -123,7 +115,7 @@ XML_NEW;
     $this->assertContains($expected, $actual);
     
     // make sure insert statements are made that match the XML definition
-    $expected = "INSERT INTO \"public\".\"table_shable\" (\"table_shable_id\", \"table_shable_value\", \"table_shable_mode\") VALUES (1, E'shim sham', BETA);";
+    $expected = "INSERT INTO \"schema1\".\"table_shable\" (\"table_shable_id\", \"table_shable_value\", \"table_shable_mode\") VALUES (1, E'shim sham', BETA);";
     $actual = trim(pgsql8_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
     $this->assertContains($expected, $actual);
   }
