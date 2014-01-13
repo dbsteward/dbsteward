@@ -1084,6 +1084,7 @@ SLEEP (SECONDS=60);
       foreach ($new_schema->table AS $new_table) {
         // is this table replicated in this replica set?
         if ( pgsql8::slony_replica_set_contains_table($new_db_doc, $new_replica_set, $new_schema, $new_table) ) {
+          
           if (!is_numeric(dbsteward::string_cast($new_table['slonyId']))) {
             throw new exception('table ' . $new_table['name'] . " slonyId " . $new_table['slonyId'] . " is not numeric");
           }
@@ -1169,6 +1170,21 @@ SLEEP (SECONDS=60);
 
               $col_sequence = pgsql8::identifier_name($new_schema['name'], $new_table['name'], $new_column['name'], '_seq');
               $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_replica_set['upgradeSetId']), dbsteward::string_cast($new_replica_set['originNodeId']), dbsteward::string_cast($new_column['slonyId']), $new_schema['name'] . '.' . $col_sequence, $new_schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
+            }
+            
+            // also check to make sure that additions of slonyIds in new XML
+            // where the column did exist before also generates slonik changes
+            if (($old_schema !== NULL && $old_table !== NULL && $old_column !== NULL)
+                && strcasecmp('IGNORE_REQUIRED', $new_column['slonyId']) !== 0
+                && !isset($old_column['slonyId'])) {
+              if (!$upgrade_set_created) {
+                self::create_slonik_upgrade_set($slony_stage3_ofs, $new_db_doc, $new_replica_set);
+                $upgrade_set_created = TRUE;
+              }
+
+              $col_sequence = pgsql8::identifier_name($new_schema['name'], $new_table['name'], $new_column['name'], '_seq');
+              $slony_stage3_ofs->write(sprintf(slony1_slonik::script_add_sequence, dbsteward::string_cast($new_replica_set['upgradeSetId']), dbsteward::string_cast($new_replica_set['originNodeId']), dbsteward::string_cast($new_column['slonyId']), $new_schema['name'] . '.' . $col_sequence, $new_schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");              
+              
             }
           }
         }
