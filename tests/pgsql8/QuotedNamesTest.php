@@ -60,4 +60,28 @@ XML;
     $expected = 'ADD CONSTRAINT "test2_col1_fkey" FOREIGN KEY ("col1") REFERENCES "test"."test1"("col1")';
     $this->assertEquals($expected, $sql);
   }
+  
+  public function testFunctionNameQuoting() {
+    $xml = <<<XML
+<dbsteward>
+  <schema name="test">
+    <table name="test1">
+      <column name="col1" type="int" />
+    </table>
+    <function name="testfunc" returns="int" owner="ROLE_OWNER" cachePolicy="VOLATILE" description="test function">
+      <functionParameter name="test_id" type="int" />
+      <functionDefinition language="plpgsql" sqlFormat="pgsql8">
+        BEGIN
+          RETURN test_id;
+        END;
+      </functionDefinition>
+    </function>
+  </schema>
+</dbsteward>
+XML;
+    $db_doc = simplexml_load_string($xml);
+    $fxn_sql = pgsql8_function::get_declaration($db_doc->schema, $db_doc->schema->function);
+    $expected = '"test"."testfunc"(test_id int)';
+    $this->assertEquals($expected, $fxn_sql);
+  }
 }
