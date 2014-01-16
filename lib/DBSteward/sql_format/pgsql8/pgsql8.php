@@ -308,7 +308,9 @@ class pgsql8 extends sql99 {
     if (count(dbsteward::$limit_to_tables) == 0) {
       $build_file_ofs->write("-- full database definition file generated " . date('r') . "\n");
     }
-    $build_file_ofs->write("BEGIN; -- STRIP_SLONY: SlonyI installs should strip this line as Slony will manage the transaction\n\n");
+    if (!dbsteward::$generate_slonik) {
+      $build_file_ofs->write("BEGIN;\n\n");
+    }
 
     dbsteward::console_line(1, "Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
@@ -368,8 +370,10 @@ class pgsql8 extends sql99 {
       pgsql8::build_data($db_doc, $build_file_ofs, $table_dependency);
     }
     dbsteward::$new_database = NULL;
-
-    $build_file_ofs->write("COMMIT; -- STRIP_SLONY: SlonyI installs should strip this line as Slony will manage the transaction\n\n");
+    
+    if (!dbsteward::$generate_slonik) {
+      $build_file_ofs->write("COMMIT;\n\n");
+    }
 
     if ( dbsteward::$generate_slonik ) {
       $replica_sets = static::get_slony_replica_sets($db_doc);

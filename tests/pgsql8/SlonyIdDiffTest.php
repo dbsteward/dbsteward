@@ -8,6 +8,7 @@
  */
 
 require_once 'PHPUnit/Framework/TestCase.php';
+require_once __DIR__ . '/../mock_output_file_segmenter.php';
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 
 class SlonyIdDiffTest extends PHPUnit_Framework_TestCase 
@@ -87,7 +88,32 @@ XML;
     // clear these before each test so we don't run into conflicts
     pgsql8::$table_slony_ids = array();
     pgsql8::$sequence_slony_ids = array();
+    dbsteward::$generate_slonik = TRUE;
     
+  }
+  
+  protected function transaction_statement_check($expected) {
+    dbsteward::$old_database = new SimpleXMLElement($this->oldxml);
+    dbsteward::$new_database = new SimpleXMLElement($this->newxml);
+    dbsteward::set_sql_format('pgsql8');
+    
+    $ofs1 = new mock_output_file_segmenter();
+    $ofs2 = new mock_output_file_segmenter();
+    $ofs3 = new mock_output_file_segmenter();
+    $ofs4 = new mock_output_file_segmenter();
+    $ofses = array($ofs1, $ofs2, $ofs3, $ofs4);
+
+    pgsql8_diff::diff_doc_work($ofs1, $ofs2, $ofs3, $ofs4);
+    for ($i = 0; $i < 4; $i++) {
+      $this->assertEquals($expected, stripos(trim($ofses[$i]->_get_output()), 'BEGIN') === FALSE);
+      $this->assertEquals($expected, stripos(trim($ofses[$i]->_get_output()), 'COMMIT') === FALSE);
+    }    
+  }
+  
+  public function testGenerateSlonikRemovesTransactionStatements() {
+    $this->transaction_statement_check(TRUE);
+    dbsteward::$generate_slonik = FALSE;
+    $this->transaction_statement_check(FALSE);
   }
   
   public function testSlonikChangesMadeForExistingSequence() {
@@ -156,6 +182,18 @@ EXPECTED2;
       // make sure changes are NOT present in stage1 slonik
       $this->assertTrue(stripos($not_expected, $expected) === FALSE);     
     }
+  }
+  
+  protected function generate_slonik_testing($check) {
+    $slony_filename_prefix = $this->build_replica_sets_for_test();
+    $expecteds = array('BEGIN', 'COMMIT');
+    $stage3_file = file_get_contents($slony_filename_prefix . '_stage3.slonik');
+    $stage1_file = file_get_contents($slony_filename_prefix . '_stage1.slonik');
+    
+    foreach ($expecteds as $expected) {
+      $this->assertTrue(stripos($stage1_file, $expected) === $check);
+      $this->assertTrue(stripos($stage3_file, $expected) === $check);
+    }    
   }
   
 }

@@ -146,16 +146,16 @@ class pgsql8_diff extends sql99_diff {
       format::set_context_replica_set_to_natural_first(dbsteward::$new_database);
     }
     
-    if (self::$as_transaction) {
-      $stage1_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
-      $stage1_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
+    if (self::$as_transaction && !dbsteward::$generate_slonik) {
+      $stage1_ofs->append_header("BEGIN;\n");
+      $stage1_ofs->append_footer("\nCOMMIT;\n");
       if ( ! dbsteward::$single_stage_upgrade ) {
-        $stage2_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
-        $stage3_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
-        $stage4_ofs->append_header("BEGIN; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n\n");
-        $stage2_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
-        $stage3_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
-        $stage4_ofs->append_footer("\nCOMMIT; -- STRIP_SLONY: SlonyI upgrades should strip this line as Slony will manage the transaction\n");
+        $stage2_ofs->append_header("BEGIN;\n\n");
+        $stage3_ofs->append_header("BEGIN;\n\n");
+        $stage4_ofs->append_header("BEGIN;\n\n");
+        $stage2_ofs->append_footer("\nCOMMIT;\n");
+        $stage3_ofs->append_footer("\nCOMMIT;\n");
+        $stage4_ofs->append_footer("\nCOMMIT;\n");
       }
     }
 
