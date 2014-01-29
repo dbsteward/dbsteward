@@ -139,7 +139,7 @@ XML;
     );
   }
   
-  protected function setup_pgsql8($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  protected function setup_pgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
     $base_xml = '';
     $strict_overlay_xml = '';
     $new_table_xml = '';
@@ -157,10 +157,10 @@ XML;
     dbsteward::$single_stage_upgrade = TRUE;
     dbsteward::$generate_slonik = FALSE;
 
-    $this->setup_output_dir('pgsql8', $output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_output_dir('pgsql8', $output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
   }
   
-  protected function setup_mysql5($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  protected function setup_mysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
     $base_xml = '';
     $strict_overlay_xml = '';
     $new_table_xml = '';
@@ -177,15 +177,15 @@ XML;
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$single_stage_upgrade = TRUE;
 
-    $this->setup_output_dir('mysql5', $output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_output_dir('mysql5', $output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
   }
   
-  protected function setup_output_dir($setup_file_prefix, $output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
-    if ( $output_dir === FALSE ) {
+  protected function setup_output_dir($setup_file_prefix, $output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+    if ( $output_file_dir === FALSE ) {
       $this->output_prefix = dirname(__FILE__) . '/../testdata';
     }
     else {
-      $this->output_prefix = $output_dir;
+      $this->output_prefix = $output_file_dir;
     }
     
     if ( $output_file_prefix === FALSE ) {
@@ -200,9 +200,9 @@ XML;
    * @group pgsql8
    * @dataProvider output_variance_provider
    */
-  public function testUpgradeIdenticalDDLPgsql8($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testUpgradeIdenticalDDLPgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
     $this->apply_options_pgsql8();
-    $this->setup_pgsql8($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_pgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
 
     $base_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
     $upgrade_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_a));
@@ -232,9 +232,9 @@ XML;
    * @group mysql5
    * @dataProvider output_variance_provider
    */
-  public function testUpgradeIdenticalDDLMysql5($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testUpgradeIdenticalDDLMysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
     $this->apply_options_mysql5();
-    $this->setup_mysql5($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_mysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
 
     $base_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
     $upgrade_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_a));
@@ -265,9 +265,9 @@ XML;
    * @group pgsql8
    * @dataProvider output_variance_provider
    */
-  public function testFullBuildPgsql8($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testFullBuildPgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
     $this->apply_options_pgsql8();
-    $this->setup_pgsql8($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_pgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
 
     // build base full, check contents
     $base_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_a));
@@ -301,9 +301,9 @@ XML;
    * @group mysql5
    * @dataProvider output_variance_provider
    */
-  public function testFullBuildMysql5($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testFullBuildMysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
     $this->apply_options_mysql5();
-    $this->setup_mysql5($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_mysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
 
     // build base full, check contents
     $base_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_a));
@@ -337,9 +337,9 @@ XML;
    * @group pgsql8
    * @dataProvider output_variance_provider
    */
-  public function testUpgradeNewTablePgsql8($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testUpgradeNewTablePgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
     $this->apply_options_pgsql8();
-    $this->setup_pgsql8($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_pgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
     
     // upgrade from base 
     // to base + strict action table + new resolution table
@@ -360,9 +360,9 @@ XML;
    * @group mysql5
    * @dataProvider output_variance_provider
    */
-  public function testUpgradeNewTableMysql5($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testUpgradeNewTableMysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
     $this->apply_options_mysql5();
-    $this->setup_mysql5($output_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_mysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
     
     // upgrade from base 
     // to base + strict action table + new resolution table
