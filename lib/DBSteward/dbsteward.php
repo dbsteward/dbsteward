@@ -91,6 +91,28 @@ class dbsteward {
   public static $only_data_sql = FALSE;
   public static $limit_to_tables = array();
   public static $single_stage_upgrade = FALSE;
+  
+  
+  /**
+   * directory to write all output files
+   * @var string
+   */
+  public static $file_output_directory = FALSE;
+  /**
+   * filename to write database creation (_build.sql) file as
+   * @var string
+   */
+  public static $file_output_build_file = FALSE;
+  /**
+   * output file prefix to use for artifact files
+   * @var string
+   */
+  public static $file_output_prefix = FALSE;
+  /**
+   * upgrade file prefix to write database upgrade files with
+   * @var string
+   */
+  public static $file_output_upgrade_prefix = FALSE;
 
   /**
    * Should old*Name attributes be validated and traced out, or ignored?
@@ -150,6 +172,13 @@ XML utilities
   --xmlconvert=<database.xml> ...
   --xmldatainsert=<tabledata.xml>
   --xmlcollectdataaddendums=N       collect the last N xml files specified during a build into an aggregate file
+Output options
+  --outputdir                       directory to write all output files
+                                    default is location of --xml or --newxml file
+  --outputbuildfile                 filename to write database creation (_build.sql) file as
+  --outputfileprefix                output file prefix to use for artifact files
+  --outputupgradeprefix             upgrade file prefix to write database upgrade files with
+                                    default is --newxml file base + _upgrade
 ";
     return $s;
   }
@@ -223,7 +252,11 @@ Format-specific options
       "xmlconvert::",
       "xmlcollectdataaddendums::",
       "useautoincrementoptions::",
-      "useschemaprefix::"
+      "useschemaprefix::",
+      "outputdir",
+      "outputbuildfile",
+      "outputfileprefix",
+      "outputupgradeprefix"
     );
     $options = getopt($short_opts, $long_opts);
     //var_dump($options); die('dieoptiondump');
@@ -412,6 +445,36 @@ Format-specific options
     elseif (isset($options["slonydiffold"])) {
       $mode = dbsteward::MODE_SLONY_DIFF;
     }
+    
+    ///// File output location specificity
+    if ( isset($options['outputdir']) ) {
+      if ( strlen($options['outputdir']) == 0 ) {
+        throw new exception("outputdir is blank, must specify a value for this option");
+      }
+      if ( !is_dir($options['outputdir']) ) {
+        throw new exception("outputdir is not a directory; this must be a writable directory");
+      }
+      dbsteward::$file_output_directory = $options['outputdir'];
+    }
+    if ( isset($options['outputbuildfile']) ) {
+      if ( strlen($options['outputbuildfile']) == 0 ) {
+        throw new exception("outputbuildfile is blank, must specify a value for this option");
+      }
+      dbsteward::$file_output_build_file = $options['outputbuildfile'];
+    }
+    if ( isset($options['outputfileprefix']) ) {
+      if ( strlen($options['outputfileprefix']) == 0 ) {
+        throw new exception("outputfileprefix is blank, must specify a value for this option");
+      }
+      dbsteward::$file_output_prefix = $options['outputfileprefix'];
+    }
+    if ( isset($options['outputupgradeprefix']) ) {
+      if ( strlen($options['outputupgradeprefix']) == 0 ) {
+        throw new exception("outputupgradeprefix is blank, must specify a value for this option");
+      }
+      dbsteward::$file_output_upgrade_prefix = $options['outputupgradeprefix'];
+    }
+
 
     ///// For the appropriate modes, composite the input XML
     ///// and figure out the SQL format of it
@@ -502,7 +565,7 @@ Format-specific options
 
         dbsteward::console_line(1, "XML files " . implode(' ', $files) . " composited");
 
-        $output_prefix = dbsteward::get_output_prefix($files);
+        $output_prefix = dbsteward::calculate_file_output_prefix($files);
         $composite_file = $output_prefix . '_composite.xml';
         $db_doc = xml_parser::sql_format_convert($db_doc);
         xml_parser::vendor_parse($db_doc);
@@ -536,14 +599,14 @@ Format-specific options
 
         dbsteward::console_line(1, "New XML files " . implode(' ', $new_files) . " composited");
 
-        $old_output_prefix = dbsteward::get_output_prefix($old_files);
+        $old_output_prefix = dbsteward::calculate_file_output_prefix($old_files);
         $old_composite_file = $old_output_prefix . '_composite.xml';
         $old_db_doc = xml_parser::sql_format_convert($old_db_doc);
         xml_parser::vendor_parse($old_db_doc);
         dbsteward::console_line(1, "Saving as " . $old_composite_file);
         xml_parser::save_doc($old_composite_file, $old_db_doc);
 
-        $new_output_prefix = dbsteward::get_output_prefix($new_files);
+        $new_output_prefix = dbsteward::calculate_file_output_prefix($new_files);
         $new_composite_file = $new_output_prefix . '_composite.xml';
         $new_db_doc = xml_parser::sql_format_convert($new_db_doc);
         xml_parser::vendor_parse($new_db_doc);
@@ -642,17 +705,6 @@ Format-specific options
       }
     }
     return $dbport;
-  }
-  
-  /**
-   * Convenience function to get the directory and extensionless basename of the first of a list of files
-   *
-   * @param array|string $files
-   * @return string
-   */
-  public static function get_output_prefix($files) {
-    $files = (array)$files;
-    return dirname($files[0]) . '/' . basename($files[0], '.xml');
   }
 
   /**
@@ -850,6 +902,51 @@ Format-specific options
   
   public static function sql_format_exists($format) {
     return in_array($format, dbsteward::get_sql_formats());
+  }
+  
+  public static function calculate_file_output_directory($context_file = FALSE) {
+    if ( $context_file !== FALSE ) {
+      $output_dir = dirname($context_file);
+    }
+    if ( dbsteward::$file_output_directory !== FALSE ) {
+      $output_dir = dbsteward::$file_output_directory;
+    }
+    return $output_dir;
+  }
+  
+  /**
+   * Consistency function to return the directory and extensionless basename of the first of a list of files
+   *
+   * @param array|string $files
+   * @return string
+   */
+  public static function calculate_file_output_prefix($files) {
+    $files = (array)$files;
+    $output_prefix = dbsteward::calculate_file_output_directory($files[0]) . '/' . basename($files[0], '.xml');
+    if ( dbsteward::$file_output_prefix !== FALSE ) {
+      $output_prefix = dbsteward::calculate_file_output_directory($files[0]) . '/' . dbsteward::$file_output_prefix;
+    }
+    return $output_prefix;
+  }
+  
+  public static function calculate_file_output_build_file($context_file = FALSE) {
+    if ( $context_file !== FALSE ) {
+      $output_build_file = $output_prefix . '_build.sql';
+    }
+    if ( dbsteward::$file_output_build_file !== FALSE ) {
+      $output_build_file = dbsteward::$file_output_build_file;
+    }
+    return $output_build_file;
+  }
+  
+  public static function calculate_file_output_upgrade_prefix($context_file = FALSE) {
+    if ( $context_file !== FALSE ) {
+      $output_upgrade_prefix = basename($files[0], '.xml') . '_upgrade';
+    }
+    if ( dbsteward::$file_output_upgrade_prefix !== FALSE ) {
+      $output_upgrade_prefix = dbsteward::$file_output_upgrade_prefix;
+    }
+    return $output_upgrade_prefix;
   }
 
 }
