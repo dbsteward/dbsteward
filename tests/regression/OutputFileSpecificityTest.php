@@ -381,4 +381,6 @@ XML;
     $this->assertContains('`resolution` character varying(16) NOT NULL', $text);
     // make sure NOT NULL is NOT specified for points column
     $this->assertNotContains('`points` int NOT NULL', $text);
- 
+  }
+
+}

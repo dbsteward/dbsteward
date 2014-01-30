@@ -110,6 +110,9 @@ DBSteward 1.3.7 Release
 Changes
 * Fix sequence slonyId replication add and removal
 * Fix object quoting rules for functions
+* STRIP_SLONY anchors removed from upgrade scripts due
+  do advent of --generateslonik mode delineator
+* Output directory and file prefix specificity 
 
 Supported Platform DDL Generation and Differencing:
 * pgsql8    - PostgreSQL 8
