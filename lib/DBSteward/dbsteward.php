@@ -241,8 +241,8 @@ Format-specific options
       "xmlcollectdataaddendums::",
       "useautoincrementoptions::",
       "useschemaprefix::",
-      "outputdir",
-      "outputfileprefix"
+      "outputdir::",
+      "outputfileprefix::"
     );
     $options = getopt($short_opts, $long_opts);
     //var_dump($options); die('dieoptiondump');
