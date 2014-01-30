@@ -1,12 +1,12 @@
 <?php
+
 /**
- * Output directory and file specificity regression tests
+ * Output directory and file prefix specificity regression tests
  *
  * @package DBSteward
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
-
 require_once 'PHPUnit/Framework/TestCase.php';
 require_once 'PHPUnit/Framework/TestSuite.php';
 
@@ -14,12 +14,11 @@ require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 require_once dirname(__FILE__) . '/../dbstewardUnitTestBase.php';
 
 class OutputFileSpecificityTest extends dbstewardUnitTestBase {
-  
+
   public function setUp() {
     parent::setUp();
-
   }
-  
+
   protected function setup_definition_xml(&$base_xml, &$strict_overlay_xml, &$new_table_xml) {
     $base_xml = <<<XML
 <dbsteward>
@@ -121,25 +120,8 @@ XML;
 </dbsteward>
 XML;
   }
-  
-  public function output_variance_provider() {
-    $output_dir1 = dirname(__FILE__) . '/../testdata_outputdir1_' . date("His");
-    if ( !is_dir($output_dir1) ) {
-      mkdir($output_dir1);
-    }
-    $output_dir2 = dirname(__FILE__) . '/../testdata_outputdir2_' . date("His");
-    if ( !is_dir($output_dir2) ) {
-      mkdir($output_dir2);
-    }
 
-    return array(
-      array(FALSE, FALSE, FALSE, FALSE),
-      array($output_dir1, FALSE, FALSE, FALSE),
-      array($output_dir2, 'goopy_goop', FALSE, FALSE),
-    );
-  }
-  
-  protected function setup_pgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  protected function setup_pgsql8($output_file_dir, $output_file_prefix) {
     $base_xml = '';
     $strict_overlay_xml = '';
     $new_table_xml = '';
@@ -148,19 +130,19 @@ XML;
     $this->xml_file_a = dirname(__FILE__) . '/../testdata/pgsql8_unit_test_xml_a.xml';
     $this->xml_file_b = dirname(__FILE__) . '/../testdata/pgsql8_unit_test_xml_b.xml';
     $this->xml_file_c = dirname(__FILE__) . '/../testdata/pgsql8_unit_test_xml_c.xml';
-        
+
     $this->set_xml_content_a($base_xml);
     $this->set_xml_content_b($strict_overlay_xml);
     $this->set_xml_content_c($new_table_xml);
-    
+
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$single_stage_upgrade = TRUE;
     dbsteward::$generate_slonik = FALSE;
 
-    $this->setup_output_dir('pgsql8', $output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_output_options('pgsql8', $output_file_dir, $output_file_prefix);
   }
-  
-  protected function setup_mysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+
+  protected function setup_mysql5($output_file_dir, $output_file_prefix) {
     $base_xml = '';
     $strict_overlay_xml = '';
     $new_table_xml = '';
@@ -169,40 +151,63 @@ XML;
     $this->xml_file_a = dirname(__FILE__) . '/../testdata/mysql5_unit_test_xml_a.xml';
     $this->xml_file_b = dirname(__FILE__) . '/../testdata/mysql5_unit_test_xml_b.xml';
     $this->xml_file_c = dirname(__FILE__) . '/../testdata/mysql5_unit_test_xml_c.xml';
-        
+
     $this->set_xml_content_a($base_xml);
     $this->set_xml_content_b($strict_overlay_xml);
     $this->set_xml_content_c($new_table_xml);
-    
+
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$single_stage_upgrade = TRUE;
 
-    $this->setup_output_dir('mysql5', $output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_output_options('mysql5', $output_file_dir, $output_file_prefix);
   }
-  
-  protected function setup_output_dir($setup_file_prefix, $output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
-    if ( $output_file_dir === FALSE ) {
+
+  public function output_variance_provider() {
+    $output_dir1 = dirname(__FILE__) . '/../testdata_outputdir_dir_' . date("His");
+    if (!is_dir($output_dir1)) {
+      mkdir($output_dir1);
+    }
+    $output_dir2 = dirname(__FILE__) . '/../testdata_outputdir_fileprefix_' . date("His");
+    if (!is_dir($output_dir2)) {
+      mkdir($output_dir2);
+    }
+
+    return array(
+      array(FALSE, FALSE),
+      array($output_dir1, FALSE),
+      array($output_dir2, 'gloopy_glop'),
+      array(FALSE, 'solo_nobo'),
+    );
+  }
+
+  protected function setup_output_options($setup_file_prefix, $output_file_dir, $output_file_prefix) {
+    dbsteward::$file_output_directory = FALSE;
+    dbsteward::$file_output_prefix = FALSE;
+
+    if ($output_file_dir === FALSE) {
       $this->output_prefix = dirname(__FILE__) . '/../testdata';
-    }
-    else {
+    } else {
       $this->output_prefix = $output_file_dir;
+      // match dbsteward specification
+      dbsteward::$file_output_directory = $output_file_dir;
     }
-    
-    if ( $output_file_prefix === FALSE ) {
+
+    if ($output_file_prefix === FALSE) {
       $this->output_prefix .= '/' . $setup_file_prefix . '_test_column_nulls';
-    }
-    else {
+    } else {
       $this->output_prefix .= '/' . $setup_file_prefix . '_' . $output_file_prefix;
+      // match dbsteward specification
+      dbsteward::$file_output_prefix = $setup_file_prefix . '_' . $output_file_prefix;
     }
   }
-  
+
   /**
    * @group pgsql8
    * @dataProvider output_variance_provider
    */
-  public function testUpgradeIdenticalDDLPgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testUpgradeIdenticalDDLPgsql8($output_file_dir, $output_file_prefix) {
     $this->apply_options_pgsql8();
-    $this->setup_pgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_pgsql8($output_file_dir, $output_file_prefix);
 
     $base_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
     $upgrade_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_a));
@@ -227,14 +232,13 @@ XML;
     $this->assertNotRegExp('/DELETE\s+/', $text, 'Diff SQL output contains DELETE statements');
   }
 
-  
   /**
    * @group mysql5
    * @dataProvider output_variance_provider
    */
-  public function testUpgradeIdenticalDDLMysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testUpgradeIdenticalDDLMysql5($output_file_dir, $output_file_prefix) {
     $this->apply_options_mysql5();
-    $this->setup_mysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_mysql5($output_file_dir, $output_file_prefix);
 
     $base_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
     $upgrade_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_a));
@@ -265,9 +269,9 @@ XML;
    * @group pgsql8
    * @dataProvider output_variance_provider
    */
-  public function testFullBuildPgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testFullBuildPgsql8($output_file_dir, $output_file_prefix) {
     $this->apply_options_pgsql8();
-    $this->setup_pgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_pgsql8($output_file_dir, $output_file_prefix);
 
     // build base full, check contents
     $base_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_a));
@@ -277,7 +281,7 @@ XML;
     $this->assertContains('ALTER COLUMN "action" SET NOT NULL', $text);
     // make sure SET NOT NULL is NOT specified for description column
     $this->assertNotContains('ALTER COLUMN "description" SET NOT NULL', $text);
-    
+
     // build base + strict, check contents
     $strict_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b));
     pgsql8::build($this->output_prefix, $strict_db_doc);
@@ -286,7 +290,7 @@ XML;
     $this->assertContains('ALTER COLUMN "action" SET NOT NULL', $text);
     // make sure SET NOT NULL is specified for description column
     $this->assertContains('ALTER COLUMN "description" SET NOT NULL', $text);
-    
+
     // build base + strict + new table, check contents
     $addtable_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b, $this->xml_file_c));
     pgsql8::build($this->output_prefix, $addtable_db_doc);
@@ -296,14 +300,14 @@ XML;
     // make sure NOT NULL is NOT specified for points column
     $this->assertNotContains('ALTER COLUMN "points" SET NOT NULL', $text);
   }
-  
+
   /**
    * @group mysql5
    * @dataProvider output_variance_provider
    */
-  public function testFullBuildMysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testFullBuildMysql5($output_file_dir, $output_file_prefix) {
     $this->apply_options_mysql5();
-    $this->setup_mysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
+    $this->setup_mysql5($output_file_dir, $output_file_prefix);
 
     // build base full, check contents
     $base_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_a));
@@ -313,7 +317,7 @@ XML;
     $this->assertContains('`action` character varying(16) NOT NULL', $text);
     // make sure NOT NULL is NOT specified for description column
     $this->assertNotContains('`description` character varying(200) NOT NULL', $text);
-    
+
     // build base + strict, check contents
     $strict_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b));
     mysql5::build($this->output_prefix, $strict_db_doc);
@@ -322,7 +326,7 @@ XML;
     $this->assertContains('`action` character varying(16) NOT NULL', $text);
     // make sure NOT NULL is specified for description column
     $this->assertContains('`description` character varying(200) NOT NULL', $text);
-    
+
     // build base + strict + new table, check contents
     $addtable_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b, $this->xml_file_c));
     mysql5::build($this->output_prefix, $addtable_db_doc);
@@ -337,10 +341,10 @@ XML;
    * @group pgsql8
    * @dataProvider output_variance_provider
    */
-  public function testUpgradeNewTablePgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testUpgradeNewTablePgsql8($output_file_dir, $output_file_prefix) {
     $this->apply_options_pgsql8();
-    $this->setup_pgsql8($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
-    
+    $this->setup_pgsql8($output_file_dir, $output_file_prefix);
+
     // upgrade from base 
     // to base + strict action table + new resolution table
     // check null specificity
@@ -360,10 +364,10 @@ XML;
    * @group mysql5
    * @dataProvider output_variance_provider
    */
-  public function testUpgradeNewTableMysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix) {
+  public function testUpgradeNewTableMysql5($output_file_dir, $output_file_prefix) {
     $this->apply_options_mysql5();
-    $this->setup_mysql5($output_file_dir, $output_file_prefix, $output_build_file, $output_upgrade_prefix);
-    
+    $this->setup_mysql5($output_file_dir, $output_file_prefix);
+
     // upgrade from base 
     // to base + strict action table + new resolution table
     // check null specificity
@@ -377,6 +381,4 @@ XML;
     $this->assertContains('`resolution` character varying(16) NOT NULL', $text);
     // make sure NOT NULL is NOT specified for points column
     $this->assertNotContains('`points` int NOT NULL', $text);
-  }
-  
-}
+ 

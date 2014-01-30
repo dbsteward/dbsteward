@@ -99,20 +99,10 @@ class dbsteward {
    */
   public static $file_output_directory = FALSE;
   /**
-   * filename to write database creation (_build.sql) file as
-   * @var string
-   */
-  public static $file_output_build_file = FALSE;
-  /**
    * output file prefix to use for artifact files
    * @var string
    */
   public static $file_output_prefix = FALSE;
-  /**
-   * upgrade file prefix to write database upgrade files with
-   * @var string
-   */
-  public static $file_output_upgrade_prefix = FALSE;
 
   /**
    * Should old*Name attributes be validated and traced out, or ignored?
@@ -175,10 +165,8 @@ XML utilities
 Output options
   --outputdir                       directory to write all output files
                                     default is location of --xml or --newxml file
-  --outputbuildfile                 filename to write database creation (_build.sql) file as
   --outputfileprefix                output file prefix to use for artifact files
-  --outputupgradeprefix             upgrade file prefix to write database upgrade files with
-                                    default is --newxml file base + _upgrade
+                                    default is first XML file basename
 ";
     return $s;
   }
@@ -254,9 +242,7 @@ Format-specific options
       "useautoincrementoptions::",
       "useschemaprefix::",
       "outputdir",
-      "outputbuildfile",
-      "outputfileprefix",
-      "outputupgradeprefix"
+      "outputfileprefix"
     );
     $options = getopt($short_opts, $long_opts);
     //var_dump($options); die('dieoptiondump');
@@ -456,23 +442,11 @@ Format-specific options
       }
       dbsteward::$file_output_directory = $options['outputdir'];
     }
-    if ( isset($options['outputbuildfile']) ) {
-      if ( strlen($options['outputbuildfile']) == 0 ) {
-        throw new exception("outputbuildfile is blank, must specify a value for this option");
-      }
-      dbsteward::$file_output_build_file = $options['outputbuildfile'];
-    }
     if ( isset($options['outputfileprefix']) ) {
       if ( strlen($options['outputfileprefix']) == 0 ) {
         throw new exception("outputfileprefix is blank, must specify a value for this option");
       }
       dbsteward::$file_output_prefix = $options['outputfileprefix'];
-    }
-    if ( isset($options['outputupgradeprefix']) ) {
-      if ( strlen($options['outputupgradeprefix']) == 0 ) {
-        throw new exception("outputupgradeprefix is blank, must specify a value for this option");
-      }
-      dbsteward::$file_output_upgrade_prefix = $options['outputupgradeprefix'];
     }
 
 
@@ -927,26 +901,6 @@ Format-specific options
       $output_prefix = dbsteward::calculate_file_output_directory($files[0]) . '/' . dbsteward::$file_output_prefix;
     }
     return $output_prefix;
-  }
-  
-  public static function calculate_file_output_build_file($context_file = FALSE) {
-    if ( $context_file !== FALSE ) {
-      $output_build_file = $output_prefix . '_build.sql';
-    }
-    if ( dbsteward::$file_output_build_file !== FALSE ) {
-      $output_build_file = dbsteward::$file_output_build_file;
-    }
-    return $output_build_file;
-  }
-  
-  public static function calculate_file_output_upgrade_prefix($context_file = FALSE) {
-    if ( $context_file !== FALSE ) {
-      $output_upgrade_prefix = basename($files[0], '.xml') . '_upgrade';
-    }
-    if ( dbsteward::$file_output_upgrade_prefix !== FALSE ) {
-      $output_upgrade_prefix = dbsteward::$file_output_upgrade_prefix;
-    }
-    return $output_upgrade_prefix;
   }
 
 }
