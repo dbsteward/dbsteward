@@ -174,13 +174,13 @@ class pgsql8_type {
   protected static function alter_column_type_placeholder_type($node_type) {
     switch(strtolower($node_type['type'])) {
       case 'enum':
-        $placeholder_type = 'text';
+        return 'text';
         break;
+      case 'domain':
+        return (string)$node_type->domainType['baseType'];
       default:
         throw new exception("type of type " . $node_type['type'] . " placeholder definition is not defined");
-        break;
     }
-    return $placeholder_type;
   }
   
   /**

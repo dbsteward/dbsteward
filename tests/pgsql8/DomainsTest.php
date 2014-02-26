@@ -265,6 +265,44 @@ SQL;
   }
 
 
+  public function testDiffTablesAlter() {
+    $old = <<<XML
+<schema name="domains">
+  <table name="some_table" primaryKey="col1">
+    <column name="col1" type="int" null="false"/>
+    <column name="mycol" type="my_domain"/>
+  </table>
+  <type name="my_domain" type="domain">
+    <domainType baseType="int"/>
+    <domainConstraint name="gt5">VALUE > 5</domainConstraint>
+  </type>
+</schema>
+XML;
+  
+    $new = <<<XML
+<schema name="domains">
+  <table name="some_table" primaryKey="col1">
+    <column name="col1" type="int" null="false"/>
+    <column name="mycol" type="domains.my_domain"/>
+  </table>
+  <type name="my_domain" type="domain">
+    <domainType baseType="int"/>
+    <domainConstraint name="gt5">VALUE > 3</domainConstraint>
+  </type>
+</schema>
+XML;
+    
+    $expected = <<<SQL
+ALTER TABLE "domains"."some_table" ALTER COLUMN "mycol" TYPE int;
+ALTER DOMAIN "domains"."my_domain" DROP CONSTRAINT gt5;
+ALTER DOMAIN "domains"."my_domain" ADD CONSTRAINT gt5 CHECK(VALUE > 3);
+ALTER TABLE "domains"."some_table" ALTER COLUMN "mycol" TYPE "domains"."my_domain" USING "mycol"::"domains"."my_domain";
+SQL;
+
+    $this->diff($old, $new, $expected);
+  }
+
+
   private function build($xml, $expected) {
     $schema = simplexml_load_string($xml);
     $type = $schema->type;
@@ -277,10 +315,18 @@ SQL;
   private function diff($old, $new, $expected) {
     $ofs = new mock_output_file_segmenter();
 
-    $old_schema = simplexml_load_string($old);
-    $new_schema = simplexml_load_string($new);
+    $old = '<dbsteward><database/>' . $old . '</dbsteward>';
+    $new = '<dbsteward><database/>' . $new . '</dbsteward>';
 
-    pgsql8_diff_types::apply_changes($ofs, $old_schema, $new_schema);
+    $old_doc = simplexml_load_string($old);
+    $new_doc = simplexml_load_string($new);
+
+    dbsteward::$old_database = $old_doc;
+    dbsteward::$new_database = $new_doc;
+    pgsql8_diff::$old_table_dependency = xml_parser::table_dependency_order($old_doc);
+    pgsql8_diff::$new_table_dependency = xml_parser::table_dependency_order($new_doc);
+
+    pgsql8_diff_types::apply_changes($ofs, $old_doc->schema, $new_doc->schema);
     $sql = trim(preg_replace('/\n\n+/', "\n", preg_replace('/^--.*$/m', '', $ofs->_get_output())));
 
     $this->assertEquals($expected, $sql);
