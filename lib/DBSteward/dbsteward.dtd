@@ -199,15 +199,24 @@
 <!ATTLIST sql stage (STAGE1BEFORE|STAGE1|STAGE2BEFORE|STAGE2|STAGE3|STAGE4) #IMPLIED>
 <!ATTLIST sql slonySetId CDATA #IMPLIED>
 
-<!ELEMENT type (enum*, typeCompositeElement*)>
+<!ELEMENT type (enum+|typeCompositeElement+|(domainType, domainConstraint*))>
 <!ATTLIST type name CDATA #REQUIRED>
-<!ATTLIST type type (enum|composite) #REQUIRED>
+<!ATTLIST type type (enum|composite|domain) #REQUIRED>
 <!ATTLIST type slonySetId CDATA #IMPLIED>
+
 <!ELEMENT enum EMPTY>
 <!ATTLIST enum name CDATA #REQUIRED>
+
 <!ELEMENT typeCompositeElement EMPTY>
 <!ATTLIST typeCompositeElement name CDATA #REQUIRED>
 <!ATTLIST typeCompositeElement type CDATA #REQUIRED>
+
+<!ELEMENT domainType EMPTY>
+<!ATTLIST domainType baseType CDATA #REQUIRED>
+<!ATTLIST domainType default CDATA #IMPLIED>
+<!ATTLIST domainType null (true|false) #IMPLIED>
+<!ELEMENT domainConstraint (#PCDATA)>
+<!ATTLIST domainConstraint name CDATA #REQUIRED>
 
 <!ELEMENT view (viewQuery+, grant*)>
 <!ATTLIST view name CDATA #REQUIRED>
