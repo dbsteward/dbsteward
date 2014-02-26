@@ -48,10 +48,57 @@ class pgsql8_type {
       }
       $ddl .= ");";
     }
+    else if ( strcasecmp($node_type['type'], 'domain') == 0 ) {
+      $type_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_type['name']);
+      if ( !isset($node_type->domainType) ) {
+        throw new exception("domain type $type_name contains no domainType element");
+      }
+      $info_node = $node_type->domainType;
+      $base_type = trim($info_node['baseType']);
+      if ($base_type === '') {
+        throw new exception("No baseType was given for domain type $name");
+      }
+      $ddl = "CREATE DOMAIN $type_name AS $base_type";
+
+      if (isset($info_node['default'])) {
+        $ddl .= "\n  DEFAULT " . pgsql8::value_escape($base_type, (string)$info_node['default']);
+      }
+
+      $null = strtolower($info_node['null']);
+      // NULL is the default, must match exactly "false" to be NOT NULL
+      if (strcasecmp($null, "false") === 0) {
+        $ddl .= "\n  NOT NULL";
+      }
+
+      foreach ($node_type->domainConstraint as $domainConstraint) {
+        $constraint_name = trim($domainConstraint['name']);
+        if ($constraint_name === '') {
+          throw new exception("Empty domain constraint name for $type_name");
+        }
+
+        $check = trim($domainConstraint);
+        if ($check === '') {
+          throw new exception("Empty domain constraint for $type_name");
+        }
+        $check = self::normalize_domain_constraint($check);
+
+        $ddl .= "\n  CONSTRAINT " . pgsql8::get_quoted_object_name($constraint_name) . " CHECK($check)";
+      }
+
+      $ddl .= ';';
+    }
     else {
       throw new exception("unknown type " . $node_type['name'] . ' type ' . $node_type['type']);
     }
     return $ddl;
+  }
+
+  public static function normalize_domain_constraint($constraint) {
+    $constraint = (string)$constraint;
+    if (strtolower(substr($constraint, 0, 6)) == 'check(') {
+      $constraint = substr($constraint, 6, -1);
+    }
+    return $constraint;
   }
 
   /**
@@ -61,8 +108,11 @@ class pgsql8_type {
    */
   public static function get_drop_sql($node_schema, $node_type) {
     $type_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_type['name']);
-    $ddl = "DROP TYPE " . $type_name . ";";
-    return $ddl;
+    if (strcasecmp($node_type['type'], 'domain') === 0) {
+      return "DROP DOMAIN $type_name;";
+    } else {
+      return "DROP TYPE $type_name;";
+    }
   }
 
   public static function equals($schema_a, $type_a, $schema_b, $type_b) {
@@ -124,13 +174,13 @@ class pgsql8_type {
   protected static function alter_column_type_placeholder_type($node_type) {
     switch(strtolower($node_type['type'])) {
       case 'enum':
-        $placeholder_type = 'text';
+        return 'text';
         break;
+      case 'domain':
+        return (string)$node_type->domainType['baseType'];
       default:
         throw new exception("type of type " . $node_type['type'] . " placeholder definition is not defined");
-        break;
     }
-    return $placeholder_type;
   }
   
   /**
