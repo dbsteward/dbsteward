@@ -102,8 +102,11 @@ class pgsql8_type {
    */
   public static function get_drop_sql($node_schema, $node_type) {
     $type_name = pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_object_name($node_type['name']);
-    $ddl = "DROP TYPE " . $type_name . ";";
-    return $ddl;
+    if (strcasecmp($node_type['type'], 'domain') === 0) {
+      return "DROP DOMAIN $type_name;";
+    } else {
+      return "DROP TYPE $type_name;";
+    }
   }
 
   public static function equals($schema_a, $type_a, $schema_b, $type_b) {

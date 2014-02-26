@@ -137,4 +137,19 @@ XML;
 
     $this->assertEquals("CREATE DOMAIN \"domains\".\"my_domain\" AS varchar(20)\n  DEFAULT E'abc';", $sql);
   }
+
+  public function testDrop() {
+    $xml = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="varchar(20)" default="abc"/>
+  </type>
+</schema>
+XML;
+    
+    $schema = simplexml_load_string($xml);
+    $type = $schema->type;
+
+    $this->assertEquals('DROP DOMAIN "domains"."my_domain";', pgsql8_type::get_drop_sql($schema, $type));
+  }
 }
