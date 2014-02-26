@@ -80,9 +80,7 @@ class pgsql8_type {
         if ($check === '') {
           throw new exception("Empty domain constraint for $type_name");
         }
-        if (strtolower(substr($check, 0, 6)) == 'check(') {
-          $check = substr($check, 6, -1);
-        }
+        $check = self::normalize_domain_constraint($check);
 
         $ddl .= "\n  CONSTRAINT " . pgsql8::get_quoted_object_name($constraint_name) . " CHECK($check)";
       }
@@ -93,6 +91,14 @@ class pgsql8_type {
       throw new exception("unknown type " . $node_type['name'] . ' type ' . $node_type['type']);
     }
     return $ddl;
+  }
+
+  public static function normalize_domain_constraint($constraint) {
+    $constraint = (string)$constraint;
+    if (strtolower(substr($constraint, 0, 6)) == 'check(') {
+      $constraint = substr($constraint, 6, -1);
+    }
+    return $constraint;
   }
 
   /**

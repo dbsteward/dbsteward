@@ -9,6 +9,7 @@
 
 require_once 'PHPUnit/Framework/TestCase.php';
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/../mock_output_file_segmenter.php';
 
 /**
  * @group pgsql8
@@ -50,12 +51,7 @@ XML;
 </schema>
 XML;
     
-    $schema = simplexml_load_string($xml);
-    $type = $schema->type;
-
-    $sql = pgsql8_type::get_creation_sql($schema, $type);
-
-    $this->assertEquals("CREATE DOMAIN \"domains\".\"my_domain\" AS int;", $sql);
+    $this->build($xml, "CREATE DOMAIN \"domains\".\"my_domain\" AS int;");
   }
 
   public function testCreationWithDefaultAndNotNull() {
@@ -67,12 +63,7 @@ XML;
 </schema>
 XML;
     
-    $schema = simplexml_load_string($xml);
-    $type = $schema->type;
-
-    $sql = pgsql8_type::get_creation_sql($schema, $type);
-
-    $this->assertEquals("CREATE DOMAIN \"domains\".\"my_domain\" AS int\n  DEFAULT 5\n  NOT NULL;", $sql);
+    $this->build($xml, "CREATE DOMAIN \"domains\".\"my_domain\" AS int\n  DEFAULT 5\n  NOT NULL;");
   }
 
 
@@ -85,13 +76,8 @@ XML;
   </type>
 </schema>
 XML;
-    
-    $schema = simplexml_load_string($xml);
-    $type = $schema->type;
 
-    $sql = pgsql8_type::get_creation_sql($schema, $type);
-
-    $this->assertEquals("CREATE DOMAIN \"domains\".\"my_domain\" AS int\n  CONSTRAINT \"gt_five\" CHECK(VALUE > 5);", $sql);
+    $this->build($xml, "CREATE DOMAIN \"domains\".\"my_domain\" AS int\n  CONSTRAINT \"gt_five\" CHECK(VALUE > 5);");
   }
 
   public function testCreationWithMultipleConstraints() {
@@ -104,11 +90,6 @@ XML;
   </type>
 </schema>
 XML;
-    
-    $schema = simplexml_load_string($xml);
-    $type = $schema->type;
-
-    $sql = pgsql8_type::get_creation_sql($schema, $type);
 
     $expected = <<<SQL
 CREATE DOMAIN "domains"."my_domain" AS int
@@ -117,7 +98,7 @@ CREATE DOMAIN "domains"."my_domain" AS int
   CONSTRAINT "gt_five" CHECK(VALUE > 5);
 SQL;
 
-    $this->assertEquals($expected, $sql);
+    $this->build($xml, $expected);
   }
 
 
@@ -129,13 +110,8 @@ SQL;
   </type>
 </schema>
 XML;
-    
-    $schema = simplexml_load_string($xml);
-    $type = $schema->type;
 
-    $sql = pgsql8_type::get_creation_sql($schema, $type);
-
-    $this->assertEquals("CREATE DOMAIN \"domains\".\"my_domain\" AS varchar(20)\n  DEFAULT E'abc';", $sql);
+    $this->build($xml, "CREATE DOMAIN \"domains\".\"my_domain\" AS varchar(20)\n  DEFAULT E'abc';");
   }
 
   public function testDrop() {
@@ -151,5 +127,162 @@ XML;
     $type = $schema->type;
 
     $this->assertEquals('DROP DOMAIN "domains"."my_domain";', pgsql8_type::get_drop_sql($schema, $type));
+  }
+
+  public function testDiffBaseType() {
+    $old = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int"/>
+  </type>
+</schema>
+XML;
+    
+    $new = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="varchar(20)"/>
+  </type>
+</schema>
+XML;
+  
+    $this->diff($old, $new, "DROP DOMAIN \"domains\".\"my_domain\";\nCREATE DOMAIN \"domains\".\"my_domain\" AS varchar(20);");
+  }
+
+  public function testDiffChangeDefault() {
+    $old = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int" default="5"/>
+  </type>
+</schema>
+XML;
+    
+    $new = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int" default="10"/>
+  </type>
+</schema>
+XML;
+  
+    $this->diff($old, $new, "ALTER DOMAIN \"domains\".\"my_domain\" SET DEFAULT 10;");
+  }
+
+
+  public function testDiffDropDefault() {
+    $old = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int" default="5"/>
+  </type>
+</schema>
+XML;
+    
+    $new = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int"/>
+  </type>
+</schema>
+XML;
+  
+    $this->diff($old, $new, "ALTER DOMAIN \"domains\".\"my_domain\" DROP DEFAULT;");
+  }
+
+  public function testDiffMakeNull() {
+    $old = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int" null="false"/>
+  </type>
+</schema>
+XML;
+    
+    $new = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int"/>
+  </type>
+</schema>
+XML;
+  
+    $this->diff($old, $new, "ALTER DOMAIN \"domains\".\"my_domain\" DROP NOT NULL;");
+  }
+
+  public function testDiffMakeNotNull() {
+    $old = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int"/>
+  </type>
+</schema>
+XML;
+    
+    $new = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int" null="false"/>
+  </type>
+</schema>
+XML;
+  
+    $this->diff($old, $new, "ALTER DOMAIN \"domains\".\"my_domain\" SET NOT NULL;");
+  }
+
+
+  public function testDiffAddDropChangeConstraints() {
+    $old = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int"/>
+    <domainConstraint name="gt5">VALUE > 5</domainConstraint>
+    <domainConstraint name="lt10">VALUE &lt; 10</domainConstraint>
+    <domainConstraint name="eq7">VALUE = 7</domainConstraint>
+  </type>
+</schema>
+XML;
+    
+    $new = <<<XML
+<schema name="domains">
+  <type name="my_domain" type="domain">
+    <domainType baseType="int"/>
+    <domainConstraint name="gt5">CHECK(VALUE > 5)</domainConstraint>
+    <domainConstraint name="gt4">VALUE > 4</domainConstraint>
+    <domainConstraint name="eq7">VALUE = 2</domainConstraint>
+  </type>
+</schema>
+XML;
+
+    $expected = <<<SQL
+ALTER DOMAIN "domains"."my_domain" ADD CONSTRAINT gt4 CHECK(VALUE > 4);
+ALTER DOMAIN "domains"."my_domain" DROP CONSTRAINT eq7;
+ALTER DOMAIN "domains"."my_domain" ADD CONSTRAINT eq7 CHECK(VALUE = 2);
+ALTER DOMAIN "domains"."my_domain" DROP CONSTRAINT lt10;
+SQL;
+  
+    $this->diff($old, $new, $expected);
+  }
+
+
+  private function build($xml, $expected) {
+    $schema = simplexml_load_string($xml);
+    $type = $schema->type;
+
+    $sql = pgsql8_type::get_creation_sql($schema, $type);
+
+    $this->assertEquals($expected, $sql);
+  }
+
+  private function diff($old, $new, $expected) {
+    $ofs = new mock_output_file_segmenter();
+
+    $old_schema = simplexml_load_string($old);
+    $new_schema = simplexml_load_string($new);
+
+    pgsql8_diff_types::apply_changes($ofs, $old_schema, $new_schema);
+    $sql = trim(preg_replace('/\n\n+/', "\n", preg_replace('/^--.*$/m', '', $ofs->_get_output())));
+
+    $this->assertEquals($expected, $sql);
   }
 }
