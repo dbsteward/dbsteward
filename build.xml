@@ -112,7 +112,9 @@ Changes
 * Fix object quoting rules for functions
 * STRIP_SLONY anchors removed from upgrade scripts due
   do advent of --generateslonik mode delineator
-* Output directory and file prefix specificity 
+* Output directory and file prefix specificity
+* Tune pgsql8_index dimension quoting
+
 
 Supported Platform DDL Generation and Differencing:
 * pgsql8    - PostgreSQL 8

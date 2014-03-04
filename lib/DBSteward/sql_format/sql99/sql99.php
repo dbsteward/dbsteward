@@ -70,6 +70,16 @@ class sql99 {
       $doc->database->role->customRole .= ',' . $role;
     }
   }
+  
+  /**
+   * name is a valid sql99 identifier
+   * @param string $name
+   * @return boolean
+   */
+  public static function is_valid_identifier($name) {
+    $valid_identifier = preg_match('/^[a-zA-Z_]\w*$/', $name) > 0;
+    return $valid_identifier;
+  }
 
   /**
    * returns if quote_name is true then returns quoted name otherwise returns the original name
@@ -83,7 +93,7 @@ class sql99 {
     $quoted = $quoted || dbsteward::$quote_all_names;
     
     // only verify identifier correctness if we aren't quoting it
-    if ( !$quoted && preg_match('/^[a-zA-Z_]\w*$/', $name) == 0 ) {
+    if ( !$quoted && !format::is_valid_identifier($name) ) {
       throw new exception("Invalid identifier: '$name' - To use it, you will need to quote it with --quoteallnames");
     }
 
