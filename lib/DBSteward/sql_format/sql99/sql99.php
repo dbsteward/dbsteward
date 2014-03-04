@@ -72,7 +72,8 @@ class sql99 {
   }
   
   /**
-   * name is a valid sql99 identifier
+   * confirm $name is a valid sql99 identifier
+   * 
    * @param string $name
    * @return boolean
    */

@@ -413,6 +413,16 @@ class mssql10 {
     }
     return $value;
   }
+  
+  /**
+   * confirm $name is a valid mssql10 identifier
+   * 
+   * @param string $name
+   * @return boolean
+   */
+  public static function is_valid_identifier($name) {
+    return sql99::is_valid_identifier($name);
+  }
 
   /**
    * Split the primary key up into an array of columns

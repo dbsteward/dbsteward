@@ -835,6 +835,16 @@ class mysql5 {
   public static function primary_key_split($primary_key_string) {
     return preg_split("/[\,\s]+/", $primary_key_string, -1, PREG_SPLIT_NO_EMPTY);
   }
+  
+  /**
+   * confirm $name is a valid mysql5 identifier
+   * 
+   * @param string $name
+   * @return boolean
+   */
+  public static function is_valid_identifier($name) {
+    return sql99::is_valid_identifier($name);
+  }
 
   // @TODO: pull all of these up to sql99
   public static function get_quoted_schema_name($name) {
