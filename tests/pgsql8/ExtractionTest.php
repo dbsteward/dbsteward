@@ -139,6 +139,37 @@ SQL;
     $this->assertEquals($table_description, (string)$schema->table['description']);
     $this->assertEquals($column_description, (string)$schema->table->column['description']);
   }
+  
+  /*
+   * Test that functions with ampersands in their definition bodies
+   * extract properly - because XML
+   */
+  public function testExtractFunctionWithAmpersandParade() {
+    $function_body = <<<SQL
+DECLARE
+  overlap boolean;
+BEGIN
+  overlap := $1 && $2;
+  RETURN overlap;
+END;
+SQL;
+    
+    // this function definition cheats - money is not an implicit array
+    // even so, this test ensures that functionDefinitions with && will get extracted properly
+    // function_body is used inline in the SQL definition and checked for in the assertion
+    $sql = <<<SQL
+CREATE OR REPLACE FUNCTION "rates_overlap"(rates_a money, rates_b money) RETURNS boolean
+    AS \$_$
+$function_body
+    \$_$
+LANGUAGE plpgsql VOLATILE;
+SQL;
+    
+    $schema = $this->extract($sql);
+
+    $extracted_function_body = trim($schema->function->functionDefinition);
+    $this->assertEquals(trim($function_body), $extracted_function_body);
+  }
 
   protected function extract($sql, $in_schema = TRUE) {
     $schemaname = __CLASS__;

@@ -104,16 +104,17 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
-      <changelog version="1.3.7" date="2014-01-31" license="Simplified BSD License">
+      <changelog version="1.3.7" date="2014-03-10" license="Simplified BSD License">
 DBSteward 1.3.7 Release
 
 Changes
 * Fix sequence slonyId replication add and removal
 * Fix object quoting rules for functions
 * STRIP_SLONY anchors removed from upgrade scripts due
-  do advent of --generateslonik mode delineator
+  to advent of --generateslonik mode delineator
 * Output directory and file prefix specificity
 * Tune pgsql8_index dimension quoting
+* pgsql8 function definition extraction fix for array contains value operator
 
 
 Supported Platform DDL Generation and Differencing:
