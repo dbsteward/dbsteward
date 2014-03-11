@@ -6,21 +6,34 @@
   @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
   @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
 
+  http://www.dbsteward.org/
 
-  Phing extension dependencies:
 
-  1) domain51/Phing_d51PearPkg2Task
-     # pear channel-discover pear.domain51.com
-     # pear install domain51/Phing_d51PearPkg2Task
-
-  2) PhpDocumentor
-     # pear upgrade PhpDocumentor
-
-  3) PHPUnit
+  PEAR Dependencies:
+pear channel-discover pear.symfony-project.com
+pear channel-discover pear.symfony.com
+pear channel-discover pear.pdepend.org
+pear channel-discover pear.phpmd.org
+pear channel-discover pear.phpunit.de
+pear channel-discover pear.phpdoc.org
+pear channel-discover pear.phing.info
+pear install \-\-alldeps phing/phing
+pear install channel://pear.php.net/VersionControl_SVN-0.5.1
+pear install channel://pear.php.net/VersionControl_Git-0.4.4
+pear install phpunit/PHPUnit-3.7.32
+pear install channel://pear.php.net/Console_ProgressBar-0.5.2beta
+pear install channel://pear.php.net/XML_Serializer-0.20.2
+pear upgrade PhpDocumentor
+pear channel-discover pear.pirum-project.org
+pear install pirum/Pirum
+pear install PEAR_PackageFileManager2-1.0.2
+pear channel-discover pear.dbsteward.org
+pear install dbsteward/PEARCrater-1.0.0
 
 -->
 
-  <taskdef classname="phing.tasks.ext.d51PearPkg2Task" name="d51pearpkg2" />
+  <!-- <taskdef classname="phing.tasks.ext.PEARCraterTask" name="PEARCrater" /> -->
+  <taskdef classpath="${project.basedir}/../PEARCrater" name="PEARCrater" classname="PEARCraterTask" />
 
   <property file=".config.properties" override="true" />
 
@@ -68,7 +81,7 @@
   </target>
 
   <target name="make_package" depends="build">
-    <d51pearpkg2 dir="${directory.build}" baseinstalldir="/">
+    <PEARCrater dir="${directory.build}" baseinstalldir="/">
       <name>DBSteward</name>
       <summary>SQL database XML definition tool for DDL creation and differencing</summary>
       <channel>pear.dbsteward.org</channel>
@@ -104,7 +117,7 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
-      <changelog version="1.3.7" date="2014-03-10" license="Simplified BSD License">
+      <changelog version="1.3.7" date="2014-03-11" license="Simplified BSD License">
 DBSteward 1.3.7 Release
 
 Changes
@@ -446,7 +459,7 @@ Supported db structure dump into DBSteward XML:
       <release>
          <install as="dbsteward" name="bin/dbsteward" />
       </release>
-      </d51pearpkg2>
+    </PEARCrater>
   </target>
 
   <target name="make" depends="make_package">
