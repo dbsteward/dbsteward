@@ -31,6 +31,15 @@ pear install PEAR_PackageFileManager2-1.0.2
 pear install pirum/Pirum-1.1.5
 pear install dbsteward/PEARCrater-1.0.0
 
+  If you are trying to upgrade to a new
+  PEAR package of DBSteward and it is not working,
+  try this first:
+
+pear clear-cache
+pear update-channels
+pear remote-list -c dbsteward
+pear upgrade dbsteward/DBSteward
+
 -->
 
   <!-- <taskdef classname="phing.tasks.ext.PEARCraterTask" name="PEARCrater" /> -->
