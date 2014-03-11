@@ -17,17 +17,18 @@ pear channel-discover pear.phpmd.org
 pear channel-discover pear.phpunit.de
 pear channel-discover pear.phpdoc.org
 pear channel-discover pear.phing.info
-pear install \-\-alldeps phing/phing
+pear channel-discover pear.dbsteward.org
+pear install channel://pear.php.net/Services_Amazon_S3-0.4.0
 pear install channel://pear.php.net/VersionControl_SVN-0.5.1
 pear install channel://pear.php.net/VersionControl_Git-0.4.4
-pear install phpunit/PHPUnit-3.7.32
+pear install channel://pear.php.net/Console_Color2-0.1.2
 pear install channel://pear.php.net/Console_ProgressBar-0.5.2beta
 pear install channel://pear.php.net/XML_Serializer-0.20.2
-pear upgrade PhpDocumentor
-pear channel-discover pear.pirum-project.org
-pear install pirum/Pirum
+pear install \-\-alldeps phpdoc/PhpDocumentor-2.3.1
+pear install \-\-alldeps phpunit/PHPUnit-4.0.6
+pear install \-\-alldeps phing/phing
 pear install PEAR_PackageFileManager2-1.0.2
-pear channel-discover pear.dbsteward.org
+pear install pirum/Pirum-1.1.5
 pear install dbsteward/PEARCrater-1.0.0
 
 -->
