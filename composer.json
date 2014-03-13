@@ -1,6 +1,6 @@
 {
   "name": "nkiraly/dbsteward",
-  "description": "A database diffing and upgrade tool",
+  "description": "SQL database diffing and upgrade tool",
   "require": {
     "php": ">=5.3.0"
   },
