@@ -14,6 +14,12 @@ export PATH=$PATH:~/.composer/vendor/bin
 
 With the composer global package installed, now you can refer to the dbsteward binary with just **dbsteward**. See [Using DBSteward](https://github.com/nkiraly/DBSteward/wiki/Crash-course#using-dbsteward).
 
+##Updating via Composer
+Updating your composer global package is as easy as re-requireing the global nkiraly/dbsteward package.
+```bash
+composer global require nkiraly/dbsteward:dev-master
+```
+
 
 
 ##Installing via PEAR
