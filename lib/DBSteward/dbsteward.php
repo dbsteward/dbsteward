@@ -284,6 +284,9 @@ Format-specific options
       && strlen($options["dbport"]) > 0) {
       $dbport = $options["dbport"];
     }
+    else {
+    }
+
     $dbname = FALSE;
     if (isset($options["dbname"])
       && strlen($options["dbname"]) > 0) {
@@ -493,7 +496,9 @@ Format-specific options
     dbsteward::console_line(1, "Using sqlformat=$sql_format");
     dbsteward::set_sql_format($sql_format);
 
-    $dbport = dbsteward::define_sql_format_default_values($sql_format, $options);
+    if (is_null($dbport)) {
+      $dbport = dbsteward::define_sql_format_default_values($sql_format, $options);
+    }
     
     // user-specified overrides for identifier quoting
     if (isset($options["quoteschemanames"])) {
