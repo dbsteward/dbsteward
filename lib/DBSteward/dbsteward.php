@@ -284,8 +284,6 @@ Format-specific options
       && strlen($options["dbport"]) > 0) {
       $dbport = $options["dbport"];
     }
-    else {
-    }
 
     $dbname = FALSE;
     if (isset($options["dbname"])
