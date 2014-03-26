@@ -280,6 +280,7 @@ Format-specific options
       $dbhost = $options["dbhost"];
     }
     // $dbport set in sql_format defaults section
+    $dbport = NULL;
     if (isset($options["dbport"])
       && strlen($options["dbport"]) > 0) {
       $dbport = $options["dbport"];
