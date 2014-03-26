@@ -1406,6 +1406,9 @@ SLEEP (SECONDS=60);
    * @return string pulled db schema from database, in dbsteward format
    */
   public static function extract_schema($host, $port, $database, $user, $password) {
+    // serials that are implicitly created as part of a table, no need to explicitly create these
+    $table_serials = array();
+
     dbsteward::console_line(1, "Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
@@ -1539,6 +1542,11 @@ SLEEP (SECONDS=60);
             }
             $node_column->addAttribute('type', $col_type);
 
+            // store sequences that will be implicitly genreated during table create
+            //$identifier_name = pgsql8::identifier_name($node_schema['name'], $node_table['name'], $col_row['column_name'], '_seq');
+            $identifier_name = pgsql8::identifier_name($node_schema['name'], pgsql8::get_fully_qualified_table_name($node_schema['name'], $node_table['name']), $col_row['column_name'], '_seq');
+            $table_serials[] = $identifier_name;
+
             $seq_name = explode("'", $col_row['column_default']);
             $sequence_cols[] = $seq_name[1];
           }
@@ -1619,8 +1627,10 @@ SLEEP (SECONDS=60);
           JOIN pg_roles r ON (c.relowner = r.oid)
           WHERE schemaname = '" . $schema['name'] . "'"; //. " AND s.relname NOT IN (" . $sequence_str. ");";
       if (strlen($sequence_str) > 0) {
-        $seq_list_sql .=  " AND s.relname NOT IN (" . $sequence_str . ");";
+        $seq_list_sql .=  " AND s.relname NOT IN (" . $sequence_str . ")";
       }
+
+      $seq_list_sql .= " GROUP BY s.relname, r.rolname;";
       $seq_list_rs = pgsql8_db::query($seq_list_sql);
 
       while (($seq_list_row = pg_fetch_assoc($seq_list_rs)) !== FALSE) {
@@ -1630,6 +1640,11 @@ SLEEP (SECONDS=60);
         while (($seq_row = pg_fetch_assoc($seq_rs)) !== FALSE) {
           $nodes = $schema->xpath("sequence[@name='" . $seq_list_row['relname'] . "']");
           if (count($nodes) == 0) {
+            // is sequence being implictly generated? If so skip it  
+            if (in_array($schema['name'] . '.' . $seq_list_row['relname'], $table_serials)) {
+              continue;
+            }
+
             $node_sequence = $schema->addChild('sequence');
             $node_sequence->addAttribute('name', $seq_list_row['relname']);
             $node_sequence->addAttribute('owner', $seq_list_row['rolname']);
