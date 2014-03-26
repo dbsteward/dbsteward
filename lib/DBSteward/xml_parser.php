@@ -321,7 +321,22 @@ class xml_parser {
           $node = $nodes[0];
         }
       }
-      // more basic name attribute match
+      // make sure there are no duplicate index names
+      else if (strcasecmp('index', $tag_name) == 0) {
+        $xpath = "index[name='" . $child['name'] . "']";
+        $nodes = $base->xpath($xpath);
+        if (count($nodes) > 1) {
+          throw new exception("dupliate index name, more than one match for $xpath");
+        }
+
+        if (count($nodes) == 0) {
+          $node = $base->addChild($tag_name, dbsteward::string_cast($child));
+          $node->addAttribute('name', $child['name']);
+        }
+        else {
+          $node = $nodes[0];
+        }
+      }
       else if (isset($child['name'])) {
         $xpath = $tag_name . "[@name='" . $child['name'] . "']";
         $nodes = $base->xpath($xpath);
