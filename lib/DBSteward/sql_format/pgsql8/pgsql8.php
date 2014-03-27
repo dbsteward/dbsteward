@@ -21,11 +21,11 @@ class pgsql8 extends sql99 {
   const E_ESCAPE = TRUE;
 
   /**
-   * Pretty much the same as sql99::VALID_IDENTIFIER_REGEX, except it limits it to 31 chars
+   * Pretty much the same as sql99::VALID_IDENTIFIER_REGEX, except it limits it to 63 chars
    * @const string
    */
-  const VALID_IDENTIFIER_REGEX = '/^[a-z_]\w{,30}$/i';
-  
+  const VALID_IDENTIFIER_REGEX = '/^[a-z_]\w{0,62}$/i';
+
   public static $table_slony_ids = array();
   public static $sequence_slony_ids = array();
 

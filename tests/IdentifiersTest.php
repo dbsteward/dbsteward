@@ -109,7 +109,7 @@ class IdentifiersTest extends PHPUnit_Framework_TestCase {
       $this->loadBlacklistWords('pgsql8'),
       array(
         array('with$dolla'),
-        array('reallyreallylongstringwhywouldsomeonedothis'),
+        array('reallyreallyreallyreallyreallyreallyreallyreallyreallyreallylongstringwhywouldsomeonedothis'),
         array('1st_number'), // srsly, why is this valid in mysql?
         array('with"quotechar')
       ));
