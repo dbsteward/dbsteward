@@ -8,7 +8,7 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-class mysql5 {
+class mysql5 extends sql99 {
 
   const QUOTE_CHAR = '`';
 
@@ -835,40 +835,10 @@ class mysql5 {
   public static function primary_key_split($primary_key_string) {
     return preg_split("/[\,\s]+/", $primary_key_string, -1, PREG_SPLIT_NO_EMPTY);
   }
-  
-  /**
-   * confirm $name is a valid mysql5 identifier
-   * 
-   * @param string $name
-   * @return boolean
-   */
-  public static function is_valid_identifier($name) {
-    return sql99::is_valid_identifier($name);
-  }
 
-  // @TODO: pull all of these up to sql99
-  public static function get_quoted_schema_name($name) {
-    return sql99::get_quoted_name($name, dbsteward::$quote_schema_names, self::QUOTE_CHAR);
-  }
-
-  public static function get_quoted_table_name($name) {
-    return sql99::get_quoted_name($name, dbsteward::$quote_table_names, self::QUOTE_CHAR);
-  }
-
-  public static function get_quoted_column_name($name) {
-    return sql99::get_quoted_name($name, dbsteward::$quote_column_names, self::QUOTE_CHAR);
-  }
-
-  public static function get_quoted_function_name($name) {
-    return sql99::get_quoted_name($name, dbsteward::$quote_function_names, self::QUOTE_CHAR);
-  }
 
   public static function get_quoted_function_parameter($name) {
     return sql99::get_quoted_name($name, self::$quote_function_parameters, self::QUOTE_CHAR);
-  }
-
-  public static function get_quoted_object_name($name) {
-    return sql99::get_quoted_name($name, dbsteward::$quote_object_names, self::QUOTE_CHAR);
   }
 
   public static function get_fully_qualified_object_name($schema_name, $object_name, $type = 'object') {
@@ -884,10 +854,6 @@ class mysql5 {
       $table_name = $schema_name . '_' . $table_name;
     }
     return self::get_quoted_table_name($table_name);
-  }
-
-  public static function get_fully_qualified_column_name($schema_name, $table_name, $column_name) {
-    return self::get_fully_qualified_table_name($schema_name, $table_name) . '.' . self::get_quoted_column_name($column_name);
   }
 
   // @TODO: pull up and generalize
