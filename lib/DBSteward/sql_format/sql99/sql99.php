@@ -11,6 +11,8 @@
 class sql99 {
 
   const QUOTE_CHAR = '"';
+
+  const VALID_IDENTIFIER_REGEX = '/^[a-z_]\w*$/i';
   
   /**
    * extendable:
@@ -78,8 +80,31 @@ class sql99 {
    * @return boolean
    */
   public static function is_valid_identifier($name) {
-    $valid_identifier = preg_match('/^[a-zA-Z_]\w*$/', $name) > 0;
-    return $valid_identifier;
+    return preg_match(static::VALID_IDENTIFIER_REGEX, $name) > 0 && !static::is_identifier_blacklisted($name);
+  }
+
+  public static function get_identifier_blacklist_file() {
+    return null;
+  }
+
+  /**
+   * confirm $name is not a reserved identifier
+   *
+   * @param string $name
+   * @return boolean
+   */
+  public static function is_identifier_blacklisted($name) {
+    static $list;
+    $file = static::get_identifier_blacklist_file();
+    if ($file === null) {
+      // no blacklist file, so assume $name isn't blacklisted
+      return false;
+    }
+    if ($list === null) {
+      $list = array_fill_keys(array_map('trim', file($file)), true);
+    }
+
+    return array_key_exists(strtolower($name), $list);
   }
 
   /**
@@ -94,8 +119,13 @@ class sql99 {
     $quoted = $quoted || dbsteward::$quote_all_names;
     
     // only verify identifier correctness if we aren't quoting it
-    if ( !$quoted && !format::is_valid_identifier($name) ) {
-      throw new exception("Invalid identifier: '$name' - To use it, you will need to quote it with --quoteallnames");
+    if ( !$quoted && !static::is_valid_identifier($name) ) {
+      if (dbsteward::$quote_illegal_identifiers) {
+        dbsteward::console_line(3, "WARNING: Quoting illegal identifer $name");
+        return $quote_char . $name . $quote_char;
+      } else {
+        throw new exception("Invalid identifier: '$name' - To use it, you will need to quote it with --quoteallnames");
+      }
     }
 
     if ( $quoted ) {

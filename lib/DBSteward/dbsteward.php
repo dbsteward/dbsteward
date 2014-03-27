@@ -87,6 +87,7 @@ class dbsteward {
   public static $quote_function_names = FALSE;
   public static $quote_column_names = FALSE;
   public static $quote_all_names = FALSE;
+  public static $quote_illegal_identifiers = FALSE;
   public static $only_schema_sql = FALSE;
   public static $only_data_sql = FALSE;
   public static $limit_to_tables = array();

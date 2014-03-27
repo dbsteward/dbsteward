@@ -20,8 +20,18 @@ class pgsql8 extends sql99 {
 
   const E_ESCAPE = TRUE;
 
+  /**
+   * Pretty much the same as sql99::VALID_IDENTIFIER_REGEX, except it limits it to 31 chars
+   * @const string
+   */
+  const VALID_IDENTIFIER_REGEX = '/^[a-z_]\w{,30}$/i';
+  
   public static $table_slony_ids = array();
   public static $sequence_slony_ids = array();
+
+  public static function get_identifier_blacklist_file() {
+    return __DIR__ . '/pgsql8_identifier_blacklist.txt';
+  }
   
   /**
    * Current replica set ID context
