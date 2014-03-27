@@ -1516,9 +1516,15 @@ SLEEP (SECONDS=60);
         $sql = "SELECT
             column_name, data_type, character_maximum_length,
             column_default, is_nullable,
-            ordinal_position, numeric_precision
+            ordinal_position, numeric_precision,
+            format_type(atttypid, atttypmod) as attribute_data_type
           FROM information_schema.columns
-          WHERE table_schema='" . $node_schema['name'] . "' AND table_name='" . $node_table['name'] . "'";
+            JOIN pg_class pgc ON (pgc.relname = table_name AND pgc.relkind='r')
+            JOIN pg_namespace nsp ON (nsp.nspname = table_schema AND nsp.oid = pgc.relnamespace)
+            JOIN pg_attribute pga ON (pga.attrelid = pgc.oid AND columns.column_name = pga.attname)
+          WHERE table_schema='" . $node_schema['name'] . "' AND table_name='" . $node_table['name'] . "'
+            AND attnum > 0
+            AND NOT attisdropped";
         $col_rs = pgsql8_db::query($sql);
 
         while (($col_row = pg_fetch_assoc($col_rs)) !== FALSE) {
@@ -1533,11 +1539,11 @@ SLEEP (SECONDS=60);
           // type int or bigint
           // is_nullable = NO
           // column_default starts with nextval and contains iq_seq
-          if ((strcasecmp('integer', $col_row['data_type']) == 0 || strcasecmp('bigint', $col_row['data_type']) == 0)
+          if ((strcasecmp('integer', $col_row['attribute_data_type']) == 0 || strcasecmp('bigint', $col_row['attribute_data_type']) == 0)
             && strcasecmp($col_row['is_nullable'], 'NO') == 0
             && (stripos($col_row['column_default'], 'nextval') === 0 && stripos($col_row['column_default'], '_seq') !== FALSE)) {
             $col_type = 'serial';
-            if (strcasecmp('bigint', $col_row['data_type']) == 0) {
+            if (strcasecmp('bigint', $col_row['attribute_data_type']) == 0) {
               $col_type = 'bigserial';
             }
             $node_column->addAttribute('type', $col_type);
@@ -1552,7 +1558,7 @@ SLEEP (SECONDS=60);
           }
           // not serial column
           else {
-            $col_type = $col_row['data_type'];
+            $col_type = $col_row['attribute_data_type'];
             if (is_numeric($col_row['character_maximum_length'])
               && $col_row['character_maximum_length'] > 0) {
               $col_type .= "(" . $col_row['character_maximum_length'] . ")";
