@@ -20,6 +20,8 @@ class ExtractionTest extends PHPUnit_Framework_TestCase {
     // disable pesky output buffering
     while (ob_get_level()) ob_end_clean();
 
+    dbsteward::set_sql_format('pgsql8');
+
     $this->conn = $GLOBALS['db_config']->pgsql8_conn;
     $this->createSchema();
   }
@@ -169,6 +171,41 @@ SQL;
 
     $extracted_function_body = trim($schema->function->functionDefinition);
     $this->assertEquals(trim($function_body), $extracted_function_body);
+  }
+
+  public function testExtractFunctionWithArrayTypeAndArgumentNames() {
+    $schema = $this->extract("DROP LANGUAGE IF EXISTS plpgsql; CREATE LANGUAGE plpgsql; CREATE OR REPLACE FUNCTION increment(arg1 integer[], arg2 uuid[]) RETURNS integer AS $$ BEGIN RETURN 1; END; $$ LANGUAGE plpgsql");
+    $this->assertEquals("integer[]", (string)$schema->function->functionParameter[0]->attributes()->type);
+    $this->assertEquals("arg1", (string)$schema->function->functionParameter[0]->attributes()->name);
+    $this->assertEquals("uuid[]", (string)$schema->function->functionParameter[1]->attributes()->type);
+    $this->assertEquals("arg2", (string)$schema->function->functionParameter[1]->attributes()->name);
+  }
+
+  public function testExtractFunctionWithArrayTypeAndNoArgumentNames() {
+    $schema = $this->extract("DROP LANGUAGE IF EXISTS plpgsql; CREATE LANGUAGE plpgsql; CREATE OR REPLACE FUNCTION increment(integer[], uuid[]) RETURNS integer AS $$ BEGIN RETURN 1; END; $$ LANGUAGE plpgsql");
+    $this->assertEquals("integer[]", (string)$schema->function->functionParameter[0]->attributes()->type);
+    $this->assertEquals("", (string)$schema->function->functionParameter[0]->attributes()->name);
+    $this->assertEquals("uuid[]", (string)$schema->function->functionParameter[1]->attributes()->type);
+    $this->assertEquals("", (string)$schema->function->functionParameter[1]->attributes()->name);
+  }
+
+  public function testExtractFunctionWithArrayTypeAndMixedArgumentNames() {
+    $schema = $this->extract("DROP LANGUAGE IF EXISTS plpgsql; CREATE LANGUAGE plpgsql; CREATE OR REPLACE FUNCTION increment(arg1 integer[], uuid[]) RETURNS integer AS $$ BEGIN RETURN 1; END; $$ LANGUAGE plpgsql");
+    $this->assertEquals("integer[]", (string)$schema->function->functionParameter[0]->attributes()->type);
+    $this->assertEquals("arg1", (string)$schema->function->functionParameter[0]->attributes()->name);
+    $this->assertEquals("uuid[]", (string)$schema->function->functionParameter[1]->attributes()->type);
+    $this->assertEquals("", (string)$schema->function->functionParameter[1]->attributes()->name);
+    $schema = $this->extract("CREATE OR REPLACE FUNCTION increment(integer[], arg1 uuid[]) RETURNS integer AS $$ BEGIN RETURN 1; END; $$ LANGUAGE plpgsql");
+    $this->assertEquals("integer[]", (string)$schema->function->functionParameter[0]->attributes()->type);
+    $this->assertEquals("", (string)$schema->function->functionParameter[0]->attributes()->name);
+    $this->assertEquals("uuid[]", (string)$schema->function->functionParameter[1]->attributes()->type);
+    $this->assertEquals("arg1", (string)$schema->function->functionParameter[1]->attributes()->name);
+  }
+
+  public function testExtractTableWithArrayType() {
+    $schema = $this->extract("CREATE TABLE test(name text[]); CREATE INDEX lower_idx on test(name);");
+    $column = $schema->table->column;
+    $this->assertEquals("text[]", (string)$schema->table->column->attributes()->type);
   }
 
   protected function extract($sql, $in_schema = TRUE) {
