@@ -50,6 +50,11 @@ class mysql5 extends sql99 {
    */
   public static $use_schema_name_prefix = FALSE;
 
+
+  public static function get_identifier_blacklist_file() {
+    return __DIR__ . '/mysql5_identifier_blacklist.txt';
+  }
+
   public static function build($output_prefix, $db_doc) {
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';

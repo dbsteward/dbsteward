@@ -120,10 +120,12 @@ class IdentifiersTest extends PHPUnit_Framework_TestCase {
    * Illegal in mysql5
    */
   public function illegalUnquotedMysql5Identifiers() {
-    return array_merge($this->illegalUnquotedIdentifiers(), array(
-      array('with`quotechar'),
-      array('AUTO_INCREMENT')
-    ));
+    return array_merge(
+      $this->illegalUnquotedIdentifiers(),
+      $this->loadBlacklistWords('mysql5'),
+      array(
+        array('with`quotechar')
+      ));
   }
 
   private function loadBlacklistWords($format) {
