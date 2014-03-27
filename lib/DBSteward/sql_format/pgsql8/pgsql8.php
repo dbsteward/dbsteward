@@ -1514,7 +1514,7 @@ SLEEP (SECONDS=60);
         //hasindexes | hasrules | hastriggers  handled later
         // get columns for the table
         $sql = "SELECT
-            column_name, data_type, character_maximum_length,
+            column_name, data_type,
             column_default, is_nullable,
             ordinal_position, numeric_precision,
             format_type(atttypid, atttypmod) as attribute_data_type
@@ -1559,10 +1559,6 @@ SLEEP (SECONDS=60);
           // not serial column
           else {
             $col_type = $col_row['attribute_data_type'];
-            if (is_numeric($col_row['character_maximum_length'])
-              && $col_row['character_maximum_length'] > 0) {
-              $col_type .= "(" . $col_row['character_maximum_length'] . ")";
-            }
             $node_column->addAttribute('type', $col_type);
             if (strcasecmp($col_row['is_nullable'], 'NO') == 0) {
               $node_column->addAttribute('null', 'false');
@@ -1894,13 +1890,6 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       $node_function = $node_schema->addChild('function');
       $node_function['name'] = $row_fxn['name'];
 
-      // @TODO: Exploits internal naming scheme to match parameters to routines (name + _ + oid)
-      /*
-      $sql = "SELECT p.ordinal_position, p.parameter_name, p.data_type
-              FROM information_schema.parameters p
-              WHERE p.specific_name = '{$row_fxn['name']}_{$row_fxn['oid']}'
-              ORDER BY p.ordinal_position ASC;";
-              */
       // unnest the proargtypes (which are in ordinal order) and get the correct format for them.
       // information_schema.parameters does not contain enough information to get correct type (e.g. ARRAY)
       //   Note: * proargnames can be empty (not null) if there are no parameters names
