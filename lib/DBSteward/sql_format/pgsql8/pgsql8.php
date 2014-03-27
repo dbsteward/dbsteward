@@ -386,10 +386,14 @@ class pgsql8 extends sql99 {
         }
         
         static::slony_ids_required_during_build($replica_set, $db_doc);
-        
       }
 
-      dbsteward::console_line(1, "[slony] ID summary: " . count(self::$table_slony_ids) . " tables " . count(self::$sequence_slony_ids) . " sequences");
+      $count = 0;
+      foreach (array_keys(self::$sequence_slony_ids) as $slony_set_id) {
+        $count += count(self::$sequence_slony_ids[$slony_set_id]);
+      }
+
+      dbsteward::console_line(1, "[slony] ID summary: " . count(self::$table_slony_ids) . " tables " . $count . " sequences");
       dbsteward::console_line(1, "[slony] table ID segments: " . static::slony_id_segment_summary(self::$table_slony_ids));
       
       // keep this from bombing on there being no ids in $sequence_slony_ids
@@ -397,7 +401,14 @@ class pgsql8 extends sql99 {
       // or they were all set to IGNORE_REQUIRED which hopefully doesn't happen
       // because why would you do that for all of them)
       if (!empty(self::$sequence_slony_ids)) {
-        dbsteward::console_line(1, "[slony] sequence ID segments: " . static::slony_id_segment_summary(self::$sequence_slony_ids));
+        foreach (array_keys(self::$sequence_slony_ids) as $slony_set_id) {
+          $console_line = "[slony] sequence ID segments";
+          if ($slony_set_id != 'NoSlonySet') {
+            $console_line .= " for slonySetId $slony_set_id";
+          }
+          $console_line .= ": ";
+          dbsteward::console_line(1, $console_line . static::slony_id_segment_summary(self::$sequence_slony_ids[$slony_set_id]));
+        }
       }
     }
 
@@ -677,7 +688,7 @@ class pgsql8 extends sql99 {
             if (in_array(dbsteward::string_cast($column['slonyId']), self::$sequence_slony_ids)) {
               throw new exception("column sequence slonyId " . $column['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
             }
-            self::$sequence_slony_ids[] = dbsteward::string_cast($column['slonyId']);
+            self::set_sequence_slony_ids($column);
 
             $col_sequence = pgsql8::identifier_name($schema['name'], $table['name'], $column['name'], '_seq');
             $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, $replica_set['id'], $replica_set['originNodeId'], $column['slonyId'], $schema['name'] . '.' . $col_sequence, $schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
@@ -703,7 +714,7 @@ class pgsql8 extends sql99 {
             if (in_array(dbsteward::string_cast($sequence['slonyId']), self::$sequence_slony_ids)) {
               throw new exception("sequence slonyId " . $sequence['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
             }
-            self::$sequence_slony_ids[] = dbsteward::string_cast($sequence['slonyId']);
+            self::set_sequence_slony_ids($sequence);
 
             $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, $replica_set['id'], $replica_set['originNodeId'], $sequence['slonyId'], $schema['name'] . '.' . $sequence['name'], $schema['name'] . '.' . $sequence['name'] . ' sequence replication') . "\n\n");
           }
@@ -784,11 +795,11 @@ SLEEP (SECONDS=60);
         $streak++;
       }
       else {
-        if ( $streak > 1 ) {
+        if ( $streak >= 1 ) {
           $s .= "-" . $ids[$i - 1];
         }
         $s .= ", " . $ids[$i];
-        $streak = 1;
+        $streak = 0;
       }
       $last_id = (int)($ids[$i]);
     }
@@ -1130,7 +1141,7 @@ SLEEP (SECONDS=60);
             if (in_array(dbsteward::string_cast($new_column['slonyId']), self::$sequence_slony_ids)) {
               throw new exception("column sequence slonyId " . $new_column['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
             }
-            self::$sequence_slony_ids[] = dbsteward::string_cast($new_column['slonyId']);
+            self::set_sequence_slony_ids($new_column);
 
             // resolve $old_table on our own -- the table itself may not be replicated
             $old_table = NULL;
@@ -1202,7 +1213,7 @@ SLEEP (SECONDS=60);
           if (in_array(dbsteward::string_cast($new_sequence['slonyId']), self::$sequence_slony_ids)) {
             throw new exception("sequence slonyId " . $new_sequence['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
           }
-          self::$sequence_slony_ids[] = dbsteward::string_cast($new_sequence['slonyId']);
+          self::set_sequence_slony_ids($new_sequence);
         }
 
         $old_sequence = NULL;
@@ -2615,5 +2626,27 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     return FALSE;
   }
   
+  /**
+   * Function for placing the slonyids into their Sets, or not if they have no set
+  */
+  protected static function set_sequence_slony_ids(SimpleXMLElement $column) {
+    if (isset($column['slonySetId']) && !is_null($column['slonySetId'])) {
+      if (isset(self::$sequence_slony_ids[(int)$column['slonySetId']])) {
+        self::$sequence_slony_ids[(int)$column['slonySetId']][] = dbsteward::string_cast($column['slonyId']);
+      }
+      else {
+        self::$sequence_slony_ids[(int)$column['slonySetId']] = array(dbsteward::string_cast($column['slonyId']));
+      }
+    }
+    else {
+      // not a huge fan of magic values but don't want to let PHP default to 0
+      if (isset(self::$sequence_slony_ids['NoSlonySet'])) {
+        self::$sequence_slony_ids['NoSlonySet'][] = dbsteward::string_cast($column['slonyId']);
+      }
+      else {
+        self::$sequence_slony_ids['NoSlonySet'] = array(dbsteward::string_cast($column['slonyId']));
+      }
+    }
+  }
   
 }
