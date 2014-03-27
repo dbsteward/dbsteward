@@ -208,6 +208,11 @@ SQL;
     $this->assertEquals("text[]", (string)$schema->table->column->attributes()->type);
   }
 
+  public function testDoNotExtractSequenceFromTable() {
+    $schema = $this->extract("CREATE TABLE test(id serial, blah serial);");
+    $this->assertEquals(0, (string)$schema->sequence->count());
+  }
+
   protected function extract($sql, $in_schema = TRUE) {
     $schemaname = __CLASS__;
     
