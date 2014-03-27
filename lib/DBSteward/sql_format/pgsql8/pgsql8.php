@@ -1895,10 +1895,23 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       $node_function['name'] = $row_fxn['name'];
 
       // @TODO: Exploits internal naming scheme to match parameters to routines (name + _ + oid)
+      /*
       $sql = "SELECT p.ordinal_position, p.parameter_name, p.data_type
               FROM information_schema.parameters p
               WHERE p.specific_name = '{$row_fxn['name']}_{$row_fxn['oid']}'
               ORDER BY p.ordinal_position ASC;";
+              */
+      // unnest the proargtypes (which are in ordinal order) and get the correct format for them.
+      // information_schema.parameters does not contain enough information to get correct type (e.g. ARRAY)
+      //   Note: * proargnames can be empty (not null) if there are no parameters names
+      //         * proargnames will contain empty strings for unnamed parameters if there are other named
+      //                       parameters, e.g. {"", parameter_name}       
+      //         * proargtypes is an oidvector, enjoy the hackery to deal with NULL proargnames
+      //         * proallargtypes is NULL when all arguments are IN.
+      $sql = "SELECT UNNEST(COALESCE(proargnames, ARRAY_FILL(''::text, ARRAY[(SELECT COUNT(*) FROM UNNEST(COALESCE(proallargtypes, proargtypes)))]::int[]))) as parameter_name,
+                     FORMAT_TYPE(UNNEST(COALESCE(proallargtypes, proargtypes)), NULL) AS data_type
+              FROM pg_proc pr
+              WHERE oid = {$row_fxn['oid']}";
       $rs_args = pgsql8_db::query($sql);
       while (($row_arg = pg_fetch_assoc($rs_args)) !== FALSE) {
         $node_param = $node_function->addChild('functionParameter');
