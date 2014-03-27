@@ -106,23 +106,23 @@ class sql99 {
   }
 
   public static function get_quoted_schema_name($name) {
-    return self::get_quoted_name($name, dbsteward::$quote_schema_names, static::QUOTE_CHAR);
+    return static::get_quoted_name($name, dbsteward::$quote_schema_names, static::QUOTE_CHAR);
   }
 
   public static function get_quoted_table_name($name) {
-    return self::get_quoted_name($name, dbsteward::$quote_table_names, static::QUOTE_CHAR);
+    return static::get_quoted_name($name, dbsteward::$quote_table_names, static::QUOTE_CHAR);
   }
 
   public static function get_quoted_column_name($name) {
-    return self::get_quoted_name($name, dbsteward::$quote_column_names, static::QUOTE_CHAR);
+    return static::get_quoted_name($name, dbsteward::$quote_column_names, static::QUOTE_CHAR);
   }
 
   public static function get_quoted_function_name($name) {
-    return self::get_quoted_name($name, dbsteward::$quote_function_names, static::QUOTE_CHAR);
+    return static::get_quoted_name($name, dbsteward::$quote_function_names, static::QUOTE_CHAR);
   }
 
   public static function get_quoted_object_name($name) {
-    return self::get_quoted_name($name, dbsteward::$quote_object_names, static::QUOTE_CHAR);
+    return static::get_quoted_name($name, dbsteward::$quote_object_names, static::QUOTE_CHAR);
   }
 
   public static function get_fully_qualified_table_name($schema_name, $table_name) {
