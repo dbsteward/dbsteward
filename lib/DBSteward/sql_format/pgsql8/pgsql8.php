@@ -1549,8 +1549,8 @@ SLEEP (SECONDS=60);
             $node_column->addAttribute('type', $col_type);
 
             // store sequences that will be implicitly genreated during table create
-            //$identifier_name = pgsql8::identifier_name($node_schema['name'], $node_table['name'], $col_row['column_name'], '_seq');
-            $identifier_name = pgsql8::identifier_name($node_schema['name'], pgsql8::get_fully_qualified_table_name($node_schema['name'], $node_table['name']), $col_row['column_name'], '_seq');
+            // could use pgsql8::identifier_name and fully qualify the table but it will just truncate "for us" anyhow, so manually prepend schema
+            $identifier_name = $node_schema['name'] . '.' . pgsql8::identifier_name($node_schema['name'], $node_table['name'], $col_row['column_name'], '_seq');
             $table_serials[] = $identifier_name;
 
             $seq_name = explode("'", $col_row['column_default']);
