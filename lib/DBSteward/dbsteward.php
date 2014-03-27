@@ -144,6 +144,7 @@ Global Switches and Flags
   --quotetablenames                 quote table names in SQL output
   --quotecolumnnames                quote column names in SQL output
   --quoteallnames                   quote ALL identifiers in SQL output
+  --quoteillegalnames               quote illegal identifiers and treat as a warning, rather than an error.
 Generating SQL DDL / DML / DCL
   --xml=<database.xml> ...
   --pgdataxml=<pgdata.xml> ...      postgresql SELECT database_to_xml() result to overlay in composite definition
@@ -228,6 +229,7 @@ Format-specific options
       "quotetablenames::",
       "quotecolumnnames::",
       "quoteallnames::",
+      "quoteillegalnames::",
       "onlyschemasql::",
       "onlydatasql::",
       "onlytable::",
@@ -508,7 +510,10 @@ Format-specific options
     }
     if (isset($options["quoteallnames"])) {
       dbsteward::$quote_all_names = TRUE;
-    }    
+    }
+    if (isset($options["quoteillegalnames"])) {
+      dbsteward::$quote_illegal_identifiers = TRUE;
+    }
     
     switch ($mode) {
       case dbsteward::MODE_XML_DATA_INSERT:
