@@ -78,6 +78,9 @@ class xml_parser {
 
       $composite = self::composite_doc($composite, $doc, $i, $file_name, $start_addendums_idx, $addendums_doc);
     }
+    // revalidate composited xml
+    self::validate_xml(self::format_xml($composite->saveXML()));
+
 
     return $composite;
   }
@@ -181,9 +184,6 @@ class xml_parser {
     else {
       self::xml_composite_children($base, $overlay);
     }
-
-    // revalidate composited xml
-    self::validate_xml(self::format_xml($base->saveXML()));
 
     return $base;
   }
@@ -480,6 +480,19 @@ class xml_parser {
       static::file_sort_reappend_child($base, 'constraint');
       static::file_sort_reappend_child($base, 'grant');
       static::file_sort_reappend_child($base, 'rows');
+    }
+    // as above, when compositing database put it in right order
+    else if (strcasecmp($base->getName(), 'database') == 0) {
+      static::file_sort_reappend_child($base, 'role');
+      static::file_sort_reappend_child($base, 'slony');
+      static::file_sort_reappend_child($base, 'configurationParameter');
+    }
+    // keep slony order in tact for DTD validation
+    else if (strcasecmp($base->getName(), 'slony') == 0) {
+      static::file_sort_reappend_child($base, 'slony');
+      static::file_sort_reappend_child($base, 'slonyNode');
+      static::file_sort_reappend_child($base, 'slonyReplicaSet');
+      static::file_sort_reappend_child($base, 'slonyReplicaSetNode');
     }
 
     return TRUE;
