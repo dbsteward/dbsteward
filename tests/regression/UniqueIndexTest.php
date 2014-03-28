@@ -125,9 +125,11 @@ XML_TWO;
     $mofs = new mock_output_file_segmenter();
     try {
       pgsql8::build_schema($doc, $mofs, $table_dependency);
-      $this->fail("build_schema did not detect duplicate index names");
     }
     catch (Exception $e) {
+      $this->assertContains('duplicate index name', strtolower($e->getMessage()));
+      return;
     }
+    $this->fail("build_schema did not detect duplicate index names");
   }
 }
