@@ -14,7 +14,7 @@ require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 /**
  * @group pgsql8
  */
-class SlonyIdOutputTest extends dbstewardUnitTestBase {
+class SlonyIdStreakTest extends dbstewardUnitTestBase {
 
   public function setUp() {
     dbsteward::set_sql_format('pgsql8');

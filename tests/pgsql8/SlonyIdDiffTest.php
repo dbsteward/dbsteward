@@ -11,8 +11,10 @@ require_once 'PHPUnit/Framework/TestCase.php';
 require_once __DIR__ . '/../mock_output_file_segmenter.php';
 require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 
-class SlonyIdDiffTest extends PHPUnit_Framework_TestCase 
-{
+/**
+ * @group pgsql8
+ */
+class SlonyIdDiffTest extends PHPUnit_Framework_TestCase {
   
   protected $oldxml = <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
