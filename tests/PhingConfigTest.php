@@ -21,7 +21,7 @@ class PhingConfigTest extends PHPUnit_Framework_TestCase {
 
   public function testSaneConfig() {
     // not exactly an ini file, oh well
-    $props = file('../.config.properties');
+    $props = file(__DIR__ . '/../.config.properties');
     $config = array();
     foreach ($props as $prop) {
       $dynamite = explode('=', $prop);
