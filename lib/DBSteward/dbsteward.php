@@ -23,6 +23,9 @@ require_once dirname(__FILE__) . '/active_sql_format_autoloader.php';
 
 class dbsteward {
 
+  const VERSION = '1.3.8';
+  const API_VERSION = '1.3';
+
   const PATTERN_KNOWN_TYPES = "/^bigint.*|^bigserial|^bool.*|^bytea.*|^char.*|^date|^double precision|^inet$|^interval|^int.*|^oid|^smallint|^serial|^string|^text|^time$|^time with.*|^timestamp.*|^varchar.*|^uuid$/i";
 
   const PATTERN_SPLIT_OPERATION = "/\,\s*/";
@@ -135,7 +138,8 @@ class dbsteward {
   }
 
   public static function usage() {
-    $s = "DBSteward Usage:
+    $s = "DBSteward Version " . self::VERSION . "
+Usage:
 Global Switches and Flags
   --sqlformat=<pgsql8|mssql10|mysql5|oracle10g>
   --requireslonyid                  require tables and sequences to specify a valid slonyId
