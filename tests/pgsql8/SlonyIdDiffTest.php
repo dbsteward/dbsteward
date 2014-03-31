@@ -115,6 +115,7 @@ XML;
     dbsteward::$generate_slonik = FALSE;
     $this->transaction_statement_check(FALSE);
   }
+
   
   public function testSlonikChangesMadeForExistingSequence() {
     $slony_prefix = $this->build_replica_sets_for_test();
