@@ -1416,6 +1416,9 @@ SLEEP (SECONDS=60);
    * @return string pulled db schema from database, in dbsteward format
    */
   public static function extract_schema($host, $port, $database, $user, $password) {
+    // serials that are implicitly created as part of a table, no need to explicitly create these
+    $table_serials = array();
+
     dbsteward::console_line(1, "Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
@@ -1521,11 +1524,17 @@ SLEEP (SECONDS=60);
         //hasindexes | hasrules | hastriggers  handled later
         // get columns for the table
         $sql = "SELECT
-            column_name, data_type, character_maximum_length,
+            column_name, data_type,
             column_default, is_nullable,
-            ordinal_position, numeric_precision
+            ordinal_position, numeric_precision,
+            format_type(atttypid, atttypmod) as attribute_data_type
           FROM information_schema.columns
-          WHERE table_schema='" . $node_schema['name'] . "' AND table_name='" . $node_table['name'] . "'";
+            JOIN pg_class pgc ON (pgc.relname = table_name AND pgc.relkind='r')
+            JOIN pg_namespace nsp ON (nsp.nspname = table_schema AND nsp.oid = pgc.relnamespace)
+            JOIN pg_attribute pga ON (pga.attrelid = pgc.oid AND columns.column_name = pga.attname)
+          WHERE table_schema='" . $node_schema['name'] . "' AND table_name='" . $node_table['name'] . "'
+            AND attnum > 0
+            AND NOT attisdropped";
         $col_rs = pgsql8_db::query($sql);
 
         while (($col_row = pg_fetch_assoc($col_rs)) !== FALSE) {
@@ -1540,25 +1549,26 @@ SLEEP (SECONDS=60);
           // type int or bigint
           // is_nullable = NO
           // column_default starts with nextval and contains iq_seq
-          if ((strcasecmp('integer', $col_row['data_type']) == 0 || strcasecmp('bigint', $col_row['data_type']) == 0)
+          if ((strcasecmp('integer', $col_row['attribute_data_type']) == 0 || strcasecmp('bigint', $col_row['attribute_data_type']) == 0)
             && strcasecmp($col_row['is_nullable'], 'NO') == 0
             && (stripos($col_row['column_default'], 'nextval') === 0 && stripos($col_row['column_default'], '_seq') !== FALSE)) {
             $col_type = 'serial';
-            if (strcasecmp('bigint', $col_row['data_type']) == 0) {
+            if (strcasecmp('bigint', $col_row['attribute_data_type']) == 0) {
               $col_type = 'bigserial';
             }
             $node_column->addAttribute('type', $col_type);
+
+            // store sequences that will be implicitly genreated during table create
+            // could use pgsql8::identifier_name and fully qualify the table but it will just truncate "for us" anyhow, so manually prepend schema
+            $identifier_name = $node_schema['name'] . '.' . pgsql8::identifier_name($node_schema['name'], $node_table['name'], $col_row['column_name'], '_seq');
+            $table_serials[] = $identifier_name;
 
             $seq_name = explode("'", $col_row['column_default']);
             $sequence_cols[] = $seq_name[1];
           }
           // not serial column
           else {
-            $col_type = $col_row['data_type'];
-            if (is_numeric($col_row['character_maximum_length'])
-              && $col_row['character_maximum_length'] > 0) {
-              $col_type .= "(" . $col_row['character_maximum_length'] . ")";
-            }
+            $col_type = $col_row['attribute_data_type'];
             $node_column->addAttribute('type', $col_type);
             if (strcasecmp($col_row['is_nullable'], 'NO') == 0) {
               $node_column->addAttribute('null', 'false');
@@ -1629,8 +1639,10 @@ SLEEP (SECONDS=60);
           JOIN pg_roles r ON (c.relowner = r.oid)
           WHERE schemaname = '" . $schema['name'] . "'"; //. " AND s.relname NOT IN (" . $sequence_str. ");";
       if (strlen($sequence_str) > 0) {
-        $seq_list_sql .=  " AND s.relname NOT IN (" . $sequence_str . ");";
+        $seq_list_sql .=  " AND s.relname NOT IN (" . $sequence_str . ")";
       }
+
+      $seq_list_sql .= " GROUP BY s.relname, r.rolname;";
       $seq_list_rs = pgsql8_db::query($seq_list_sql);
 
       while (($seq_list_row = pg_fetch_assoc($seq_list_rs)) !== FALSE) {
@@ -1640,6 +1652,11 @@ SLEEP (SECONDS=60);
         while (($seq_row = pg_fetch_assoc($seq_rs)) !== FALSE) {
           $nodes = $schema->xpath("sequence[@name='" . $seq_list_row['relname'] . "']");
           if (count($nodes) == 0) {
+            // is sequence being implictly generated? If so skip it  
+            if (in_array($schema['name'] . '.' . $seq_list_row['relname'], $table_serials)) {
+              continue;
+            }
+
             $node_sequence = $schema->addChild('sequence');
             $node_sequence->addAttribute('name', $seq_list_row['relname']);
             $node_sequence->addAttribute('owner', $seq_list_row['rolname']);
@@ -1883,11 +1900,17 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       $node_function = $node_schema->addChild('function');
       $node_function['name'] = $row_fxn['name'];
 
-      // @TODO: Exploits internal naming scheme to match parameters to routines (name + _ + oid)
-      $sql = "SELECT p.ordinal_position, p.parameter_name, p.data_type
-              FROM information_schema.parameters p
-              WHERE p.specific_name = '{$row_fxn['name']}_{$row_fxn['oid']}'
-              ORDER BY p.ordinal_position ASC;";
+      // unnest the proargtypes (which are in ordinal order) and get the correct format for them.
+      // information_schema.parameters does not contain enough information to get correct type (e.g. ARRAY)
+      //   Note: * proargnames can be empty (not null) if there are no parameters names
+      //         * proargnames will contain empty strings for unnamed parameters if there are other named
+      //                       parameters, e.g. {"", parameter_name}       
+      //         * proargtypes is an oidvector, enjoy the hackery to deal with NULL proargnames
+      //         * proallargtypes is NULL when all arguments are IN.
+      $sql = "SELECT UNNEST(COALESCE(proargnames, ARRAY_FILL(''::text, ARRAY[(SELECT COUNT(*) FROM UNNEST(COALESCE(proallargtypes, proargtypes)))]::int[]))) as parameter_name,
+                     FORMAT_TYPE(UNNEST(COALESCE(proallargtypes, proargtypes)), NULL) AS data_type
+              FROM pg_proc pr
+              WHERE oid = {$row_fxn['oid']}";
       $rs_args = pgsql8_db::query($sql);
       while (($row_arg = pg_fetch_assoc($rs_args)) !== FALSE) {
         $node_param = $node_function->addChild('functionParameter');
