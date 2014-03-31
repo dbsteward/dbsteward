@@ -13,6 +13,10 @@ require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/pgsql8/pgsql8.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/pgsql8/pgsql8_diff.php';
 
+/**
+ * @group pgsql8
+ * @group mysql5
+ */
 class PhingConfigTest extends PHPUnit_Framework_TestCase {
 
   public function testSaneConfig() {
