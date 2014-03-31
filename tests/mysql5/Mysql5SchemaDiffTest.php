@@ -302,6 +302,29 @@ XML;
     $this->should_throw($old, $new, 'you cannot use more than one schema in mysql5 without schema name prefixing');
   }
 
+  public function testNullToNotNullDoesNotUpdate() {
+    mysql5::$use_schema_name_prefix = TRUE;
+
+    $old = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" default="2" null="true" />
+  </table>
+</schema>
+XML;
+    $new = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" default="2" null="false" />
+  </table>
+</schema>
+XML;
+
+    $expected3 = "ALTER TABLE `s1_t1`\n  MODIFY COLUMN `col1` int(11) NOT NULL DEFAULT 2;";
+
+    $this->diff($old, $new, '', $expected3, 'Splitting a schema and not using oldSchemaName while in schema prefixing mode should be a recreate');
+  }
+
   public function testDropSchemaWithObjects() {
     mysql5::$use_schema_name_prefix = TRUE;
 
