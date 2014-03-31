@@ -18,6 +18,8 @@ class SlonyIdOutputTest extends dbstewardUnitTestBase {
 
   public function setUp() {
     dbsteward::set_sql_format('pgsql8');
+    pgsql8::$table_slony_ids = array();
+    pgsql8::$sequence_slony_ids = array();
   }
 
   public function testSlonikOutputIsCorrect() {

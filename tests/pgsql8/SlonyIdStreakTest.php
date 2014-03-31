@@ -18,6 +18,8 @@ class SlonyIdStreakTest extends dbstewardUnitTestBase {
 
   public function setUp() {
     dbsteward::set_sql_format('pgsql8');
+    pgsql8::$table_slony_ids = array();
+    pgsql8::$sequence_slony_ids = array();
   }
   /**
    * There was a bug in streaker where it wasn't counting the entire first streak, output used to be for below: 1, 5-6, 98-98
