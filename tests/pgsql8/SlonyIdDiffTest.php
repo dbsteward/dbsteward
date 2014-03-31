@@ -76,6 +76,8 @@ XML;
   protected function build_replica_sets_for_test() {
     dbsteward::$old_database = new SimpleXMLElement($this->oldxml);
     dbsteward::$new_database = new SimpleXMLElement($this->newxml);
+    pgsql8_diff::$new_table_dependency = xml_parser::table_dependency_order(dbsteward::$new_database);
+    pgsql8_diff::$old_table_dependency = xml_parser::table_dependency_order(dbsteward::$old_database);
     
     $old_replica_set = pgsql8::get_slony_replica_sets(dbsteward::$old_database);
     $new_replica_set = pgsql8::get_slony_replica_sets(dbsteward::$new_database);
@@ -86,18 +88,21 @@ XML;
   
   public function setUp() {
     parent::setUp();
+    dbsteward::set_sql_format('pgsql8');
     
     // clear these before each test so we don't run into conflicts
     pgsql8::$table_slony_ids = array();
     pgsql8::$sequence_slony_ids = array();
     dbsteward::$generate_slonik = TRUE;
-    
+    pgsql8_diff::$new_table_dependency = null;
+    pgsql8_diff::$old_table_dependency = null;
   }
   
   protected function transaction_statement_check($expected) {
     dbsteward::$old_database = new SimpleXMLElement($this->oldxml);
     dbsteward::$new_database = new SimpleXMLElement($this->newxml);
-    dbsteward::set_sql_format('pgsql8');
+    pgsql8_diff::$new_table_dependency = xml_parser::table_dependency_order(dbsteward::$new_database);
+    pgsql8_diff::$old_table_dependency = xml_parser::table_dependency_order(dbsteward::$old_database);
     
     $ofs1 = new mock_output_file_segmenter();
     $ofs2 = new mock_output_file_segmenter();

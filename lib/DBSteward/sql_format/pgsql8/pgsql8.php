@@ -695,9 +695,8 @@ class pgsql8 extends sql99 {
         foreach ($table->column AS $column) {
           // is this table column replicated in this replica set?
           if ( static::slony_replica_set_contains_table_column_serial_sequence($db_doc, $replica_set, $schema, $table, $column) ) {
-            if (in_array(dbsteward::string_cast($column['slonyId']), self::$sequence_slony_ids)) {
-              throw new exception("column sequence slonyId " . $column['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
-            }
+            self::check_duplicate_sequence_slony_id('column', (string)$column['slonyId']);
+            
             self::set_sequence_slony_ids($column);
 
             $col_sequence = pgsql8::identifier_name($schema['name'], $table['name'], $column['name'], '_seq');
@@ -721,9 +720,7 @@ class pgsql8 extends sql99 {
         foreach ($schema->sequence AS $sequence) {
           // is this sequence replicated in this replica set?
           if ( static::slony_replica_set_contains_sequence($db_doc, $replica_set, $schema, $sequence) ) {
-            if (in_array(dbsteward::string_cast($sequence['slonyId']), self::$sequence_slony_ids)) {
-              throw new exception("sequence slonyId " . $sequence['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
-            }
+            self::check_duplicate_sequence_slony_id('sequence', (string)$sequence['slonyId']);
             self::set_sequence_slony_ids($sequence);
 
             $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, $replica_set['id'], $replica_set['originNodeId'], $sequence['slonyId'], $schema['name'] . '.' . $sequence['name'], $schema['name'] . '.' . $sequence['name'] . ' sequence replication') . "\n\n");
@@ -1148,9 +1145,7 @@ SLEEP (SECONDS=60);
           // is this column sequence replicated in this replica set?
           if ( pgsql8::slony_replica_set_contains_table_column_serial_sequence($new_db_doc, $new_replica_set, $new_schema, $new_table, $new_column) ) {
 
-            if (in_array(dbsteward::string_cast($new_column['slonyId']), self::$sequence_slony_ids)) {
-              throw new exception("column sequence slonyId " . $new_column['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
-            }
+            self::check_duplicate_sequence_slony_id('column', (string)$new_column['slonyId']);
             self::set_sequence_slony_ids($new_column);
 
             // resolve $old_table on our own -- the table itself may not be replicated
@@ -1219,10 +1214,7 @@ SLEEP (SECONDS=60);
       foreach ($new_schema->sequence AS $new_sequence) {
         // is this sequence replicated in this replica set?
         if ( pgsql8::slony_replica_set_contains_sequence($new_db_doc, $new_replica_set, $new_schema, $new_sequence) ) {
-
-          if (in_array(dbsteward::string_cast($new_sequence['slonyId']), self::$sequence_slony_ids)) {
-            throw new exception("sequence slonyId " . $new_sequence['slonyId'] . " already in sequence_slony_ids -- duplicates not allowed");
-          }
+          self::check_duplicate_sequence_slony_id('sequence', (string)$new_sequence['slonyId']);
           self::set_sequence_slony_ids($new_sequence);
         }
 
@@ -2642,6 +2634,18 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     }
     
     return FALSE;
+  }
+
+  protected static function check_duplicate_sequence_slony_id($type, $slony_id) {
+    $slony_id = (string)$slony_id;
+    if ($type == 'column') {
+      $type = 'column sequence';
+    }
+    foreach (self::$sequence_slony_ids as $set_ids) {
+      if (in_array($slony_id, $set_ids)) {
+        throw new exception("$type slonyId $slony_id already in sequence_slony_ids -- duplicates not allowed");
+      }
+    }
   }
   
   /**
