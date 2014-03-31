@@ -2495,6 +2495,10 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         return TRUE;
       }
       else if ( !isset($table['slonySetId']) ) {
+        if (dbsteward::$require_slony_set_id) {
+          throw new exception("Table " . $schema['name'] . '.' . $table['name'] . " has a slonyId without a slonySetId, and --requiremissing slonyId and slonyIds are required");
+        }
+
         // this table has no replica set
         $first_replica_set = static::get_slony_replica_set_natural_first($db_doc);
         if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
@@ -2528,6 +2532,9 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         return TRUE;
       }
       else if ( !isset($sequence['slonySetId']) ) {
+        if (dbsteward::$require_slony_set_id) {
+          throw new exception("Sequence " . $schema['name'] . '.' . $sequence['name'] . " has a slonyId without a slonySetId, and --requiremissing slonyId and slonyIds are required");
+        }
         // this sequence has no replica set
         $first_replica_set = static::get_slony_replica_set_natural_first($db_doc);
         if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
@@ -2564,6 +2571,10 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
           return TRUE;
         }
         else if ( !isset($column['slonySetId']) ) {
+          if (dbsteward::$require_slony_set_id) {
+            throw new exception($schema['name'] . '.' . $table['name'] . '.' . $column['name'] . " has a slonyId without a slonySetId, and --requiremissing slonyId and slonyIds are required");
+          }
+
           // this column has no replica set
           $first_replica_set = static::get_slony_replica_set_natural_first($db_doc);
           if ( strcmp($replica_set['id'], $first_replica_set['id']) == 0 ) {
