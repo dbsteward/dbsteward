@@ -104,20 +104,15 @@ XML;
     pgsql8_diff::$new_table_dependency = xml_parser::table_dependency_order(dbsteward::$new_database);
     pgsql8_diff::$old_table_dependency = xml_parser::table_dependency_order(dbsteward::$old_database);
     
-    $ofs1 = new mock_output_file_segmenter();
-    $ofs2 = new mock_output_file_segmenter();
-    $ofs3 = new mock_output_file_segmenter();
-    $ofs4 = new mock_output_file_segmenter();
-    $ofses = array($ofs1, $ofs2, $ofs3, $ofs4);
+    $ofs = new mock_output_file_segmenter();
 
-    pgsql8_diff::diff_doc_work($ofs1, $ofs2, $ofs3, $ofs4);
-    for ($i = 0; $i < 4; $i++) {
-      $this->assertEquals($expected, stripos(trim($ofses[$i]->_get_output()), 'BEGIN') === FALSE);
-      $this->assertEquals($expected, stripos(trim($ofses[$i]->_get_output()), 'COMMIT') === FALSE);
-    }    
+    pgsql8_diff::diff_doc_work($ofs, $ofs, $ofs, $ofs);
+    $this->assertEquals($expected, stripos(trim($ofs->_get_output()), 'BEGIN') === FALSE);
+    $this->assertEquals($expected, stripos(trim($ofs->_get_output()), 'COMMIT') === FALSE);
   }
   
   public function testGenerateSlonikRemovesTransactionStatements() {
+    dbsteward::$generate_slonik = TRUE;
     $this->transaction_statement_check(TRUE);
     dbsteward::$generate_slonik = FALSE;
     $this->transaction_statement_check(FALSE);
