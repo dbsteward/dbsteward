@@ -17,6 +17,7 @@ require_once __DIR__ . '/../mock_output_file_segmenter.php';
 
 /**
  * @group mysql5
+ * @group nodb
  */
 class Mysql5CompleteTableDiffTest extends PHPUnit_Framework_TestCase {
 
