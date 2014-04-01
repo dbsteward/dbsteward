@@ -481,6 +481,29 @@ XML;
     $this->fail("Expected an 'ambiguous operation' exception due to column case change, got nothing.");
   }
 
+  public function testNullToNotNullDoesNotUpdate() {
+    mysql5::$use_schema_name_prefix = TRUE;
+
+    $old = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" default="2" null="true" />
+  </table>
+</schema>
+XML;
+    $new = <<<XML
+<schema name="s1" owner="NOBODY">
+  <table name="t1" owner="NOBODY" primaryKey="col1">
+    <column name="col1" type="int" default="2" null="false" />
+  </table>
+</schema>
+XML;
+
+    $expected3 = "ALTER TABLE `s1_t1`\n  MODIFY COLUMN `col1` int NOT NULL DEFAULT 2;";
+
+    $this->common_diff($old, $new, '', $expected3, 'Changing NULL->NOT NULL should only result in a single stage 3 ALTER');;
+  }
+
   private function common_diff($xml_a, $xml_b, $expected1, $expected3, $message='') {
     dbsteward::$old_database = new SimpleXMLElement($this->db_doc_xml . $xml_a . '</dbsteward>');
     dbsteward::$new_database = new SimpleXMLElement($this->db_doc_xml . $xml_b . '</dbsteward>');
