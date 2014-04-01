@@ -131,7 +131,16 @@ http://dbsteward.org/
 DBSteward 1.3.8 Release
 
 Changes
-* 
+* Composer support - project inclusion and installation as global binary
+* DBSteward now reports it's version in the CLI help text
+* DTD validation improvements for partial definitions and extracted definitions
+* pgsql8 --dbport is now honored
+* selective identifier quoting with --quoteillegalnames flag
+* require slonySetId with --requireslonysetid flag
+* Duplicate sequence definiton fix for certain pgsql8 serial structure extractions
+* Improve the slonyID summary text
+* Remove extraneous DDL when diffing MySQL tables for changed column attributes
+* Fix for duplicate index creation during pgsql8 diff
 
 
 Supported Platform DDL Generation and Differencing:
