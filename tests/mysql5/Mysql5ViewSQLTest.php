@@ -14,6 +14,7 @@ require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
 
 /**
  * @group mysql5
+ * @group nodb
  */
 class Mysql5ViewSQLTest extends PHPUnit_Framework_TestCase {
 
