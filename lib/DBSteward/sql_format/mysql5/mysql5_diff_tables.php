@@ -174,7 +174,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
 
     $defaults = array(
       'set' => array(),    // in stage 1, ALTER TABLE new_table ALTER COLUMN new_column SET DEFAULT new_column[default] ?: getDefaultValue(type)
-      'update' => array(), // after stage 1, UPDATE new_table SET new_column = DEFAULT WHERE new_column = DEFAULT
       'drop' => array()    // after that, ALTER TABLE new_table ALTER COLUMN new_column DROP DEFAULT
     );
 
@@ -196,14 +195,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
     $new_columns = dbx::get_table_columns($new_table);
     foreach ($new_columns as $col_index => $new_column) {
       $cmd1 = array(
-        'command' => 'nothing',
-        'column' => $new_column,
-        'defaults' => mysql5_diff::$add_defaults,
-        'nulls' => TRUE,
-        'auto_increment' => FALSE
-      );
-
-      $cmd3 = array(
         'command' => 'nothing',
         'column' => $new_column,
         'defaults' => mysql5_diff::$add_defaults,
@@ -274,82 +265,39 @@ class mysql5_diff_tables extends sql99_diff_tables {
         $auto_increment_removed = mysql5_column::is_auto_increment($old_column['type']) && !mysql5_column::is_auto_increment($new_column['type']);
         $auto_increment_changed = $auto_increment_added || $auto_increment_removed;
 
-        $new_is_nullable = mysql5_column::null_allowed($new_table, $new_column);
-
         $type_changed = strcasecmp($old_column_type, $new_column_type) !== 0 || $auto_increment_changed;
         $default_changed = strcasecmp($old_default, $new_default) !== 0;
         $nullable_changed = strcasecmp($old_column['null'] ?: 'true', $new_column['null'] ?: 'true') !== 0;
 
-        // if the type changed, we need to redefine the column
-        // if the column went from NOT NULL -> NULL, redefine in stage 1
-        // if the column is being modified in stage 1, don't redefine in stage 3. 
-        //    Otherwise went from NULL -> NOT NULL, redefine in stage 3
-        $cmd1['command'] = $type_changed || ($nullable_changed && $new_is_nullable) ? 'modify' : 'nothing';
-        // if type changes lets always do stage 3 alter
-        $cmd3['command'] = $type_changed || ($nullable_changed && !$new_is_nullable) ? 'modify' : 'nothing';
+        $cmd1['command'] = 'nothing';
 
-        if ($auto_increment_added) {
-          $cmd1['auto_increment'] = TRUE;
-          $cmd3['auto_increment'] = TRUE;
-        }
+        if ($type_changed || $nullable_changed) {
+          $cmd1['command'] = 'modify';
 
-        if ($nullable_changed) {
-          if (!$new_is_nullable) {
-            if (!$new_default) {
-              // if the column went from NULL to NOT NULL, and there is no default
-              if (mysql5_diff::$add_defaults) {
-                // update from NULL to type default
-                $defaults['update'][] = $new_column;
-                // make sure we don't redefine with forced defaults
-                $cmd3['defaults'] = FALSE;
-              }
-            }
-            else {
-              // the column went from NULL to NOT NULL and there *is* a default
-              if ($default_changed && !$type_changed) {
-                // if the default changed or was added (but not dropped),
-                // we need to set the new default. however, if the type did change,
-                // the column will be redefined, so we don't need to set the default
-                if (mysql5_column::is_timestamp($new_column)) {
-                  $cmd1['command'] = 'modify';
-                }
-                else {
-                  $defaults['set'][] = $new_column;
-                }
-              }
-
-              // if there is a type change or default change, NULLs are no longer allowed, 
-              // and so we need to update existing rows from NULL -> DEFAULT
-              if ($default_changed || $type_changed) {
-                $defaults['update'][] = $new_column;
-              }
-            }
+          if ($default_changed && !$new_default) {
+            $cmd1['defaults'] = FALSE;
           }
-          // else {
-            // the column went from NOT NULL to NULL. regardless of changes to the default,
-            // it will be redefined in stage 1.
-          // }
+
+          if ($auto_increment_added) {
+            $cmd1['auto_increment'] = TRUE;
+          }
         }
-        else {
-          if (!$type_changed && $default_changed) {
-            // if the type was changed, the column will be redefined, so don't bother here
-            if ($new_default) {
-              if (mysql5_column::is_timestamp($new_column)) {
-                $cmd1['command'] = 'modify';
-              }
-              else {
-                $defaults['set'][] = $new_column;
-              }
+        elseif ($default_changed) {
+          if ($new_default) {
+            if (mysql5_column::is_timestamp($new_column)) {
+              // timestamps get special treatment
+              $cmd1['command'] = 'modify';
             }
             else {
-              $defaults['drop'][] = $new_column;
+              $defaults['set'][] = $new_column;
             }
+          } else {
+            $defaults['drop'][] = $new_column;
           }
         }
       }
 
       $commands['1'][(string)$new_column['name']] = $cmd1;
-      $commands['3'][(string)$new_column['name']] = $cmd3;
     } // end foreach column
 
     $table_name = mysql5::get_fully_qualified_table_name($new_schema['name'], $new_table['name']);
@@ -436,19 +384,6 @@ class mysql5_diff_tables extends sql99_diff_tables {
       $sql .= implode(",\n  ", $stage1_commands);
       $sql .= ";\n\n";
       $ofs1->write($sql);
-    }
-
-    // update defaults, if any
-    foreach ($defaults['update'] as $column) {
-      $name = mysql5::get_quoted_column_name($column['name']);
-      if (strlen($column['default']) > 0) {
-        $default = (string)$column['default'];
-      }
-      else {
-        $type = mysql5_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $column);
-        $default = mysql5_column::get_default_value($type);
-      }
-      $ofs1->write("UPDATE $table_name SET $name = $default WHERE $name IS NULL;\n\n");
     }
 
     // output stage 3 sql

@@ -177,10 +177,10 @@ XML;
 </schema>
 XML;
 
-    // drop defaults
+    // drop defaults: stage 1 drop default
     $this->common_diff($old, $new, "ALTER TABLE `table`\n  ALTER COLUMN `col` DROP DEFAULT;", '');
 
-    // add defaults
+    // add defaults: stage 1 set default
     $this->common_diff($new, $old, "ALTER TABLE `table`\n  ALTER COLUMN `col` SET DEFAULT 'xyz';", '');
 
 
@@ -201,10 +201,10 @@ XML;
 </schema>
 XML;
     
-    // NULL -> NOT NULL
-    $this->common_diff($nullable, $notnullable, '', "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL;");
+    // NULL -> NOT NULL: stage 1 alter to NOT NULL (no update or stage 3 alter)
+    $this->common_diff($nullable, $notnullable, "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL;", '');
 
-    // NOT NULL -> NULL
+    // NOT NULL -> NULL: stage 1 alter to NULL
     $this->common_diff($notnullable, $nullable, "ALTER TABLE `table`\n  MODIFY COLUMN `col` text;", '');
 
     $nullable_with_default = <<<XML
@@ -224,13 +224,16 @@ XML;
 </schema>
 XML;
     mysql5_diff::$add_defaults = true;
-    // NULL -> NOT NULL
-    $this->common_diff($nullable_with_default, $notnullable_with_default,
-     "UPDATE `table` SET `col` = 'xyz' WHERE `col` IS NULL;",
-     "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL DEFAULT 'xyz';");
 
-    // NOT NULL -> NULL
-    $this->common_diff($notnullable_with_default, $nullable_with_default, "ALTER TABLE `table`\n  MODIFY COLUMN `col` text DEFAULT 'xyz';", '');
+    // NULL -> NOT NULL with defaults: stage 1 alter, updating nulls to default is done implicitly by mysql
+    $this->common_diff($nullable_with_default, $notnullable_with_default,
+     "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL DEFAULT 'xyz';",
+     '');
+
+    // NOT NULL -> NULL with defaults: stage 1 alter, no need to change anything else
+    $this->common_diff($notnullable_with_default, $nullable_with_default,
+      "ALTER TABLE `table`\n  MODIFY COLUMN `col` text DEFAULT 'xyz';",
+      '');
 
     $notnullable_without_default = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -241,13 +244,12 @@ XML;
 </schema>
 XML;
 
-    // going from NULL DEFAULT 'xyz' -> NOT NULL
-    // all we need to do is replace NULL with the type default.
-    // the redefinition in stage 3 will remove the default and make it NOT NULL
+    // NULL DEFAULT 'xyz' -> NOT NULL: stage 1 alter, no need to update nulls
     $this->common_diff($nullable_with_default, $notnullable_without_default,
-      "UPDATE `table` SET `col` = '' WHERE `col` IS NULL;",
-      "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL;");
+      "ALTER TABLE `table`\n  MODIFY COLUMN `col` text NOT NULL;",
+      '');
 
+    // NOT NULL -> NULL DEFAULT 'xyz': stage 1 alter
     $this->common_diff($notnullable_without_default, $nullable_with_default,
       "ALTER TABLE `table`\n  MODIFY COLUMN `col` text DEFAULT 'xyz';",
       "");
@@ -500,9 +502,9 @@ XML;
 </schema>
 XML;
 
-    $expected3 = "ALTER TABLE `s1_t1`\n  MODIFY COLUMN `col1` int NOT NULL DEFAULT 2;";
+    $expected1 = "ALTER TABLE `s1_t1`\n  MODIFY COLUMN `col1` int NOT NULL DEFAULT 2;";
 
-    $this->common_diff($old, $new, '', $expected3, 'Changing NULL->NOT NULL should only result in a single stage 3 ALTER');;
+    $this->common_diff($old, $new, $expected1, '', 'Changing NULL->NOT NULL should only result in a single stage 1 ALTER');;
   }
 
   private function common_diff($xml_a, $xml_b, $expected1, $expected3, $message='') {
