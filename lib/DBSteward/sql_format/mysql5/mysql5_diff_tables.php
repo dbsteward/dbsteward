@@ -282,9 +282,11 @@ class mysql5_diff_tables extends sql99_diff_tables {
 
         // if the type changed, we need to redefine the column
         // if the column went from NOT NULL -> NULL, redefine in stage 1
-        // if the column went from NULL -> NOT NULL, redefine in stage 3
+        // if the column is being modified in stage 1, don't redefine in stage 3. 
+        //    Otherwise went from NULL -> NOT NULL, redefine in stage 3
         $cmd1['command'] = $type_changed || ($nullable_changed && $new_is_nullable) ? 'modify' : 'nothing';
-        $cmd3['command'] = $nullable_changed && !$new_is_nullable ? 'modify' : 'nothing';
+        // if type changes lets always do stage 3 alter
+        $cmd3['command'] = $type_changed || ($nullable_changed && !$new_is_nullable) ? 'modify' : 'nothing';
 
         if ($auto_increment_added) {
           $cmd1['auto_increment'] = TRUE;
@@ -316,9 +318,11 @@ class mysql5_diff_tables extends sql99_diff_tables {
                 }
               }
 
-              // regardless of type change or default change, NULLs are no longer allowed, 
+              // if there is a type change or default change, NULLs are no longer allowed, 
               // and so we need to update existing rows from NULL -> DEFAULT
-              $defaults['update'][] = $new_column;
+              if ($default_changed || $type_changed) {
+                $defaults['update'][] = $new_column;
+              }
             }
           }
           // else {
