@@ -491,6 +491,7 @@ Supported db structure dump into DBSteward XML:
       </changelog>
 
       <dirroles key="bin">script</dirroles>
+      <dirroles key="DBSteward">php</dirroles>
       <replacement path="bin/dbsteward" type="pear-config" from="@php_bin@" to="php_bin" />
       <replacement path="bin/dbsteward" type="pear-config" from="@bin_dir@" to="bin_dir" />
       <release>
