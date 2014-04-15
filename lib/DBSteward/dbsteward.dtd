@@ -129,6 +129,7 @@
 <!ATTLIST index using (hash|btree|gist|gin|KEY) #REQUIRED>
 <!ELEMENT indexDimension (#PCDATA)>
 <!ATTLIST indexDimension name CDATA #REQUIRED>
+<!ATTLIST indexDimension sql (true|false) #IMPLIED>
 <!ELEMENT indexWhere (#PCDATA)>
 <!ATTLIST indexWhere sqlFormat CDATA #REQUIRED>
 
