@@ -18,7 +18,7 @@ class mssql10_function extends pgsql8_function {
    *
    * @return string
    */
-  public function get_creation_sql($node_schema, $node_function) {
+  public static function get_creation_sql($node_schema, $node_function) {
     // http://msdn.microsoft.com/en-us/library/ms186755.aspx
     $sql = 'CREATE FUNCTION ' . mssql10_function::get_declaration($node_schema, $node_function) . "\n" . 'RETURNS ' . $node_function['returns'] . "\n" . "  AS \n" . mssql10_function::get_definition($node_function) . "\n" . "; -- DBSTEWARD_FUNCTION_DEFINITION_END\n";
 

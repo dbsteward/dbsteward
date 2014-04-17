@@ -15,7 +15,7 @@ class mssql10_index extends pgsql8_index {
    *
    * @return created SQL
    */
-  public function get_creation_sql($node_schema, $node_table, $node_index) {
+  public static function get_creation_sql($node_schema, $node_table, $node_index) {
     try {
       $sql = "CREATE ";
 

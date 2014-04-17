@@ -20,7 +20,7 @@ class mssql10_bit_table {
    *
    * @return created SQL command
    */
-  public function get_creation_sql($node_schema, $node_sequence) {
+  public static function get_creation_sql($node_schema, $node_sequence) {
     if (isset($node_sequence['start']) && !is_numeric((string)$node_sequence['start'])) {
       throw new exception("start value is not numeric: " . $node_sequence['start']);
     }
