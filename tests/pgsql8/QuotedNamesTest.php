@@ -39,6 +39,25 @@ XML;
     $this->assertEquals('CREATE INDEX "idx" ON "test"."test" USING btree ("col1", "col2");', $sql);
   }
 
+  public function testNoQuoteIndexIdentifierDimensions() {
+    $xml = <<<XML
+<schema name="test">
+  <table name="test">
+    <index name="idx" using="btree" unique="false">
+      <indexDimension name="idx_1">col1</indexDimension>
+      <indexDimension name="idx_2" sql="true">x + 1</indexDimension>
+      <indexDimension name="idx_3">x + 1</indexDimension>
+    </index>
+  </table>
+</schema>
+XML;
+    $schema = simplexml_load_string($xml);
+
+    $sql = pgsql8_index::get_creation_sql($schema, $schema->table, $schema->table->index);
+
+    $this->assertEquals('CREATE INDEX "idx" ON "test"."test" USING btree ("col1", x + 1, "x + 1");', $sql);
+  }
+
   public function testQuoteFKeyTable() {
     $xml = <<<XML
 <dbsteward>
@@ -60,7 +79,7 @@ XML;
     $expected = 'ADD CONSTRAINT "test2_col1_fkey" FOREIGN KEY ("col1") REFERENCES "test"."test1"("col1")';
     $this->assertEquals($expected, $sql);
   }
-  
+
   public function testFunctionNameQuoting() {
     $xml = <<<XML
 <dbsteward>
