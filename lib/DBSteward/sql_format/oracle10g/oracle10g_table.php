@@ -15,7 +15,7 @@ class oracle10g_table extends sql99_table {
    *
    * @return created SQL command
    */
-  public function get_creation_sql($node_schema, $node_table) {
+  public static function get_creation_sql($node_schema, $node_table) {
     if ($node_schema->getName() != 'schema') {
       throw new exception("node_schema object element name is not schema. check stack for offending caller");
     }

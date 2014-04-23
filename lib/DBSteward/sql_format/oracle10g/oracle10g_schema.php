@@ -15,7 +15,7 @@ class oracle10g_schema extends sql99_schema {
    *
    * @return created SQL
    */
-  public function get_creation_sql($node_schema) {
+  public static function get_creation_sql($node_schema) {
     if (strcasecmp('dbo', $node_schema['name']) == 0) {
       // don't create the dbo schema
       $ddl = '';

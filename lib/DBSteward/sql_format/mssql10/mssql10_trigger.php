@@ -15,7 +15,7 @@ class mssql10_trigger extends pgsql8_trigger {
    *
    * @return created SQL
    */
-  public function get_creation_sql($node_schema, $node_trigger) {
+  public static function get_creation_sql($node_schema, $node_trigger) {
     $event_chunks = preg_split("/[\,\s]+/", $node_trigger['event'], -1, PREG_SPLIT_NO_EMPTY);
     $node_table = dbx::get_table($node_schema, $node_trigger['table']);
     if ($node_table == NULL) {
