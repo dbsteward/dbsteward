@@ -871,6 +871,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    * @return boolean
    */
   public static function table_has_dependency($a, $b) {
+
     // does b contain a column that a references?
     $columns = $a['table']->xpath('column');
     foreach ($columns AS $column) {
@@ -906,6 +907,16 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
         }
       }
     }
+
+    // does table A inherit from table B? If so, obviously dependent on it
+    if (isset($a['table']->attributes()->inheritsSchema) || isset($a['table']->attributes()->inheritsTable)) {
+       if (strcasecmp($a['table']->attributes()->inheritsSchema, $b['schema']['name']) == 0 &&
+           strcasecmp($a['table']->attributes()->inheritsTable, $b['table']['name']) == 0) {
+
+           return TRUE;
+       }
+    }
+
     return FALSE;
   }
 
