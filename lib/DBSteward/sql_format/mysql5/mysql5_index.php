@@ -53,12 +53,13 @@ class mysql5_index extends sql99_index {
         $found = (string)$node_table['primaryKey'] == (string)$column['name'];
         if (!$found) {
           foreach ($nodes as $node) {
-            if (count($node->indexDimension) == 1 && (string)$node->indexDimension[0] == (string)$column['name']) {
+            if ((string)$node->indexDimension[0] == (string)$column['name']) {
               $found = true;
               break;
             }
           }
         }
+ 
         if (!$found) {
           // no? then create one
           $fkey_index = new SimpleXMLElement('<index/>');
