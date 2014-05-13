@@ -1,9 +1,8 @@
 <?php
 /**
- * DBSteward serial start confirmat test
+ * DBSteward inherited table tests
  *
- * 1) Confirm serial starts are applied when creating new tables
- * 2) Confirm when adding new tables with serial columns that serial starts are applied in stage 2
+ * Ensure that inherited tables are properly resolved by table dependency algorithm
  *
  *
  * @package DBSteward
@@ -11,8 +10,7 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
-require_once __DIR__ . '/mock_output_file_segmenter.php';
+require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
 class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
 
@@ -38,4 +36,3 @@ class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
 
 }
 
-?>

@@ -7,8 +7,7 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/dbstewardUnitTestBase.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/sql99/sql99.php';
 
 class IdentifiersTest extends PHPUnit_Framework_TestCase {

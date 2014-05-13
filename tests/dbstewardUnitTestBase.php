@@ -7,8 +7,11 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once 'PHPUnit/Framework/TestSuite.php';
+/*
+this file includes the dbsteward class and autoloader.
+the PHPUnit classes and autoloader are expected to be available by running tests from phpunit commandline, such as
+phpunit --verbose --group pgsql8 regression/
+*/
 
 require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 
@@ -16,6 +19,7 @@ require_once __DIR__ . '/dbsteward_sql99_connection.php';
 require_once __DIR__ . '/dbsteward_pgsql8_connection.php';
 require_once __DIR__ . '/dbsteward_mssql10_connection.php';
 require_once __DIR__ . '/dbsteward_mysql5_connection.php';
+require_once __DIR__ . '/mock_output_file_segmenter.php';
 
 class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 

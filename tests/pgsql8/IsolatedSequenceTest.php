@@ -1,17 +1,13 @@
 <?php
 /**
- *
+ * Sequence definition in a schema without tables regression test
  *
  * @package DBSteward
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Rusty Hamilton <rusty@shrub3.net>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
-require_once(dirname(__FILE__) . '/../../lib/DBSteward/sql_format/sql99/sql99.php');
-require_once(dirname(__FILE__) . '/../../lib/DBSteward/sql_format/pgsql8/pgsql8.php');
 
 /**
  * @group pgsql8

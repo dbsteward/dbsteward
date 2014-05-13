@@ -23,7 +23,7 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
+require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
 class typeDiffTest extends dbstewardUnitTestBase {
   // don't use tabrows if not actually starting dbsteward builds from scratch;

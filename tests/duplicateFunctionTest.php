@@ -11,8 +11,7 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
-require_once __DIR__ . '/mock_output_file_segmenter.php';
+require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
 class duplicateFunctionTest extends PHPUnit_Framework_TestCase {
 

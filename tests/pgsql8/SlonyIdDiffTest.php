@@ -7,9 +7,7 @@
  * @author Rusty Hamilton <rusty@shrub3.net>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once __DIR__ . '/../mock_output_file_segmenter.php';
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
  * @group pgsql8

@@ -1,6 +1,13 @@
 <?php
+/**
+ * Tests for when pgsql8 column default is a user defined function
+ *
+ * @package DBSteward
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Austin Hyde <austin109@gmail.com>
+ */
 
-require_once dirname(__FILE__) . '/../dbstewardUnitTestBase.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
  * @group pgsql8

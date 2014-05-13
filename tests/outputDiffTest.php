@@ -7,7 +7,7 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
+require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
 class outputDiffTest extends dbstewardUnitTestBase {
 

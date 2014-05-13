@@ -7,11 +7,7 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once 'PHPUnit/Framework/TestSuite.php';
-
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
-require_once dirname(__FILE__) . '/../dbstewardUnitTestBase.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 class ColumnNullNotNullRegressionTest extends dbstewardUnitTestBase {
   
