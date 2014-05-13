@@ -23,7 +23,7 @@ require_once dirname(__FILE__) . '/active_sql_format_autoloader.php';
 
 class dbsteward {
 
-  const VERSION = '1.3.8';
+  const VERSION = '1.3.9';
   const API_VERSION = '1.3';
 
   const PATTERN_KNOWN_TYPES = "/^bigint.*|^bigserial|^bool.*|^bytea.*|^char.*|^date|^double precision|^inet$|^interval|^int.*|^oid|^smallint|^serial|^string|^text|^time$|^time with.*|^timestamp.*|^varchar.*|^uuid$/i";
@@ -502,6 +502,9 @@ Format-specific options
         throw new Exception("Cannot collect more data addendums then files provided");
       }
     }
+
+    // announce our defined version before doing any configuration announcements or tasks
+    dbsteward::console_line(1, "DBSteward Version " . self::VERSION);
 
     ///// set the global SQL format
     $sql_format = dbsteward::reconcile_sql_format($target_sql_format, $force_sql_format);
