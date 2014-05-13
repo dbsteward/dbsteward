@@ -697,7 +697,7 @@ class pgsql8 extends sql99 {
           if ( static::slony_replica_set_contains_table_column_serial_sequence($db_doc, $replica_set, $schema, $table, $column) ) {
             self::check_duplicate_sequence_slony_id('column', (string)$column['slonyId']);
             
-            self::set_sequence_slony_ids($column);
+            self::set_sequence_slony_ids($column, $db_doc);
 
             $col_sequence = pgsql8::identifier_name($schema['name'], $table['name'], $column['name'], '_seq');
             $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, $replica_set['id'], $replica_set['originNodeId'], $column['slonyId'], $schema['name'] . '.' . $col_sequence, $schema['name'] . '.' . $col_sequence . ' serial sequence column replication') . "\n\n");
@@ -721,7 +721,7 @@ class pgsql8 extends sql99 {
           // is this sequence replicated in this replica set?
           if ( static::slony_replica_set_contains_sequence($db_doc, $replica_set, $schema, $sequence) ) {
             self::check_duplicate_sequence_slony_id('sequence', (string)$sequence['slonyId']);
-            self::set_sequence_slony_ids($sequence);
+            self::set_sequence_slony_ids($sequence, $db_doc);
 
             $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, $replica_set['id'], $replica_set['originNodeId'], $sequence['slonyId'], $schema['name'] . '.' . $sequence['name'], $schema['name'] . '.' . $sequence['name'] . ' sequence replication') . "\n\n");
           }
@@ -1146,7 +1146,7 @@ SLEEP (SECONDS=60);
           if ( pgsql8::slony_replica_set_contains_table_column_serial_sequence($new_db_doc, $new_replica_set, $new_schema, $new_table, $new_column) ) {
 
             self::check_duplicate_sequence_slony_id('column', (string)$new_column['slonyId']);
-            self::set_sequence_slony_ids($new_column);
+            self::set_sequence_slony_ids($new_column, $new_db_doc);
 
             // resolve $old_table on our own -- the table itself may not be replicated
             $old_table = NULL;
@@ -1215,7 +1215,7 @@ SLEEP (SECONDS=60);
         // is this sequence replicated in this replica set?
         if ( pgsql8::slony_replica_set_contains_sequence($new_db_doc, $new_replica_set, $new_schema, $new_sequence) ) {
           self::check_duplicate_sequence_slony_id('sequence', (string)$new_sequence['slonyId']);
-          self::set_sequence_slony_ids($new_sequence);
+          self::set_sequence_slony_ids($new_sequence, $new_db_doc);
         }
 
         $old_sequence = NULL;
@@ -2662,7 +2662,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
   /**
    * Function for placing the slonyids into their Sets, or not if they have no set
   */
-  protected static function set_sequence_slony_ids(SimpleXMLElement $column) {
+  protected static function set_sequence_slony_ids(SimpleXMLElement $column, $db_doc) {
     if (isset($column['slonySetId']) && !is_null($column['slonySetId'])) {
       if (isset(self::$sequence_slony_ids[(int)$column['slonySetId']])) {
         self::$sequence_slony_ids[(int)$column['slonySetId']][] = dbsteward::string_cast($column['slonyId']);
@@ -2672,12 +2672,25 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
     }
     else {
-      // not a huge fan of magic values but don't want to let PHP default to 0
-      if (isset(self::$sequence_slony_ids['NoSlonySet'])) {
-        self::$sequence_slony_ids['NoSlonySet'][] = dbsteward::string_cast($column['slonyId']);
+      // if no slonySetId is defined, put it into the first natural order
+      $first_replica_set = static::get_slony_replica_set_natural_first($db_doc);
+      if ((int)$first_replica_set['id'] > 0) {
+        if (isset(self::$sequence_slony_ids[(int)$first_replica_set['id']])) {
+          self::$sequence_slony_ids[(int)$first_replica_set['id']][] = dbsteward::string_cast($column['slonyId']);
+        }
+        else {
+          self::$sequence_slony_ids[(int)$first_replica_set['id']] = array(dbsteward::string_cast($column['slonyId']));
+        }
       }
       else {
-        self::$sequence_slony_ids['NoSlonySet'] = array(dbsteward::string_cast($column['slonyId']));
+        // only use if there is no default natural order replica set,
+        // not a huge fan of magic values but don't want to let PHP default to 0
+        if (isset(self::$sequence_slony_ids['NoSlonySet'])) {
+          self::$sequence_slony_ids['NoSlonySet'][] = dbsteward::string_cast($column['slonyId']);
+        }
+        else {
+          self::$sequence_slony_ids['NoSlonySet'] = array(dbsteward::string_cast($column['slonyId']));
+        }
       }
     }
   }

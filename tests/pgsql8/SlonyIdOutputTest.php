@@ -78,10 +78,11 @@ OUTXML;
       pgsql8::build('', $old_db_doc);
       $output = ob_get_contents();
       ob_end_clean();
-      preg_match('/sequence ID segments:\s(.*)\n/', $output, $matches);
-      $this->assertEquals("1098", $matches[1]);
-      preg_match('/101:\s(.*)\n/', $output, $matches);
+      preg_match('/101:\s(\d+\-\d+)/', $output, $matches);
       $this->assertEquals("101-102", $matches[1]);
+      // before 1098 wasn't getting put into first natural order, now it should be
+      preg_match('/101:\s[\d\-]+,\s*(\d+)/', $output, $matches);
+      $this->assertEquals("1098", $matches[1], "SlonyIds without slonySetIds are not put into first natural order slonySet");
       preg_match('/201:\s(.*)\n/', $output, $matches);
       $this->assertEquals("105-106", $matches[1]);
   }

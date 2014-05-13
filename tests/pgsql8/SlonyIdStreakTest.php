@@ -77,7 +77,7 @@ SLONXML;
       pgsql8::build('', $old_db_doc);
       $output = ob_get_contents();
       ob_end_clean();
-      preg_match('/sequence ID segments:\s(.*)\n/', $output, $matches);
+      preg_match('/sequence ID segments.*:\s(.*)\n/', $output, $matches);
       $this->assertEquals("1-2, 5-6, 98", $matches[1]);
   }
 
