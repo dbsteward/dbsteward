@@ -1971,7 +1971,13 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         $node_trigger['event'] .= ', ' . dbsteward::string_cast($row_trigger['event_manipulation']);
       }
 
-      $node_trigger['when'] = dbsteward::string_cast($row_trigger['condition_timing']);
+      if (isset($row_trigger['condition_timing'])) {
+        $when = $row_trigger['condition_timing'];
+      }
+      else {
+        $when = $row_trigger['action_timing'];
+      }
+      $node_trigger['when'] = dbsteward::string_cast($when);
       $node_trigger['table'] = dbsteward::string_cast($row_trigger['event_object_table']);
       $node_trigger['forEach'] = dbsteward::string_cast($row_trigger['action_orientation']);
       $trigger_function = trim(str_ireplace('EXECUTE PROCEDURE', '', $row_trigger['action_statement']));
