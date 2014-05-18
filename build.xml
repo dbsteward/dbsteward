@@ -127,6 +127,28 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
+      <changelog version="1.3.9" date="2014-05-18" license="Simplified BSD License">
+DBSteward 1.3.9 Release
+
+Changes
+* mysql5 duplicate implicit index create statement bug fix
+* pgsql8 index extraction PHP runtime error
+* miscellaneous PHP runtime warning polish
+* fix for slonyId slony set association to be consistent between sequences and tables
+* fix for parent table dependency order calculations when diffing
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
+
       <changelog version="1.3.8" date="2014-04-01" license="Simplified BSD License">
 DBSteward 1.3.8 Release
 
