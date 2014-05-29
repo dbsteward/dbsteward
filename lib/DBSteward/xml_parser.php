@@ -1071,6 +1071,47 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
   }
 
   /**
+   * Go up the parent chain until the default value is found
+  */
+  protected static function recurse_inheritance_get_column($table_node, $column_name) {
+    $inherit_schema = $table_node->attributes()->inheritsSchema;
+    $inherit_table = $table_node->attributes()->inheritsTable;
+    $parent = $table_node->xpath('parent::*');
+    if ((string)$parent[0]->attributes()->name == (string)$inherit_schema) {
+      $nodes = $table_node->xpath('parent::*/table[@name="' . $inherit_table . '"]/column[@name="' . $column_name . '"]');
+      if (empty($nodes)) {
+        $grandparent = $table_node->xpath('parent::*/table[@name="' . $inherit_table . '"]');
+        if (count($grandparent) == 1 && isset($grandparent[0]->attributes()->inheritsSchema)) {
+          return static::recurse_inheritance_get_column($grandparent[0], $column_name);
+        }
+      }
+      return $nodes;
+    }
+    return NULL;
+  }
+
+  /**
+   * Gets the column present within a table, if it isn't present go up the inheritance
+   * chain to find it.
+   *
+  */
+  public static function inheritance_get_column($table_node, $column_name) {
+    $xpath = 'column[@name="' . $column_name . '"]';
+    $nodes = $table_node->xpath($xpath);
+    if (count($nodes) != 1) {
+      // if couldn't be found, check the inheritance chain and see if the column exists there
+      if (isset($table_node->attributes()->inheritsSchema)) {
+        $nodes = static::recurse_inheritance_get_column($table_node, $column_name);
+      }
+      else if (count($nodes) == 0) {
+        throw new exception("Could not find column " . $name . " in table " . $node_table['name'] . " or in its parents -- panic!");
+      }
+    }
+
+    return $nodes;
+  }
+
+  /**
    * return the column default value if it is defined
    *
    * @param SimpleXMLNode  $table_name   table definition xml node
@@ -1080,11 +1121,11 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    */
   public static function column_default_value(&$table_node, $column_name, &$node) {
     // find the column node in the table
-    $xpath = 'column[@name="' . $column_name . '"]';
-    $nodes = $table_node->xpath($xpath);
-    if (count($nodes) != 1) {
+    $nodes = static::inheritance_get_column($table_node, $column_name);
+    if (is_null($nodes) || count($nodes) != 1) {
       throw new exception(count($nodes) . " column elements found via xpath '" . 'column[@name="' . $column_name . '"]' . "' - unexpected!");
     }
+
     $column_node = &$nodes[0];
 
     $default_value = NULL;

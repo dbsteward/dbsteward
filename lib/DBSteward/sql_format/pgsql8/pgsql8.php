@@ -253,7 +253,9 @@ class pgsql8 extends sql99 {
       }
     }
     else {
-      $node_column = dbx::get_table_column($node_table, $data_column_name);
+      //$node_column = dbx::get_table_column($node_table, $data_column_name);
+      $node_column = xml_parser::inheritance_get_column($node_table, $data_column_name);
+      $node_column = $node_column[0];
       if ($node_column === NULL) {
         throw new exception("Failed to find table " . $node_table['name'] . " column " . $data_column_name . " for default value check");
       }
@@ -622,7 +624,7 @@ class pgsql8 extends sql99 {
         && strlen($table['primaryKey']) > 0 && in_array(dbsteward::string_cast($table['primaryKey']), $columns)) {
         $pk_column = dbsteward::string_cast($table['primaryKey']);
         // only do it if the primary key column is also a serial/bigserial
-        $nodes = $table->xpath("column[@name='" . $pk_column . "']");
+        $nodes = xml_parser::inheritance_get_column($table, $pk_column);
         if (count($nodes) != 1) {
           var_dump($nodes);
           throw new exception("Failed to find primary key column '" . $pk_column . "' for " . $schema['name'] . "." . $table['name']);
