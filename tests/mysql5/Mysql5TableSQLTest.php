@@ -135,15 +135,15 @@ XML;
     };
 
     // base case - note the quoted column
-    $this->assertEquals("PARTITION BY HASH(`id`) PARTITIONS 4", $get_sql());
+    $this->assertEquals("PARTITION BY HASH (`id`) PARTITIONS 4", $get_sql());
 
     // modulo is acceptable too
     $table->tablePartition['type'] = 'MODULO';
-    $this->assertEquals("PARTITION BY HASH(`id`) PARTITIONS 4", $get_sql());
+    $this->assertEquals("PARTITION BY HASH (`id`) PARTITIONS 4", $get_sql());
 
     // linear hash is just a different algorithm
     $table->tablePartition['type'] = 'LINEAR HASH';
-    $this->assertEquals("PARTITION BY LINEAR HASH(`id`) PARTITIONS 4", $get_sql());
+    $this->assertEquals("PARTITION BY LINEAR HASH (`id`) PARTITIONS 4", $get_sql());
 
     // check that a column option looks for the column
     $table->tablePartition['type'] = 'HASH';
@@ -159,7 +159,7 @@ XML;
     $table->tablePartition->tablePartitionOption[1]['value'] = '4';
     $table->tablePartition->tablePartitionOption[0]['name'] = 'expression';
     $table->tablePartition->tablePartitionOption[0]['value'] = 'id + 1';
-    $this->assertEquals("PARTITION BY HASH(id + 1) PARTITIONS 4", $get_sql());
+    $this->assertEquals("PARTITION BY HASH (id + 1) PARTITIONS 4", $get_sql());
   }
 
   public function testGetKeyPartitionSql() {
@@ -182,11 +182,11 @@ XML;
     };
 
     // base case - note the quoted column
-    $this->assertEquals("PARTITION BY KEY(`id`) PARTITIONS 4", $get_sql());
+    $this->assertEquals("PARTITION BY KEY (`id`) PARTITIONS 4", $get_sql());
 
     // linear key is just a different algorithm
     $table->tablePartition['type'] = 'LINEAR KEY';
-    $this->assertEquals("PARTITION BY LINEAR KEY(`id`) PARTITIONS 4", $get_sql());
+    $this->assertEquals("PARTITION BY LINEAR KEY (`id`) PARTITIONS 4", $get_sql());
 
     // check that a column option looks for the column
     $table->tablePartition['type'] = 'KEY';
@@ -202,7 +202,47 @@ XML;
     $table->tablePartition->tablePartitionOption[1]['value'] = '4';
     $table->tablePartition->tablePartitionOption[0]['name'] = 'columns';
     $table->tablePartition->tablePartitionOption[0]['value'] = 'id, foo';
-    $this->assertEquals("PARTITION BY KEY(`id`, `foo`) PARTITIONS 4", $get_sql());
+    $this->assertEquals("PARTITION BY KEY (`id`, `foo`) PARTITIONS 4", $get_sql());
+  }
+
+  public function testListRangePartitionSql() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="id" owner="NOBODY">
+    <column name="id" type="int auto_increment"/>
+    <column name="foo" type="int"/>
+    <tablePartition type="LIST">
+      <tablePartitionOption name="column" value="id"/>
+      <tablePartitionSegment name="p0" value="1, 2, 3"/>
+      <tablePartitionSegment name="p1" value="4, 5, 6"/>
+    </tablePartition>
+  </table>
+</schema>
+XML;
+    $schema = simplexml_load_string($xml);
+    $table = $schema->table;
+    $get_sql = function() use (&$schema, &$table) {
+      return mysql5_table::get_partition_sql($schema, $table);
+    };
+
+    $this->assertEquals("PARTITION BY LIST (`id`) (
+  PARTITION `p0` VALUES IN (1, 2, 3),
+  PARTITION `p1` VALUES IN (4, 5, 6)
+)", $get_sql());
+
+    $table->tablePartition['type'] = 'RANGE';
+    $table->tablePartition->tablePartitionSegment[0]['value'] = '4';
+    $table->tablePartition->tablePartitionSegment[1]['value'] = '6';
+    $p2 = $table->tablePartition->addChild('tablePartitionSegment');
+    $p2['name'] = 'p2';
+    $p2['value'] = 'MAXVALUE';
+
+
+    $this->assertEquals("PARTITION BY RANGE (`id`) (
+  PARTITION `p0` VALUES LESS THAN (4),
+  PARTITION `p1` VALUES LESS THAN (6),
+  PARTITION `p2` VALUES LESS THAN (MAXVALUE)
+)", $get_sql());
   }
 
   private function expect($err, $callback) {

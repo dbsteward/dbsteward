@@ -72,20 +72,7 @@ class mysql5_table extends sql99_table {
           throw new exception("No table partiton type selected for $table_name");
         }
 
-        $options = array();
-        foreach ($tablePartition->tablePartitionOption as $opt) {
-          $name = isset($opt['name']) ? trim(strtolower($opt['name'])) : '';
-          $value = isset($opt['value']) ? trim($opt['value']) : '';
-
-          if (strlen($name) === 0) {
-            throw new exception("No tablePartitionOption name given for table $table_name");
-          }
-          if (strlen($value) === 0) {
-            throw new exception("No tablePartitionOption value given for tablePartitionOption $name on table $table_name");
-          }
-
-          $options[$name] = $value;
-        }
+        $options = static::get_partition_options($table_name, $tablePartition);
 
         $type = trim(strtoupper($tablePartition['type']));
         switch ($type) {
@@ -93,60 +80,27 @@ class mysql5_table extends sql99_table {
             $type = 'HASH';
           case 'HASH':
           case 'LINEAR HASH':
-            if (!isset($options['number'])) {
-              throw new exception("tablePartitionOption 'number' must be specified for $type partition on table $table_name");
-            }
-
-            $number = $options['number'] + 0;
-            if (!is_int($number) || $number <= 0) {
-              throw new exception("tablePartitionOption 'number' must be an integer greater than 0 for $type partition on $table_name");
-            }
-
-            if (isset($options['column']) && strlen(trim($options['column'])) !== 0) {
-              $col = trim($options['column']);
-              if (!static::contains_column($node_table, $col)) {
-                throw new exception("Invalid column partition option: there is no column named '$col' on table $table_name");
-              }
-              $expr = mysql5::get_quoted_column_name($col);
-            }
-            elseif (isset($options['expression']) && strlen(trim($options['expression'])) !== 0) {
-              $expr = trim($options['expression']);
-            }
-            else {
-              throw new exception("tablePartitionOption 'column' or 'expression' must be specified for $type partition on $table_name");
-            }
-
-            return "PARTITION BY $type($expr) PARTITIONS $number";
+            $number = static::get_partition_number($table_name, $type, $options);
+            $expr = static::get_partition_column_expression($node_table, $table_name, $type, $options);
+            return "PARTITION BY $type ($expr) PARTITIONS $number";
 
           case 'KEY':
           case 'LINEAR KEY':
-            if (!isset($options['number'])) {
-              throw new exception("tablePartitionOption 'number' must be specified for $type partition on table $table_name");
-            }
+            $number = static::get_partition_number($table_name, $type, $options);
+            $expr = static::get_partition_column_list($node_table, $table_name, $type, $options);            
+            return "PARTITION BY $type ($expr) PARTITIONS $number";
 
-            $number = $options['number'] + 0;
-            if (!is_int($number) || $number <= 0) {
-              throw new exception("tablePartitionOption 'number' must be an integer greater than 0 for $type partition on $table_name");
-            }
+          case 'LIST':
+          case 'RANGE':
+            $expr = static::get_partition_column_expression($node_table, $table_name, $type, $options, true, false);
 
-            if (isset($options['columns']) && strlen(trim($options['columns']))) {
-              $cols = preg_split('/\s*,\s*/', trim($options['columns']), -1, PREG_SPLIT_NO_EMPTY);
-            }
-            elseif (isset($options['column']) && strlen(trim($options['column']))) {
-              $cols = array(trim($options['column']));
-            }
-            else {
-              throw new exception("tablePartitionOption 'columns' must be specified for $type partition on $table_name");
-            }
-            foreach ($cols as &$col) {
-              $col = trim($col);
-              if (!static::contains_column($node_table, $col)) {
-                throw new exception("Invalid column partition option: there is no column named '$col' on table $table_name");
-              }
-              $col = mysql5::get_quoted_column_name($col);
-            }
-            $cols = implode(', ', $cols);
-            return "PARTITION BY $type($cols) PARTITIONS $number";
+            $cond = $type == 'LIST' ? 'IN' : 'LESS THAN';
+
+            $segs = static::map_partition_segments($table_name, $tablePartition, function($name, $value) use ($cond) {
+              return "PARTITION $name VALUES $cond ($value)";
+            });
+
+            return "PARTITION BY $type ($expr) (\n  " . implode(",\n  ", $segs) . "\n)";
 
           default:
             throw new exception("Unknown tablePartition type '$type'");
@@ -155,6 +109,101 @@ class mysql5_table extends sql99_table {
     }
 
     return null;
+  }
+
+  protected function get_partition_options($table_name, $tablePartition) {
+    $options = array();
+    foreach ($tablePartition->tablePartitionOption as $opt) {
+      $name = isset($opt['name']) ? trim(strtolower($opt['name'])) : '';
+      $value = isset($opt['value']) ? trim($opt['value']) : '';
+
+      if (strlen($name) === 0) {
+        throw new exception("No tablePartitionOption name given for table $table_name");
+      }
+      if (strlen($value) === 0) {
+        throw new exception("No tablePartitionOption value given for tablePartitionOption $name on table $table_name");
+      }
+
+      $options[$name] = $value;
+    }
+    return $options;
+  }
+
+  protected function get_partition_number($table_name, $type, $options) {
+    if (!isset($options['number'])) {
+      throw new exception("tablePartitionOption 'number' must be specified for $type partition on table $table_name");
+    }
+
+    $number = $options['number'] + 0;
+    if (!is_int($number) || $number <= 0) {
+      throw new exception("tablePartitionOption 'number' must be an integer greater than 0 for $type partition on $table_name");
+    }
+
+    return $number;
+  }
+
+  protected function get_partition_column_expression($node_table, $table_name, $type, $options) {
+    if (isset($options['column']) && strlen(trim($options['column'])) !== 0) {
+      $col = trim($options['column']);
+      if (!static::contains_column($node_table, $col)) {
+        throw new exception("Invalid column partition option: there is no column named '$col' on table $table_name");
+      }
+      return mysql5::get_quoted_column_name($col);
+    }
+    elseif (isset($options['expression']) && strlen(trim($options['expression'])) !== 0) {
+      return trim($options['expression']);
+    }
+
+    throw new exception("tablePartitionOption 'column' or 'expression' must be specified for $type partition on $table_name");
+  }
+
+  protected function get_partition_column_list($node_table, $table_name, $type, $options) {
+    if (isset($options['columns']) && strlen(trim($options['columns']))) {
+      $cols = preg_split('/\s*,\s*/', trim($options['columns']), -1, PREG_SPLIT_NO_EMPTY);
+    }
+    elseif (isset($options['column']) && strlen(trim($options['column']))) {
+      $cols = array(trim($options['column']));
+    }
+    else {
+      throw new exception("tablePartitionOption 'column' or 'columns' must be specified for $type partition on $table_name");
+    }
+
+    if (count($cols) === 0) {
+      throw new exception("Invalid column partition option: you must specify at least one column for $type partition on $table_name");
+    }
+
+    foreach ($cols as &$col) {
+      $col = trim($col);
+      if (!static::contains_column($node_table, $col)) {
+        throw new exception("Invalid column partition option: there is no column named '$col' on table $table_name");
+      }
+      $col = mysql5::get_quoted_column_name($col);
+    }
+    return implode(', ', $cols);
+  }
+
+  protected function map_partition_segments($table_name, $tablePartition, $callback) {
+    $segs = array();
+    foreach ($tablePartition->tablePartitionSegment as $segment) {
+      $name = isset($segment['name']) ? trim($segment['name']) : '';
+      $value = isset($segment['value']) ? trim($segment['value']) : '';
+
+      if (strlen($name) === 0) {
+        throw new exception("No tablePartitionSegment name given for table $table_name");
+      }
+      if (strlen($value) === 0) {
+        throw new exception("No tablePartitionSegment value given for tablePartitionSegment $name on table $table_name");
+      }
+
+      $name = mysql5::get_quoted_object_name($name);
+      $segs[] = call_user_func($callback, $name, $value);
+    }
+
+    if (count($segs) === 0) {
+      throw new exception("At least one tablePartitionSegment must be defined for $type partition on table $table_name");
+    }
+
+    return $segs;
   }
 
   /**
