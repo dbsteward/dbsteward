@@ -157,6 +157,7 @@
 
 <!ELEMENT tablePartition (tablePartitionOption*)>
 <!ATTLIST tablePartition type CDATA #REQUIRED>
+<!ATTLIST tablePartition sqlFormat CDATA #IMPLIED>
 
 <!ELEMENT tablePartitionOption EMPTY>
 <!ATTLIST tablePartitionOption name CDATA #REQUIRED>
