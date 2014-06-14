@@ -115,5 +115,104 @@ XML;
     dbsteward::$new_database = $dbs;
     $this->assertEquals("CREATE TABLE `test` (\n  `id` int,\n  `fk` int\n);", mysql5_table::get_creation_sql($dbs->schema, $dbs->schema->table[0]));
   }
+
+  public function testGetHashPartitionSql() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="id" owner="NOBODY">
+    <column name="id" type="int auto_increment"/>
+    <tablePartition type="HASH">
+      <tablePartitionOption name="column" value="id"/>
+      <tablePartitionOption name="number" value="4"/>
+    </tablePartition>
+  </table>
+</schema>
+XML;
+    $schema = simplexml_load_string($xml);
+    $table = $schema->table;
+    $get_sql = function() use (&$schema, &$table) {
+      return mysql5_table::get_partition_sql($schema, $table);
+    };
+
+    // base case - note the quoted column
+    $this->assertEquals("PARTITION BY HASH(`id`) PARTITIONS 4", $get_sql());
+
+    // modulo is acceptable too
+    $table->tablePartition['type'] = 'MODULO';
+    $this->assertEquals("PARTITION BY HASH(`id`) PARTITIONS 4", $get_sql());
+
+    // linear hash is just a different algorithm
+    $table->tablePartition['type'] = 'LINEAR HASH';
+    $this->assertEquals("PARTITION BY LINEAR HASH(`id`) PARTITIONS 4", $get_sql());
+
+    // check that a column option looks for the column
+    $table->tablePartition['type'] = 'HASH';
+    $table->tablePartition->tablePartitionOption[0]['value'] = 'foo';
+    $this->expect("no column named 'foo'", $get_sql);
+
+    // check that we validate the number of partitions
+    $table->tablePartition->tablePartitionOption[0]['value'] = 'id';
+    $table->tablePartition->tablePartitionOption[1]['value'] = 'x';
+    $this->expect("tablePartitionOption 'number' must be an integer greater than 0", $get_sql);
+
+    // check that using an expression does NOT quote the value
+    $table->tablePartition->tablePartitionOption[1]['value'] = '4';
+    $table->tablePartition->tablePartitionOption[0]['name'] = 'expression';
+    $table->tablePartition->tablePartitionOption[0]['value'] = 'id + 1';
+    $this->assertEquals("PARTITION BY HASH(id + 1) PARTITIONS 4", $get_sql());
+  }
+
+  public function testGetKeyPartitionSql() {
+    $xml = <<<XML
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="id" owner="NOBODY">
+    <column name="id" type="int auto_increment"/>
+    <column name="foo" type="int"/>
+    <tablePartition type="KEY">
+      <tablePartitionOption name="column" value="id"/>
+      <tablePartitionOption name="number" value="4"/>
+    </tablePartition>
+  </table>
+</schema>
+XML;
+    $schema = simplexml_load_string($xml);
+    $table = $schema->table;
+    $get_sql = function() use (&$schema, &$table) {
+      return mysql5_table::get_partition_sql($schema, $table);
+    };
+
+    // base case - note the quoted column
+    $this->assertEquals("PARTITION BY KEY(`id`) PARTITIONS 4", $get_sql());
+
+    // linear key is just a different algorithm
+    $table->tablePartition['type'] = 'LINEAR KEY';
+    $this->assertEquals("PARTITION BY LINEAR KEY(`id`) PARTITIONS 4", $get_sql());
+
+    // check that a column option looks for the column
+    $table->tablePartition['type'] = 'KEY';
+    $table->tablePartition->tablePartitionOption[0]['value'] = 'bar';
+    $this->expect("no column named 'bar'", $get_sql);
+
+    // check that we validate the number of partitions
+    $table->tablePartition->tablePartitionOption[0]['value'] = 'id';
+    $table->tablePartition->tablePartitionOption[1]['value'] = 'x';
+    $this->expect("tablePartitionOption 'number' must be an integer greater than 0", $get_sql);
+
+    // check that using an expression does NOT quote the value
+    $table->tablePartition->tablePartitionOption[1]['value'] = '4';
+    $table->tablePartition->tablePartitionOption[0]['name'] = 'columns';
+    $table->tablePartition->tablePartitionOption[0]['value'] = 'id, foo';
+    $this->assertEquals("PARTITION BY KEY(`id`, `foo`) PARTITIONS 4", $get_sql());
+  }
+
+  private function expect($err, $callback) {
+    try {
+      $res = call_user_func($callback);
+    }
+    catch (exception $ex) {
+      $this->assertContains(strtolower($err), strtolower($ex->getMessage()));
+      return;
+    }
+    $this->fail("Expected to catch exception with message containing '$err', instead got result:\n".print_r($res));
+  }
 }
-?>
