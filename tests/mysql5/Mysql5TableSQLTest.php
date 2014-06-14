@@ -243,6 +243,20 @@ XML;
   PARTITION `p1` VALUES LESS THAN (6),
   PARTITION `p2` VALUES LESS THAN (MAXVALUE)
 )", $get_sql());
+
+
+    $table->tablePartition['type'] = 'RANGE COLUMNS';
+    $table->tablePartition->tablePartitionOption[0]['name'] = 'columns';
+    $table->tablePartition->tablePartitionOption[0]['value'] = 'id,foo';
+    $table->tablePartition->tablePartitionSegment[0]['value'] = '4,10';
+    $table->tablePartition->tablePartitionSegment[1]['value'] = '6,20';
+    $table->tablePartition->tablePartitionSegment[2]['value'] = 'MAXVALUE,MAXVALUE';
+
+    $this->assertEquals("PARTITION BY RANGE COLUMNS (`id`, `foo`) (
+  PARTITION `p0` VALUES LESS THAN (4,10),
+  PARTITION `p1` VALUES LESS THAN (6,20),
+  PARTITION `p2` VALUES LESS THAN (MAXVALUE,MAXVALUE)
+)", $get_sql());
   }
 
   private function expect($err, $callback) {

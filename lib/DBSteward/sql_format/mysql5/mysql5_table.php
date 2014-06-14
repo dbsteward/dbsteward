@@ -92,7 +92,13 @@ class mysql5_table extends sql99_table {
 
           case 'LIST':
           case 'RANGE':
-            $expr = static::get_partition_column_expression($node_table, $table_name, $type, $options, true, false);
+          case 'RANGE COLUMNS':
+            if ($type === 'RANGE COLUMNS') {
+              $expr = static::get_partition_column_list($node_table, $table_name, $type, $options);
+            }
+            else {
+              $expr = static::get_partition_column_expression($node_table, $table_name, $type, $options);
+            }
 
             $cond = $type == 'LIST' ? 'IN' : 'LESS THAN';
 
