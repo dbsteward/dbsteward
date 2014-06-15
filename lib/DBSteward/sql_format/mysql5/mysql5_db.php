@@ -83,9 +83,13 @@ class mysql5_db {
         );
 
       case 'LIST':
+      case 'RANGE':
+      case 'RANGE COLUMNS':
         return (object)array(
           'type' => $method,
-          'expression' => $parts[0]->partition_expression,
+          'expression' => $method == 'RANGE COLUMNS' ?
+            str_replace(mysql5::QUOTE_CHAR, '', $parts[0]->partition_expression)
+            : $parts[0]->partition_expression,
           'segments' => array_map(function($p) {
             return (object)array(
               'name' => $p->partition_name,

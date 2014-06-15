@@ -408,8 +408,10 @@ class mysql5 extends sql99 {
               break;
 
             case 'LIST':
+            case 'RANGE':
+            case 'RANGE COLUMNS':
               $opt = $node_partition->addChild('tablePartitionOption');
-              $opt->addAttribute('name', 'expression');
+              $opt->addAttribute('name', $partition_info->type == 'RANGE COLUMNS' ? 'columns' : 'expression');
               $opt->addAttribute('value', $partition_info->expression);
 
               foreach ($partition_info->segments as $segment) {
