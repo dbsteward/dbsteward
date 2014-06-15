@@ -67,8 +67,9 @@ class mysql5_db {
 
     switch ($method) {
       case 'HASH':
+      case 'LINEAR HASH':
         return (object)array(
-          'type' => 'HASH',
+          'type' => $method,
           'number' => count($parts),
           'expression' => $parts[0]->partition_expression
         );

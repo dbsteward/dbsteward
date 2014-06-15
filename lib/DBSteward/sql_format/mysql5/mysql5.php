@@ -385,6 +385,7 @@ class mysql5 extends sql99 {
           $node_partition['type'] = $partition_info->type;
           switch ($partition_info->type) {
             case 'HASH':
+            case 'LINEAR HASH':
               $opt = $node_partition->addChild('tablePartitionOption');
               $opt->addAttribute('name', 'expression');
               $opt->addAttribute('value', $partition_info->expression);

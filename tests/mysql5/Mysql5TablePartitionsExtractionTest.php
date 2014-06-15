@@ -16,12 +16,24 @@ class Mysql5TablePartitionsExtractionTest extends Mysql5ExtractionTest {
 
   const DEBUG = true;
 
-  public function testExtractHashByColumnPartition() {
+  public function testExtractHash() {
     $schema = $this->extract("CREATE TABLE hash_test (id int PRIMARY KEY) PARTITION BY HASH (id) PARTITIONS 4;");
     $partition = $schema->table->tablePartition;
 
     $this->assertNotEmpty($partition);
     $this->assertEquals('HASH', (string)$partition['type']);
+
+    $opts = mysql5_table::get_partition_options($schema->table['name'], $partition);
+    $this->assertEquals('id', $opts['expression']);
+    $this->assertEquals('4', $opts['number']);
+  }
+
+  public function testExtractLinearHash() {
+    $schema = $this->extract("CREATE TABLE linear_hash_test (id int PRIMARY KEY) PARTITION BY LINEAR HASH (id) PARTITIONS 4;");
+    $partition = $schema->table->tablePartition;
+
+    $this->assertNotEmpty($partition);
+    $this->assertEquals('LINEAR HASH', (string)$partition['type']);
 
     $opts = mysql5_table::get_partition_options($schema->table['name'], $partition);
     $this->assertEquals('id', $opts['expression']);
