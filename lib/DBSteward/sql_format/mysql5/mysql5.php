@@ -348,7 +348,7 @@ class mysql5 extends sql99 {
         $node_grant = $node_schema->addChild('grant');
         // There are 28 permissions encompassed by the GRANT ALL statement
         $node_grant['operation'] = $db_grant->num_ops == 28 ? 'ALL' : $db_grant->operations;
-        $node_grant['role'] = self::translate_role_name($doc, $user);
+        $node_grant['role'] = self::translate_role_name($user, $doc);
 
         if ( $db_grant->is_grantable ) {
           $node_grant['with'] = 'GRANT';
@@ -581,7 +581,7 @@ class mysql5 extends sql99 {
           dbsteward::console_line(3, "Analyze table permissions " . $db_table->table_name);
           $node_grant = $node_table->addChild('grant');
           $node_grant['operation'] = $db_grant->operations;
-          $node_grant['role'] = self::translate_role_name($doc, $user);
+          $node_grant['role'] = self::translate_role_name($user, $doc);
 
           if ( $db_grant->is_grantable ) {
             $node_grant['with'] = 'GRANT';
@@ -691,7 +691,11 @@ class mysql5 extends sql99 {
     return xml_parser::format_xml($doc->saveXML());
   }
 
-  public static function translate_role_name($doc, $name) {
+  public static function translate_role_name($name, $doc = null) {
+    if ($doc === null) {
+      throw new exception('Expected $doc param to not be null');
+    }
+    
     $node_role = $doc->database->role;
 
     if ( strcasecmp($name, $node_role->application) == 0 ) {
