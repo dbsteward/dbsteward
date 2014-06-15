@@ -39,4 +39,28 @@ class Mysql5TablePartitionsExtractionTest extends Mysql5ExtractionTest {
     $this->assertEquals('id', $opts['expression']);
     $this->assertEquals('4', $opts['number']);
   }
+
+  public function testExtractKey() {
+    $schema = $this->extract("CREATE TABLE key_test (id int, foo int, PRIMARY KEY (id, foo)) PARTITION BY KEY (id, foo) PARTITIONS 4;");
+    $partition = $schema->table->tablePartition;
+
+    $this->assertNotEmpty($partition);
+    $this->assertEquals('KEY', (string)$partition['type']);
+
+    $opts = mysql5_table::get_partition_options($schema->table['name'], $partition);
+    $this->assertEquals('id,foo', $opts['columns']);
+    $this->assertEquals('4', $opts['number']);
+  }
+
+  public function testExtractLinearKey() {
+    $schema = $this->extract("CREATE TABLE key_test (id int, foo int, PRIMARY KEY (id, foo)) PARTITION BY LINEAR KEY (id, foo) PARTITIONS 4;");
+    $partition = $schema->table->tablePartition;
+
+    $this->assertNotEmpty($partition);
+    $this->assertEquals('LINEAR KEY', (string)$partition['type']);
+
+    $opts = mysql5_table::get_partition_options($schema->table['name'], $partition);
+    $this->assertEquals('id,foo', $opts['columns']);
+    $this->assertEquals('4', $opts['number']);
+  }
 }

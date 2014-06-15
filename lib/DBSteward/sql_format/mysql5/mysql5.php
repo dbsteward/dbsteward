@@ -389,10 +389,22 @@ class mysql5 extends sql99 {
               $opt = $node_partition->addChild('tablePartitionOption');
               $opt->addAttribute('name', 'expression');
               $opt->addAttribute('value', $partition_info->expression);
-              
+            
               $opt = $node_partition->addChild('tablePartitionOption');
               $opt->addAttribute('name', 'number');
               $opt->addAttribute('value', $partition_info->number);
+              break;
+
+            case 'KEY':
+            case 'LINEAR KEY':
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'columns');
+              $opt->addAttribute('value', $partition_info->columns);
+            
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'number');
+              $opt->addAttribute('value', $partition_info->number);
+              break;
           }
         }
 

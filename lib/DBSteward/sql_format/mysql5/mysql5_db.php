@@ -74,6 +74,14 @@ class mysql5_db {
           'expression' => $parts[0]->partition_expression
         );
 
+      case 'KEY':
+      case 'LINEAR KEY':
+        return (object)array(
+          'type' => $method,
+          'number' => count($parts),
+          'columns' => str_replace(mysql5::QUOTE_CHAR, '', $parts[0]->partition_expression)
+        );
+
       default:
         dbsteward::console_line(1, "Unrecognized partition method $method!");
     }
