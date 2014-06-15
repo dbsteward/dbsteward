@@ -14,6 +14,8 @@ require_once __DIR__ . '/../dbstewardUnitTestBase.php';
  */
 class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
 
+  const DEBUG = false;
+
   public function setUp() {
     // disable pesky output buffering
     while (ob_get_level()) ob_end_clean();
@@ -21,6 +23,7 @@ class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
     $this->conn = $GLOBALS['db_config']->mysql5_conn;
     $this->createSchema();
   }
+
   public function tearDown() {
     $this->dropSchema();
 
@@ -46,7 +49,7 @@ class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
 
     foreach ($dbdoc->schema as $schema) {
       if (strcmp($schema['name'], $schemaname) == 0) {
-        echo "Got schema:\n" . $schema->asXML() . "\n";
+        if (static::DEBUG) echo "Got schema:\n" . $schema->asXML() . "\n";
         return $schema;
       }
     }
@@ -66,7 +69,7 @@ class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
   }
 
   protected function query($sql) {
-    echo "Running query:\n$sql\n\n";
+    if (static::DEBUG) echo "Running query:\n$sql\n\n";
     $this->conn->query($sql);
   }
 }

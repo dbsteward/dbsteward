@@ -117,7 +117,7 @@ class mysql5_table extends sql99_table {
     return null;
   }
 
-  protected function get_partition_options($table_name, $tablePartition) {
+  public function get_partition_options($table_name, $tablePartition) {
     $options = array();
     foreach ($tablePartition->tablePartitionOption as $opt) {
       $name = isset($opt['name']) ? trim(strtolower($opt['name'])) : '';

@@ -33,7 +33,8 @@ class mysql5_db {
   public function get_tables() {
     $table_name = mysql5_sequence::TABLE_NAME;
     return $this->query("SELECT table_schema, table_name, engine,
-                                table_rows, auto_increment, table_comment
+                                table_rows, auto_increment, table_comment,
+                                create_options
                           FROM tables
                           WHERE table_type = 'base table'
                             AND table_name != '$table_name'
@@ -42,12 +43,40 @@ class mysql5_db {
 
   public function get_table($name) {
     return $this->query("SELECT table_schema, table_name, engine,
-                                table_rows, table_comment
+                                table_rows, auto_increment, table_comment,
+                                create_options
                          FROM tables
                          WHERE table_type = 'base table'
                            AND table_schema = ?
                            AND table_name = ?
                          LIMIT 1", array($this->dbname, $name), 'one');
+  }
+
+  public function get_partition_info($table) {
+    $parts = $this->query("SELECT partition_method, partition_name,
+                                  partition_expression
+                           FROM partitions
+                           WHERE table_schema = ?
+                             AND table_name = ?
+                           ORDER BY partition_ordinal_position",
+                          array($this->dbname, $table->table_name));
+
+    if (count($parts) === 0) return null;
+
+    $method = strtoupper($parts[0]->partition_method);
+
+    switch ($method) {
+      case 'HASH':
+        return (object)array(
+          'type' => 'HASH',
+          'number' => count($parts),
+          'expression' => $parts[0]->partition_expression
+        );
+
+      default:
+        dbsteward::console_line(1, "Unrecognized partition method $method!");
+    }
+    return null;
   }
 
   public function get_table_options($table) {

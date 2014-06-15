@@ -371,12 +371,29 @@ class mysql5 extends sql99 {
         return $name;
       };
       foreach ( $db->get_tables() as $db_table ) {
-        dbsteward::console_line(3, "Analyze table options " . $db_table->table_name);
+        dbsteward::console_line(3, "Analyze table options/partitions " . $db_table->table_name);
         $node_table = $node_schema->addChild('table');
         $node_table['name'] = $db_table->table_name;
         $node_table['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
         $node_table['description'] = $db_table->table_comment;
         $node_table['primaryKey'] = '';
+
+        if (stripos($db_table->create_options, 'partitioned') !== FALSE &&
+            ($partition_info = $db->get_partition_info($db_table))) {
+
+          $node_partition = $node_table->addChild('tablePartition');
+          $node_partition['type'] = $partition_info->type;
+          switch ($partition_info->type) {
+            case 'HASH':
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'expression');
+              $opt->addAttribute('value', $partition_info->expression);
+              
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'number');
+              $opt->addAttribute('value', $partition_info->number);
+          }
+        }
 
         foreach ( $db->get_table_options($db_table) as $name => $value ) {
           if (strcasecmp($name, 'auto_increment') === 0 && !static::$use_auto_increment_table_options) {
