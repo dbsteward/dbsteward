@@ -63,4 +63,31 @@ class Mysql5TablePartitionsExtractionTest extends Mysql5ExtractionTest {
     $this->assertEquals('id,foo', $opts['columns']);
     $this->assertEquals('4', $opts['number']);
   }
+
+  public function testExtractList() {
+    $sql = <<<SQL
+CREATE TABLE list_test (id int PRIMARY KEY)
+PARTITION BY LIST (id) (
+  PARTITION p0 VALUES IN (1, 2, 3),
+  PARTITION p1 VALUES IN (4, 5, 6),
+  PARTITION p2 VALUES IN (7, 8, 9)
+);
+SQL;
+    $schema = $this->extract($sql);
+    $partition = $schema->table->tablePartition;
+
+    $this->assertNotEmpty($partition);
+    $this->assertEquals('LIST', (string)$partition['type']);
+
+    $opts = mysql5_table::get_partition_options($schema->table['name'], $partition);
+    $this->assertEquals('id', $opts['expression']);
+
+    $this->assertEquals(3, count($partition->tablePartitionSegment));
+    $this->assertEquals('p0', (string)$partition->tablePartitionSegment[0]['name']);
+    $this->assertEquals('1,2,3', (string)$partition->tablePartitionSegment[0]['value']);
+    $this->assertEquals('p1', (string)$partition->tablePartitionSegment[1]['name']);
+    $this->assertEquals('4,5,6', (string)$partition->tablePartitionSegment[1]['value']);
+    $this->assertEquals('p2', (string)$partition->tablePartitionSegment[2]['name']);
+    $this->assertEquals('7,8,9', (string)$partition->tablePartitionSegment[2]['value']);
+  }
 }

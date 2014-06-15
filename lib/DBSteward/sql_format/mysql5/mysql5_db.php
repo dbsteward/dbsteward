@@ -54,7 +54,7 @@ class mysql5_db {
 
   public function get_partition_info($table) {
     $parts = $this->query("SELECT partition_method, partition_name,
-                                  partition_expression
+                                  partition_expression, partition_description
                            FROM partitions
                            WHERE table_schema = ?
                              AND table_name = ?
@@ -80,6 +80,18 @@ class mysql5_db {
           'type' => $method,
           'number' => count($parts),
           'columns' => str_replace(mysql5::QUOTE_CHAR, '', $parts[0]->partition_expression)
+        );
+
+      case 'LIST':
+        return (object)array(
+          'type' => $method,
+          'expression' => $parts[0]->partition_expression,
+          'segments' => array_map(function($p) {
+            return (object)array(
+              'name' => $p->partition_name,
+              'value' => $p->partition_description
+            );
+          }, $parts)
         );
 
       default:

@@ -382,6 +382,7 @@ class mysql5 extends sql99 {
             ($partition_info = $db->get_partition_info($db_table))) {
 
           $node_partition = $node_table->addChild('tablePartition');
+          $node_partition['sqlFormat'] = 'mysql5';
           $node_partition['type'] = $partition_info->type;
           switch ($partition_info->type) {
             case 'HASH':
@@ -404,6 +405,18 @@ class mysql5 extends sql99 {
               $opt = $node_partition->addChild('tablePartitionOption');
               $opt->addAttribute('name', 'number');
               $opt->addAttribute('value', $partition_info->number);
+              break;
+
+            case 'LIST':
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'expression');
+              $opt->addAttribute('value', $partition_info->expression);
+
+              foreach ($partition_info->segments as $segment) {
+                $node_seg = $node_partition->addChild('tablePartitionSegment');
+                $node_seg->addAttribute('name', $segment->name);
+                $node_seg->addAttribute('value', $segment->value);
+              }
               break;
           }
         }
