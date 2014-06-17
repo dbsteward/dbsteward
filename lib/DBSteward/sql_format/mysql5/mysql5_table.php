@@ -117,7 +117,7 @@ class mysql5_table extends sql99_table {
     return null;
   }
 
-  public function get_partition_options($table_name, $tablePartition) {
+  public static function get_partition_options($table_name, $tablePartition) {
     $options = array();
     foreach ($tablePartition->tablePartitionOption as $opt) {
       $name = isset($opt['name']) ? trim(strtolower($opt['name'])) : '';
@@ -135,7 +135,7 @@ class mysql5_table extends sql99_table {
     return $options;
   }
 
-  protected function get_partition_number($table_name, $type, $options) {
+  protected static function get_partition_number($table_name, $type, $options) {
     if (!isset($options['number'])) {
       throw new exception("tablePartitionOption 'number' must be specified for $type partition on table $table_name");
     }
@@ -148,7 +148,7 @@ class mysql5_table extends sql99_table {
     return $number;
   }
 
-  protected function get_partition_column_expression($node_table, $table_name, $type, $options) {
+  protected static function get_partition_column_expression($node_table, $table_name, $type, $options) {
     if (isset($options['column']) && strlen(trim($options['column'])) !== 0) {
       $col = trim($options['column']);
       if (!static::contains_column($node_table, $col)) {
@@ -163,7 +163,7 @@ class mysql5_table extends sql99_table {
     throw new exception("tablePartitionOption 'column' or 'expression' must be specified for $type partition on $table_name");
   }
 
-  protected function get_partition_column_list($node_table, $table_name, $type, $options) {
+  protected static function get_partition_column_list($node_table, $table_name, $type, $options) {
     if (isset($options['columns']) && strlen(trim($options['columns']))) {
       $cols = preg_split('/\s*,\s*/', trim($options['columns']), -1, PREG_SPLIT_NO_EMPTY);
     }
@@ -188,7 +188,7 @@ class mysql5_table extends sql99_table {
     return implode(', ', $cols);
   }
 
-  protected function map_partition_segments($table_name, $tablePartition, $callback) {
+  protected static function map_partition_segments($table_name, $tablePartition, $callback) {
     $segs = array();
     foreach ($tablePartition->tablePartitionSegment as $segment) {
       $name = isset($segment['name']) ? trim($segment['name']) : '';
