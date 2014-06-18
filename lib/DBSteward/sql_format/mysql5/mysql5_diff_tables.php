@@ -29,6 +29,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
       if ( $old_table && $new_table) {
         static::update_table_options($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
         static::update_table_columns($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
+        static::update_table_partitions($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
       }
     }
     else {
@@ -49,6 +50,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
   
         static::update_table_options($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
         static::update_table_columns($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
+        static::update_table_partitions($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table);
       }
     }
   }
@@ -124,6 +126,22 @@ class mysql5_diff_tables extends sql99_diff_tables {
       throw new Exception("Table {$schema['name']}.{$table['name']} indicates it was moved from schema {$table['oldSchemaName']}, but no such schema was found!");
     }
     return true;
+  }
+
+  private static function update_table_partitions($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table) {
+    $new_part = mysql5_table::get_partition_sql($new_schema, $new_table);
+    $old_part = mysql5_table::get_partition_sql($old_schema, $old_table);
+
+    $table_name =  mysql5::get_fully_qualified_table_name($new_schema, $new_table['name']);
+
+    if (strcasecmp($new_part, $old_part)) {
+      if (is_null($new_part)) {
+        $ofs1->write("ALTER TABLE $table_name\n  REMOVE PARTITIONING;\n\n");
+      }
+      else {
+        $ofs1->write("ALTER TABLE $table_name\n  $new_part;\n\n");
+      }
+    }
   }
 
   /**

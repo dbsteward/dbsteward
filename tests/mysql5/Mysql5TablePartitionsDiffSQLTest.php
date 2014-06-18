@@ -39,7 +39,6 @@ XML;
   }
 
   public function testAddRemovePartitioning() {
-    $this->markTestSkipped('Does not pass yet');
 
     $without = <<<XML
 <schema name="test" owner="ROLE_OWNER">
@@ -62,10 +61,10 @@ XML;
 XML;
     
     $this->diff($without, $with,
-      "ALTER TABLE `test`\n  PARTITION BY HASH (`id`) PARTITIONS 4;", '');
+      "ALTER TABLE `partition_test`\n  PARTITION BY HASH (`id`) PARTITIONS 4;", '');
 
     $this->diff($with, $without,
-      "ALTER TABLE `test`\n  REMOVE PARTITIONING;", '');
+      "ALTER TABLE `partition_test`\n  REMOVE PARTITIONING;", '');
   }
 
   public function changeHashKeyNumber() {
