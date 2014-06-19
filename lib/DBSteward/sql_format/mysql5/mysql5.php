@@ -582,6 +582,10 @@ class mysql5 extends sql99 {
         }
         $node_fn['description'] = $db_function->routine_comment;
 
+        if (isset($db_function->procedure) && $db_function->procedure) {
+          $node_fn['procedure'] = 'true';
+        }
+
         // $node_fn['procedure'] = 'false';
 
         // I just don't trust mysql enough to make guarantees about data safety
@@ -602,6 +606,9 @@ class mysql5 extends sql99 {
             $node_param['type'] = $enum_type($db_function->routine_name,
                                              $param->parameter_name,
                                              $db->parse_enum_values($param->dtd_identifier));
+          }
+          if (isset($param->direction)) {
+            $node_param['direction'] = $param->direction;
           }
         }
 
@@ -648,7 +655,9 @@ class mysql5 extends sql99 {
     return xml_parser::format_xml($doc->saveXML());
   }
 
-  public static function translate_role_name($doc, $name) {
+  public static function translate_role_name($doc, $name = null) {
+
+    if (is_null($name)) return parent::translate_role_name($doc);
     $node_role = $doc->database->role;
 
     if ( strcasecmp($name, $node_role->application) == 0 ) {

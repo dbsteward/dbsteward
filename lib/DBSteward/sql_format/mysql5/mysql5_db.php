@@ -228,14 +228,17 @@ class mysql5_db {
     else {
       $not_shim_fns = "";
     }
-    $functions = $this->query("SELECT routine_name, data_type, character_maximum_length, numeric_precision, routine_comment,
-                                      numeric_scale, routine_definition, is_deterministic, security_type, definer, sql_data_access, dtd_identifier
-                               FROM routines
-                               WHERE routine_type = 'FUNCTION' $not_shim_fns
-                                 AND routine_schema = ?", array($this->dbname));
+    $sql = "SELECT routine_name, data_type, character_maximum_length, numeric_precision,
+                   routine_comment, (routine_type <> 'FUNCTION') AS `procedure`,
+                   numeric_scale, routine_definition, is_deterministic, security_type,
+                   definer, sql_data_access, dtd_identifier
+            FROM routines
+            WHERE routine_schema = ? $not_shim_fns";
+    $functions = $this->query($sql, array($this->dbname));
+
     foreach ($functions as $fn) {
       $fn->parameters = $this->query("SELECT parameter_mode, parameter_name, data_type, character_maximum_length,
-                                                    numeric_precision, numeric_scale, dtd_identifier
+                                                    numeric_precision, numeric_scale, dtd_identifier, parameter_mode as direction
                                              FROM parameters
                                              WHERE specific_schema = ?
                                                AND specific_name = ?
