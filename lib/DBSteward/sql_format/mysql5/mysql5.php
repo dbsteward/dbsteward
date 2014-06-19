@@ -655,7 +655,9 @@ class mysql5 extends sql99 {
     return xml_parser::format_xml($doc->saveXML());
   }
 
-  public static function translate_role_name($doc, $name) {
+  public static function translate_role_name($doc, $name = null) {
+
+    if (is_null($name)) return parent::translate_role_name($doc);
     $node_role = $doc->database->role;
 
     if ( strcasecmp($name, $node_role->application) == 0 ) {
