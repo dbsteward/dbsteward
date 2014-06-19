@@ -582,6 +582,10 @@ class mysql5 extends sql99 {
         }
         $node_fn['description'] = $db_function->routine_comment;
 
+        if (isset($db_function->procedure) && $db_function->procedure) {
+          $node_fn['procedure'] = 'true';
+        }
+
         // $node_fn['procedure'] = 'false';
 
         // I just don't trust mysql enough to make guarantees about data safety
