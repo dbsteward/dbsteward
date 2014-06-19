@@ -96,6 +96,40 @@ SQL;
     $this->assertEquals($expected, $actual);
   }
 
+
+  public function testProcedure() {
+    $xml = <<<XML
+<schema name="test" owner="ROLE_OWNER">
+    <function name="why_would_i_do_this" owner="ROLE_OWNER" returns="" procedure="true">
+      <functionParameter name="str" type="varchar(25)" direction="IN"/>
+      <functionParameter name="len" type="int(11)" direction="OUT"/>
+      <functionDefinition language="sql" sqlFormat="mysql5">BEGIN
+  SELECT length(str)
+  INTO len;
+END</functionDefinition>
+    </function>
+  </schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+
+    $expected = <<<SQL
+DROP PROCEDURE IF EXISTS `why_would_i_do_this`;
+CREATE DEFINER = the_owner PROCEDURE `why_would_i_do_this` (IN `str` varchar(25), OUT `len` int(11))
+LANGUAGE SQL
+MODIFIES SQL DATA
+NOT DETERMINISTIC
+SQL SECURITY INVOKER
+BEGIN
+  SELECT length(str)
+  INTO len;
+END;
+SQL;
+
+    $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
+
+    $this->assertEquals($expected, $actual);
+  }
+
   public function testCachePolicy() {
     $xml = <<<XML
 <schema name="test" owner="ROLE_OWNER">
