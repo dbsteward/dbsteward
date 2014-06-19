@@ -39,7 +39,7 @@ class mysql5_function extends sql99_function {
     if ( isset($node_function->functionParameter) ) {
       $params = array();
       foreach ( $node_function->functionParameter as $param ) {
-        if ( isset($param['direction']) ) {
+        if ( isset($param['direction']) && ! static::is_procedure($node_function) ) {
           throw new exception("Parameter directions are not supported in MySQL functions");
         }
         if ( empty($param['name']) ) {
@@ -51,7 +51,13 @@ class mysql5_function extends sql99_function {
           $type = mysql5_type::get_enum_type_declaration($node_type);
         }
 
-        $params[] = mysql5::get_quoted_function_parameter($param['name']) . ' ' . $type;
+        $sparam = '';
+        if (isset($param['direction'])) {
+          $sparam .= (string)$param['direction'] . ' ';
+        }
+
+        $sparam .= mysql5::get_quoted_function_parameter($param['name']) . ' ' . $type;
+        $params[] = $sparam;
       }
       $sql .= implode(', ', $params);
     }

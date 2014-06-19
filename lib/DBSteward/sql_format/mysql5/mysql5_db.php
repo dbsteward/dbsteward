@@ -238,7 +238,7 @@ class mysql5_db {
 
     foreach ($functions as $fn) {
       $fn->parameters = $this->query("SELECT parameter_mode, parameter_name, data_type, character_maximum_length,
-                                                    numeric_precision, numeric_scale, dtd_identifier
+                                                    numeric_precision, numeric_scale, dtd_identifier, parameter_mode as direction
                                              FROM parameters
                                              WHERE specific_schema = ?
                                                AND specific_name = ?

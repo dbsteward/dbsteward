@@ -607,6 +607,9 @@ class mysql5 extends sql99 {
                                              $param->parameter_name,
                                              $db->parse_enum_values($param->dtd_identifier));
           }
+          if (isset($param->direction)) {
+            $node_param['direction'] = $param->direction;
+          }
         }
 
         $node_def = $node_fn->addChild('functionDefinition', $db_function->routine_definition);
