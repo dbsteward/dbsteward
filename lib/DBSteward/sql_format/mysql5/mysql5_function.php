@@ -16,6 +16,10 @@ class mysql5_function extends sql99_function {
     return strcasecmp($language, 'sql') == 0;
   }
 
+  public static function is_procedure($node_function) {
+    return (isset($node_function['procedure']) && $node_function['procedure']);
+  }
+
   public static function get_creation_sql($node_schema, $node_function) {
     $name = static::get_declaration($node_schema, $node_function);
 
@@ -28,12 +32,14 @@ class mysql5_function extends sql99_function {
       $sql .= 'DELIMITER ' . static::ALT_DELIMITER . "\n";
     }
 
-    $sql .= "CREATE DEFINER = $definer FUNCTION $name (";
+    $function_type = static::is_procedure($node_function) ? 'PROCEDURE' : 'FUNCTION';
+
+    $sql .= "CREATE DEFINER = $definer $function_type $name (";
 
     if ( isset($node_function->functionParameter) ) {
       $params = array();
       foreach ( $node_function->functionParameter as $param ) {
-        if ( isset($param['direction']) ) {
+        if ( isset($param['direction']) && ! static::is_procedure($node_function) ) {
           throw new exception("Parameter directions are not supported in MySQL functions");
         }
         if ( empty($param['name']) ) {
@@ -45,17 +51,28 @@ class mysql5_function extends sql99_function {
           $type = mysql5_type::get_enum_type_declaration($node_type);
         }
 
-        $params[] = mysql5::get_quoted_function_parameter($param['name']) . ' ' . $type;
+        $sparam = '';
+        if (isset($param['direction'])) {
+          $sparam .= (string)$param['direction'] . ' ';
+        }
+
+        $sparam .= mysql5::get_quoted_function_parameter($param['name']) . ' ' . $type;
+        $params[] = $sparam;
       }
       $sql .= implode(', ', $params);
     }
 
-    $returns = $node_function['returns'];
-    if ( $node_type = mysql5_type::get_type_node(dbsteward::$new_database, $node_schema, $returns) ) {
-      $returns = mysql5_type::get_enum_type_declaration($node_type);
-    }
+    $sql .= ")\n";
 
-    $sql .= ")\nRETURNS " . $returns . "\nLANGUAGE SQL\n";
+    // Procedures don't have a return statement
+    if (!static::is_procedure($node_function)) {
+      $returns = $node_function['returns'];
+      if ( $node_type = mysql5_type::get_type_node(dbsteward::$new_database, $node_schema, $returns) ) {
+        $returns = mysql5_type::get_enum_type_declaration($node_type);
+      }
+      $sql .= "RETURNS " . $returns . "\n";
+    }
+    $sql .= "LANGUAGE SQL\n";
 
     switch ( strtoupper($node_function['cachePolicy']) ) {
       case 'IMMUTABLE':
@@ -102,7 +119,8 @@ class mysql5_function extends sql99_function {
       dbsteward::console_line(1, $note);
       return "-- $note\n";
     }
-    return "DROP FUNCTION IF EXISTS " . mysql5::get_fully_qualified_object_name($node_schema['name'], $node_function['name'], 'function') . ";";
+    $function_type = static::is_procedure($node_function) ? 'PROCEDURE' : 'FUNCTION';
+    return "DROP $function_type IF EXISTS " . mysql5::get_fully_qualified_object_name($node_schema['name'], $node_function['name'], 'function') . ";";
   }
 
   public static function get_declaration($node_schema, $node_function) {
