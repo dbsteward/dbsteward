@@ -127,6 +127,26 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
+      <changelog version="1.3.10" date="2014-06-24" license="Simplified BSD License">
+DBSteward 1.3.10 Release
+
+Changes
+* psql8 inherited table static row definition bugfixes
+* mysql5 table partition support for extracton and diffing
+* mysql5 stored procedure extraction and diffing support
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
+
       <changelog version="1.3.9" date="2014-05-18" license="Simplified BSD License">
 DBSteward 1.3.9 Release
 
