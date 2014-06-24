@@ -627,6 +627,10 @@ class mysql5 extends sql99 {
         }
         $node_fn['description'] = $db_function->routine_comment;
 
+        if (isset($db_function->procedure) && $db_function->procedure) {
+          $node_fn['procedure'] = 'true';
+        }
+
         // $node_fn['procedure'] = 'false';
 
         // I just don't trust mysql enough to make guarantees about data safety
@@ -647,6 +651,9 @@ class mysql5 extends sql99 {
             $node_param['type'] = $enum_type($db_function->routine_name,
                                              $param->parameter_name,
                                              $db->parse_enum_values($param->dtd_identifier));
+          }
+          if (isset($param->direction)) {
+            $node_param['direction'] = $param->direction;
           }
         }
 
@@ -693,30 +700,30 @@ class mysql5 extends sql99 {
     return xml_parser::format_xml($doc->saveXML());
   }
 
-  public static function translate_role_name($name, $doc = null) {
+  public static function translate_role_name($role, $doc = null) {
     if ($doc === null) {
       throw new exception('Expected $doc param to not be null');
     }
-    
+
     $node_role = $doc->database->role;
 
-    if ( strcasecmp($name, $node_role->application) == 0 ) {
+    if ( strcasecmp($role, $node_role->application) == 0 ) {
       return 'ROLE_APPLICATION';
     }
 
-    if ( strcasecmp($name, $node_role->owner) == 0 ) {
+    if ( strcasecmp($role, $node_role->owner) == 0 ) {
       return 'ROLE_OWNER';
     }
 
-    if ( strcasecmp($name, $node_role->replication) == 0 ) {
+    if ( strcasecmp($role, $node_role->replication) == 0 ) {
       return 'ROLE_REPLICATION';
     }
 
-    if ( strcasecmp($name, $node_role->readonly) == 0 ) {
+    if ( strcasecmp($role, $node_role->readonly) == 0 ) {
       return 'ROLE_READONLY';
     }
 
-    return $name;
+    return $role;
   }
 
   /**

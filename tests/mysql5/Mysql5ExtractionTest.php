@@ -17,18 +17,12 @@ class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
   const DEBUG = false;
 
   public function setUp() {
-    // disable pesky output buffering
-    while (ob_get_level()) ob_end_clean();
-
     $this->conn = $GLOBALS['db_config']->mysql5_conn;
     $this->createSchema();
   }
 
   public function tearDown() {
     $this->dropSchema();
-
-    // re-enable output buffering so phpunit doesn't bitch
-    ob_start();
   }
 
   // public function testSchema() {
@@ -41,7 +35,7 @@ class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
     $schemaname = __CLASS__;
     
     $sql = rtrim($sql, ';');
-    $sql = "USE $schemaname;\n$sql;";
+    $sql = "DROP DATABASE IF EXISTS $schemaname;\nCREATE DATABASE $schemaname;\nUSE $schemaname;\n$sql;";
     $this->query($sql);
 
     $xml = mysql5::extract_schema($this->conn->get_dbhost(), $this->conn->get_dbport(), $schemaname, $this->conn->get_dbuser(), $this->conn->get_dbpass());

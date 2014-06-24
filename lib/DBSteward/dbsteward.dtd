@@ -190,7 +190,7 @@
 <!ATTLIST function forceRedefine (true|false) #IMPLIED>
 <!ATTLIST function slonySetId CDATA #IMPLIED>
 <!ELEMENT functionParameter EMPTY>
-<!ATTLIST functionParameter direction (IN|OUT) #IMPLIED>
+<!ATTLIST functionParameter direction (IN|OUT|INOUT) #IMPLIED>
 <!ATTLIST functionParameter name CDATA #IMPLIED>
 <!ATTLIST functionParameter type CDATA #REQUIRED>
 <!ELEMENT functionDefinition (#PCDATA)>
