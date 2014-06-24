@@ -19,10 +19,10 @@ class sql99 {
    * translate explicit role names a meta ROLE_ enumeration, etc
    *
    * @param  string $role   username
-   *
+   * @param SimpleXMLElement $doc document
    * @return string         translated ROLE_ enumeration
    */
-  public static function translate_role_name($role) {
+  public static function translate_role_name($role, $doc = null) {
     switch (strtolower($role)) {
       /* examples for extraction extensions:
       case 'pgsql':

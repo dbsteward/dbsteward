@@ -348,7 +348,7 @@ class mysql5 extends sql99 {
         $node_grant = $node_schema->addChild('grant');
         // There are 28 permissions encompassed by the GRANT ALL statement
         $node_grant['operation'] = $db_grant->num_ops == 28 ? 'ALL' : $db_grant->operations;
-        $node_grant['role'] = self::translate_role_name($doc, $user);
+        $node_grant['role'] = self::translate_role_name($user, $doc);
 
         if ( $db_grant->is_grantable ) {
           $node_grant['with'] = 'GRANT';
@@ -371,12 +371,57 @@ class mysql5 extends sql99 {
         return $name;
       };
       foreach ( $db->get_tables() as $db_table ) {
-        dbsteward::console_line(3, "Analyze table options " . $db_table->table_name);
+        dbsteward::console_line(3, "Analyze table options/partitions " . $db_table->table_name);
         $node_table = $node_schema->addChild('table');
         $node_table['name'] = $db_table->table_name;
         $node_table['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
         $node_table['description'] = $db_table->table_comment;
         $node_table['primaryKey'] = '';
+
+        if (stripos($db_table->create_options, 'partitioned') !== FALSE &&
+            ($partition_info = $db->get_partition_info($db_table))) {
+
+          $node_partition = $node_table->addChild('tablePartition');
+          $node_partition['sqlFormat'] = 'mysql5';
+          $node_partition['type'] = $partition_info->type;
+          switch ($partition_info->type) {
+            case 'HASH':
+            case 'LINEAR HASH':
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'expression');
+              $opt->addAttribute('value', $partition_info->expression);
+            
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'number');
+              $opt->addAttribute('value', $partition_info->number);
+              break;
+
+            case 'KEY':
+            case 'LINEAR KEY':
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'columns');
+              $opt->addAttribute('value', $partition_info->columns);
+            
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'number');
+              $opt->addAttribute('value', $partition_info->number);
+              break;
+
+            case 'LIST':
+            case 'RANGE':
+            case 'RANGE COLUMNS':
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', $partition_info->type == 'RANGE COLUMNS' ? 'columns' : 'expression');
+              $opt->addAttribute('value', $partition_info->expression);
+
+              foreach ($partition_info->segments as $segment) {
+                $node_seg = $node_partition->addChild('tablePartitionSegment');
+                $node_seg->addAttribute('name', $segment->name);
+                $node_seg->addAttribute('value', $segment->value);
+              }
+              break;
+          }
+        }
 
         foreach ( $db->get_table_options($db_table) as $name => $value ) {
           if (strcasecmp($name, 'auto_increment') === 0 && !static::$use_auto_increment_table_options) {
@@ -538,7 +583,7 @@ class mysql5 extends sql99 {
           dbsteward::console_line(3, "Analyze table permissions " . $db_table->table_name);
           $node_grant = $node_table->addChild('grant');
           $node_grant['operation'] = $db_grant->operations;
-          $node_grant['role'] = self::translate_role_name($doc, $user);
+          $node_grant['role'] = self::translate_role_name($user, $doc);
 
           if ( $db_grant->is_grantable ) {
             $node_grant['with'] = 'GRANT';
@@ -648,7 +693,11 @@ class mysql5 extends sql99 {
     return xml_parser::format_xml($doc->saveXML());
   }
 
-  public static function translate_role_name($doc, $name) {
+  public static function translate_role_name($name, $doc = null) {
+    if ($doc === null) {
+      throw new exception('Expected $doc param to not be null');
+    }
+    
     $node_role = $doc->database->role;
 
     if ( strcasecmp($name, $node_role->application) == 0 ) {

@@ -155,12 +155,17 @@
 <!ATTLIST tableOption name CDATA #REQUIRED>
 <!ATTLIST tableOption value CDATA #IMPLIED>
 
-<!ELEMENT tablePartition (tablePartitionOption*)>
+<!ELEMENT tablePartition (tablePartitionOption*, tablePartitionSegment*)>
 <!ATTLIST tablePartition type CDATA #REQUIRED>
+<!ATTLIST tablePartition sqlFormat CDATA #IMPLIED>
 
 <!ELEMENT tablePartitionOption EMPTY>
 <!ATTLIST tablePartitionOption name CDATA #REQUIRED>
 <!ATTLIST tablePartitionOption value CDATA #REQUIRED>
+
+<!ELEMENT tablePartitionSegment EMPTY>
+<!ATTLIST tablePartitionSegment name CDATA #REQUIRED>
+<!ATTLIST tablePartitionSegment value CDATA #REQUIRED>
 
 <!ELEMENT sequence (grant*)>
 <!ATTLIST sequence name CDATA #REQUIRED>
