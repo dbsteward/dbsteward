@@ -34,6 +34,8 @@ env:
 #     - dev-travis
 
 before_script:
+  # psql is failing to connect here sometimes, sleep a little
+  - sleep 2
   - if [[ "$PHPUNIT_GROUP" == "pgsql8" ]]; then psql -U postgres -d postgres -c "CREATE USER deployment WITH SUPERUSER CREATEDB CREATEROLE PASSWORD 'password1';"; fi
   - if [[ "$PHPUNIT_GROUP" == "pgsql8" ]]; then psql -U postgres -d postgres -c "CREATE ROLE dbsteward_phpunit_app;"; fi
   - if [[ "$PHPUNIT_GROUP" == "pgsql8" ]]; then PGPASSWORD=password1 psql -U deployment -d postgres -c "CREATE DATABASE dbsteward_phpunit;"; fi
