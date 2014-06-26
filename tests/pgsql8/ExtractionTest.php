@@ -211,6 +211,29 @@ SQL;
     $this->assertEquals(0, (string)$schema->sequence->count());
   }
 
+  public function testCompositeForeignKeyReferentialConstraints() {
+    $sql = <<<SQL
+CREATE TABLE dummy (foo int, bar varchar(32), PRIMARY KEY (foo, bar));
+CREATE TABLE test (
+  id int PRIMARY KEY,
+  foo int,
+  bar varchar(32),
+  FOREIGN KEY (foo, bar) REFERENCES dummy (foo, bar)
+    ON UPDATE NO ACTION
+    ON DELETE SET NULL
+);
+SQL;
+    $schema = $this->extract($sql);
+    $schemaname = __CLASS__;
+    foreach ($schema->table as $table) {
+      if ((string)$table['name'] == 'test') {
+        $this->assertEquals("(foo, bar) REFERENCES $schemaname.dummy (foo, bar) ON UPDATE NO ACTION ON DELETE SET NULL",
+          (string)$table->constraint['definition']);
+        return;
+      }
+    }
+  }
+
   protected function extract($sql, $in_schema = TRUE) {
     $schemaname = __CLASS__;
     

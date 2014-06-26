@@ -1849,12 +1849,12 @@ SLEEP (SECONDS=60);
         $node_constraint = $node_table->addChild('constraint');
         $node_constraint['name'] = $fk_row['constraint_name'];
         $node_constraint['type'] = 'FOREIGN KEY';
-        $node_constraint['definition'] = sprintf("(%s) REFERENCES %s (%s) ON DELETE %s ON UPDATE %s",
+        $node_constraint['definition'] = sprintf("(%s) REFERENCES %s (%s) ON UPDATE %s ON DELETE %s",
           implode(', ', array_map('pgsql8::get_quoted_column_name', $local_cols)),
           pgsql8::get_fully_qualified_table_name($fk_row['foreign_schema'],$fk_row['foreign_table']),
           implode(', ', array_map('pgsql8::get_quoted_column_name', $foreign_cols)),
-          $rules[$fk_row['update_rule']],
-          $rules[$fk_row['delete_rule']]
+          pgsql8_constraint::get_reference_option_sql($rules[$fk_row['update_rule']]),
+          pgsql8_constraint::get_reference_option_sql($rules[$fk_row['delete_rule']])
         );
         $node_constraint['foreignSchema'] = $fk_row['foreign_schema'];
         $node_constraint['foreignTable'] = $fk_row['foreign_table'];
