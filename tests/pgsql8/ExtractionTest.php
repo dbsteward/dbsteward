@@ -212,6 +212,13 @@ SQL;
   }
 
   public function testCompositeForeignKeyReferentialConstraints() {
+    dbsteward::$quote_all_names = false;
+    dbsteward::$quote_schema_names = false;
+    dbsteward::$quote_table_names = false;
+    dbsteward::$quote_column_names = false;
+    dbsteward::$quote_function_names = false;
+    dbsteward::$quote_object_names = false;
+    
     $sql = <<<SQL
 CREATE TABLE dummy (foo int, bar varchar(32), PRIMARY KEY (foo, bar));
 CREATE TABLE test (
