@@ -2,9 +2,14 @@
 
 
 ##Installing via Composer
-Installing DBSteward as a composer global binary allows you to use the bin/dbsteward file anywhere, and track master branch if that better suits you.
+Installing DBSteward as a [Composer] (https://getcomposer.org/) global [vendor binary] (https://getcomposer.org/doc/articles/vendor-binaries.md) allows you to use the bin/dbsteward file anywhere, and track master branch if that better suits you.
 ```bash
 composer global require nkiraly/dbsteward:dev-master
+```
+
+Or, install a particular version:
+```bash
+composer global require nkiraly/dbsteward:1.3.8
 ```
 
 You may need to add the composer bin path to your PATH environment variable to streamline dbsteward usage:
@@ -12,12 +17,12 @@ You may need to add the composer bin path to your PATH environment variable to s
 export PATH=$PATH:~/.composer/vendor/bin
 ```
 
-With the composer global package installed, now you can refer to the dbsteward binary with just **dbsteward**. See [Using DBSteward](https://github.com/nkiraly/DBSteward/wiki/Crash-course#using-dbsteward).
+With the composer global vendor binary installed, now you can run by just referring to the vendor binary as **dbsteward**. See [Using DBSteward](https://github.com/nkiraly/DBSteward/wiki/Crash-course#using-dbsteward).
 
 ##Updating via Composer
-Updating your composer global package is as easy as re-requireing the global nkiraly/dbsteward package and master branch:
+Updating your composer global package is as easy as re-requiring the global nkiraly/dbsteward package and specifying the version you want to switch to using:
 ```bash
-composer global require nkiraly/dbsteward:dev-master
+composer global require nkiraly/dbsteward:1.3.11
 ```
 
 Or, if you have several global composer dependencies, do a global update:
@@ -27,11 +32,8 @@ composer global update
 
 To see what version / tag of DBSteward you have installed globally, use show:
 ```bash
-composer global show
+composer global show -i
 ```
-
-
-
 
 ##Installing via PEAR
 To install DBSteward and get rolling via [PHP PEAR](http://pear.php.net),
@@ -76,4 +78,3 @@ DBSteward 1.3.7
 [nicholas.kiraly@bludgeon ~]$ sudo pear upgrade dbsteward/DBSteward
 Nothing to upgrade
 ```
-

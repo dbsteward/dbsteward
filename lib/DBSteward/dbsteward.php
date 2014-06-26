@@ -23,7 +23,7 @@ require_once dirname(__FILE__) . '/active_sql_format_autoloader.php';
 
 class dbsteward {
 
-  const VERSION = '1.3.10';
+  const VERSION = '1.3.11';
   const API_VERSION = '1.3';
 
   const PATTERN_KNOWN_TYPES = "/^bigint.*|^bigserial|^bool.*|^bytea.*|^char.*|^date|^double precision|^inet$|^interval|^int.*|^oid|^smallint|^serial|^string|^text|^time$|^time with.*|^timestamp.*|^varchar.*|^uuid$/i";
