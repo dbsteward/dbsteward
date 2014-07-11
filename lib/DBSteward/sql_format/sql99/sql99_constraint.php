@@ -31,7 +31,24 @@ class sql99_constraint {
       $foreignColumn = $column['name'];
     }
 
-    $foreign['column'] = dbx::get_table_column($foreign['table'], $foreignColumn);
+
+    $table = $foreign['table'];
+    $schema = $foreign['schema'];
+
+    do {
+      $col = dbx::get_table_column($table, $foreignColumn);
+      if ($table['inheritsSchema']) {
+        $schema = dbx::get_schema($db_doc, $table['inheritsSchema']);
+      }
+
+      if ($table['inheritsTable']) {
+        $table = dbx::get_table($schema, $table['inheritsTable']);
+      } else {
+        $table = null;
+      }
+    } while (!$col && !!$schema && !!$table);
+    
+    $foreign['column'] = $col;
     if ( ! $foreign['column'] ) {
       var_dump($foreign['column']);
       throw new Exception("Failed to find foreign column '{$foreignColumn}' for {$node_schema['name']}.{$node_table['name']}.{$column['name']}");
