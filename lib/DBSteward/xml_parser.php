@@ -374,7 +374,9 @@ class xml_parser {
       }
       // add / compare sql tags based on their contents making them unique, not their name
       else if (strcasecmp($tag_name, 'sql') == 0) {
-        $nodes = $base->xpath('sql[. ="' . $child . '"]');
+        // just replace the " with &quote; since we're embedding it, DOMDocument text nodes won't escape for
+        // this specific purpose
+        $nodes = $base->xpath('sql[. ="' . str_replace('"', '&quote;', $child) . '"]');
         if ($nodes === FALSE) {
           throw new exception("xpath to lookup sql match for sql element inner text '" . $child . "' returned error");
         }
