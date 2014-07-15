@@ -32,11 +32,9 @@ class pgsql8_index extends sql99_index {
     }
     $sql .= ' (';
     foreach($node_index->indexDimension AS $dimension) {
-      // if the index dimension is an expression
-      // and not a single token identifier
-      // don't quote the identifier if it's defined as being sql, e.g. '<indexDimension>X + 1</indexDimension>' -> USING ("X + 1")
-      //                                                               '<indexDimension sql="true">X + 1</indexDimension> -> USING(X + 1)
-      if ( !format::is_valid_identifier($dimension) && (isset($dimension['sql']) && strcasecmp($dimension['sql'], 'true') == 0)) {
+      // don't quote the identifier if it's defined as being sql, e.g. '<indexDimension>X + 1</indexDimension>' -> "X + 1"
+      //                                                               '<indexDimension sql="true">X + 1</indexDimension> -> X + 1
+      if ( (isset($dimension['sql']) && strcasecmp($dimension['sql'], 'true') == 0) ) {
         $sql .= $dimension . ', ';
       }
       else {
