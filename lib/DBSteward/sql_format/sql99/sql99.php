@@ -129,7 +129,7 @@ class sql99 {
           $quoted = true;
         }
         else {
-          throw new Exception("Illegal identifier: '$name' - turn on quoting of illegal identifiers with --quoteillegalidentifiers");
+          throw new Exception("Illegal identifier: '$name' - turn on quoting of illegal identifiers with --quoteillegalnames");
         }
       }
       elseif (static::is_identifier_blacklisted($name)) {
@@ -138,7 +138,7 @@ class sql99 {
           $quoted = true;
         }
         else {
-          throw new Exception("Reserved identifier: '$name' - turn on quoting of reserved identifiers with --quotereservedidentifiers");
+          throw new Exception("Reserved identifier: '$name' - turn on quoting of reserved identifiers with --quotereservednames");
         }
       }
     }
