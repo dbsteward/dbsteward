@@ -9,6 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
+/**
+ * @group pgsql8
+ * @group mysql5
+ * @group nodb
+ */
 class XmlParserSqlXpathTest extends PHPUnit_Framework_TestCase {
 
   public function testXPathWorksWithQuotes() {
