@@ -11,7 +11,7 @@ require_once __DIR__ . '/Mysql5ExtractionTest.php';
 /**
  * @group mysql5
  */
-class Mysql5ExtractProcedure extends Mysql5ExtractionTest { 
+class Mysql5ExtractProcedureTest extends Mysql5ExtractionTest { 
 
   public function testExtractProcedure() {
     $sql = <<<SQL
@@ -29,9 +29,7 @@ END;__
 SQL;
 
   $expected = <<<XML
-<schema name="Mysql5ExtractionTest" owner="ROLE_OWNER">
-    <grant operation="ALTER,ALTER ROUTINE,CREATE,CREATE ROUTINE,CREATE TEMPORARY TABLES,CREATE VIEW,DELETE,DROP,EVENT,EXECUTE,INDEX,INSERT,LOCK TABLES,REFERENCES,SELECT,SHOW VIEW,TRIGGER,UPDATE" role="ROLE_APPLICATION"/>
-    <function name="why_would_i_do_this" owner="ROLE_OWNER" returns="" description="" procedure="true" cachePolicy="VOLATILE" securityDefiner="true">
+<function name="why_would_i_do_this" owner="ROLE_OWNER" returns="" description="" procedure="true" cachePolicy="VOLATILE" mysqlEvalType="MODIFIES_SQL_DATA" securityDefiner="true">
       <functionParameter name="str" type="varchar(25)" direction="IN"/>
       <functionParameter name="len" type="int(11)" direction="OUT"/>
       <functionDefinition language="sql" sqlFormat="mysql5">BEGIN
@@ -39,10 +37,9 @@ SQL;
     INTO len;
 END</functionDefinition>
     </function>
-  </schema>
 XML;
 
     $schema = $this->extract($sql);
-    $this->assertEquals($expected, $schema->asXML());
+    $this->assertEquals($expected, $schema->function->asXML());
   }
 }
