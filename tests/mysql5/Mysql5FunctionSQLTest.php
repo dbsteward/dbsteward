@@ -133,15 +133,24 @@ SQL;
   /**
    * @dataProvider characteristicsProvider
    */
-  public function testCharacteristics($cachePolicy, $expected) {
-    $this->assertEquals($expected, mysql5_function::get_characteristics($cachePolicy));
+  public function testCharacteristics($cachePolicy, $evalType, $expected) {
+    $this->assertEquals($expected, mysql5_function::get_characteristics($cachePolicy, $evalType));
   }
 
   public function characteristicsProvider() {
     return array(
-      array('IMMUTABLE', array('NO SQL', 'DETERMINISTIC')),
-      array('STABLE', array('READS SQL DATA', 'NOT DETERMINISTIC')),
-      array('VOLATILE', array('MODIFIES SQL DATA', 'NOT DETERMINISTIC'))
+      // basic behavior, no evalType specified
+      array('IMMUTABLE', '', array('NO SQL', 'DETERMINISTIC')),
+      array('STABLE', '', array('READS SQL DATA', 'NOT DETERMINISTIC')),
+      array('VOLATILE', '', array('MODIFIES SQL DATA', 'NOT DETERMINISTIC')),
+
+      // neither specified
+      array('', '', array('MODIFIES SQL DATA', 'NOT DETERMINISTIC')),
+
+      // custom evalType
+      array('IMMUTABLE', 'CONTAINS SQL', array('CONTAINS SQL', 'DETERMINISTIC')),
+      array('STABLE', 'MODIFIES SQL DATA', array('MODIFIES SQL DATA', 'NOT DETERMINISTIC')),
+      array('VOLATILE', 'NO SQL', array('NO SQL', 'NOT DETERMINISTIC'))
     );
   }
 
