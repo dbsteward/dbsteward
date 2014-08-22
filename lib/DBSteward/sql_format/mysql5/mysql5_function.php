@@ -104,7 +104,7 @@ class mysql5_function extends sql99_function {
     return $sql;
   }
 
-  public static function get_characteristics($cache_policy, $eval_type = false) {
+  public static function get_characteristics($cache_policy, $eval_type) {
     switch (strtoupper($cache_policy)) {
       case 'IMMUTABLE':
         if (!$eval_type) {
@@ -122,6 +122,46 @@ class mysql5_function extends sql99_function {
           $eval_type = 'MODIFIES SQL DATA';
         }
         return array($eval_type, 'NOT DETERMINISTIC');
+    }
+  }
+
+  public static function get_cache_policy_from_characteristics($determinism, $eval_type) {
+    // See:
+    // http://www.postgresql.org/docs/9.3/static/sql-createfunction.html
+    // http://dev.mysql.com/doc/refman/5.5/en/create-procedure.html
+
+    // mysql:
+    // A routine is considered “deterministic” if it always produces the same result for the same input parameters, and “not deterministic” otherwise.
+    // CONTAINS SQL indicates that the routine does not contain statements that read or write data
+    // NO SQL indicates that the routine contains no SQL statements.
+    // READS SQL DATA indicates that the routine contains statements that read data, but not statements that write data.
+    // MODIFIES SQL DATA indicates that the routine contains statements that may write data
+
+    // pgsql:
+    // IMMUTABLE indicates that the function cannot modify the database and always returns the same result when given the same argument values
+    // STABLE indicates that the function cannot modify the database, and that within a single table scan it will consistently return the same result for the same argument values
+    // VOLATILE indicates that the function value can change even within a single table scan
+
+    //                   | NO SQL    | CONTAINS SQL | READS SQL DATA | MODIFIES SQL DATA
+    // ------------------+-----------+--------------+----------------+-------------------
+    // DETERMINISTIC     | IMMUTABLE | STABLE       | STABLE         | VOLATILE
+    // NOT DETERMINISTIC | VOLATILE  | VOLATILE     | VOLATILE       | VOLATILE
+
+    switch (strtoupper($determinism)) {
+      case 'DETERMINISTIC':
+        switch (strtoupper(str_replace('_', ' ', $eval_type))) {
+          case 'NO SQL':
+            return 'IMMUTABLE';
+          case 'CONTAINS SQL':
+          case 'READS SQL DATA':
+            return 'STABLE';
+          case 'MODIFIES SQL DATA':
+          default:
+            return 'VOLATILE';
+        }
+      case 'NOT DETERMINISTIC':
+      default:
+        return 'VOLATILE';
     }
   }
 
