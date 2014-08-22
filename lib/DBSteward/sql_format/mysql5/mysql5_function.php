@@ -74,18 +74,8 @@ class mysql5_function extends sql99_function {
     }
     $sql .= "LANGUAGE SQL\n";
 
-    switch ( strtoupper($node_function['cachePolicy']) ) {
-      case 'IMMUTABLE':
-        $sql .= "NO SQL\nDETERMINISTIC\n";
-        break;
-      case 'STABLE':
-        $sql .= "READS SQL DATA\nNOT DETERMINISTIC\n";
-        break;
-      case 'VOLATILE':
-      default:
-        $sql .= "MODIFIES SQL DATA\nNOT DETERMINISTIC\n";
-        break;
-    }
+    list($eval_type, $determinism) = static::get_characteristics((string)$node_function['cachePolicy']);
+    $sql .= "$eval_type\n$determinism\n";
 
     // unlike pgsql8, mysql5 defaults to SECURITY DEFINER, so we need to set it to INVOKER unless explicitly told to leave it DEFINER
     if ( ! isset($node_function['securityDefiner']) || strcasecmp($node_function['securityDefiner'], 'false') == 0 ) {
@@ -111,6 +101,18 @@ class mysql5_function extends sql99_function {
     }
 
     return $sql;
+  }
+
+  public static function get_characteristics($cache_policy) {
+    switch (strtoupper($cache_policy)) {
+      case 'IMMUTABLE':
+        return array('NO SQL', 'DETERMINISTIC');
+      case 'STABLE':
+        return array('READS SQL DATA', 'NOT DETERMINISTIC');
+      case 'VOLATILE':
+      default:
+        return array('MODIFIES SQL DATA', 'NOT DETERMINISTIC');
+    }
   }
 
   public static function get_drop_sql($node_schema, $node_function) {
