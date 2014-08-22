@@ -130,7 +130,22 @@ SQL;
     $this->assertEquals($expected, $actual);
   }
 
-  public function testCachePolicy() {
+  /**
+   * @dataProvider characteristicsProvider
+   */
+  public function testCharacteristics($cachePolicy, $expected) {
+    $this->assertEquals($expected, mysql5_function::get_characteristics($cachePolicy));
+  }
+
+  public function characteristicsProvider() {
+    return array(
+      array('IMMUTABLE', array('NO SQL', 'DETERMINISTIC')),
+      array('STABLE', array('READS SQL DATA', 'NOT DETERMINISTIC')),
+      array('VOLATILE', array('MODIFIES SQL DATA', 'NOT DETERMINISTIC'))
+    );
+  }
+
+  public function testCharacteristicsSQL() {
     $xml = <<<XML
 <schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text" cachePolicy="IMMUTABLE">
