@@ -127,11 +127,14 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
-      <changelog version="1.3.11" date="2014-08-01" license="Simplified BSD License">
+      <changelog version="1.3.11" date="2014-08-28" license="Simplified BSD License">
 DBSteward 1.3.11 Release
 
 Changes
+* fix cross-schema references of table-inherited columns
+* fix double quote support in sql tags
 * pgsql8 fix extraction of foreign key ON actions
+* mysql5 function characteristic definition and extraction support
 
 
 Supported Platform DDL Generation and Differencing:
