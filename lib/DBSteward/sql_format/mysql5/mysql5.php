@@ -633,8 +633,12 @@ class mysql5 extends sql99 {
 
         // $node_fn['procedure'] = 'false';
 
-        // I just don't trust mysql enough to make guarantees about data safety
-        $node_fn['cachePolicy'] = 'VOLATILE';
+        $eval_type = $db_function->sql_data_access;
+        // srsly mysql? is_deterministic varchar(3) not null default '', contains YES or NO
+        $determinism = strcasecmp($db_function->is_deterministic, 'YES') === 0 ? 'DETERMINISTIC' : 'NOT DETERMINISTIC';
+
+        $node_fn['cachePolicy'] = mysql5_function::get_cache_policy_from_characteristics($determinism, $eval_type);
+        $node_fn['mysqlEvalType'] = str_replace(' ', '_', $eval_type);
 
         // INVOKER is the default, leave it implicit when possible
         if ( strcasecmp($db_function->security_type, 'definer') === 0 ) {

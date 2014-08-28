@@ -186,6 +186,7 @@
 <!ATTLIST function description CDATA #IMPLIED>
 <!ATTLIST function procedure (true) #IMPLIED>
 <!ATTLIST function cachePolicy (IMMUTABLE|STABLE|VOLATILE) "VOLATILE">
+<!ATTLIST function mysqlEvalType (CONTAINS_SQL|NO_SQL|READS_SQL_DATA|MODIFIES_SQL_DATA) #IMPLIED>
 <!ATTLIST function securityDefiner (true|false) #IMPLIED>
 <!ATTLIST function forceRedefine (true|false) #IMPLIED>
 <!ATTLIST function slonySetId CDATA #IMPLIED>
