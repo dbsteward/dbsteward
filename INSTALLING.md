@@ -9,7 +9,7 @@ composer global require nkiraly/dbsteward:dev-master
 
 Or, install a particular version:
 ```bash
-composer global require nkiraly/dbsteward:1.3.8
+composer global require nkiraly/dbsteward:1.3.9
 ```
 
 You may need to add the composer bin path to your PATH environment variable to streamline dbsteward usage:
@@ -73,7 +73,7 @@ Channel "pear.dbsteward.org" is up to date
 Channel pear.dbsteward.org Available packages:
 ==============================================
 Package   Version
-DBSteward 1.3.7
+DBSteward 1.3.11
  
 [nicholas.kiraly@bludgeon ~]$ sudo pear upgrade dbsteward/DBSteward
 Nothing to upgrade
