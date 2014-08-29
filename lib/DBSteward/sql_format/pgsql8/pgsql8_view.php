@@ -39,7 +39,7 @@ class pgsql8_view {
    * @return string
    */
   public static function get_drop_sql($node_schema, $node_view) {
-    $ddl = "DROP VIEW " . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_view['name']) . ";\n";
+    $ddl = "DROP VIEW IF EXISTS " . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_view['name']) . ";\n";
     return $ddl;
   }
 
