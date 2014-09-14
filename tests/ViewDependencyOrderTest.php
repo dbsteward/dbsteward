@@ -34,7 +34,7 @@ class ColumnDefaultIsFunctionTest extends dbstewardUnitTestBase {
   </database>
 
   <schema name="public" owner="ROLE_OWNER">
-    <view name="view1" owner="ROLE_OWNER">
+    <view name="view1" owner="ROLE_OWNER" dependsOnViews="view2">
       <viewQuery sqlFormat="pgsql8">
         SELECT * FROM view2
       </viewQuery>

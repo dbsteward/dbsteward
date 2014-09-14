@@ -230,5 +230,6 @@
 <!ATTLIST view owner CDATA #REQUIRED>
 <!ATTLIST view description CDATA #IMPLIED>
 <!ATTLIST view slonySetId CDATA #IMPLIED>
+<!ATTLIST view dependsOnViews CDATA #IMPLIED>
 <!ELEMENT viewQuery (#PCDATA)>
 <!ATTLIST viewQuery sqlFormat CDATA #IMPLIED>
