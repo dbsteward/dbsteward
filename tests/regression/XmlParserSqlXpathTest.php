@@ -17,11 +17,12 @@ require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 class XmlParserSqlXpathTest extends PHPUnit_Framework_TestCase {
 
   public function testXPathWorksWithQuotes() {
+    $file_name = 'sqlXpathTest.xml';
     $base = new SimpleXMLElement("<allyour>baseyourbaseyourbasebase</allyour>");
     $over = new SimpleXMLElement("<allyour><sql>(1, 'version=\"1.0\"')</sql></allyour>");
     $this->assertNotEquals($base, $over);
     // ensure the sql is composited
-    xml_parser::xml_composite_children($base, $over);
+    xml_parser::xml_composite_children($base, $over, $file_name);
     $this->assertEquals($base, $over);
   }
 }

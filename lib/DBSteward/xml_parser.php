@@ -41,7 +41,6 @@ class xml_parser {
 
   /**
    * Composite a list of XML files into one dbsteward definition
-   * @NOTICE: only 'base' XML files, those listed in the $files list should contain includeFile entries
    *
    * @param  array     $files                       list of files to composite
    * @param  integer   $xml_collect_data_addendums  number of files at the end of the list to collate for addendum
@@ -140,7 +139,7 @@ class xml_parser {
       if ( isset($doc_clone->inlineAssembly) ) {
         $doc_clone_ila = clone $doc_clone;
         unset($doc_clone_ila->database);
-        self::xml_composite_children($base, $doc_clone_ila);
+        self::xml_composite_children($base, $doc_clone_ila, $file_name);
       }
       
       // if not defined in the base yet
@@ -149,40 +148,19 @@ class xml_parser {
         $base->addChild('database');
       }
     }
-
-    // do overlay includes first, to allow definer to overwrite included file values at the same level
-    while (isset($overlay->includeFile)) {
-      foreach ($overlay->includeFile AS $includeFile) {
-        $include_file_name = (string)($includeFile['name']);
-        // if include_file_name does not appear to be absolute, make it relative to its parent
-        if (substr($include_file_name, 0, 1) != '/') {
-          $include_file_name = dirname($file_name) . '/' . $include_file_name;
-        }
-        dbsteward::console_line(1, "Compositing XML includeFile " . $include_file_name);
-        $include_doc = simplexml_load_file($include_file_name);
-        if ($include_doc === FALSE) {
-          throw new Exception("failed to simplexml_load_file() includeFile " . $include_file_name);
-        }
-        $include_doc = xml_parser::expand_tabrow_data($include_doc);
-        $include_doc = xml_parser::sql_format_convert($include_doc);
-        self::xml_composite_children($base, $include_doc);
-      }
-      unset($overlay->includeFile);
-      unset($base->includeFile);
-    }
     
     // if doc_clone is defined, there were database element values to overlay.
     // now that includeFile has been processed, put these values overlaid "last"
     if ( $doc_clone ) {
-      self::xml_composite_children($base->database, $doc_clone->database);
+      self::xml_composite_children($base->database, $doc_clone->database, $file_name);
     }
 
     // includes done, now put $overlay values in, to allow definer to overwrite included file values at the same level
     if ($addendums_doc != NULL && $i >= $start_addendums_idx) {
-      self::xml_composite_children($base, $overlay, $addendums_doc);
+      self::xml_composite_children($base, $overlay, $file_name, $addendums_doc);
     }
     else {
-      self::xml_composite_children($base, $overlay);
+      self::xml_composite_children($base, $overlay, $file_name);
     }
 
     return $base;
@@ -202,7 +180,28 @@ class xml_parser {
     }
   }
 
-  public static function xml_composite_children(&$base, &$overlay, &$addendum = NULL) {
+  public static function xml_composite_children(&$base, &$overlay, $file_name, &$addendum = NULL) {
+    // do overlay includes first, to allow definer to overwrite included file values at the same level
+    while (isset($overlay->includeFile)) {
+      foreach ($overlay->includeFile AS $includeFile) {
+        $include_file_name = (string)($includeFile['name']);
+        // if include_file_name does not appear to be absolute, make it relative to its parent
+        if (substr($include_file_name, 0, 1) != '/') {
+          $include_file_name = dirname($file_name) . '/' . $include_file_name;
+        }
+        dbsteward::console_line(1, "Compositing XML includeFile " . $include_file_name);
+        $include_doc = simplexml_load_file($include_file_name);
+        if ($include_doc === FALSE) {
+          throw new Exception("failed to simplexml_load_file() includeFile " . $include_file_name);
+        }
+        $include_doc = xml_parser::expand_tabrow_data($include_doc);
+        $include_doc = xml_parser::sql_format_convert($include_doc);
+        self::xml_composite_children($base, $include_doc, $include_file_name);
+      }
+      unset($overlay->includeFile);
+      unset($base->includeFile);
+    }
+
     // overlay elements found in the overlay node
     foreach ($overlay->children() AS $child) {
       // always reset the base relative node to null to prevent loop carry-over
@@ -467,7 +466,7 @@ class xml_parser {
 
       // recurse if child has children
       if (count($child->children()) > 0) {
-        self::xml_composite_children($node, $child, $node2);
+        self::xml_composite_children($node, $child, $file_name, $node2);
       }
     }
 
