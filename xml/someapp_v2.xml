@@ -24,7 +24,7 @@
     </slony>
   </database>
   <schema name="public" owner="ROLE_OWNER">
-    <table name="user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="10">
+    <table name="sql_user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="10">
       <tablePartition type="MODULO">
         <tablePartitionOption name="number" value="4" />
         <tablePartitionOption name="column" value="user_id" />
@@ -54,7 +54,7 @@
         </row>
       </rows>
     </table>
-    <trigger name="user_audit" sqlFormat="mysql5" table="user" when="before" event="insert" function="EXECUTE xyz"/>
+    <trigger name="user_audit" sqlFormat="mysql5" table="sql_user" when="BEFORE" event="INSERT" function="EXECUTE xyz"/>
     <table name="user_status_list" owner="ROLE_OWNER" slonyId="30" primaryKey="user_status_list_id">
       <column name="user_status_list_id" type="int" />
       <column name="is_visible" type="boolean" null="false" default="true" />
@@ -107,7 +107,7 @@
     </table>
     <table name="session_information" description="Information regarding a user's current session" primaryKey="session_id" owner="ROLE_OWNER" slonyId="20">
       <column name="session_id" type="varchar(255)" null="false" />
-      <column name="user_id" foreignSchema="public" foreignTable="user" foreignColumn="user_id" />
+      <column name="user_id" foreignSchema="public" foreignTable="sql_user" foreignColumn="user_id" />
       <column name="login_time" type="timestamp with time zone" />
       <column name="logout_time" type="timestamp with time zone" />
       <column name="last_active_time" type="timestamp with time zone" />
