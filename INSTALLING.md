@@ -22,7 +22,7 @@ With the composer global vendor binary installed, now you can run by just referr
 ##Updating via Composer
 Updating your composer global package is as easy as re-requiring the global nkiraly/dbsteward package and specifying the version you want to switch to using:
 ```bash
-composer global require nkiraly/dbsteward:1.3.11
+composer global require nkiraly/dbsteward:1.3.12
 ```
 
 Or, if you have several global composer dependencies, do a global update:
@@ -73,7 +73,7 @@ Channel "pear.dbsteward.org" is up to date
 Channel pear.dbsteward.org Available packages:
 ==============================================
 Package   Version
-DBSteward 1.3.11
+DBSteward 1.3.12
  
 [nicholas.kiraly@bludgeon ~]$ sudo pear upgrade dbsteward/DBSteward
 Nothing to upgrade
