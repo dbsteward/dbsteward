@@ -213,12 +213,7 @@ class mysql5_diff extends sql99_diff {
       self::drop_old_schemas($ofs3);
     }
 
-    // drop all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      mysql5_diff_views::drop_views($ofs1, $old_schema, $new_schema);
-    }
+    mysql5_diff_views::drop_views_ordered($ofs1, dbsteward::$old_database, dbsteward::$new_database);
     
     //@TODO: implement mysql5_language ? no relevant conversion exists see other TODO's stating this
     //mysql5_diff_languages::diff_languages($ofs1);
@@ -364,12 +359,7 @@ class mysql5_diff extends sql99_diff {
       }
     }
     
-    // create all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      mysql5_diff_views::create_views($ofs1, $old_schema, $new_schema);
-    }
+    mysql5_diff_views::create_views_ordered($ofs1, dbsteward::$old_database, dbsteward::$new_database);
   }
 
   /**

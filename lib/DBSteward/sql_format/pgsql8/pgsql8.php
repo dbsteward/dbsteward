@@ -568,12 +568,11 @@ class pgsql8 extends sql99 {
     }
     $ofs->write("\n");
 
-    // view creation
+    pgsql8_diff_views::create_views_ordered($ofs, null, $db_doc);
+
+    // view permission grants
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->view AS $view) {
-        $ofs->write(pgsql8_view::get_creation_sql($schema, $view));
-
-        // view permission grants
         if (isset($view->grant)) {
           foreach ($view->grant AS $grant) {
             $ofs->write(pgsql8_permission::get_sql($db_doc, $schema, $view, $grant) . "\n");
@@ -584,8 +583,7 @@ class pgsql8 extends sql99 {
     $ofs->write("\n");
 
     // use pgdiff to add any configurationParameters that are defined
-    // dbsteward::$new_database is already set in the caller, build()
-    pgsql8_diff::update_database_config_parameters($ofs);
+    pgsql8_diff::update_database_config_parameters($ofs, null, $db_doc);
   }
 
   public static function build_data($db_doc, $ofs, $tables) {
