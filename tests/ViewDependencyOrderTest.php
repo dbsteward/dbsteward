@@ -12,7 +12,7 @@ require_once __DIR__ . '/dbstewardUnitTestBase.php';
 /**
  * @group nodb
  */
-class ColumnDefaultIsFunctionTest extends dbstewardUnitTestBase {
+class ViewDependencyOrderTest extends dbstewardUnitTestBase {
   private $xml = <<<XML
 <dbsteward>
   <database>
