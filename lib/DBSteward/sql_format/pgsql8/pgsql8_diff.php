@@ -146,7 +146,7 @@ class pgsql8_diff extends sql99_diff {
       format::set_context_replica_set_to_natural_first(dbsteward::$new_database);
     }
     
-    if (self::$as_transaction && !dbsteward::$generate_slonik) {
+    if (self::$as_transaction) {
       $stage1_ofs->append_header("BEGIN;\n");
       $stage1_ofs->append_footer("\nCOMMIT;\n");
       if ( ! dbsteward::$single_stage_upgrade ) {
