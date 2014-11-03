@@ -359,7 +359,7 @@ class mysql5_diff extends sql99_diff {
       }
     }
     
-    mysql5_diff_views::create_views_ordered($ofs1, dbsteward::$old_database, dbsteward::$new_database);
+    mysql5_diff_views::create_views_ordered($ofs3, dbsteward::$old_database, dbsteward::$new_database);
   }
 
   /**
