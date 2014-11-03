@@ -164,10 +164,13 @@ XML;
   private function common_drop($xml_a, $xml_b, $expected, $message='') {
     $ofs = new mock_output_file_segmenter();
 
-    $this->append(dbsteward::$new_database, new SimpleXMLElement($xml_a));
-    $this->append(dbsteward::$old_database, new SimpleXMLElement($xml_b));
+    list($old_doc, $old_schema) = $this->append(dbsteward::$old_database, new SimpleXMLElement($xml_a));
+    list($new_doc, $new_schema) = $this->append(dbsteward::$new_database, new SimpleXMLElement($xml_b));
 
     mysql5_diff_views::drop_views_ordered($ofs, dbsteward::$old_database, dbsteward::$new_database);
+    
+    $old_doc->removeChild($old_schema);
+    $new_doc->removeChild($new_schema);
 
     $actual = trim($ofs->_get_output());
 
@@ -177,10 +180,13 @@ XML;
   private function common_create($xml_a, $xml_b, $expected, $message='') {
     $ofs = new mock_output_file_segmenter();
 
-    $this->append(dbsteward::$new_database, new SimpleXMLElement($xml_a));
-    $this->append(dbsteward::$old_database, new SimpleXMLElement($xml_b));
+    list($old_doc, $old_schema) = $this->append(dbsteward::$old_database, new SimpleXMLElement($xml_a));
+    list($new_doc, $new_schema) = $this->append(dbsteward::$new_database, new SimpleXMLElement($xml_b));
 
     mysql5_diff_views::create_views_ordered($ofs, dbsteward::$old_database, dbsteward::$new_database);
+
+    $old_doc->removeChild($old_schema);
+    $new_doc->removeChild($new_schema);
 
     $actual = trim($ofs->_get_output());
 
@@ -191,6 +197,7 @@ XML;
     $parent_node = dom_import_simplexml($parent);
     $child_node = dom_import_simplexml($child);
 
-    $parent_node->appendChild($parent_node->ownerDocument->importNode($child_node, true));
+    $parent_node->appendChild($child_node = $parent_node->ownerDocument->importNode($child_node, true));
+    return array($parent_node, $child_node);
   }
 }
