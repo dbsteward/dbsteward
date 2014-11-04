@@ -13,7 +13,7 @@ require_once __DIR__ . '/dbstewardUnitTestBase.php';
  * @group nodb
  */
 class ViewDependencyOrderTest extends dbstewardUnitTestBase {
-  private $xml = <<<XML
+  private $xml_with = <<<XML
 <dbsteward>
   <database>
     <role>
@@ -37,9 +37,26 @@ class ViewDependencyOrderTest extends dbstewardUnitTestBase {
 </dbsteward>
 XML;
 
+  private $xml_without = <<<XML
+<dbsteward>
+  <database>
+    <role>
+      <application>dbsteward_phpunit_app</application>
+      <owner>deployment</owner>
+      <replication/>
+      <readonly/>
+    </role>
+  </database>
+
+  <schema name="public" owner="ROLE_OWNER">
+  </schema>
+</dbsteward>
+XML;
+
   public function setUp() {
     dbsteward::$quote_all_names = true;
-    $this->doc = simplexml_load_string($this->xml);
+    $this->doc_with = simplexml_load_string($this->xml_with);
+    $this->doc_without = simplexml_load_string($this->xml_without);
   }
 
   /**
@@ -59,12 +76,12 @@ XML;
   private function doTestDependencyOrdering($format) {
     dbsteward::set_sql_format($format);
 
-    $schema = $this->doc->schema;
+    $schema = $this->doc_with->schema;
     $view1 = $schema->view[0];
     $view2 = $schema->view[1];
 
     $arr = array();
-    format_diff_views::with_views_in_order($this->doc, function($schema, $view) use (&$arr) {
+    format_diff_views::with_views_in_order($this->doc_with, function($schema, $view) use (&$arr) {
       $arr[] = array($schema, $view);
     });
 
@@ -149,9 +166,29 @@ XML;
   private function doTestViewsDroppedInOrder($format) {
     dbsteward::set_sql_format($format);
 
-    $doc = $this->doc;
+    // by dropping the entire schema
+    $doc = $this->doc_with;
     $actual = $this->capture(function($ofs) use ($doc) {
       format_diff_views::drop_views_ordered($ofs, $doc, null);
+    });
+
+    if ($format == 'pgsql8') {
+      // if we drop the whole schema, we don't need to drop individual views in it.
+      $expected = <<<SQL
+SQL;
+    } else {
+      $expected = <<<SQL
+DROP VIEW IF EXISTS `view2`;
+DROP VIEW IF EXISTS `view1`;
+SQL;
+    }
+    
+    $this->assertEquals($expected, $actual);
+
+    // by dropping only the views
+    $doc_without = $this->doc_without;
+    $actual = $this->capture(function($ofs) use ($doc, $doc_without) {
+      format_diff_views::drop_views_ordered($ofs, $doc, $doc_without);
     });
 
     if ($format == 'pgsql8') {
@@ -186,7 +223,7 @@ SQL;
   private function doTestViewsCreatedInOrder($format) {
     dbsteward::set_sql_format($format);
 
-    $doc = $this->doc;
+    $doc = $this->doc_with;
     $actual = $this->capture(function($ofs) use ($doc) {
       format_diff_views::create_views_ordered($ofs, null, $doc);
     });
@@ -224,7 +261,7 @@ SQL;
   private function doTestBuildsInOrder($format) {
     dbsteward::set_sql_format($format);
 
-    $doc = $this->doc;
+    $doc = $this->doc_with;
     $actual = $this->capture(function($ofs) use ($doc) {
       format::build_schema($doc, $ofs, array());
     });
@@ -263,7 +300,7 @@ SQL;
   private function doTestUpgradesInOrder($format) {
     dbsteward::set_sql_format($format);
 
-    $doc = $this->doc;
+    $doc = $this->doc_with;
     $actual = $this->capture(function($ofs) use ($doc) {
       dbsteward::$new_database = $doc;
       dbsteward::$old_database = $doc;
