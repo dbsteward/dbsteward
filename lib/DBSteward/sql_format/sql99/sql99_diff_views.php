@@ -20,10 +20,16 @@ class sql99_diff_views {
     static::with_views_in_order($db_doc_old, function ($old_schema, $old_view) use ($db_doc_new, $ofs) {
       $new_schema = dbx::get_schema($db_doc_new, $old_schema['name']);
       $new_view = dbx::get_view($new_schema, $old_view['name']);
-      if ($new_view == null || format_diff_views::is_view_modified($old_view, $new_view)) {
+      if (format_diff_views::should_drop_view($old_schema, $old_view, $new_schema, $new_view)) {
         $ofs->write(format_view::get_drop_sql($old_schema, $old_view) . "\n");
       }
     });
+  }
+
+  public static function should_drop_view($old_schema, $old_view, $new_schema, $new_view) {
+    // don't drop the view if new_schema is null - we've already dropped the view by this point
+    // otherwise, drop if it changed or no longer exists
+    return $new_schema != null && ($new_view == null || static::is_view_modified($old_view, $new_view));
   }
 
   /**
@@ -36,12 +42,20 @@ class sql99_diff_views {
     static::with_views_in_order($db_doc_new, function ($new_schema, $new_view) use ($db_doc_new, $db_doc_old, $ofs) {
       $old_schema = dbx::get_schema($db_doc_old, $new_schema['name']);
       $old_view = dbx::get_view($old_schema, $new_view['name']);
-      if ($old_view == null || format_diff_views::is_view_modified($old_view, $new_view)) {
+      if (format_diff_views::should_create_view($old_schema, $old_view, $new_schema, $new_view)) {
         $ofs->write(format_view::get_creation_sql($db_doc_new, $new_schema, $new_view) . "\n");
       }
     });
   }
 
+  public static function should_create_view($old_schema, $old_view, $new_schema, $new_view) {
+    return $old_view == null || static::is_view_modified($old_view, $new_view);
+  }
+
+  /**
+   * Iterates over all views in the given document, calling $callback for each one in dependency order
+   * $callback takes ($node_schema, $node_view)
+   */
   public static function with_views_in_order($db_doc, $callback) {
     if ($db_doc != null) {
       $visited = array();

@@ -128,9 +128,6 @@ class mysql5_diff extends sql99_diff {
           if (!in_array(trim($old_schema['name']), $processed_schemas)) {
             // this schema hasn't been processed yet, go ahead and drop views, types, functions, sequences
             // only do it once per schema
-            foreach ($old_schema->view as $node_view) {
-              $ofs->write(mysql5_view::get_drop_sql($old_schema, $node_view) . "\n");
-            }
             foreach ($old_schema->type as $node_type) {
               $ofs->write(mysql5_type::get_drop_sql($old_schema, $node_type) . "\n");
             }
@@ -166,9 +163,6 @@ class mysql5_diff extends sql99_diff {
     else {
       foreach (dbsteward::$old_database->schema as $old_schema) {
         if (!dbx::get_schema(dbsteward::$new_database, $old_schema['name'])) {
-          foreach ($old_schema->view as $node_view) {
-            $ofs->write(mysql5_view::get_drop_sql($old_schema, $node_view) . "\n");
-          }
           foreach ($old_schema->type as $node_type) {
             $ofs->write(mysql5_type::get_drop_sql($old_schema, $node_type) . "\n");
           }
