@@ -110,8 +110,11 @@ XML;
   }
   
   public function testGenerateSlonikRemovesTransactionStatements() {
+    pgsql8_diff::$as_transaction = FALSE;
     dbsteward::$generate_slonik = TRUE;
     $this->transaction_statement_check(TRUE);
+
+    pgsql8_diff::$as_transaction = TRUE;
     dbsteward::$generate_slonik = FALSE;
     $this->transaction_statement_check(FALSE);
   }
