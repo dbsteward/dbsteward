@@ -540,7 +540,7 @@ class pgsql8_diff extends sql99_diff {
     foreach(dbx::get_configuration_parameters($db_doc_new) AS $new_param) {
       $old_param = null;
       if ( is_object(dbsteward::$old_database) ) {
-        $old_param = &dbx::get_configuration_parameter($db_doc_old, $new_param['name']);
+        $old_param = dbx::get_configuration_parameter($db_doc_old, $new_param['name']);
       }
 
       if ( $old_param == null || strcmp($old_param['value'], $new_param['value']) != 0 ) {
