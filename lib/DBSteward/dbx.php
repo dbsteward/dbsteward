@@ -58,10 +58,18 @@ class dbx {
     return $nodes;
   }
 
-  public static function &get_configuration_parameter(&$node_database, $name, $create_if_not_exist = FALSE) {
-    $nodes = $node_database->xpath("configurationParameter[@name='" . $name . "']");
+  public static function get_configuration_parameter($db_doc, $name, $create_if_not_exist = FALSE) {
+    if ($db_doc == null) {
+      return null;
+    }
+
+    $nodes = $db_doc->xpath("database/configurationParameter[@name='" . $name . "']");
     if (count($nodes) == 0) {
       if ($create_if_not_exist) {
+        $node_database = $db_doc->database;
+        if (empty($node_database)) {
+          $node_database = $db_doc->addChild('configurationParameter');
+        }
         // schema not found, caller wants the schema created in the db
         $node_param = $node_database->addChild('configurationParameter');
         $node_param->addAttribute('name', $name);
@@ -79,12 +87,17 @@ class dbx {
     return $node_param;
   }
 
-  public static function &get_configuration_parameters(&$node_database) {
-    $nodes = $node_database->xpath("configurationParameter");
-    return $nodes;
+  public static function get_configuration_parameters($db_doc) {
+    if ($db_doc == null) {
+      return null;
+    }
+    return $db_doc->xpath("database/configurationParameter");
   }
 
-  public static function &get_schema(&$node_db, $name, $create_if_not_exist = FALSE) {
+  public static function get_schema(&$node_db, $name, $create_if_not_exist = FALSE) {
+    if ($node_db == null && !$create_if_not_exist) {
+      return null;
+    }
     if (!is_object($node_db)) {
       throw new exception("node_db is not an object!");
     }
@@ -643,7 +656,10 @@ class dbx {
     return $nodes;
   }
 
-  public static function &get_view(&$node_schema, $name, $create_if_not_exist = FALSE) {
+  public static function get_view(&$node_schema, $name, $create_if_not_exist = FALSE) {
+    if ($node_schema == null && !$create_if_not_exist) {
+      return null;
+    }
     $nodes = $node_schema->xpath("view[@name='" . $name . "']");
     if (count($nodes) == 0) {
       if ($create_if_not_exist) {
@@ -665,6 +681,9 @@ class dbx {
   }
 
   public static function &get_views(&$node_schema) {
+    if ($node_schema == null) {
+      return array();
+    }
     $nodes = $node_schema->xpath("view");
     return $nodes;
   }

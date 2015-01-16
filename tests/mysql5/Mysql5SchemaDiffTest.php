@@ -339,9 +339,12 @@ XML;
   </table>
 </schema>
 XML;
-    
-    $expected3 = <<<SQL
+
+    $expected1 = <<<SQL
 DROP VIEW IF EXISTS `s2_view`;
+SQL;
+
+    $expected3 = <<<SQL
 -- dropping enum type yesno. references to type yesno will be replaced with the type 'text'
 DROP FUNCTION IF EXISTS `s2_test_concat`;
 DELETE FROM `__sequences` WHERE `name` IN ('the_sequence');
@@ -350,7 +353,7 @@ DELETE FROM `__sequences` WHERE `name` IN ('the_sequence');
 DROP TABLE `s2_table2`;
 SQL;
 
-    $this->diff($old, $new, '', $expected3);
+    $this->diff($old, $new, $expected1, $expected3);
   }
 
   private $db_doc_xml = <<<XML

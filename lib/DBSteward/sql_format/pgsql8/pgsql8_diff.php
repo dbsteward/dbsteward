@@ -172,7 +172,7 @@ class pgsql8_diff extends sql99_diff {
     dbsteward::console_line(1, "Update Permissions");
     self::update_permissions($stage1_ofs, $stage3_ofs);
 
-    self::update_database_config_parameters($stage1_ofs);
+    self::update_database_config_parameters($stage1_ofs, dbsteward::$new_database, dbsteward::$old_database);
 
     dbsteward::console_line(1, "Update Data");
     if (dbsteward::$generate_slonik) {
@@ -221,18 +221,13 @@ class pgsql8_diff extends sql99_diff {
    * @param $ofs1  stage1 output file segmenter
    * @param $ofs3  stage3 output file segmenter
    */
-  private static function update_structure($ofs1, $ofs3) {
+  public static function update_structure($ofs1, $ofs3) {
     $type_modified_columns = array();
     
     pgsql8_diff_languages::diff_languages($ofs1);
     
     // drop all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      pgsql8::set_context_replica_set_id($new_schema);
-      pgsql8_diff_views::drop_views($ofs1, $old_schema, $new_schema);
-    }
+    pgsql8_diff_views::drop_views_ordered($ofs1, dbsteward::$old_database, dbsteward::$new_database);
 
     // if the table dependency order is unknown, bang them in natural order
     if ( ! is_array(self::$new_table_dependency) ) {
@@ -396,13 +391,7 @@ class pgsql8_diff extends sql99_diff {
       }
     }
     
-    // create all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      pgsql8::set_context_replica_set_id($new_schema);
-      pgsql8_diff_views::create_views($ofs3, $old_schema, $new_schema);
-    }
+    pgsql8_diff_views::create_views_ordered($ofs3, dbsteward::$old_database, dbsteward::$new_database);
   }
 
   protected static function update_permissions($ofs1, $ofs3) {
@@ -547,11 +536,11 @@ class pgsql8_diff extends sql99_diff {
    *
    * @return void
    */
-  public static function update_database_config_parameters($ofs) {
-    foreach(dbx::get_configuration_parameters(dbsteward::$new_database->database) AS $new_param) {
+  public static function update_database_config_parameters($ofs, $db_doc_old, $db_doc_new) {
+    foreach(dbx::get_configuration_parameters($db_doc_new) AS $new_param) {
       $old_param = null;
       if ( is_object(dbsteward::$old_database) ) {
-        $old_param = &dbx::get_configuration_parameter(dbsteward::$old_database->database, $new_param['name']);
+        $old_param = dbx::get_configuration_parameter($db_doc_old, $new_param['name']);
       }
 
       if ( $old_param == null || strcmp($old_param['value'], $new_param['value']) != 0 ) {

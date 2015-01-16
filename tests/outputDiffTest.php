@@ -243,6 +243,7 @@ XML;
    * @group mysql5
    */
   public function testSerialToIntMysql5() {
+    dbsteward::$single_stage_upgrade = false;
     $this->xml_content_a = $this->mysql5_serial_xml_a;
     $this->xml_file_a = dirname(__FILE__) . '/testdata/type_diff_xml_a.xml';
     file_put_contents($this->xml_file_a, $this->xml_content_a);

@@ -128,9 +128,6 @@ class mysql5_diff extends sql99_diff {
           if (!in_array(trim($old_schema['name']), $processed_schemas)) {
             // this schema hasn't been processed yet, go ahead and drop views, types, functions, sequences
             // only do it once per schema
-            foreach ($old_schema->view as $node_view) {
-              $ofs->write(mysql5_view::get_drop_sql($old_schema, $node_view) . "\n");
-            }
             foreach ($old_schema->type as $node_type) {
               $ofs->write(mysql5_type::get_drop_sql($old_schema, $node_type) . "\n");
             }
@@ -166,9 +163,6 @@ class mysql5_diff extends sql99_diff {
     else {
       foreach (dbsteward::$old_database->schema as $old_schema) {
         if (!dbx::get_schema(dbsteward::$new_database, $old_schema['name'])) {
-          foreach ($old_schema->view as $node_view) {
-            $ofs->write(mysql5_view::get_drop_sql($old_schema, $node_view) . "\n");
-          }
           foreach ($old_schema->type as $node_type) {
             $ofs->write(mysql5_type::get_drop_sql($old_schema, $node_type) . "\n");
           }
@@ -213,12 +207,7 @@ class mysql5_diff extends sql99_diff {
       self::drop_old_schemas($ofs3);
     }
 
-    // drop all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      mysql5_diff_views::drop_views($ofs1, $old_schema, $new_schema);
-    }
+    mysql5_diff_views::drop_views_ordered($ofs1, dbsteward::$old_database, dbsteward::$new_database);
     
     //@TODO: implement mysql5_language ? no relevant conversion exists see other TODO's stating this
     //mysql5_diff_languages::diff_languages($ofs1);
@@ -364,12 +353,7 @@ class mysql5_diff extends sql99_diff {
       }
     }
     
-    // create all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      mysql5_diff_views::create_views($ofs1, $old_schema, $new_schema);
-    }
+    mysql5_diff_views::create_views_ordered($ofs3, dbsteward::$old_database, dbsteward::$new_database);
   }
 
   /**

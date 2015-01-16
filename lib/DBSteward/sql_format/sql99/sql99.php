@@ -162,6 +162,8 @@ class sql99 {
   public static function get_fully_qualified_column_name($schema_name, $table_name, $column_name) {
     return static::get_fully_qualified_table_name($schema_name, $table_name) . '.' . static::get_quoted_column_name($column_name);
   }
-}
 
-?>
+  /** No-op. Overridden for pgsql8 slony stuffs */
+  public static function set_context_replica_set_id($obj) {
+  }
+}

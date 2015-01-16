@@ -214,12 +214,11 @@ class mysql5 extends sql99 {
     }
     $ofs->write("\n");
 
-    foreach ( $db_doc->schema as $schema ) {
-      // view creation
-      foreach ($schema->view AS $view) {
-        $ofs->write(mysql5_view::get_creation_sql($schema, $view)."\n");
+    mysql5_diff_views::create_views_ordered($ofs, null, $db_doc);
 
-        // view permission grants
+    // view permission grants
+    foreach ($db_doc->schema as $schema) {
+      foreach ($schema->view AS $view) {
         if (isset($view->grant)) {
           foreach ($view->grant AS $grant) {
             $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $view, $grant) . "\n");
