@@ -1,10 +1,14 @@
-nkiraly/DBSteward/master Build Status: [![nkiraly/DBSteward/master Build Status](https://travis-ci.org/nkiraly/DBSteward.png?branch=master)](https://travis-ci.org/nkiraly/DBSteward)
+# DBSteward
 
-austinhyde/DBSteward/master Build Status: [![austinhyde/DBSteward/master Build Status](https://travis-ci.org/austinhyde/DBSteward.png?branch=master)](https://travis-ci.org/austinhyde/DBSteward)
+Database definition differencing tool. Structure and data is defined in a DTD-enforced, human-readable XML format. Outputs transactional SQL statement files to apply your changes.
+
+[![Latest Stable Version](https://poser.pugx.org/nkiraly/DBSteward/v/stable.png)](https://packagist.org/packages/nkiraly/DBSteward)
+[![nkiraly/DBSteward/master Build Status](https://travis-ci.org/nkiraly/DBSteward.png?branch=master)](https://travis-ci.org/nkiraly/DBSteward)
+[![Dependency Status](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master/badge.png)](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master)
+[![Reference Status](https://www.versioneye.com/php/nkiraly:DBSteward/reference_badge.svg)](https://www.versioneye.com/php/nkiraly:DBSteward/references)
 
 
 # What / who is DBSteward for?
-DBSteward is a database definition differencing tool. Database structure and data is defined in a DTD-enforced, human-readable XML format.
 
 Intended users are application developers and database administrators who maintain database structure changes as part of an application life cycle. Defining your SQL database in a DBSteward XML definition can greatly lower your release engineering costs by removing the need to write and test SQL changes.
 
