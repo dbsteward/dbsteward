@@ -1,8 +1,20 @@
 {
   "name": "nkiraly/dbsteward",
   "description": "SQL database definition differencing tool. Structure and data is defined in a DTD-enforced, human-readable XML format. Outputs transactional SQL statement files to apply your changes.",
+  "keywords": ["database", "sql", "xml", "difference", "compare"],
   "require": {
-    "php": ">=5.3.0"
+    "php": ">=5.3.0",
+    "ext-dom": "*",
+    "ext-pcre": "*",
+    "ext-pgsql": "*",
+    "ext-simplexml": "*"
+    "ext-spl": "*"
+  },
+  "require-dev": {
+    "ext-mysql": "*",
+    "ext-pgsql": "*",
+    "pirum/pirum": ">=1.1.5",
+    "phpunit/phpunit": ">=4.4.0"
   },
   "bin": ["bin/dbsteward"]
 }
