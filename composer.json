@@ -7,7 +7,7 @@
     "ext-dom": "*",
     "ext-pcre": "*",
     "ext-pgsql": "*",
-    "ext-simplexml": "*"
+    "ext-simplexml": "*",
     "ext-spl": "*"
   },
   "require-dev": {
