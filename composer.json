@@ -1,6 +1,6 @@
 {
   "name": "nkiraly/dbsteward",
-  "description": "SQL database diffing and upgrade tool",
+  "description": "SQL database definition differencing tool. Structure and data is defined in a DTD-enforced, human-readable XML format. Outputs transactional SQL statement files to apply your changes.",
   "require": {
     "php": ">=5.3.0"
   },

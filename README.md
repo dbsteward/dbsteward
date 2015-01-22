@@ -1,6 +1,6 @@
 # DBSteward
 
-Database definition differencing tool. Structure and data is defined in a DTD-enforced, human-readable XML format. Outputs transactional SQL statement files to apply your changes.
+SQL database definition differencing tool. Structure and data is defined in a DTD-enforced, human-readable XML format. Outputs transactional SQL statement files to apply your changes.
 
 [![Latest Stable Version](https://poser.pugx.org/nkiraly/DBSteward/v/stable.png)](https://packagist.org/packages/nkiraly/DBSteward)
 [![nkiraly/DBSteward/master Build Status](https://travis-ci.org/nkiraly/DBSteward.png?branch=master)](https://travis-ci.org/nkiraly/DBSteward)
