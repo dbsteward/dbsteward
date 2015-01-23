@@ -2,6 +2,34 @@
   "name": "nkiraly/dbsteward",
   "description": "SQL database definition differencing tool. Structure and data is defined in a DTD-enforced, human-readable XML format. Outputs transactional SQL statement files to apply your changes.",
   "keywords": ["database", "sql", "xml", "difference", "compare"],
+  "license": "BSD-2-Clause",
+  "authors": [
+    {
+      "name": "Nicholas Kiraly",
+      "email": "kiraly.nicholas@gmail.com",
+      "role": "Developer"
+    },
+    {
+      "name": "Austin Hyde",
+      "email": "austin109@gmail.com",
+      "role": "Developer"
+    },
+    {
+      "name": "Rusty Hamilton",
+      "email": "rusty@shrub3.net",
+      "role": "Developer"
+    },
+    {
+      "name": "Bill Moran",
+      "email": "wmoran@potentialtech.com",
+      "role": "Developer"
+    },
+    {
+      "name": "Adam Jette",
+      "email": "jettea46@yahoo.com",
+      "role": "Developer"
+    }
+  ],
   "require": {
     "php": ">=5.3.0",
     "ext-dom": "*",
