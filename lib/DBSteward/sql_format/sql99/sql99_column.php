@@ -36,17 +36,23 @@ class sql99_column {
    * @return found default value or null
    */
   public static function get_default_value($type) {
-    $default_value = null;
+    $default_value = NULL;
 
-    if ( preg_match("/^smallint$|^int.*$|^bigint$|^decimal.*$|^numeric.*$|^real$|^double precision$|^float.*$|^double$|^money$/i", $type) > 0 ) {
+    if ( preg_match("/^smallint$|^int.*|^bigint.*|^decimal.*|^numeric.*|^real|^double precision$|^float.*|^double.*|^money.*/i", $type) > 0 ) {
       $default_value = "0";
     }
-    else if ( preg_match("/^character varying.*$|^varchar.*$|^char.*$|^text$/i", $type) > 0 ) {
+    else if ( preg_match("/^character varying.*|^varchar.*|^char.*|^text.*/i", $type) > 0 ) {
       $default_value = "''";
     }
     else if ( preg_match("/^boolean$/i", $type) > 0 ) {
       $default_value = "false";
     }
+    
+    /*
+    if ( $default_value === NULL ) {
+      throw new exception("could not calculate default value for type $type");
+    }
+    /**/
 
     return $default_value;
   }
