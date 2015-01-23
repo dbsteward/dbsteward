@@ -61,11 +61,11 @@ XML;
     $user = $this->pgsql8->get_dbuser();
     $password = $this->pgsql8->get_dbpass();
 
-    pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
+    // pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
   }
 
   public function tearDown() {
-    pgsql8_db::disconnect();
+    // pgsql8_db::disconnect();
   }
 
   protected function set_up_sequence_testing($schema_name = 'public') {

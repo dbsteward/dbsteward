@@ -108,6 +108,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
+    dbsteward::$always_recreate_views = TRUE;
   }
   
   protected function build_db_pgsql8() {
