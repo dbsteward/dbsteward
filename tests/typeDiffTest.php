@@ -31,8 +31,6 @@ class typeDiffTest extends dbstewardUnitTestBase {
   private $pgsql8_xml_a = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>dbsteward_phpunit_app</application>
       <owner>deployment</owner>
@@ -132,8 +130,6 @@ XML;
   private $pgsql8_xml_b = <<<XML
 <dbsteward>
   <database>
-    <host>db-host</host>
-    <name>dbsteward</name>
     <role>
       <application>dbsteward_phpunit_app</application>
       <owner>deployment</owner>
@@ -237,7 +233,6 @@ XML;
    * @group pgsql8
    */
   public function testAddEnumMemberPGSQL8() {
-    $this->markTestSkipped('testAddEnumMember does not actually test anything');
     $this->set_xml_content_a($this->pgsql8_xml_a);
     $this->set_xml_content_b($this->pgsql8_xml_b);
 
@@ -249,7 +244,6 @@ XML;
    * @group mssql10
    */
   public function testAddEnumMemberMSSQL10() {
-    $this->markTestSkipped('testAddEnumMember does not actually test anything');
     $this->set_xml_content_a($this->pgsql8_xml_a);
     $this->set_xml_content_b($this->pgsql8_xml_b);
     
