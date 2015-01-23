@@ -41,8 +41,8 @@
   "require-dev": {
     "ext-mysql": "*",
     "ext-pgsql": "*",
-    "pirum/pirum": ">=1.1.5",
-    "phpunit/phpunit": ">=4.4.0"
+    "pirum/pirum": "1.1.*",
+    "phpunit/phpunit": "4.4.*"
   },
   "bin": ["bin/dbsteward"]
 }
