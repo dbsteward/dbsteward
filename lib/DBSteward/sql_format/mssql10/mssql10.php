@@ -13,6 +13,9 @@ class mssql10 {
   const QUOTE_CHAR = '"';
 
   public static function build($output_prefix, $db_doc) {
+    if ( strlen($output_prefix) == 0 ) {
+      throw new exception("mssql10::build() sanity failure: output_prefix is blank");
+    }
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';
     dbsteward::console_line(1, "Building complete file " . $build_file);

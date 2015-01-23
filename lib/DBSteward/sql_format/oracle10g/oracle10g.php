@@ -13,6 +13,9 @@ class oracle10g {
   const QUOTE_CHAR = '"';
 
   public static function build($files) {
+    if ( strlen($output_prefix) == 0 ) {
+      throw new exception("oracle10g::build() sanity failure: output_prefix is blank");
+    }
     if (!is_array($files)) {
       $files = array($files);
     }

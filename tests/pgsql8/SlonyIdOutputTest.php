@@ -73,7 +73,8 @@ OUTXML;
       dbsteward::$generate_slonik = TRUE;
 
       ob_start();
-      pgsql8::build('', $old_db_doc);
+      $output_prefix_path = dirname(__FILE__) . '/../testdata/' . 'slony_id_output';
+      pgsql8::build($output_prefix_path, $old_db_doc);
       $output = ob_get_contents();
       ob_end_clean();
       preg_match('/101:\s(\d+\-\d+)/', $output, $matches);
