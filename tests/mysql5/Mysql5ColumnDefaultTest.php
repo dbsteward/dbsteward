@@ -20,6 +20,7 @@ class Mysql5ColumnDefaultTest extends PHPUnit_Framework_TestCase {
 
   public function setUp() {
     dbsteward::set_sql_format('mysql5');
+    // define_sql_format_default_values sets these like this
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
@@ -28,9 +29,10 @@ class Mysql5ColumnDefaultTest extends PHPUnit_Framework_TestCase {
   private $db_doc_xml = <<<XML
 <dbsteward>
   <database>
+    <sqlformat>mysql5</sqlformat>
     <role>
-      <owner>the_owner</owner>
-      <customRole>SOMEBODY</customRole>
+      <application>datapptho</application>
+      <owner>toor</owner>
     </role>
   </database>
 XML;
@@ -39,7 +41,9 @@ XML;
     $a = <<<XML
 <schema name="public" owner="ROLE_OWNER">
   <table name="widgets" primaryKey="widgetID" owner="ROLE_OWNER">
-    <column name="widgetID" type="int auto_increment" null="false"/>
+    <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
+    <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
+    <column name="widgetID" type="int(11) AUTO_INCREMENT" null="false"/>
     <column name="widgetName" type="varchar(100)" null="false" />
     <column name="widgetCreator" type="varchar(100)" null="false" />
     <column name="order" type="bigint(11)" null="false" default="0"/>
@@ -50,7 +54,9 @@ XML;
     $b = <<<XML
 <schema name="public" owner="ROLE_OWNER">
   <table name="widgets" primaryKey="widgetID" owner="ROLE_OWNER">
-    <column name="widgetID" type="int auto_increment" null="false"/>
+    <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
+    <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
+    <column name="widgetID" type="int(11) AUTO_INCREMENT" null="false"/>
     <column name="widgetName" type="varchar(100)" null="false" />
     <column name="widgetCreator" type="varchar(100)" null="false" default="'tstark'" />
     <column name="order" type="bigint(11)" null="false" />
