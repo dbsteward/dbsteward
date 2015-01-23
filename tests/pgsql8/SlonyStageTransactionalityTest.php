@@ -12,7 +12,7 @@ require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 /**
  * @group pgsql8
  */
-class SlonyStageTransactionalityTest extends dbstewardUnitTestBase {
+class SlonyStageTransactionalityTest extends PHPUnit_Framework_TestCase {
   
   protected $oldxml = <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -114,9 +114,15 @@ XML;
     parent::setUp();
     dbsteward::set_sql_format('pgsql8');
     
-    // clear these before each test so we don't run into conflicts
+    // reset runtime mode flags to their default
+    dbsteward::$single_stage_upgrade = FALSE;
+    dbsteward::$generate_slonik = FALSE;
+    pgsql8_diff::$as_transaction = TRUE;
+
+    // reset runtime tracking variables
     pgsql8::$table_slony_ids = array();
     pgsql8::$sequence_slony_ids = array();
+    pgsql8::$known_pg_identifiers = array();
     pgsql8_diff::$new_table_dependency = null;
     pgsql8_diff::$old_table_dependency = null;
   }
