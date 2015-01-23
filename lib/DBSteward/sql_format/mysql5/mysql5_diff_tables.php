@@ -276,8 +276,8 @@ class mysql5_diff_tables extends sql99_diff_tables {
         $old_column_type = mysql5_column::column_type(dbsteward::$old_database, $old_schema, $old_table, $old_column);
         $new_column_type = mysql5_column::column_type(dbsteward::$new_database, $new_schema, $new_table, $new_column);
 
-        $old_default = isset($old_column['default']) ? $old_column['default'] : '';
-        $new_default = isset($new_column['default']) ? $new_column['default'] : '';
+        $old_default = isset($old_column['default']) ? (string)$old_column['default'] : '';
+        $new_default = isset($new_column['default']) ? (string)$new_column['default'] : '';
 
         $auto_increment_added = !mysql5_column::is_auto_increment($old_column['type']) && mysql5_column::is_auto_increment($new_column['type']);
         $auto_increment_removed = mysql5_column::is_auto_increment($old_column['type']) && !mysql5_column::is_auto_increment($new_column['type']);
@@ -301,7 +301,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
           }
         }
         elseif ($default_changed) {
-          if ($new_default) {
+          if (strlen($new_default) > 0) {
             if (mysql5_column::is_timestamp($new_column)) {
               // timestamps get special treatment
               $cmd1['command'] = 'modify';
