@@ -61,10 +61,14 @@ XML;
     $user = $this->pgsql8->get_dbuser();
     $password = $this->pgsql8->get_dbpass();
 
+    // github PR#76 - connection is already handled and established by pgsql8::extract_schema()
+    // don't need to establish a connection and let it block testing framework operations
     // pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
   }
 
   public function tearDown() {
+    // github PR#76 - connection is already handled and established by pgsql8::extract_schema()
+    // don't need to establish a connection and let it block testing framework operations
     // pgsql8_db::disconnect();
   }
 
