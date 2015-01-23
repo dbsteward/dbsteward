@@ -42,7 +42,20 @@ class dbsteward_pgsql8_connection extends dbsteward_sql99_connection {
   public function create_db() {
     // disconnect any users connected to dbname
     //$this->query_mgmt(sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname = '%s'", $this->dbname));
-    $this->query_mgmt(sprintf("DROP DATABASE IF EXISTS %s", $this->dbname), FALSE);
+    
+    // check for errors when dropping the database.
+    // the IF EXISTS will yield 0 if the database exists or not, as long as the command was able to be run successfully:
+/*
+[nicholas.kiraly@bludgeon ~]$ psql -U deployment postgres -c "DROP DATABASE IF EXISTS dbsteward_phpunit" ; echo $?
+DROP DATABASE
+0
+[nicholas.kiraly@bludgeon ~]$ psql -U deployment postgres -c "DROP DATABASE IF EXISTS dbsteward_phpunit" ; echo $?
+NOTICE:  database "dbsteward_phpunit" does not exist, skipping
+DROP DATABASE
+0
+/**/
+    $this->query_mgmt(sprintf("DROP DATABASE IF EXISTS %s", $this->dbname));
+
     $this->query_mgmt(sprintf("CREATE DATABASE %s", $this->dbname));
   }
 

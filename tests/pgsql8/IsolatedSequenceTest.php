@@ -68,18 +68,6 @@ XML;
     pgsql8_db::disconnect();
   }
 
-  protected function query_db($sql) {
-    $rs = pgsql8_db::query($sql);
-
-    $rows = array();
-
-    while (($row = pg_fetch_assoc($rs)) !== FALSE) {
-      $rows[] = $row;
-    }
-    pgsql8_db::disconnect();
-    return $rows;
-  }
-
   protected function set_up_sequence_testing($schema_name = 'public') {
     $extracted_xml = pgsql8::extract_schema($this->pgsql8->get_dbhost(),
        $this->pgsql8->get_dbport(), $this->pgsql8->get_dbname(),
