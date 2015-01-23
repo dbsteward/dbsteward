@@ -146,15 +146,29 @@ class pgsql8_diff extends sql99_diff {
       format::set_context_replica_set_to_natural_first(dbsteward::$new_database);
     }
     
-    if (self::$as_transaction && !dbsteward::$generate_slonik) {
-      $stage1_ofs->append_header("BEGIN;\n");
-      $stage1_ofs->append_footer("\nCOMMIT;\n");
+    if (self::$as_transaction) {
+      // stage 1 and 3 should not be in a transaction 
+      // as they will be submitted via slonik EXECUTE SCRIPT
+      if ( ! dbsteward::$generate_slonik ) {
+        $stage1_ofs->append_header("\nBEGIN;\n");
+        $stage1_ofs->append_footer("\nCOMMIT;\n");
+      }
+      else {
+        $stage1_ofs->append_header("\n-- generateslonik specified: pgsql8 STAGE1 upgrade omitting BEGIN. slonik EXECUTE SCRIPT will wrap the submission in a transaction\n");
+      }
       if ( ! dbsteward::$single_stage_upgrade ) {
-        $stage2_ofs->append_header("BEGIN;\n\n");
-        $stage3_ofs->append_header("BEGIN;\n\n");
-        $stage4_ofs->append_header("BEGIN;\n\n");
+        $stage2_ofs->append_header("\nBEGIN;\n\n");
         $stage2_ofs->append_footer("\nCOMMIT;\n");
-        $stage3_ofs->append_footer("\nCOMMIT;\n");
+        // if generating slonik, stage 1 and 3 should not be in a transaction
+        // as they will be submitted via slonik EXECUTE SCRIPT
+        if ( ! dbsteward::$generate_slonik ) {
+          $stage3_ofs->append_header("\nBEGIN;\n\n");
+          $stage3_ofs->append_footer("\nCOMMIT;\n");
+        }
+        else {
+          $stage3_ofs->append_header("\n-- generateslonik specified: pgsql8 STAGE1 upgrade omitting BEGIN. slonik EXECUTE SCRIPT will wrap the submission in a transaction\n");
+        }
+        $stage4_ofs->append_header("\nBEGIN;\n\n");
         $stage4_ofs->append_footer("\nCOMMIT;\n");
       }
     }

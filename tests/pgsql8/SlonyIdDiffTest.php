@@ -117,6 +117,10 @@ XML;
     pgsql8_diff::$as_transaction = TRUE;
     dbsteward::$generate_slonik = FALSE;
     $this->transaction_statement_check(FALSE);
+    
+    pgsql8_diff::$as_transaction = TRUE;
+    dbsteward::$generate_slonik = TRUE;
+    $this->transaction_statement_check(FALSE);
   }
 
   
