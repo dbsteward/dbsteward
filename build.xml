@@ -127,13 +127,14 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
       
-      <changelog version="1.3.12" date="2014-10-31" license="Simplified BSD License">
+      <changelog version="1.3.12" date="2015-01-29" license="Simplified BSD License">
 DBSteward 1.3.12 Release
 
 Changes
 * allow infinite includeFile depth of definition fragment XML files
 * fix broken sample XML
 * View definition dependency support with new view element dependsOnViews attribute
+* fix SQL output file transactionality when generating stage files for execution by slonik
 
 
 Supported Platform DDL Generation and Differencing:
