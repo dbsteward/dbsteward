@@ -2067,6 +2067,8 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         }
       }
     }
+    
+    pgsql8_db::disconnect();
 
     // scan all now defined tables
     $schemas = & dbx::get_schemas($doc);
