@@ -18,7 +18,7 @@ class dbsteward_pgsql8_connection extends dbsteward_sql99_connection {
    * @param boolean $throw_on_error
    */
   public function query($sql, $throw_on_error = TRUE) {
-    dbsteward::cmd(sprintf("PGPASSWORD='%s' psql --host=%s --port=%s --username=%s --dbname=%s -c %s",
+    dbsteward::cmd(sprintf("PGPASSWORD='%s' psql --host=%s --port=%s --username=%s --dbname=%s -c %s  2>&1",
                           $this->dbpass, $this->dbhost, $this->dbport, $this->dbuser, $this->dbname, escapeshellarg($sql)), $throw_on_error);
   }
   
@@ -29,7 +29,7 @@ class dbsteward_pgsql8_connection extends dbsteward_sql99_connection {
    * @param boolean $throw_on_error
    */
   public function query_mgmt($sql, $throw_on_error = TRUE) {
-    dbsteward::cmd(sprintf("PGPASSWORD='%s' psql --host=%s --port=%s --username=%s --dbname=%s -c %s 2>&1",
+    dbsteward::cmd(sprintf("PGPASSWORD='%s' psql --host=%s --port=%s --username=%s --dbname=%s -c %s  2>&1",
                           $this->dbpass_mgmt, $this->dbhost, $this->dbport, $this->dbuser_mgmt, $this->dbname_mgmt, escapeshellarg($sql)), $throw_on_error);
   }
 
@@ -42,7 +42,7 @@ class dbsteward_pgsql8_connection extends dbsteward_sql99_connection {
   public function create_db() {
     // disconnect any users connected to dbname
     //$this->query_mgmt(sprintf("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname = '%s'", $this->dbname));
-    $this->query_mgmt(sprintf("DROP DATABASE IF EXISTS %s", $this->dbname));
+    $this->query_mgmt(sprintf("DROP DATABASE IF EXISTS %s", $this->dbname), FALSE);
     $this->query_mgmt(sprintf("CREATE DATABASE %s", $this->dbname));
   }
 
