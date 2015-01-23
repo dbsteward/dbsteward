@@ -23,11 +23,6 @@ class Mysql5ColumnDefaultTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
-    dbsteward::$quote_function_names = TRUE;
-    dbsteward::$quote_object_names = TRUE;
-    dbsteward::$ignore_oldnames = FALSE;
-    mysql5::$use_auto_increment_table_options = FALSE;
-    mysql5::$use_schema_name_prefix = FALSE;
   }
 
   private $db_doc_xml = <<<XML
@@ -47,7 +42,7 @@ XML;
     <column name="widgetID" type="int auto_increment" null="false"/>
     <column name="widgetName" type="varchar(100)" null="false" />
     <column name="widgetCreator" type="varchar(100)" null="false" />
-    <column name="order" type="bigint" null="false" default="0"/>
+    <column name="order" type="bigint(11)" null="false" default="0"/>
   </table>
 </schema>
 XML;
@@ -58,7 +53,7 @@ XML;
     <column name="widgetID" type="int auto_increment" null="false"/>
     <column name="widgetName" type="varchar(100)" null="false" />
     <column name="widgetCreator" type="varchar(100)" null="false" default="'tstark'" />
-    <column name="order" type="bigint" null="false" />
+    <column name="order" type="bigint(11)" null="false" />
   </table>
 </schema>
 XML;
