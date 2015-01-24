@@ -132,9 +132,10 @@ DBSteward 1.3.12 Release
 
 Changes
 * allow infinite includeFile depth of definition fragment XML files
-* fix broken sample XML
-* View definition dependency support with new view element dependsOnViews attribute
-* fix SQL output file transactionality when generating stage files for execution by slonik
+* update outdated sample XML
+* View definition dependency support with new view element dependsOnViews attribute github/nkiraly/DBSteward PR #75
+* fix SQL output file transactionality when generating stage files for execution by slonik github/nkiraly/DBSteward PR #76
+* mysql5 column default removal fix github/nkiraly/DBSteward PR #77
 
 
 Supported Platform DDL Generation and Differencing:
