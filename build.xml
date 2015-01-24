@@ -624,22 +624,23 @@ Supported db structure dump into DBSteward XML:
 
   <target name="clean">
     <echo message="Removing build directory..." />
-    <delete dir="${directory.build}/**" />
-    <delete dir="${directory.build}/" />
+    <delete dir="${directory.build}" />
     <echo message="" />
 
     <echo message="Removing package directory..." />
-    <delete dir="${directory.package}/**" />
-    <delete dir="${directory.package}/" />
+    <delete dir="${directory.package}" />
     <echo message="" />
 
     <echo message="Removing apidocs directory..." />
-    <delete dir="${directory.apidocs}/**" />
-    <delete dir="${directory.apidocs}/" />
+    <delete dir="${directory.apidocs}" />
     <echo message="" />
 
     <echo message="Removing testdata contents..." />
-    <delete dir="${project.basedir}/tests/testdata/**" />
+    <delete>
+      <fileset dir="${project.basedir}/tests/testdata/">
+        <include name="**" />
+      </fileset>
+    </delete>
     <echo message="" />
   </target>
 

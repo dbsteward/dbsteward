@@ -41,6 +41,7 @@
   "require-dev": {
     "ext-mysql": "*",
     "ext-pgsql": "*",
+    "phing/phing": "2.7.*",
     "pirum/pirum": "1.1.*",
     "phpunit/phpunit": "4.4.*"
   },
