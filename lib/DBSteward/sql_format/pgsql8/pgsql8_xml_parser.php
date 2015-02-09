@@ -130,6 +130,10 @@ class pgsql8_xml_parser extends sql99_xml_parser {
       $table->addAttribute('primaryKey', $orig_table['primaryKey']);
       $table->addAttribute('inheritsTable', $orig_table['name']);
       $table->addAttribute('inheritsSchema', $orig_schema['name']);
+      // Add Slony Set ID to the table if defined in original
+      if ( isset($orig_table['slonySetId']) ) {
+        $table->addAttribute('slonySetId', $orig_table['slonySetId']);
+      }
       // Add slony IDs to the table
       if (!is_null(self::$first_slony_id)) {
         $table->addAttribute('slonyId', self::$first_slony_id + $i);

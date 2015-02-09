@@ -16,6 +16,11 @@ class pgsql8_view extends sql99_view {
    * @return string
    */
   public static function get_creation_sql($db_doc, $node_schema, $node_view) {
+    // set replica set context for view
+    if ( pgsql8::set_context_replica_set_id($node_view) === -10 ) {
+      // view doesn't specify one, set from for schema object
+      pgsql8::set_context_replica_set_id($node_schema);
+    }
     if ( isset($node_view['description']) && strlen($node_view['description']) > 0 ) {
       $ddl = "-- " . dbsteward::string_cast($node_view['description']) . "\n";
     }
@@ -39,6 +44,11 @@ class pgsql8_view extends sql99_view {
    * @return string
    */
   public static function get_drop_sql($node_schema, $node_view) {
+    // set replica set context for view
+    if ( pgsql8::set_context_replica_set_id($node_view) === -10 ) {
+      // view doesn't specify one, set from for schema object
+      pgsql8::set_context_replica_set_id($node_schema);
+    }
     $ddl = "DROP VIEW IF EXISTS " . pgsql8::get_quoted_schema_name($node_schema['name']) . '.' . pgsql8::get_quoted_table_name($node_view['name']) . ";\n";
     return $ddl;
   }

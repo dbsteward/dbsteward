@@ -136,6 +136,7 @@ Changes
 * View definition dependency support with new view element dependsOnViews attribute github/nkiraly/DBSteward PR #75
 * fix SQL output file transactionality when generating stage files for execution by slonik github/nkiraly/DBSteward PR #76
 * mysql5 column default removal fix github/nkiraly/DBSteward PR #77
+* Contextualize pgsql8 VIEW Slony Replica Set ID DROP / CREATE
 
 
 Supported Platform DDL Generation and Differencing:

@@ -349,7 +349,7 @@ class mssql10_diff extends pgsql8_diff {
           || !mssql10_permission::has_permission($old_view, $new_permission)
           // OR if the view has changed, as that means it has been recreated
           || mssql10_diff_views::is_view_modified($old_view, $new_view) ) {
-            // view permissions are in schema stage 2 file because views are (re)created in that file for SELECT * expansion
+            // view permissions are in schema stage 3 file because views are (re)created in that stage for SELECT * expansion
             $ofs3->write(mssql10_permission::get_sql(dbsteward::$new_database, $new_schema, $new_view, $new_permission) . "\n");
           }
         }

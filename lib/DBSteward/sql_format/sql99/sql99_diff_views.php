@@ -43,6 +43,11 @@ class sql99_diff_views {
       $old_schema = dbx::get_schema($db_doc_old, $new_schema['name']);
       $old_view = dbx::get_view($old_schema, $new_view['name']);
       if (format_diff_views::should_create_view($old_schema, $old_view, $new_schema, $new_view)) {
+        // set replica set context for view
+        if ( pgsql8::set_context_replica_set_id($new_view) === -10 ) {
+          // view doesn't specify one, set from for schema object
+          pgsql8::set_context_replica_set_id($new_schema);
+        }
         $ofs->write(format_view::get_creation_sql($db_doc_new, $new_schema, $new_view) . "\n");
       }
     });
