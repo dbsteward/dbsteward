@@ -505,7 +505,7 @@ class dbx {
     return $filtered_nodes;
   }
 
-  public static function &get_functions_with_dependent_type(&$node_schema, $name) {
+  public static function get_functions_with_dependent_type(&$node_schema, $name) {
     return $node_schema->xpath('function/functionParameter[@type="' . $node_schema['name'] . '.' . $name . '"]/..' .
                                '|function/functionParameter[@type="' . $node_schema['name'] . '.' . $name . '[]" ]/..' .
                                '|function[@returns="' . $node_schema['name'] . '.' . $name . '"]' .
