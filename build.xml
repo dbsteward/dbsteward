@@ -127,7 +127,7 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
       
-      <changelog version="1.3.12" date="2015-01-29" license="Simplified BSD License">
+      <changelog version="1.3.12" date="2015-03-28" license="Simplified BSD License">
 DBSteward 1.3.12 Release
 
 Changes
@@ -137,6 +137,7 @@ Changes
 * fix SQL output file transactionality when generating stage files for execution by slonik github/nkiraly/DBSteward PR #76
 * mysql5 column default removal fix github/nkiraly/DBSteward PR #77
 * Contextualize pgsql8 VIEW Slony Replica Set ID DROP / CREATE
+* Drop and recreate pgsql8 functions referring to types modified in the definition github/nkiraly/DBSteward PR #78
 
 
 Supported Platform DDL Generation and Differencing:

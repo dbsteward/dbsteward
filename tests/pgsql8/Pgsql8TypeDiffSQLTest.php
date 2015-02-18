@@ -1,16 +1,16 @@
 <?php
 /**
- * DBSteward unit test for mysql5 type diffing
+ * DBSteward unit test for pgsql8 type diffing
  *
  * @package DBSteward
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
- * @author Austin Hyde <austin109@gmail.com>
+ * @author Adam Jette <jettea46@yahoo.com>
  */
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
- * @group mysql5
+ * @group pgsql8
  * @group nodb
  */
 class Pgsql8TypeDiffSQLTest extends PHPUnit_Framework_TestCase {
@@ -127,4 +127,3 @@ LANGUAGE plpgsql; -- DBSTEWARD_FUNCTION_DEFINITION_END
   }
 
 }
-?>
