@@ -48,20 +48,50 @@ class pgsql8_diff_types {
       $is_domain = strcasecmp($new_type['type'], 'domain') === 0;
       $n = $is_domain ? 3 : 4;
       $word = $is_domain ? 'domain' : 'type';
+      $i = 1;
+
+      $old_dependent_functions = dbx::get_functions_with_dependent_type($old_schema, (string)$old_type['name']);
+
+      if (count($old_dependent_functions) > 0) {
+        $n += 2;
+        $ofs->write("-- $word {$new_type['name']} definition migration ($i/$n): dependent functions return/parameter type alteration\n");
+        $i++;
+        foreach ($old_dependent_functions as $old_dependent_function) {
+          $ofs->write(pgsql8_function::get_drop_sql($old_schema, $old_dependent_function) . "\n");
+        }
+        $ofs->write("\n");
+      }
       
-      $ofs->write("-- $word {$new_type['name']} definition migration (1/$n): dependent tables column type alteration\n");
+      $ofs->write("-- $word {$new_type['name']} definition migration ($i/$n): dependent tables column type alteration\n");
+      $i++;
       $ofs->write(pgsql8_type::alter_column_type_placeholder($columns, $old_schema, $old_type) . "\n");
 
+
       if ($is_domain) {
-        $ofs->write("-- $word {$new_type['name']} definition migration (2/$n): alter domain\n");
+        $ofs->write("-- $word {$new_type['name']} definition migration ($i/$n): alter domain\n");
+        $i++;
         self::apply_domain_changes($ofs, $old_schema, $old_type, $new_schema, $new_type);
       }
       else {
-        $ofs->write("-- $word {$new_type['name']} definition migration (2/$n): drop old type\n");
+
+        $ofs->write("-- $word {$new_type['name']} definition migration ($i/$n): drop old type\n");
+        $i++;
         $ofs->write(pgsql8_type::get_drop_sql($old_schema, $old_type) . "\n\n");
         
-        $ofs->write("-- $word {$new_type['name']} definition migration (3/$n): recreate type with new definition\n");
+        $ofs->write("-- $word {$new_type['name']} definition migration ($i/$n): recreate type with new definition\n");
+        $i++;
         $ofs->write(pgsql8_type::get_creation_sql($new_schema, $new_type) . "\n\n");
+      }
+
+      // functions are only recreated if they changed elsewise, so need to create them here
+      $new_dependent_functions = dbx::get_functions_with_dependent_type($new_schema, (string)$new_type['name']);
+      if (count($new_dependent_functions) > 0) {
+        $ofs->write("-- $word {$new_type['name']} definition migration ($i/$n): dependent functions return/parameter type with new definition\n");
+        $i++;
+        foreach ($new_dependent_functions as $new_dependent_function) {
+          $ofs->write(pgsql8_function::get_creation_sql($new_schema, $new_dependent_function) . "\n");
+        }
+        $ofs->write("\n\n");
       }
       
       $ofs->write("-- $word {$new_type['name']} definition migration ($n/$n): dependent tables type restoration\n");

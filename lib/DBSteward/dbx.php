@@ -518,6 +518,13 @@ class dbx {
     return $filtered_nodes;
   }
 
+  public static function get_functions_with_dependent_type(&$node_schema, $name) {
+    return $node_schema->xpath('function/functionParameter[@type="' . $node_schema['name'] . '.' . $name . '"]/..' .
+                               '|function/functionParameter[@type="' . $node_schema['name'] . '.' . $name . '[]" ]/..' .
+                               '|function[@returns="' . $node_schema['name'] . '.' . $name . '"]' .
+                               '|function[@returns="' . $node_schema['name'] . '.' . $name . '[]" ]');
+  }
+
   public static function &get_function_parameter(&$node_function, $name, $create_if_not_exist = FALSE) {
     $nodes = $node_function->xpath("functionParameter[@name='" . $name . "']");
     if (count($nodes) == 0) {
