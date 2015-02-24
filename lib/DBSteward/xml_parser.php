@@ -1105,7 +1105,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
         $nodes = static::recurse_inheritance_get_column($table_node, $column_name);
       }
       else if (count($nodes) == 0) {
-        throw new exception("Could not find column " . $name . " in table " . $node_table['name'] . " or in its parents -- panic!");
+        throw new exception("Could not find column " . $column_name . " in table " . $table_node['name'] . " or in its parents -- panic!");
       }
     }
 
