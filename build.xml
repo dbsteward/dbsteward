@@ -138,6 +138,7 @@ Changes
 * mysql5 column default removal fix github/nkiraly/DBSteward PR #77
 * Contextualize pgsql8 VIEW Slony Replica Set ID DROP / CREATE
 * Drop and recreate pgsql8 functions referring to types modified in the definition github/nkiraly/DBSteward PR #78
+* Optional tabrow delimiter specificity github/nkiraly/DBSteward PR #79
 
 
 Supported Platform DDL Generation and Differencing:
