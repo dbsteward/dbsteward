@@ -1441,10 +1441,22 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
     foreach ($doc->schema AS $schema) {
       foreach ($schema->table as $table) {
         if (isset($table->rows)) {
+          $delimiter = "\t";
+          if (!empty($table->rows['tabrowDelimiter'])) {
+            $delimiter = (string)$table->rows['tabrowDelimiter'];
+            if ($delimiter == '\t') {
+              $delimiter = "\t";
+            }
+            elseif ($delimiter == '\n') {
+              $delimiter = "\n";
+            }
+            unset($table->rows['tabrowDelimiter']);
+          }
+
           if (isset($table->rows->tabrow)) {
             foreach ($table->rows->tabrow AS $tabrow) {
               $row = $table->rows->addChild('row');
-              $cols = explode("\t", $tabrow);
+              $cols = explode($delimiter, $tabrow);
               foreach ($cols AS $col) {
                 // similar to pgsql \N notation, make the column value explicitly null
                 if (strcmp($col, '\N') == 0) {
