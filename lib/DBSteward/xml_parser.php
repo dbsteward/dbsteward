@@ -879,7 +879,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
       // column is a foreignKey column ?
       if (isset($column['foreignTable'])) {
         // talking about the same schema?
-        if (strcasecmp($column['foreignSchema'], $b['schema']['name']) == 0) {
+        if (strlen($column['foreignSchema']) === 0 || strcasecmp($column['foreignSchema'], $b['schema']['name']) == 0) {
           // talking about the same table?
           if (strcasecmp($column['foreignTable'], $b['table']['name']) == 0) {
             // so yes, a has a dependency on b via column inline foreign key definition

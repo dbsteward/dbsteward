@@ -12,7 +12,9 @@ class sql99_constraint {
 
   public static function foreign_key_lookup($db_doc, $node_schema, $node_table, $column, $visited = array()) {
     $foreign = array();
-    $foreign['schema'] = dbx::get_schema($db_doc, $column['foreignSchema']);
+
+    $fschema = strlen($column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
+    $foreign['schema'] = dbx::get_schema($db_doc, $fschema);
     if ( ! $foreign['schema'] ) {
       throw new Exception("Failed to find foreign schema '{$column['foreignSchema']}' for {$node_schema['name']}.{$node_table['name']}.{$column['name']}");
     }
