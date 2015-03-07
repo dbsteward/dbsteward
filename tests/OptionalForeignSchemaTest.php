@@ -79,6 +79,62 @@ class OptionalForeignSchemaTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals($table2_t2id, $foreign['column']);
   }
 
+  /** @group pgsql8 */
+  public function testDbxGetTableConstraintsPgsql8() {
+    dbsteward::set_sql_format('pgsql8');
+    $this->_testDbxGetTableConstraints();
+  }
+  /** @group mysql5 */
+  public function testDbxGetTableConstraintsMysql5() {
+    dbsteward::set_sql_format('mysql5');
+    $this->_testDbxGetTableConstraints();
+  }
+  private function _testDbxGetTableConstraints() {
+    $doc = simplexml_load_string($this->xml);
+    $schema = $doc->schema;
+    $table1 = $schema->table[0];
+    $table1_t1id = $table1->column[0];
+    $table1_t2id = $table1->column[1];
+    $table2 = $schema->table[1];
+    $table2_t2id = $table2->column[0];
+
+    $constraints = dbx::get_table_constraints($doc, $schema, $table1, 'foreignKey');
+    $this->assertCount(1, $constraints);
+
+    $foreign = $constraints[0]['foreign_key_data'];
+    $this->assertEquals($schema, $foreign['schema']);
+    $this->assertEquals($table2, $foreign['table']);
+    $this->assertEquals($table2_t2id, $foreign['column']);
+  }
+
+  /** @group pgsql8 */
+  public function testConstraintGetTableConstraintsPgsql8() {
+    dbsteward::set_sql_format('pgsql8');
+    $this->_testConstraintGetTableConstraints();
+  }
+  /** @group mysql5 */
+  public function testConstraintGetTableConstraintsMysql5() {
+    dbsteward::set_sql_format('mysql5');
+    $this->_testConstraintGetTableConstraints();
+  }
+  private function _testConstraintGetTableConstraints() {
+    $doc = simplexml_load_string($this->xml);
+    $schema = $doc->schema;
+    $table1 = $schema->table[0];
+    $table1_t1id = $table1->column[0];
+    $table1_t2id = $table1->column[1];
+    $table2 = $schema->table[1];
+    $table2_t2id = $table2->column[0];
+
+    $constraints = format_constraint::get_table_constraints($doc, $schema, $table1, 'foreignKey');
+    $this->assertCount(1, $constraints);
+
+    $foreign = $constraints[0]['foreign_key_data'];
+    $this->assertEquals($schema, $foreign['schema']);
+    $this->assertEquals($table2, $foreign['table']);
+    $this->assertEquals($table2_t2id, $foreign['column']);
+  }
+
   private $xml = <<<XML
 <dbsteward>
   <database>
