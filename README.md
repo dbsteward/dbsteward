@@ -119,3 +119,8 @@ slonyIds can be completely arbitrary, but are recommended to be allocated in seg
 
 See the Slony slonik output usage guide https://github.com/nkiraly/DBSteward/blob/master/doc/SLONYGUIDE.md for examples.
 
+
+## 14. What are some recommended best practices for the software development lifecycle?
+
+See the DBSteward Development guide https://github.com/nkiraly/DBSteward/blob/master/doc/DEVGUIDE.md for detailed examples.
+

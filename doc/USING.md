@@ -128,7 +128,124 @@ Composite the pg data XML onto your structure:
 >  dbsteward --xml=some_app_structure.xml --pgdataxml=some_app_pg_data.xml
 
 Rename the composite to full.xml:
->  mv some_app_structure_composite.xml some_app_full.xml
+>  mv some_app_structure_composite.xml some_app.xml
 
 Compare the full definition to the running database:
 >  dbsteward --dbhost=db.dev --dbname=some_app --dbuser=nkiraly --dbpassword=lol --dbport=5432 --dbdatadiff=some_app_structure.xml
+
+
+## 5. Testing Active Development Branch or Working Copy Changes
+
+How to use DBSteward to test changes in your active development branch or working copy.
+
+
+### Full Definition Generation
+
+To test changes you may be making to the schema, you can run this to output a full _build.sql file to see how DBSteward is interpreting your table and column elements. This would typically be done to create a development database. Different customer-specific files may be overlaid to create customer-specific information.
+```bash
+[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --xml=db/someapp.xml --xml=customers/dev/dev_data.xml
+[nkiraly@bludgeon ~/public_html/someapp]$ ls -l db/someapp*
+-rw-r--r--  1 nkiraly  nkiraly  2403074 Jul 29 09:59 someapp.xml
+-rw-r--r--  1 nkiraly  nkiraly  3041420 Jul 29 10:56 someapp_build.sql
+-rw-r--r--  1 nkiraly  nkiraly  2473194 Jul 29 10:55 someapp_composite.xml
+```
+
+
+### Upgrade Testing
+
+To test how DBSteward will diff and therefore upgrade a system from one version to another:
+
+Check out the previous branch into a reference directory with git, or checkout the reference branch somewhere if using something like subversion.
+```bash
+mkdir -p reference-dbs/v2.1.0
+
+git archive remotes/origin/v2.1.0 db | tar -x -C reference-dbs/v2.1.0 -f -
+git archive remotes/origin/v2.1.0 customers | tar -x -C reference-dbs/v2.1.0 -f -
+```
+
+Difference the two definitions:
+```bash
+[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml
+
+[nkiraly@bludgeon ~/public_html/someapp]$ ls -l db/someapp_upgrade_*
+-rw-r--r--  1 nkiraly  nkiraly  36645 Mar 29 21:26 db/someapp_upgrade_stage1_schema1.sql
+-rw-r--r--  1 nkiraly  nkiraly  16545 Mar 29 21:26 db/someapp_upgrade_stage2_data1.sql
+-rw-r--r--  1 nkiraly  nkiraly    624 Mar 29 21:26 db/someapp_upgrade_stage3_schema3.sql
+-rw-r--r--  1 nkiraly  nkiraly    622 Mar 29 21:26 db/someapp_upgrade_stage4_data1.sql
+```
+
+### Slony Support / Slonik Script Testing
+
+When testing changes and slony configuration, the --requireslonyid sanity flag can be used to insist that all tables and sequences have slonyId's. Consequently, DBSteward will report the next available slonyId for your convienence:
+
+```bash
+[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml --generateslonik --requireslonyid --quoteillegalnames
+
+[DBSteward-1] Loading XML /home/nicholas.kiraly/public_html/someapp/db/someapp.xml..
+...
+[DBSteward-1] Compositing XML File db/someapp.xml
+...
+[DBSteward-1] Building complete file db/someapp_build.sql
+...
+[DBSteward-1] Warning: users.devices                                   table missing slonyId       NEXT ID = 211
+Unhandled exception:
+users.devices table missing slonyId and slonyIds are required!
+```
+
+With users.devices table assigned slonyId 211:
+
+```bash
+[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml --generateslonik --requireslonyid --quoteillegalnames
+
+[nkiraly@bludgeon ~/public_html/someapp]$ ls -l db/someapp_upgrade_*
+-rw-r--r--  1 nkiraly  nkiraly  1543 Mar 29 21:26 db/someapp_upgrade_slony_replica_set_100_preamble.slonik
+-rw-r--r--  1 nkiraly  nkiraly  1543 Mar 29 21:26 db/someapp_upgrade_slony_replica_set_100_stage1.slonik
+-rw-r--r--  1 nkiraly  nkiraly  1491 Mar 29 21:26 db/someapp_upgrade_slony_replica_set_100_stage1_schema1.sql
+-rw-r--r--  1 nkiraly  nkiraly  2361 Mar 29 21:26 db/someapp_upgrade_slony_replica_set_100_stage2_data1.sql
+-rw-r--r--  1 nkiraly  nkiraly  1735 Mar 29 21:26 db/someapp_upgrade_slony_replica_set_100_stage3.slonik
+-rw-r--r--  1 nkiraly  nkiraly  1497 Mar 29 21:26 db/someapp_upgrade_slony_replica_set_100_stage3_schema3.sql
+-rw-r--r--  1 nkiraly  nkiraly  2374 Mar 29 21:26 db/someapp_upgrade_slony_replica_set_100_stage4_data1.sql
+```
+
+### Comparing a definition to a running database
+
+When comparing and testing upgrades, the dbdatadiff collection arguments allow you to compare the data defined in a dbsteward composited documents to a running postgresql database:
+```bash
+[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --dbhost=db-someappdev --dbname=someapp_acme_nkiraly --dbuser=someapp --dbdatadiff=db/someapp.xml --dbdatadiff=customers/acme/acme_data.xml
+
+Connecting to db-someappdev:someapp_acme_nkiraly as someapp
+Password:
+-- Loading XML /home/nkiraly/public_html/someapp/db/someapp.xml..
+-- Validating XML (size = 2375859) against /home/nkiraly/engineering/DBSteward/lib/DBSteward/dtd/dbsteward.dtd .. OK
+-- Compositing XML ..
+-- Validating XML (size = 1509150) against /home/nkiraly/engineering/DBSteward/lib/DBSteward/dtd/dbsteward.dtd .. OK
+-- Loading XML /home/nkiraly/public_html/someapp/customers/acme/acme_data.xml..
+-- Compositing XML ..
+-- Validating XML (size = 1546776) against /home/nicholas.kiraly/engineering/DBSteward/lib/DBSteward/dtd/dbsteward.dtd .. OK
+-- XML files /home/nkiraly/public_html/someapp/db/someapp.xml /home/nkiraly/public_html/someapp/customers/acme/acme_data.xml  composited
+-- Saving as db/someapp_composite.xml
+-- Building complete file db/someapp_build.sql
+-- Sorting tables for foreign key dependencies for data insert generation..
+-- Building slonik file db/someapp_slony.slonik
+-- Comparing composited dbsteward definition data rows to postgresql database connection table contents
+scheduler.shift_status_list row column WHERE ("shift_status_list_id" = 1) can_see data does not match database row column: 'TRUE' VS ''
+scheduler.shift_status_list row column WHERE ("shift_status_list_id" = 2) can_see data does not match database row column: 'TRUE' VS ''
+scheduler.shift_status_list row column WHERE ("shift_status_list_id" = 3) can_see data does not match database row column: 'FALSE' VS ''
+public.contact_number does not contain row WHERE "contact_number_id" = 1
+public.user row column WHERE ("user_id" = 1) user_status_list_id data does not match database row column: '2' VS '1'
+public.user row column WHERE ("user_id" = 1) user_status_last_update data does not match database row column: '' VS '04/17/2009 19:43:17.734498 UTC'
+public.personal row column WHERE ("user_id" = 1) legal_residence_line1 data does not match database row column: '' VS '1'
+public.personal row column WHERE ("user_id" = 1) city data does not match database row column: '' VS 'city'
+public.personal row column WHERE ("user_id" = 1) county_list_id data does not match database row column: '' VS '2219'
+public.personal row column WHERE ("user_id" = 1) state_list_id data does not match database row column: '' VS '42'
+public.personal row column WHERE ("user_id" = 1) zip data does not match database row column: '' VS '15217'
+public.personal row column WHERE ("user_id" = 1) height data does not match database row column: '' VS '6-0'
+public.personal row column WHERE ("user_id" = 1) birth_date data does not match database row column: '' VS '03/29/1979'
+public.personal row column WHERE ("user_id" = 1) gender data does not match database row column: '' VS 'Male'
+public.personal row column WHERE ("user_id" = 1) residence_type data does not match database row column: '' VS 'county'
+public.user_preferences row column WHERE ("user_id" = 1) results_per_page_list_id data does not match database row column: '3' VS '4'
+```
+
+Some of these data differences are not relevant to static definition base we want, such as the contact, personal, and user_preference table rows found to be missing.
+But the shift_status_list values are different and should be updated in the definition XML.
+
