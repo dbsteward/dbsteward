@@ -95,18 +95,22 @@ Examples of structure and data extraction can be found on the Using DBSteward ar
 Yes you can. Static data rows will be differenced and changes DML generated in stage 2 and 4 .sql files. You can find examples of defining static data in the table _user_status_list_ of the [someapp_v1.xml sample definition](https://github.com/nkiraly/DBSteward/blob/master/xml/someapp_v1.xml). Be sure to leave your static data rows each version. They are compared for changes, additions, and deletions each time you build an upgrade.
 
 
-## 9. Why are views always dropped and re-added?
+## 9. How do I define legacy object names such as columns named order or tables called group without getting 'Invalid identifier'
+Use --quotecolumnnames or --quoteallnames to tell dbsteward to use identifier delimineters on all objects of that type, to allow reserved words to be used as objects.
+
+
+## 10. Why are views always dropped and re-added?
 
 SQL server implementations expand SELECT * .. and implicitly use column types when creating view definitions from query expressions. Rebuilding these views ensures the types and column lists in a view will be consistent with the dependent tables providing the data.
 
 
-## 10. Where are my slonik files? Why aren't my slony configuration details being honored?
+## 11. Where are my slonik files? Why aren't my slony configuration details being honored?
 
 slony slonik configuration files are not output during structure defiinition or diffing unless you use the --generateslonik flag.
-This is to steamline the development vs DBA replication roles in the development lifecycle.
+This is to steamline the development vs DBA replication staff roles in the development lifecycle.
 
 
-## 11. Do I just pick a slonyId? What's the rhyme or reason with slonyId's?
+## 12. Do I just pick a slonyId? What's the rhyme or reason with slonyId's?
 
 slonyIds can be completely arbitrary, but are recommended to be allocated in segments. Example: IDs 100-199 are reserved for user tables, IDs 200-299 are for forum relationships and post data, IDs 500-599 for form full text search tables, ad nausea.
 
