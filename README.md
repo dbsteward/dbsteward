@@ -20,6 +20,12 @@ Using DBSteward to generate or difference a database definition: https://github.
 
 Installing DBSteward with Composer / PEAR: https://github.com/nkiraly/DBSteward/blob/master/doc/INSTALLING.md
 
+XML Format examples and ancedotes: https://github.com/nkiraly/DBSteward/blob/master/doc/XMLGUIDE.md
+
+Software development best practices: https://github.com/nkiraly/DBSteward/blob/master/doc/DEVGUIDE.md
+
+Slony configuration management examples: https://github.com/nkiraly/DBSteward/blob/master/doc/SLONYGUIDE.md
+
 
 ***
 
