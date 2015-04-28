@@ -115,3 +115,7 @@ This is to steamline the development vs DBA replication staff roles in the devel
 slonyIds can be completely arbitrary, but are recommended to be allocated in segments. Example: IDs 100-199 are reserved for user tables, IDs 200-299 are for forum relationships and post data, IDs 500-599 for form full text search tables, ad nausea.
 
 
+## 13. How do I define replicate, and upgrade a database I have defined with DBSteward and want to replicate with Slony?
+
+See the Slony slonik output usage guide https://github.com/nkiraly/DBSteward/blob/master/doc/SLONYGUIDE.md for examples.
+
