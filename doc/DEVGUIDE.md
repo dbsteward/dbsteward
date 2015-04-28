@@ -39,3 +39,4 @@ ALTER TABLE user
   ADD COLUMN user_location geography('POINT');
 ```
 
+For details on differencing two versions of an application, see [Using DBSteward](https://github.com/nkiraly/DBSteward/blob/master/doc/USING.md)
