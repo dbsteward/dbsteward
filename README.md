@@ -54,7 +54,7 @@ When generating definition difference between two definitions ( _dbsteward --old
   * DML ( **_INSERT_**, **_UPDATE_** ) insert and update of statically defined table data
 
 
-# 2. How does DBSteward determine what has changed?
+## 2. How does DBSteward determine what has changed?
 DBSteward's approach and expectation is that developers only need to maintain the full definition of a database. When run, DBSteward will determine what has changed between the definition XML of two different versions of the database, generating appropriate SQL commands as output.
 
 DBSteward XML definition files can be included and overlay-composited with other DBSteward XML definition files, providing a way to overlay installation specific database structure and static data definitions.
@@ -68,15 +68,15 @@ DBSteward creates upgrade scripts as the result of comparing two XML definition 
 DBSteward is also capable of reading standard Postgresql pg_dump files or slurping a running Postgresql database and outputting a matching XML definition file.
 
 
-# 3. Why use DBSteward to maintain database structure?
+## 3. Why use DBSteward to maintain database structure?
 Maintaining database structure with DBSteward allows developers to make large or small changes and immediately be able to test a fresh database deployment against revised code. The updated definition is then also immediately useful to upgrade an older version to the current one. Being able to generate DDL / DCL / DML changes can greatly simplify and speed up database upgrade testing and deployment. At any point during a development cycle, a DBA can generate database definition changes instead of having to maintain complex upgrade scripts or hunt for developers who made a database change.
 
 
-# 4. What SQL RDMS output formats does DBSteward currently support?
+## 4. What SQL RDMS output formats does DBSteward currently support?
 DBSteward currently supports output files in Postgresql 8 / 9, MySQL 5.5, and Microsoft SQL Server 2005 / 2008 compliant SQL commands. DBSteward has an extensible SQL formatting code architecture, to allow for additional SQL flavors to be supported rapidly.
 
 
-# 5. How do I get started?
+## 5. How do I get started?
 To start tinkering with the possibilities, install DBSteward with Composer with https://github.com/nkiraly/DBSteward/blob/master/doc/INSTALLING.md
 
 You will also need to have the `xmllint` executable installed in your PATH, available from [libxml2](http://xmlsoft.org).
@@ -85,28 +85,28 @@ You can also of get a checkout at git://github.com/nkiraly/DBSteward.git
 It is runnable in source-checkout form, as php bin/dbsteward.php
 
 
-# 6. How do I convert an existing database to DBSteward definition?
-# 7. I have an existing project how do I migrate to using DBSteward?
+## 6. How do I convert an existing database to DBSteward definition?
+## 7. I have an existing project how do I migrate to using DBSteward?
 Examples of structure and data extraction can be found on the Using DBSteward article https://github.com/nkiraly/DBSteward/blob/master/doc/USING.md
 
 
-# 8. Can I define static data in DBSteward XML?
+## 8. Can I define static data in DBSteward XML?
 
 Yes you can. Static data rows will be differenced and changes DML generated in stage 2 and 4 .sql files. You can find examples of defining static data in the table _user_status_list_ of the [someapp_v1.xml sample definition](https://github.com/nkiraly/DBSteward/blob/master/xml/someapp_v1.xml). Be sure to leave your static data rows each version. They are compared for changes, additions, and deletions each time you build an upgrade.
 
 
-# 9. Why are views always dropped and re-added?
+## 9. Why are views always dropped and re-added?
 
 SQL server implementations expand SELECT * .. and implicitly use column types when creating view definitions from query expressions. Rebuilding these views ensures the types and column lists in a view will be consistent with the dependent tables providing the data.
 
 
-# 10. Where are my slonik files? Why aren't my slony configuration details being honored?
+## 10. Where are my slonik files? Why aren't my slony configuration details being honored?
 
 slony slonik configuration files are not output during structure defiinition or diffing unless you use the --generateslonik flag.
 This is to steamline the development vs DBA replication roles in the development lifecycle.
 
 
-# 11. Do I just pick a slonyId? What's the rhyme or reason with slonyId's?
+## 11. Do I just pick a slonyId? What's the rhyme or reason with slonyId's?
 
 slonyIds can be completely arbitrary, but are recommended to be allocated in segments. Example: IDs 100-199 are reserved for user tables, IDs 200-299 are for forum relationships and post data, IDs 500-599 for form full text search tables, ad nausea.
 
