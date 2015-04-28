@@ -104,7 +104,7 @@ To extract from a MySQL database is similar:
 To pull the data as XML from postgresql database, and then feed it back into DBSteward for compositing:
 
 A) Extract the PostgreSQL XML:
->  psql -A -t -h db.dev -U deployment some_app -c "SELECT database_to_xml(true, false, 'http://dbsteward.org/pgsql8_database_to_xml');" > some_app_pg_data.xml
+>  psql -A -t -h db.dev -U nkiraly_dba some_app -c "SELECT database_to_xml(true, false, 'http://dbsteward.org/pgsql8_database_to_xml');" > some_app_pg_data.xml
 
 B) Clean the psql column headers out of the head and tail of the file:
 >  vi some_app_pg_data.xml
@@ -248,4 +248,120 @@ public.user_preferences row column WHERE ("user_id" = 1) results_per_page_list_i
 
 Some of these data differences are not relevant to static definition base we want, such as the contact, personal, and user_preference table rows found to be missing.
 But the shift_status_list values are different and should be updated in the definition XML.
+
+
+## 6. Task Syntax Examples
+
+
+### TSE1
+Composite more than one source xml set ontop of the first, to build full sql and slonik configuration files for the acme specific implementation:
+> dbsteward --xml=db/someapp.xml --xml=customers/acme/acme_data.xmlp
+
+### TSE2
+Overlay postgresql database_to_xml() output onto a dbsteward defintion, alongside xml compositing:
+> psql someapp -c "select database_to_xml(true, false, 'http://dbsteward.org/pgdataxml');" > someapp_pg_data.xml
+
+> dbsteward --xml=db/someapp.xml --xml=customers/rolly/rolly_data.xml --pgdataxml=someapp_pg_data.xml
+```
+
+### TSE3
+Generate DBSteward-formatted postgresql database schema structure from a running postgresql database:
+> dbsteward --dbschemadump --dbhost=db-stable.dev --dbname=someapp_40 --dbuser=nkiraly_dba --outputfile=out.xml
+
+### TSE4
+Generate slony comparison SQL script for nagios monitoring, etc
+> dbsteward --slonycompare=db/someapp.xml
+
+
+### TSE5
+
+Sort XML definition by schema->table->column as well as sort table->rows row entries:
+> dbsteward --xmlsort=db/schema_jobs.xml
+-- Sorting XML definition file: db/schema_jobs.xml
+
+### TSE6
+Append columns in a table's rows collection, based on a simplified XML definition of what to insert:
+```XML
+<?xml version="1.0"?>
+<!-- example course_list_app_mode.xml -->
+<dbsteward>
+  <schema name="public">
+    <table name="course_list">
+      <rows columns="app_mode">
+        <row>
+          <col>{SCHD,CMS}</col>
+        </row>
+      </rows>
+    </table>
+  </schema>
+</dbsteward>
+```
+> dbsteward --xml=customers/acme/acme_data.xml --xmldatainsert=tools/dbsteward/converters/course_list_app_mode.xml
+
+```bash
+-- Automatic insert data into customers/acme/acme_data.xml from tools/dbsteward/converters/course_list_app_mode.xml
+-- Adding rows column app_mode to definition table course_list
+-- Saving modified dbsteward definition as customers/acme/acme_data.xml.xmldatainserted
+[nkiraly@bludgeon ~/public_html/someapp]$ diff customers/acme/acme_data.xml customers/acme/acme_data.xml.xmldatainserted
+3958c3958
+<       <rows columns="course_list_id, course, course_short_name, course_description, course_create_time, can_apply, can_manage, record_order">
+---
+>       <rows columns="course_list_id, course, course_short_name, course_description, course_create_time, can_apply, can_manage, record_order, app_mode">
+3970a3971
+>           <col>{SCHD,CMS}</col>
+3983a3985
+>           <col>{SCHD,CMS}</col>
+3996a3999
+>           <col>{SCHD,CMS}</col>
+...
+
+```
+
+ 
+### TSE7
+Composite more than one source and upgrade xml sets ontop of the leader of each set, and then build upgrade sql and slonik files to take a database from the build composite to the upgrade composite:
+> dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml
+
+ 
+### TSE8
+Need to rip a table's contents for customer inclusion? Use query_to_xml() and DBSteward's pgdata composite mode:
+```bash
+# use query_to_xml() to enforce primary key sorting
+# the SELECT with explicit columns are the columns that match the existing table rows definition we are trying to fix/replace
+[nkiraly@quickswitch ~/public_html/someapp]$ psql -h db01 -U nkiraly_dba someapp_gaunt_build -c "SELECT query_to_xml('SELECT course_list_id, can_manage, course, course_description, course_create_time, can_apply, course_group_id, record_order FROM course_list ORDER BY course_list_id', true, false, 'http://tempuri.org');" > someapp_gaunt_build_course_list.xml
+[nkiraly@bludgeon ~/public_html/someapp]$ scp quickswitch:/home/nkiraly/public_html/someapp/someapp_gaunt_build_course_list.xml .
+ 
+# we needed the null column placeholders, but the pgdata parser
+# doesn't respect namespaces, so kill the ' xsi:nil="true"' attributes
+sed -i  "s/ xsi:nil=\"true\"//" someapp_gaunt_build_course_list.xml
+ 
+# trash the header and footer garbage from query_to_xml()
+# and replace it with database->schema->table elements that the pgdata parser understands
+vim someapp_gaunt_build_course_list.xml
+ 
+<someapp_gaunt_build>
+<public>
+<course_list>
+ 
+... <row> collection ...
+ 
+</course_list>
+</public>
+</someapp_gaunt_build>
+
+
+# composite overlay the pgdata file ontop of base someapp
+[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --xml=db/someapp.xml --pgdataxml=someapp_gaunt_build_course_list.xml
+ 
+# now you can take the composite file and lay the <rows> data definition in the gaunt_data.xml file
+[nkiraly@bludgeon ~/public_html/someapp]$ vim db/someapp_composite.xml
+[nkiraly@bludgeon ~/public_html/someapp]$ vim customers/gaunt/gaunt_data.xml
+```
+
+### TSE9
+Addendums, to specify that for the last N XML files specified collect all changes and additions to defined XML table data in a file called BASE_addendums.xml
+> dbsteward --xmlcollectdataaddendums=1 --xml=db/someapp.xml  --xml=customers/rolly/rolly_data.xml  --xml=someapp_rolly_config_export.xml
+ 
+> --xmlcollectdataaddendums=N to specify that
+> For the purpose of someapp config exports, this allows developers to separate SomeApp config exports from SomeApp BASE + customer definitions
 
