@@ -25,7 +25,7 @@ Suppose your product is developed and managed in branches and tags like this:
 7. 2.3.5 branch and v2.3.5 tag - the 2.3.5 branch is created from the 2.3.4 branch and then any bugfix or hot fix tickets are branched from this branch for pull request reintegration. When all fix tickets have been reintegrated into 2.3.5 branch, it is tagged as v2.3.5 and released.
 
 
-An example of feature development:
+## Feature development example
 
 1. In a new sprint, feature/PROJ-123-new-feature-gps-tracking is branched from master for feature development
 2. The file db/users.xml is edited to add the column user_location to the user table as
@@ -40,3 +40,18 @@ ALTER TABLE user
 ```
 
 For details on differencing two versions of an application, see [Using DBSteward](https://github.com/nkiraly/DBSteward/blob/master/doc/USING.md)
+
+
+## Bugfix example
+
+1. It is determined that user_location must not be NULL in this geospatial centerice applicaton.
+2. The file db/users.xml is edited to specify the table user column user_location must not be null
+```XML
+  <column name="user_location" type="geography('POINT')" null="false"/>
+```
+3. After peer review, when v2.5.0 is branched from master and compared to v2.4.0, the database structure changes include the new constraints for user_location
+```SQL
+ALTER TABLE user
+  ALTER COLUMN user_location SET NOT NULL;
+```
+
