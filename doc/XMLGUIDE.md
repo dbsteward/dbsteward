@@ -157,3 +157,64 @@ Previous database XML definition:
 In the above new definition, tableA is noted to be renamed to refinedTableA, and tableB_value is noted to be renamed to referenceTableB_value with the new column tableB_business_value being added.
 
 When moving to the next development version adfter the new definition in this context, the oldObjectName attributes can be stripped as they are no longer needed to specify the object renaming. Some developers prefer to leave the oldObjectName references. This mostly depends on your rate of change and need to refer to legacy column names.
+
+
+## 6. Column rename and data transforms
+
+You have to rename a column as part of a data migration transform to support a feature change, inherently, you need to preserve the data in that column. What do?
+
+Take this scenario: queue_file_data is type text to store base64 encoded data, but you need it to be bytea for binary file storage for large object streaming. This is how you get there:
+
+Existing table - Version A
+```XML
+<table name="queue" primaryKey="queue_id" slonyId="20" owner="ROLE_OWNER">
+  <column name="queue_id" type="serial" slonyId="20"/>
+  <column name="queue_entry_time" type="timestamp with time zone"/>
+  <column name="queue_file_name" type="character varying(300)"/>
+  <column name="queue_file_data" type="text"/>
+  <column name="queue_file_data_checksum" type="text"/>
+  <column name="queue_lock_time" type="timestamp with time zone"/>
+  <column name="queue_fetch_time" type="timestamp with time zone"/>
+  <grant operation="SELECT,INSERT,UPDATE" role="ROLE_APPLICATION"/>
+</table>
+```
+
+Transitional table - Version B
+```XML
+<table name="queue" primaryKey="queue_id" slonyId="20" owner="ROLE_OWNER">
+  <column name="queue_id" type="serial" slonyId="20"/>
+  <column name="queue_entry_time" type="timestamp with time zone"/>
+  <column name="queue_file_name" type="character varying(300)"/>
+  <column name="queue_file_data_oldbase64" type="text" oldNameColumn="queue_file_data" description="pre version V, this column for base64 text storage of file contents"/>
+  <column name="queue_file_data_newbytea" type="bytea" description="version >= C column for bytea binary storage of file contents"/>
+  <column name="queue_file_data_checksum" type="text"/>
+  <column name="queue_lock_time" type="timestamp with time zone"/>
+  <column name="queue_fetch_time" type="timestamp with time zone"/>
+  <grant operation="SELECT,INSERT,UPDATE" role="ROLE_APPLICATION"/>
+</table>
+```
+
+Final table - Version C
+```XML
+<table name="queue" primaryKey="queue_id" slonyId="20" owner="ROLE_OWNER">
+  <column name="queue_id" type="serial" slonyId="20"/>
+  <column name="queue_entry_time" type="timestamp with time zone"/>
+  <column name="queue_file_name" type="character varying(300)"/>
+  <column name="queue_file_data" type="bytea" oldNameColumn="queue_file_data_newbytea"/>
+  <column name="queue_file_data_checksum" type="text"/>
+  <column name="queue_lock_time" type="timestamp with time zone"/>
+  <column name="queue_fetch_time" type="timestamp with time zone"/>
+  <grant operation="SELECT,INSERT,UPDATE" role="ROLE_APPLICATION"/>
+</table>
+```
+
+This is the upgrade process that will be managed as these 3 versions A, B, and C
+
+1. Create an old and new version of the column in Version B, for data transformation
+2. Upgrade the application to version B
+3. queue_file_data will be renamed queue_file_data_oldbase64 instead of dropped
+4. Transform the data from queue_file_data_oldbase64 to the new column queue_file_data_newbytea as bytea data
+5. Use the application / wait for next maintenance window
+6. Upgrade the application to version C
+7. queue_file_data_newbytea will be renamed queue_file_data instead of dropped - application code version C knows the column as queue_file_data
+
