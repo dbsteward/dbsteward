@@ -1,7 +1,7 @@
-#DBSteward Installation
+# Installing DBSteward
 
 
-##Installing via Composer
+## Installing via Composer
 Installing DBSteward as a [Composer] (https://getcomposer.org/) global [vendor binary] (https://getcomposer.org/doc/articles/vendor-binaries.md) allows you to use the bin/dbsteward file anywhere, and track master branch if that better suits you.
 ```bash
 composer global require nkiraly/dbsteward:dev-master
@@ -17,9 +17,10 @@ You may need to add the composer bin path to your PATH environment variable to s
 export PATH=$PATH:~/.composer/vendor/bin
 ```
 
-With the composer global vendor binary installed, now you can run by just referring to the vendor binary as **dbsteward**. See [Using DBSteward](https://github.com/nkiraly/DBSteward/wiki/Crash-course#using-dbsteward).
+With the composer global vendor binary installed, now you can run by just referring to the vendor binary as **dbsteward**. See [Using DBSteward](
+https://github.com/nkiraly/DBSteward/blob/master/doc/USING.md) for examples.
 
-##Updating via Composer
+## Updating via Composer
 Updating your composer global package is as easy as re-requiring the global nkiraly/dbsteward package and specifying the version you want to switch to using:
 ```bash
 composer global require nkiraly/dbsteward:1.3.12
@@ -35,7 +36,7 @@ To see what version / tag of DBSteward you have installed globally, use show:
 composer global show -i
 ```
 
-##Installing via PEAR
+## Installing via PEAR
 To install DBSteward and get rolling via [PHP PEAR](http://pear.php.net),
 
 The PEAR channel URL is http://pear.dbsteward.org/
@@ -47,9 +48,10 @@ pear channel-discover pear.dbsteward.org
 pear install dbsteward/DBSteward
 ```
 
-With the PEAR package installed, now you can refer to the dbsteward binary with just **dbsteward**. See [Using DBSteward](https://github.com/nkiraly/DBSteward/wiki/Crash-course#using-dbsteward).
+With the PEAR package installed, now you can refer to the dbsteward binary with just **dbsteward**. See [Using DBSteward](
+https://github.com/nkiraly/DBSteward/blob/master/doc/USING.md) for examples.
 
-##Upgrading via PEAR
+## Upgrading via PEAR
 If your workstation already has PEAR and a version of DBSteward installed, these pear commands will ensure that the DBSteward PEAR channel is up to date and you are running the latest version.
 
 ```bash
