@@ -27,9 +27,9 @@ Installing DBSteward with Composer / PEAR: https://github.com/nkiraly/DBSteward/
 
 There can be nuances to working with DBSteward for the purpose of generating or differencing a database. Please review these FAQ to aide in your development efforts when employing DBSteward.
 
-## 1. What are these output files?
-- someapp_v1.xml
-- someapp_v1_full_build.sql
+## 1. What are these input and output files?
+
+In the following examples, the definition file is *someapp_v1.xml*. For more information on the DBSteward XML format, see https://github.com/nkiraly/DBSteward/blob/master/doc/XMLGUIDE.md
 
 When building a full definition ( _dbsteward --xml=someapp.xml_ ), DBSteward will output a someapp_v1_full_build.sql file. This SQL file contains all of the DDL DML DCL to create a instance of your database definition, **with all operations in foreign-key dependency order**.
 
