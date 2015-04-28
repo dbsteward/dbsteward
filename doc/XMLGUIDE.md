@@ -194,7 +194,7 @@ Transitional table - Version B
 </table>
 ```
 
-Final table - Version C
+Final desired table form - Version C
 ```XML
 <table name="queue" primaryKey="queue_id" slonyId="20" owner="ROLE_OWNER">
   <column name="queue_id" type="serial" slonyId="20"/>
@@ -218,3 +218,65 @@ This is the upgrade process that will be managed as these 3 versions A, B, and C
 6. Upgrade the application to version C
 7. queue_file_data_newbytea will be renamed queue_file_data instead of dropped - application code version C knows the column as queue_file_data
 
+
+## 7. Column data transforms and defaults for columns being added to satisfy new constraints
+
+Adding columns to existing tables that that need immediate data transforms applied to meet constraints that are about to be applied.
+
+Four column add attributes may be defined to have DBSteward include SQL statements adjacent to table structure changes:
+
+- beforeAddStage1
+- afterAddStage1
+- beforeAddStage3
+- afterAddStage3
+
+Consider this scenario: a column added to table that will become part of the primary key.
+
+DBSteward table definition in previous version:
+
+```XML
+<table name="registration_steps_completed" owner="ROLE_OWNER" primaryKey="user_id, registration_step_list_id" slonyId="385">
+  <column name="user_id" null="false" foreignSchema="public" foreignTable="entity" foreignColumn="user_id"/>
+  <column name="registration_step_list_id" null="false" foreignSchema="public" foreignTable="registration_step_list" foreignColumn="registration_step_list_id"/>
+  <column name="status_message" type="text"/>
+  <column name="app_mode"  null="false" foreignSchema="public" foreignTable="app_mode" foreignColumn="app_mode"/>
+  <column name="visited" type="boolean" default="false"/>
+  <column name="needs_attention" type="boolean" default="false"/>
+  <column name="completed" type="boolean" default="false"/>
+  <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
+</table>
+```
+
+DBSteward table definition in current version:
+
+```XML
+<table name="registration_steps_completed" owner="ROLE_OWNER" primaryKey="user_id, registration_step_list_id, step_rank" slonyId="385">
+  <column name="user_id" null="false" foreignSchema="public" foreignTable="entity" foreignColumn="user_id"/>
+  <column name="registration_step_list_id" null="false" foreignSchema="public" foreignTable="registration_step_list" foreignColumn="registration_step_list_id"/>
+  <column name="step_rank" type="integer" null="false" afterAddStage1="UPDATE registration_steps_completed SET step_rank = 1 WHERE step_rank IS NULL;"/>
+  <column name="status_message" type="text"/>
+  <column name="app_mode"  null="false" foreignSchema="public" foreignTable="app_mode" foreignColumn="app_mode"/>
+  <column name="visited" type="boolean" default="false"/>
+  <column name="needs_attention" type="boolean" default="false"/>
+  <column name="completed" type="boolean" default="false"/>
+  <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE"/>
+</table>
+```
+ 
+
+DBSteward then outputs this SQL to achieve adding the column and making it part of the new primary key:
+
+```SQL
+--- someapp_v2_upgrade_stage1_schema1.sql
+ALTER TABLE public.registration_steps_completed
+DROP CONSTRAINT registration_steps_completed_pkey;
+ALTER TABLE public.registration_steps_completed
+DROP COLUMN step_completed ,
+ADD COLUMN step_rank integer ;
+UPDATE registration_steps_completed SET step_rank = 1 WHERE step_rank IS NULL; -- from public.registration_steps_completed.step_rank afterAddStage1 definition
+ALTER TABLE public.registration_steps_completed
+ADD CONSTRAINT registration_steps_completed_pkey PRIMARY KEY (user_id, registration_step_list_id, step_rank);
+--- someapp_v2_upgrade_schema_stage2.sql
+ALTER TABLE public.registration_steps_completed
+ALTER COLUMN step_rank SET NOT NULL;
+```
