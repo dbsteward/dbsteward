@@ -9,7 +9,7 @@ nicholas.kiraly@bludgeon  (master)
 
 phing clean
 
-grep -ir 'version' build.xml lib/* .config.properties | grep '\d.\d'
+grep -ir 'version' build.xml lib/* .config.properties | grep '='
 
 ```
 
