@@ -27,13 +27,14 @@ Suppose your product is developed and managed in branches and tags like this:
 
 ## Feature development example
 
-1. In a new sprint, feature/PROJ-123-new-feature-gps-tracking is branched from master for feature development
-2. The file db/users.xml is edited to add the column user_location to the user table as
+1. The new feature ticket PROJ-123 for user gps tracking is planned and vetted
+2. In support of the ticket, feature/PROJ-123-new-feature-gps-tracking is branched from master for code and database feature development
+3. The file db/users.xml is edited to add the column user_location to the user table as
 ```XML
   <column name="user_location" type="geography('POINT')"/>
 ```
-3. After testing and review, feature/PROJ-123-new-feature-gps-tracking is brought to master as a pull request
-4. When v2.4.0 is branched from master, it contains the sum of all v2.4.0 changes and when compared to v2.3.4, it's database changes include the new column user_location
+4. After testing and review, feature/PROJ-123-new-feature-gps-tracking is brought to master as a pull request
+5. When v2.4.0 is branched from master, it contains the sum of all v2.4.0 changes and when compared to v2.3.4, it's database changes include the new column user_location
 ```SQL
 ALTER TABLE user
   ADD COLUMN user_location geography('POINT');
@@ -45,11 +46,13 @@ For details on differencing two versions of an application, see [Using DBSteward
 ## Bugfix example
 
 1. It is determined that user_location must not be NULL in this geospatial centerice applicaton.
-2. The file db/users.xml is edited to specify the table user column user_location must not be null
+2. In support of the ticket, bugfix/PROJ-128-user-location-required is branched from master for code and database refinement and scheduled to be included in the 2.5.0 release
+3. The file db/users.xml is edited to specify the table user column user_location must not be null
 ```XML
   <column name="user_location" type="geography('POINT')" null="false"/>
 ```
-3. After peer review, when v2.5.0 is branched from master and compared to v2.4.0, the database structure changes include the new constraints for user_location
+4. After testing and review, branch bugfix/PROJ-128-user-location-required is brought to master as a pull request
+5. When v2.5.0 is branched from master and compared to v2.4.0, the database structure changes include the new constraints for user_location
 ```SQL
 ALTER TABLE user
   ALTER COLUMN user_location SET NOT NULL;
