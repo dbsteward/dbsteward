@@ -45,7 +45,7 @@ For details on differencing two versions of an application, see [Using DBSteward
 
 ## Bugfix example
 
-1. It is determined that user_location must not be NULL in this geospatial centerice applicaton.
+1. It is determined that user_location must not be NULL in this geospatial centerice application, ticketed as PROJ-128
 2. In support of the ticket, bugfix/PROJ-128-user-location-required is branched from master for code and database refinement and scheduled to be included in the 2.5.0 release
 3. The file db/users.xml is edited to specify the table user column user_location must not be null
 ```XML
