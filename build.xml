@@ -127,11 +127,11 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
-      <changelog version="1.4.0" date="2015-05-22" license="Simplified BSD License">
+      <changelog version="1.4.0" date="2015-06-10" license="Simplified BSD License">
 DBSteward 1.4.0 Release
 
 Changes
-* NF
+* Add additional quotereservednames flag and separate quoteillegalnames to only affect those
 
 
 Supported Platform DDL Generation and Differencing:
