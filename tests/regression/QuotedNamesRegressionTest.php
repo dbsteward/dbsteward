@@ -68,10 +68,10 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
               call_user_func("$format::get_quoted_{$object}_name",$invalid_name);
             }
             catch ( Exception $ex ) {
-              $this->assertContains('Invalid identifier', $ex->getMessage());
+              $this->assertContains('Illegal identifier', $ex->getMessage());
               continue;
             }
-            $this->fail("Expected 'Invalid identifier' exception, but no exception was thrown for identifier '$invalid_name'");
+            $this->fail("Expected 'Illegal identifier' exception, but no exception was thrown for identifier '$invalid_name'");
           }
         }
 

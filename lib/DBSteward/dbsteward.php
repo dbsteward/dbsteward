@@ -92,6 +92,7 @@ class dbsteward {
   public static $quote_column_names = FALSE;
   public static $quote_all_names = FALSE;
   public static $quote_illegal_identifiers = FALSE;
+  public static $quote_reserved_identifiers = FALSE;
   public static $only_schema_sql = FALSE;
   public static $only_data_sql = FALSE;
   public static $limit_to_tables = array();
@@ -151,6 +152,7 @@ Global Switches and Flags
   --quotecolumnnames                quote column names in SQL output
   --quoteallnames                   quote ALL identifiers in SQL output
   --quoteillegalnames               quote illegal identifiers and treat as a warning, rather than an error.
+  --quotereservednames              quote reserved identifiers and treat as a warning, rather than an error.
 Generating SQL DDL / DML / DCL
   --xml=<database.xml> ...
   --pgdataxml=<pgdata.xml> ...      postgresql SELECT database_to_xml() result to overlay in composite definition
@@ -237,6 +239,7 @@ Format-specific options
       "quotecolumnnames::",
       "quoteallnames::",
       "quoteillegalnames::",
+      "quotereservednames::",
       "onlyschemasql::",
       "onlydatasql::",
       "onlytable::",
@@ -530,6 +533,9 @@ Format-specific options
     }
     if (isset($options["quoteillegalnames"])) {
       dbsteward::$quote_illegal_identifiers = TRUE;
+    }
+    if (isset($options["quotereservednames"])) {
+      dbsteward::$quote_reserved_identifiers = TRUE;
     }
     
     switch ($mode) {
