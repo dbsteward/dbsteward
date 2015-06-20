@@ -100,7 +100,7 @@ class dbsteward {
   public static $limit_to_tables = array();
   public static $single_stage_upgrade = FALSE;
 
-  public static $REALLY_VERBOSE = false;
+  public static $BRING_THE_RAIN = false; // Hardcore mode
   public static $DEBUG = false;
   public static $LOG_LEVEL = Monolog\Logger::NOTICE;
   protected static $logger = null;
@@ -160,6 +160,9 @@ Global Switches and Flags
   --quoteallnames                   quote ALL identifiers in SQL output
   --quoteillegalnames               quote illegal identifiers and treat as a warning, rather than an error.
   --quotereservednames              quote reserved identifiers and treat as a warning, rather than an error.
+  -v[v[v]]                          see more detail (verbose). -vvv is not advised for normal use.
+  -q[q]                             see less detail (quiet).
+  --debug                           display extended information about errors. Automatically implies -vv.
 Generating SQL DDL / DML / DCL
   --xml=<database.xml> ...
   --pgdataxml=<pgdata.xml> ...      postgresql SELECT database_to_xml() result to overlay in composite definition
@@ -217,7 +220,7 @@ Format-specific options
   }
 
   public function arg_parse() {
-    $short_opts = '';
+    $short_opts = 'vq';
     $long_opts = array(
       "sqlformat::",
       "xml::",
@@ -262,10 +265,12 @@ Format-specific options
       "useautoincrementoptions::",
       "useschemaprefix::",
       "outputdir::",
-      "outputfileprefix::"
+      "outputfileprefix::",
+      "debug"
     );
     $options = getopt($short_opts, $long_opts);
-    //var_dump($options); die('dieoptiondump');
+    self::set_verbosity($options);
+
     $files = array(
       'old' => array(),
       'new' => array(),
@@ -672,6 +677,28 @@ Format-specific options
     }
   }
 
+  protected static function set_verbosity($options) {
+    static $levels = array(Monolog\Logger::ERROR, Monolog\Logger::WARNING, Monolog\Logger::NOTICE, Monolog\Logger::INFO, Monolog\Logger::DEBUG);
+
+    $debug = isset($options['debug']);
+    $v = isset($options['v']) ? count((array)$options['v']) : 0;
+    $q = isset($options['q']) ? count((array)$options['q']) : 0;
+    $n = $v - $q + 2;
+
+    if ($debug) {
+      self::$DEBUG = true;
+      self::$LOG_LEVEL = Monolog\Logger::DEBUG;
+      if ($v) {
+        self::$BRING_THE_RAIN = true;
+      }
+    } else {
+      self::$LOG_LEVEL = $levels[min(count($levels)-1, max(0, $n))];
+      if ($n > 2) {
+        self::$BRING_THE_RAIN = true;
+      }
+    }
+  }
+
   protected static function define_sql_format_default_values($sql_format, $options) {
 ///// sql_format-specific default options
     $dbport = FALSE;
@@ -895,7 +922,7 @@ Format-specific options
     // echo "[DBSteward-" . $level . "] " . $text . "\n";
   }
   public static function trace($text) {
-    if (self::$REALLY_VERBOSE) {
+    if (self::$BRING_THE_RAIN) {
       self::log(Monolog\Logger::DEBUG, $text);
     }
   }
