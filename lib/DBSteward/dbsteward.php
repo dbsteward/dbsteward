@@ -100,6 +100,7 @@ class dbsteward {
   public static $limit_to_tables = array();
   public static $single_stage_upgrade = FALSE;
 
+  public static $ENABLE_COLOR = true;
   public static $BRING_THE_RAIN = false; // Hardcore mode
   public static $DEBUG = false;
   public static $LOG_LEVEL = Monolog\Logger::NOTICE;
