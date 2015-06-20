@@ -12,8 +12,11 @@
 
 require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 
-class WarnOnOverriddenRoleTest extends PHPUnit_Extensions_OutputTestCase {
+class WarnOnOverriddenRoleTest extends PHPUnit_Framework_TestCase {
   public function setUp() {
+    $this->testHandler = new Monolog\Handler\TestHandler;
+    dbsteward::get_logger()->pushHandler($this->testHandler);
+
     // format doesn't really matter
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_schema_names = TRUE;
@@ -39,6 +42,9 @@ class WarnOnOverriddenRoleTest extends PHPUnit_Extensions_OutputTestCase {
 XML;
     $this->dbdoc = new SimpleXMLElement($xml);
   }
+  public function tearDown() {
+    dbsteward::get_logger()->popHandler();
+  }
 
   /**
    * @group pgsql8
@@ -63,7 +69,7 @@ XML;
     $role = xml_parser::role_enum($this->dbdoc, 'invalid');
     $this->assertEquals('deployment', $role);
 
-    $this->expectOutputString("[DBSteward-1] Warning: Ignoring custom roles. Role 'invalid' is being overridden by ROLE_OWNER ('deployment').\n");
+    $this->assertLogged(Monolog\Logger::WARNING, "Warning: Ignoring custom roles. Role 'invalid' is being overridden by ROLE_OWNER ('deployment').");
   }
 
   /**
@@ -83,5 +89,8 @@ XML;
     }
     $this->fail("Expected exception when not ignoring custom roles");
   }
+
+  private function assertLogged($level, $message) {
+    $this->assertTrue($this->testHandler->hasRecordThatContains($message, $level));
+  }
 }
-?>

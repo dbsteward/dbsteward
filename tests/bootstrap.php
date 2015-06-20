@@ -31,6 +31,8 @@ class DI {
 
 // set up our database connection instances
 
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 require_once __DIR__ . '/dbsteward_sql99_connection.php';
 require_once __DIR__ . '/dbsteward_pgsql8_connection.php';
 require_once __DIR__ . '/dbsteward_mssql10_connection.php';
@@ -117,3 +119,8 @@ else {
     return new dbsteward_mssql10_connection($c->mssql10_config);
   };
 }
+
+dbsteward::$DEBUG = true;
+dbsteward::$LOG_LEVEL = Monolog\Logger::DEBUG;
+dbsteward::$BRING_THE_RAIN = false;
+// dbsteward::$ENABLE_COLOR = false;

@@ -81,7 +81,7 @@ class mysql5 extends sql99 {
     // language defintions
     if (dbsteward::$create_languages) {
       foreach ($db_doc->language AS $language) {
-        dbsteward::warning("Ignoring language $language['name'] declaration because MySQL does not support languages other than 'sql'");
+        dbsteward::warning("Ignoring language {$language['name']} declaration because MySQL does not support languages other than 'sql'");
       }
     }
 

@@ -913,14 +913,17 @@ Format-specific options
     return xml_parser::save_xml($def_file_modified, $def_doc->saveXML());
   }
 
-  private static function log($level, $text) {
+  public static function get_logger() {
     if (!self::$logger) {
       self::$logger = new Monolog\Logger('dbsteward');
       self::$logger->pushHandler($sh = new Monolog\Handler\StreamHandler(STDERR, static::$LOG_LEVEL));
       $sh->setFormatter(new DBStewardConsoleLogFormatter);
     }
-    self::$logger->log($level, $text);
-    // echo "[DBSteward-" . $level . "] " . $text . "\n";
+    return self::$logger;
+  }
+
+  private static function log($level, $text) { 
+    self::get_logger()->log($level, $text);
   }
   public static function trace($text) {
     if (self::$BRING_THE_RAIN) {
