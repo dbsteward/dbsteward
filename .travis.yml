@@ -42,6 +42,7 @@ before_script:
   - if [[ "$PHPUNIT_GROUP" == "pgsql8" ]]; then psql -U postgres -d dbsteward_phpunit -c "CREATE OR REPLACE LANGUAGE plpgsql;"; fi
   - if [[ "$PHPUNIT_GROUP" == "mysql5" ]]; then mysql -u root -D mysql -e "GRANT ALL ON *.* TO travis@'%', dbsteward_pu_app@'%', deployment@'%' WITH GRANT OPTION;"; fi
   - if [[ "$PHPUNIT_GROUP" == "mysql5" ]]; then mysql -u root -D mysql -e "DROP DATABASE IF EXISTS dbsteward_phpunit; CREATE DATABASE dbsteward_phpunit;"; fi
+  - composer install --dev --no-interaction
 
 # by default, travis just runs "phpunit", but our tests are in the tests directory
-script: phpunit --configuration tests/phpunit.xml --verbose --debug --group $PHPUNIT_GROUP tests/
+script: vendor/bin/phpunit --configuration tests/phpunit.xml --verbose --debug --group $PHPUNIT_GROUP tests/
