@@ -41,18 +41,18 @@ class oracle10g_diff extends sql99_diff {
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1BEFORE');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
-    dbsteward::console_line(1, "Drop Old Schemas");
+    dbsteward::info("Drop Old Schemas");
     oracle10g_diff::drop_old_schemas($stage3_ofs);
-    dbsteward::console_line(1, "Create New Schemas");
+    dbsteward::info("Create New Schemas");
     oracle10g_diff::create_new_schemas($stage1_ofs);
-    dbsteward::console_line(1, "Update Structure");
+    dbsteward::info("Update Structure");
     oracle10g_diff::update_structure($stage1_ofs, $stage3_ofs, oracle10g_diff::$new_table_dependency);
-    dbsteward::console_line(1, "Update Permissions");
+    dbsteward::info("Update Permissions");
     oracle10g_diff::update_permissions($stage1_ofs, $stage3_ofs);
 
     oracle10g_diff::update_database_config_parameters($stage1_ofs);
 
-    dbsteward::console_line(1, "Update Data");
+    dbsteward::info("Update Data");
     oracle10g_diff::update_data($stage2_ofs, TRUE);
     oracle10g_diff::update_data($stage2_ofs, FALSE);
 

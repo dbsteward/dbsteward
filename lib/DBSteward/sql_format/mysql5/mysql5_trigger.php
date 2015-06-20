@@ -14,7 +14,7 @@ class mysql5_trigger extends sql99_trigger {
 
     if ( strcasecmp($node_trigger['sqlFormat'], dbsteward::get_sql_format()) ) {
       $note = "Ignoring {$node_trigger['sqlFormat']} trigger '{$node_trigger['name']}'";
-      dbsteward::console_line(1, $note);
+      dbsteward::warning($note);
       return "-- $note\n";
     }
 
@@ -33,12 +33,12 @@ class mysql5_trigger extends sql99_trigger {
     elseif ( count($events) > 1) {
       $notes .= "-- You specified more than one event for trigger {$node_trigger['name']}, but MySQL only supports a single event a time\n";
       $notes .= "--   generating separate triggers for each event\n";
-      dbsteward::console_line(1, "You specified more than one event for trigger {$node_trigger['name']}, but MySQL only supports a single event a time");
-      dbsteward::console_line(1, "  generating separate triggers for each event");
+      dbsteward::warning("You specified more than one event for trigger {$node_trigger['name']}, but MySQL only supports a single event a time");
+      dbsteward::warning("  generating separate triggers for each event");
     }
 
     if ( !empty($node_trigger['forEach']) && strcasecmp($node_trigger['forEach'], 'row') ) {
-      dbsteward::console_line(1, $notes .= "-- You specified a forEach value of {$node_trigger['forEach']} on trigger {$node_trigger['name']} but MySQL only supports ROW - ignoring\n");
+      dbsteward::error($notes .= "-- You specified a forEach value of {$node_trigger['forEach']} on trigger {$node_trigger['name']} but MySQL only supports ROW - ignoring\n");
     }
 
     $node_table = dbx::get_table($node_schema, $node_trigger['table']);
@@ -74,7 +74,7 @@ SQL;
   public static function get_drop_sql($node_schema, $node_trigger) {
     if ( strcasecmp($node_trigger['sqlFormat'], dbsteward::get_sql_format()) ) {
       $note = "Ignoring {$node_trigger['sqlFormat']} trigger '{$node_trigger['name']}'";
-      dbsteward::console_line(1, $note);
+      dbsteward::warning($note);
       return "-- $note\n";
     }
 

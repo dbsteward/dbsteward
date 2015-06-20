@@ -200,7 +200,7 @@ class mysql5_index extends sql99_index {
         break;
 
       default:
-        dbsteward::console_line(1, "MySQL does not support the $using index type, defaulting to BTREE");
+        dbsteward::warning("MySQL does not support the $using index type, defaulting to BTREE");
         return 'BTREE';
         break;
     }

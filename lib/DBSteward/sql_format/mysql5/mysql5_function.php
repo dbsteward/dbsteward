@@ -168,7 +168,7 @@ class mysql5_function extends sql99_function {
   public static function get_drop_sql($node_schema, $node_function) {
     if ( ! static::has_definition($node_function) ) {
       $note = "Not dropping function '{$node_function['name']}' - no definitions for mysql5";
-      dbsteward::console_line(1, $note);
+      dbsteward::warning($note);
       return "-- $note\n";
     }
     $function_type = static::is_procedure($node_function) ? 'PROCEDURE' : 'FUNCTION';

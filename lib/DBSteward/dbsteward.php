@@ -14,12 +14,14 @@ error_reporting(E_ALL);
 
 define('SQLFORMAT_DIR', __DIR__ . '/sql_format');
 
-require_once dirname(__FILE__) . '/dbx.php';
-require_once dirname(__FILE__) . '/xml_parser.php';
-require_once dirname(__FILE__) . '/sql_parser.php';
-require_once dirname(__FILE__) . '/output_file_segmenter.php';
-require_once dirname(__FILE__) . '/ofs_replica_set_router.php';
-require_once dirname(__FILE__) . '/active_sql_format_autoloader.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/dbx.php';
+require_once __DIR__ . '/xml_parser.php';
+require_once __DIR__ . '/sql_parser.php';
+require_once __DIR__ . '/output_file_segmenter.php';
+require_once __DIR__ . '/ofs_replica_set_router.php';
+require_once __DIR__ . '/active_sql_format_autoloader.php';
+require_once __DIR__ . '/DBStewardConsoleLogFormatter.php';
 
 class dbsteward {
 
@@ -97,6 +99,11 @@ class dbsteward {
   public static $only_data_sql = FALSE;
   public static $limit_to_tables = array();
   public static $single_stage_upgrade = FALSE;
+
+  public static $REALLY_VERBOSE = false;
+  public static $DEBUG = false;
+  public static $LOG_LEVEL = Monolog\Logger::NOTICE;
+  protected static $logger = null;
   
   
   /**
@@ -269,20 +276,20 @@ Format-specific options
     ///// XML file parameter sanity checks
     if ( isset($options['xml']) ) {
       if (count($options['xml']) > 0 && isset($options['oldxml']) && count($options['oldxml']) > 0) {
-        dbsteward::console_line(0, "Parameter error: xml and oldxml options are not to be mixed. Did you mean newxml?");
+        dbsteward::error("Parameter error: xml and oldxml options are not to be mixed. Did you mean newxml?");
         exit(1);
       }
       if (count($options['xml']) > 0 && isset($options['newxml']) && count($options['newxml']) > 0) {
-        dbsteward::console_line(0, "Parameter error: xml and newxml options are not to be mixed. Did you mean oldxml?");
+        dbsteward::error("Parameter error: xml and newxml options are not to be mixed. Did you mean oldxml?");
         exit(1);
       }
     }
     if ((isset($options['oldxml']) && count($options['oldxml']) > 0) && (!isset($options['newxml']) || count($options['newxml']) == 0)) {
-      dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
+      dbsteward::error("Parameter error: oldxml needs newxml specified for differencing to occur");
       exit(1);
     }
     if ((!isset($options['oldxml']) || count($options['oldxml']) == 0) && (isset($options['newxml']) && count($options['newxml']) > 0)) {
-      dbsteward::console_line(0, "Parameter error: oldxml needs newxml specified for differencing to occur");
+      dbsteward::error("Parameter error: oldxml needs newxml specified for differencing to occur");
       exit(1);
     }
 
@@ -507,11 +514,11 @@ Format-specific options
     }
 
     // announce our defined version before doing any configuration announcements or tasks
-    dbsteward::console_line(1, "DBSteward Version " . self::VERSION);
+    dbsteward::notice("DBSteward Version " . self::VERSION);
 
     ///// set the global SQL format
     $sql_format = dbsteward::reconcile_sql_format($target_sql_format, $force_sql_format);
-    dbsteward::console_line(1, "Using sqlformat=$sql_format");
+    dbsteward::notice("Using sqlformat=$sql_format");
     dbsteward::set_sql_format($sql_format);
 
     if (is_null($dbport)) {
@@ -552,32 +559,32 @@ Format-specific options
         break;
 
       case dbsteward::MODE_BUILD:
-        dbsteward::console_line(1, "Compositing XML files..");
+        dbsteward::info("Compositing XML files..");
         $addendums_doc = NULL;
         if ($xml_collect_data_addendums > 0) {
-          dbsteward::console_line(1, "Collecting $xml_collect_data_addendums data addendums");
+          dbsteward::info("Collecting $xml_collect_data_addendums data addendums");
         }
         $db_doc = xml_parser::xml_composite($files, $xml_collect_data_addendums, $addendums_doc);
 
         if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
           $pg_data_files = (array)$options['pgdataxml'];
-          dbsteward::console_line(1, "Compositing pgdata XML files on top of XML composite..");
+          dbsteward::info("Compositing pgdata XML files on top of XML composite..");
           xml_parser::xml_composite_pgdata($db_doc, $pg_data_files);
-          dbsteward::console_line(1, "postgres data XML files [" . implode(' ', $pg_data_files) . "] composited.");
+          dbsteward::info("postgres data XML files [" . implode(' ', $pg_data_files) . "] composited.");
         }
 
-        dbsteward::console_line(1, "XML files " . implode(' ', $files) . " composited");
+        dbsteward::info("XML files " . implode(' ', $files) . " composited");
 
         $output_prefix = dbsteward::calculate_file_output_prefix($files);
         $composite_file = $output_prefix . '_composite.xml';
         $db_doc = xml_parser::sql_format_convert($db_doc);
         xml_parser::vendor_parse($db_doc);
-        dbsteward::console_line(1, "Saving as " . $composite_file);
+        dbsteward::notice("Saving composite as " . $composite_file);
         xml_parser::save_doc($composite_file, $db_doc);
 
         if ($addendums_doc !== NULL) {
           $addendums_file = $output_prefix . '_addendums.xml';
-          dbsteward::console_line(1, "Saving addendums as $addendums_file");
+          dbsteward::notice("Saving addendums as $addendums_file");
           xml_parser::save_doc($addendums_file, $addendums_doc);
         }
 
@@ -585,35 +592,35 @@ Format-specific options
         break;
 
       case dbsteward::MODE_DIFF:
-        dbsteward::console_line(1, "Compositing old XML files..");
+        dbsteward::info("Compositing old XML files..");
         $old_db_doc = xml_parser::xml_composite($old_files);
 
-        dbsteward::console_line(1, "Old XML files " . implode(' ', $old_files) . " composited");
+        dbsteward::info("Old XML files " . implode(' ', $old_files) . " composited");
 
-        dbsteward::console_line(1, "Compositing new XML files..");
+        dbsteward::info("Compositing new XML files..");
         $new_db_doc = xml_parser::xml_composite($new_files);
 
         if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
           $pg_data_files = (array)$options['pgdataxml'];
-          dbsteward::console_line(1, "Compositing pgdata XML files on top of new XML composite..");
+          dbsteward::info("Compositing pgdata XML files on top of new XML composite..");
           xml_parser::xml_composite_pgdata($new_db_doc, $pg_data_files);
-          dbsteward::console_line(1, "postgres data XML files [" . implode(' ', $pg_data_files) . "] composited");
+          dbsteward::info("postgres data XML files [" . implode(' ', $pg_data_files) . "] composited");
         }
 
-        dbsteward::console_line(1, "New XML files " . implode(' ', $new_files) . " composited");
+        dbsteward::info("New XML files " . implode(' ', $new_files) . " composited");
 
         $old_output_prefix = dbsteward::calculate_file_output_prefix($old_files);
         $old_composite_file = $old_output_prefix . '_composite.xml';
         $old_db_doc = xml_parser::sql_format_convert($old_db_doc);
         xml_parser::vendor_parse($old_db_doc);
-        dbsteward::console_line(1, "Saving as " . $old_composite_file);
+        dbsteward::notice("Saving oldxml composite as " . $old_composite_file);
         xml_parser::save_doc($old_composite_file, $old_db_doc);
 
         $new_output_prefix = dbsteward::calculate_file_output_prefix($new_files);
         $new_composite_file = $new_output_prefix . '_composite.xml';
         $new_db_doc = xml_parser::sql_format_convert($new_db_doc);
         xml_parser::vendor_parse($new_db_doc);
-        dbsteward::console_line(1, "Saving as " . $new_composite_file);
+        dbsteward::notice("Saving newxml composite as " . $new_composite_file);
         xml_parser::save_doc($new_composite_file, $new_db_doc);
 
         format::build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $old_files, $new_output_prefix, $new_composite_file, $new_db_doc, $new_files);
@@ -621,7 +628,7 @@ Format-specific options
 
       case dbsteward::MODE_EXTRACT:
         $output = format::extract_schema($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
-        dbsteward::console_line(1, "Saving extracted database schema to " . $output_file);
+        dbsteward::notice("Saving extracted database schema to " . $output_file);
         if (!file_put_contents($output_file, $output)) {
           throw new exception("Failed to save extracted database schema to " . $output_file);
         }
@@ -641,7 +648,7 @@ Format-specific options
       case dbsteward::MODE_SLONIK_CONVERT:
         $output = slony1_slonik::convert($options["slonikconvert"]);
         if ($output_file !== FALSE) {
-          dbsteward::console_line(1, "Saving slonikconvert output to " . $output_file);
+          dbsteward::notice("Saving slonikconvert output to " . $output_file);
           if (!file_put_contents($output, $output_file)) {
             throw new exception("Failed to save slonikconvert output to " . $output_file);
           }
@@ -703,7 +710,7 @@ Format-specific options
     
     if (strcasecmp($sql_format, 'pgsql8') != 0) {
       if (isset($options['pgdataxml'])) {
-        dbsteward::console_line(0, "pgdataxml parameter is not supported by " . dbsteward::get_sql_format() . " driver");
+        dbsteward::error("pgdataxml parameter is not supported by " . dbsteward::get_sql_format() . " driver");
         exit(1);
       }
     }
@@ -733,13 +740,13 @@ Format-specific options
           $use_sql_format = $target;
         }
         else {
-          dbsteward::console_line(1, "WARNING: XML is targeted for $target, but you are forcing $requested. Things will probably break!");
+          dbsteward::warning("WARNING: XML is targeted for $target, but you are forcing $requested. Things will probably break!");
           $use_sql_format = $requested;
         }
       }
       else {
         // not forcing a sql_format, use target
-        dbsteward::console_line(1, "XML file(s) are targeted for sqlformat=$target");
+        dbsteward::notice("XML file(s) are targeted for sqlformat=$target");
         $use_sql_format = $target;
       }
     }
@@ -753,14 +760,14 @@ Format-specific options
   }
 
   public static function cmd($command, $error_fatal = TRUE) {
-    //dbsteward::console_line(3,  "dbsteward::cmd( " . $command . " )");
+    dbsteward::debug("dbsteward::cmd( " . $command . " )");
     $output = array();
     $return_value = 0;
     $last_line = exec($command, $output, $return_value);
     if ($return_value > 0) {
       if ($error_fatal) {
-        dbsteward::console_line(1, "ERROR(" . $return_value . ") with command: " . $command);
-        dbsteward::console_line(1, implode("\n", $output));
+        dbsteward::error("ERROR(" . $return_value . ") with command: " . $command);
+        dbsteward::error(implode("\n", $output));
         throw new exception("ERROR(" . $return_value . ") with command: " . $command);
       }
     }
@@ -790,8 +797,8 @@ Format-specific options
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
       $sorted_file_name = $file_name . '.xmlsorted';
-      dbsteward::console_line(1, "Sorting XML definition file: " . $file_name);
-      dbsteward::console_line(1, "Sorted XML output file: " . $sorted_file_name);
+      dbsteward::info("Sorting XML definition file: " . $file_name);
+      dbsteward::info("Sorted XML output file: " . $sorted_file_name);
       xml_parser::file_sort($file_name, $sorted_file_name);
     }
   }
@@ -803,8 +810,8 @@ Format-specific options
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
       $converted_file_name = $file_name . '.xmlconverted';
-      dbsteward::console_line(1, "Upconverting XML definition file: " . $file_name);
-      dbsteward::console_line(1, "Upconvert XML output file: " . $converted_file_name);
+      dbsteward::info("Upconverting XML definition file: " . $file_name);
+      dbsteward::info("Upconvert XML output file: " . $converted_file_name);
       $doc = simplexml_load_file($file_name);
       xml_parser::sql_format_convert($doc);
       $converted_xml = xml_parser::format_xml($doc->asXML());
@@ -814,7 +821,7 @@ Format-specific options
   }
 
   public function xml_data_insert($def_file, $data_file) {
-    dbsteward::console_line(1, "Automatic insert data into " . $def_file . " from " . $data_file);
+    dbsteward::info("Automatic insert data into " . $def_file . " from " . $data_file);
     $def_doc = simplexml_load_file($def_file);
     if (!$def_doc) {
       throw new exception("Failed to load " . $def_file);
@@ -857,7 +864,7 @@ Format-specific options
         $new_columns = preg_split("/[\,\s]+/", $data_table->rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
         for ($i = 0; $i < count($new_columns); $i++) {
           $new_column = $new_columns[$i];
-          dbsteward::console_line(3, "Adding rows column " . $new_column . " to definition table " . $def_table['name']);
+          dbsteward::info("Adding rows column " . $new_column . " to definition table " . $def_table['name']);
           if (in_array($new_column, $definition_columns)) {
             throw new exception("new column " . $new_column . " is already defined in dbsteward definition file");
           }
@@ -874,16 +881,38 @@ Format-specific options
     }
 
     $def_file_modified = $def_file . '.xmldatainserted';
-    dbsteward::console_line(1, "Saving modified dbsteward definition as " . $def_file_modified);
+    dbsteward::notice("Saving modified dbsteward definition as " . $def_file_modified);
     return xml_parser::save_xml($def_file_modified, $def_doc->saveXML());
   }
-  
-  public static function console_line($level, $text) {
-    echo "[DBSteward-" . $level . "] " . $text . "\n";
+
+  private static function log($level, $text) {
+    if (!self::$logger) {
+      self::$logger = new Monolog\Logger('dbsteward');
+      self::$logger->pushHandler($sh = new Monolog\Handler\StreamHandler(STDERR, static::$LOG_LEVEL));
+      $sh->setFormatter(new DBStewardConsoleLogFormatter);
+    }
+    self::$logger->log($level, $text);
+    // echo "[DBSteward-" . $level . "] " . $text . "\n";
   }
-  
-  public static function console_text($level, $text) {
-    echo $text;
+  public static function trace($text) {
+    if (self::$REALLY_VERBOSE) {
+      self::log(Monolog\Logger::DEBUG, $text);
+    }
+  }
+  public static function debug($text) {
+    self::log(Monolog\Logger::DEBUG, $text);
+  }
+  public static function info($text) {
+    self::log(Monolog\Logger::INFO, $text);
+  }
+  public static function notice($text) {
+    self::log(Monolog\Logger::NOTICE, $text);
+  }
+  public static function warning($text) {
+    self::log(Monolog\Logger::WARNING, $text);
+  }
+  public static function error($text) {
+    self::log(Monolog\Logger::ERROR, $text);
   }
   
   public static function get_sql_formats() {

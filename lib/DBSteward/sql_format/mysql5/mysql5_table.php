@@ -25,7 +25,7 @@ class mysql5_table extends sql99_table {
 
     if ( strlen($node_table['inherits']) > 0 ) {
       //@TODO: implement compatibility with pgsql table inheritance
-      dbsteward::console_line(1, "Skipping table '{$node_table['name']}' because MySQL does not support table inheritance");
+      dbsteward::error("Skipping table '{$node_table['name']}' because MySQL does not support table inheritance");
       return "-- Skipping table '{$node_table['name']}' because MySQL does not support table inheritance";
     }
 
@@ -277,8 +277,8 @@ class mysql5_table extends sql99_table {
     $opts = parent::get_table_options($node_schema, $node_table);
 
     if (!mysql5::$use_auto_increment_table_options && array_key_exists('auto_increment', $opts)) {
-      dbsteward::console_line(1, 'WARNING: Ignoring auto_increment tableOption on table ' . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']));
-      dbsteward::console_line(1, '         Setting the auto_increment value is unreliable. If you want to use it, pass the --useautoincrementoptions commandline flag');
+      dbsteward::warning('WARNING: Ignoring auto_increment tableOption on table ' . mysql5::get_fully_qualified_table_name($node_schema['name'], $node_table['name']));
+      dbsteward::warning('         Setting the auto_increment value is unreliable. If you want to use it, pass the --useautoincrementoptions commandline flag');
       unset($opts['auto_increment']);
     }
 

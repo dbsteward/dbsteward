@@ -62,7 +62,7 @@ class xml_parser {
 
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
-      dbsteward::console_line(1, "Loading XML " . realpath($file_name) . "..");
+      dbsteward::notice("Loading XML " . realpath($file_name) . "..");
       $xml_contents = @file_get_contents($file_name);
       if ($xml_contents === FALSE) {
         throw new exception("Failed to load XML from disk: " . $file_name);
@@ -73,7 +73,7 @@ class xml_parser {
         throw new Exception("failed to simplexml_load_string() contents of " . $file_name);
       }
 
-      dbsteward::console_line(1, "Compositing XML File " . $file_name);
+      dbsteward::notice("Compositing XML File " . $file_name);
 
       $composite = self::composite_doc($composite, $doc, $i, $file_name, $start_addendums_idx, $addendums_doc);
     }
@@ -189,7 +189,7 @@ class xml_parser {
         if (substr($include_file_name, 0, 1) != '/') {
           $include_file_name = dirname($file_name) . '/' . $include_file_name;
         }
-        dbsteward::console_line(1, "Compositing XML includeFile " . $include_file_name);
+        dbsteward::notice("Compositing XML includeFile " . $include_file_name);
         $include_doc = simplexml_load_file($include_file_name);
         if ($include_doc === FALSE) {
           throw new Exception("failed to simplexml_load_file() includeFile " . $include_file_name);
@@ -312,7 +312,7 @@ class xml_parser {
         }
         // doesn't exist
         if (count($nodes) == 0) {
-          //dbsteward::console_line(7, "DEBUG: Add missing trigger: " . $child->asXML());
+          dbsteward::debug("DEBUG: Add missing trigger: " . $child->asXML());
           $node = $base->addChild($tag_name, dbsteward::string_cast($child));
           $node->addAttribute('name', $child['name']);
         }
@@ -571,7 +571,7 @@ class xml_parser {
       // sanity check the overlay's rows columns list against the col count of the row
       $overlay_row_count = count($overlay_row->col);
       if (count($overlay_cols) != $overlay_row_count) {
-        dbsteward::console_line(1, count($overlay_cols) . " elements != " . $overlay_row_count . " elements");
+        dbsteward::error(count($overlay_cols) . " overlay columns != " . $overlay_row_count . " overlay elements");
         var_dump($overlay_cols);
         foreach ($overlay_row->col AS $olcol) {
           var_dump($olcol);
@@ -583,7 +583,7 @@ class xml_parser {
       // if the node had no ->row's to start
       // don't try to match any of the children we are considering in this loop
       if ($base_table_rows_count == 0) {
-        //dbsteward::console_line(7, "DEBUG: skipping " . $base_table['name'] . " overlay -- no base table rows");
+        dbsteward::debug("DEBUG: skipping " . $base_table['name'] . " overlay -- no base table rows");
         $row_match = FALSE;
       }
       else {
@@ -600,18 +600,6 @@ class xml_parser {
         }
         // $row_match = self::data_row_overlay_key_search($base_table_rows, $overlay_row, $primary_key_index, $base_row_index);
       }
-      
-/* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
-if ( strcasecmp($base_table['name'], 'ponderoustable') == 0 ) {
-  $pkv = '';
-  foreach($primary_key_index AS $pki_table => $pki_table_map) {
-    $pkv .= $overlay_cols[$pki_table_map['overlay_index']] . ' = ' . $overlay_row->col[$pki_table_map['overlay_index']] . ', ';
-  }
-  $pkv = substr($pkv, 0, -2);
-  $pkv = "(" . $pkv . ")";
-  dbsteward::console_line(4, "DEBUG: " . $base_table['name'] . " primary key " . $pkv . " match at " . $base_row_index);
-}
-/**/
 
       if ($row_match) {
         // $base_row_index is set to $i in _match() when a match is found, so use it to overlay the matched row
@@ -667,11 +655,6 @@ if ( strcasecmp($base_table['name'], 'ponderoustable') == 0 ) {
         var_dump($overlay_row);
         throw new exception("failed to find overlay_col " . $overlay_cols[$j] . " in base_cols");
       }
-/* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
-if ( strcasecmp($base['name'], 'ponderoustable') == 0 && strcasecmp($overlay_cols[$j], 'ponderouscolumn') == 0 ) {
-  dbsteward::console_line(6, "DEBUG: " . $base['name'] . " base index match for " . $overlay_cols[$j] . " at " . $base_col_index);
-}
-/**/
 
       // if has null="true" set, null the column
       if (isset($overlay_row->col[$j]['null']) && strcasecmp($overlay_row->col[$j]['null'], 'true') == 0) {
@@ -694,11 +677,6 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 && strcasecmp($overlay_col
         // it seems in the late versions of PHP 5.2, that LESS ampersand magic is required, albeit some in other places still is
         // see the ampersand_magic function docblock for more confusion
         //$node_row->col[$base_col_index] = self::ampersand_magic($overlay_row->col[$j]);
-/* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
-if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
-  dbsteward::console_line(6, "DEBUG: overwrite " . $overlay_cols[$j] . " value " . $node_row->col[$base_col_index] . " as " . $overlay_row->col[$j]);
-}
-/**/
         $node_row->col[$base_col_index] = $overlay_row->col[$j];
       }
       // the overlay column is empty
@@ -753,7 +731,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
 
     // attempt to verify that xmllint exists on the system
     if ($echo_status) {
-      dbsteward::console_line(1, "Locating xmllint executable...");
+      dbsteward::debug("Locating xmllint executable...");
     }
 
     // which will return 1 on failure to find executable, so dbsteward::cmd will throw an exception
@@ -765,13 +743,13 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
     }
 
     if ($echo_status) {
-      dbsteward::console_line(1, "Found xmllint");
+      dbsteward::debug("Found xmllint");
     }
 
     // realpath the dtd_file so when it is announced it is simplified to remove relative directory pathing
     $dtd_file = realpath($dtd_file);
     if ($echo_status) {
-      dbsteward::console_line(1, "Validating XML (size = " . strlen($xml) . ") against $dtd_file");
+      dbsteward::info("Validating XML (size = " . strlen($xml) . ") against $dtd_file");
     }
     $tmp_file = tempnam(sys_get_temp_dir(), 'dbsteward_validate_');
     if (file_put_contents($tmp_file, $xml) === FALSE) {
@@ -779,7 +757,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
     }
     dbsteward::cmd("xmllint --noout --dtdvalid " . $dtd_file . " " . $tmp_file . " 2>&1");
     if ($echo_status) {
-      dbsteward::console_line(1, "XML Validates (size = " . strlen($xml) . ") against $dtd_file OK");
+      dbsteward::info("XML Validates (size = " . strlen($xml) . ") against $dtd_file OK");
     }
     unlink($tmp_file);
   }
@@ -811,11 +789,11 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
         if ( self::table_has_dependency($table_list[$i], $table_list[$j]) ) {
           // if the table has been visited more than 3 times the number of tables, stop trying
           if ( isset($visited[$visited_index]) && $visited[$visited_index] > $table_list_count * 3 ) {
-            dbsteward::console_line(4, "table " . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " has been processed as a dependency more than 3 times as many total tables; skipping further reordering");
+            dbsteward::warning("table " . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " has been processed as a dependency more than 3 times as many total tables; skipping further reordering");
             break 1;
           }
 
-          // dbsteward::console_line(7, "table_dependency_order i = $i j = $j    i (" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . ") has dependency on j (" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . ")");
+          dbsteward::trace("table_dependency_order i = $i j = $j    i (" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . ") has dependency on j (" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . ")");
 
           // increment that i table dependency was visited
           if ( !isset($visited[$visited_index]) ) {
@@ -883,7 +861,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
           // talking about the same table?
           if (strcasecmp($column['foreignTable'], $b['table']['name']) == 0) {
             // so yes, a has a dependency on b via column inline foreign key definition
-            //dbsteward::console_line(7, $a['schema']['name'] . '.' . $a['table']['name'] . '.' . $column['name'] . "\thas inline fkey dep on\t" . $b['schema']['name'] . '.' . $b['table']['name']);
+            dbsteward::debug($a['schema']['name'] . '.' . $a['table']['name'] . '.' . $column['name'] . "\thas inline fkey dep on\t" . $b['schema']['name'] . '.' . $b['table']['name']);
             return TRUE;
           }
         }
@@ -901,7 +879,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
             // talking about the same table?
             if (strcasecmp($constraint['foreignTable'], $b['table']['name']) == 0) {
               // so yes, a has a dependency on b via constraint definition
-              //dbsteward::console_line(7, $a['schema']['name'] . '.' . $a['table']['name'] . '.' . $column['name'] . "\thas constraint dep on\t" . $b['schema']['name'] . '.' . $b['table']['name']);
+              dbsteward::trace($a['schema']['name'] . '.' . $a['table']['name'] . '.' . $column['name'] . "\thas constraint dep on\t" . $b['schema']['name'] . '.' . $b['table']['name']);
               return TRUE;
             }
           }
@@ -923,7 +901,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
 
   public static $table_dependency_sort_depth = 0;
   public static function table_dependency_sort(&$table_list, $recursion_index = FALSE) {
-    dbsteward::console_line(6, "DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "ENTER table_dependency_sort()");
+    dbsteward::debug("DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "ENTER table_dependency_sort()");
     self::$table_dependency_sort_depth++;
     for ($i = 0; $i < floor(count($table_list) / 2); $i++) {
       $append_list = array();
@@ -934,7 +912,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
         }
         // i depends on j ?
         if (self::table_has_dependency($table_list[$i], $table_list[$j])) {
-          dbsteward::console_line(6, "DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . " " . $i . "\tDEPENDS ON\t" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " " . $j);
+          dbsteward::debug("DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . " " . $i . "\tDEPENDS ON\t" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " " . $j);
           $append_list = array_merge($append_list, array($table_list[$i]));
           // discard the i entry in main array
           unset($table_list[$i]);
@@ -966,7 +944,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
       }
     }
     self::$table_dependency_sort_depth--;
-    dbsteward::console_line(6, "DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "RETURN table_dependency_sort()");
+    dbsteward::debug("DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "RETURN table_dependency_sort()");
   }
 
   /**
@@ -996,7 +974,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
 
     foreach ($pgdatafiles AS $file) {
       $file_name = realpath($file);
-      dbsteward::console_line(1, "Loading postgres data XML " . $file_name);
+      dbsteward::notice("Loading postgres data XML " . $file_name);
       $xml_contents = @file_get_contents($file_name);
       if ($xml_contents === FALSE) {
         throw new exception("Failed to load postgres data XML from disk: " . $file_name);
@@ -1006,7 +984,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
         throw new Exception("failed to simplexml_load_string() contents of " . $file_name);
       }
 
-      dbsteward::console_line(1, "Compositing postgres data (size=" . strlen($xml_contents) . ")");
+      dbsteward::info("Compositing postgres data (size=" . strlen($xml_contents) . ")");
       foreach ($doc AS $schema) {
         foreach ($schema AS $table) {
           $table_xpath = "schema[@name='" . $schema->getName() . "']/table[@name='" . $table->getName() . "']";
@@ -1137,11 +1115,11 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
       if (strcasecmp($column_node['default'], 'null') == 0) {
         // the column is allowed to be null and the definition of default is null
         // so instead of setting the value, mark the column null
-        //dbsteward::console_line(7, 'column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default null');
+        dbsteward::trace('column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default null');
         $node['null'] = 'true';
       }
       else {
-        ////dbsteward::console_line(7, 'column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default value ' . $column_node['default']);
+        dbsteward::trace('column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default value ' . $column_node['default']);
         $default_value = format::strip_string_quoting($default_value);
       }
     }
@@ -1389,7 +1367,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
           // MySQL doesn't have a "public" role, and will attempt to create the user "PUBLIC"
           // instead, warn and alias to ROLE_APPLICATION
           $role = dbsteward::string_cast($db_doc->database->role->application);
-          dbsteward::console_line(1, "Warning: MySQL doesn't support the PUBLIC role, using ROLE_APPLICATION ('$role') instead.");
+          dbsteward::warning("Warning: MySQL doesn't support the PUBLIC role, using ROLE_APPLICATION ('$role') instead.");
         }
         else {
           $role = 'PUBLIC';
@@ -1420,7 +1398,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
             // without having to modify the 450000 calls to role_enum
             // return role->owner when a role macro is not found and there is no custom role called $role
             $owner = $db_doc->database->role->owner;
-            dbsteward::console_line(1, "Warning: Ignoring custom roles. Role '$role' is being overridden by ROLE_OWNER ('$owner').");
+            dbsteward::warning("Warning: Ignoring custom roles. Role '$role' is being overridden by ROLE_OWNER ('$owner').");
             return $owner;
           }
         }

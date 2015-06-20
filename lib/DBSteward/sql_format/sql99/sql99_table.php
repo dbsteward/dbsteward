@@ -156,8 +156,8 @@ class sql99_table {
 
     $new_table_rows = dbx::get_table_rows($new_table);
     $data_rows = $new_table_rows->row;
-//dbsteward::console_line(7, "CLAUSE " . $where);
-//dbsteward::console_line(7, "BEFORE this->data has " . count($data_rows) . " rows");
+    dbsteward::trace("CLAUSE " . $where);
+    dbsteward::trace("BEFORE this->data has " . count($data_rows) . " rows");
     for($i=0; $i < count($data_rows); $i++) {
       if ( self::clause_match($data_rows[$i], $clause) ) {
         unset($data_rows[$i]);
@@ -165,7 +165,7 @@ class sql99_table {
         $i--;
       }
     }
-//dbsteward::console_line(7, "AFTER  this->data has " . count($data_rows) . " rows");
+    dbsteward::trace("AFTER  this->data has " . count($data_rows) . " rows");
   }
 
   protected static function clause_match($row, $clause) {
@@ -226,7 +226,7 @@ class sql99_table {
         }
       }
       else {
-        //dbsteward::console_line(6, "clause[$i] = " . $clause[$i]);
+        // dbsteward::console_line(6, "clause[$i] = " . $clause[$i]);
         //$result = rand(1,5) != 2;
       }
     }
@@ -313,7 +313,7 @@ class sql99_table {
       }
 
       if ( sql99_diff_tables::is_renamed_table($references_schema, $references_table) ) {
-        dbsteward::console_line(5, "NOTICE: constraint " . $constraint['name'] . " for " . $constraint['schema_name'] . "." . $constraint['table_name'] . " references a renamed table -- " . $constraint['definition']);
+        dbsteward::info("NOTICE: constraint " . $constraint['name'] . " for " . $constraint['schema_name'] . "." . $constraint['table_name'] . " references a renamed table -- " . $constraint['definition']);
         return TRUE;
       }
     }

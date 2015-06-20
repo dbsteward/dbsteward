@@ -25,7 +25,7 @@ class mysql5_diff extends sql99_diff {
    */
   public static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
     if (mysql5_diff::$as_transaction) {
-      dbsteward::console_line(1, "Most MySQL DDL implicitly commits transactions, so using them is pointless.");
+      dbsteward::warning("Most MySQL DDL implicitly commits transactions, so using them is pointless.");
     }
 
     // start with pre-upgrade sql statements that prepare the database to take on its changes
@@ -33,18 +33,18 @@ class mysql5_diff extends sql99_diff {
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
 
-    dbsteward::console_line(1, "Revoke Permissions");
+    dbsteward::info("Revoke Permissions");
     self::revoke_permissions($stage1_ofs, $stage3_ofs);
 
-    dbsteward::console_line(1, "Update Structure");
+    dbsteward::info("Update Structure");
     self::update_structure($stage1_ofs, $stage3_ofs, self::$new_table_dependency);
 
-    dbsteward::console_line(1, "Update Permissions");
+    dbsteward::info("Update Permissions");
     self::update_permissions($stage1_ofs, $stage3_ofs);
 
     // self::update_database_config_parameters($stage1_ofs);
 
-    dbsteward::console_line(1, "Update Data");
+    dbsteward::info("Update Data");
     self::update_data($stage2_ofs, TRUE);
     self::update_data($stage4_ofs, FALSE);
 
@@ -203,7 +203,7 @@ class mysql5_diff extends sql99_diff {
       }
     }
     else {
-      dbsteward::console_line(1, "Drop Old Schemas");
+      dbsteward::info("Drop Old Schemas");
       self::drop_old_schemas($ofs3);
     }
 

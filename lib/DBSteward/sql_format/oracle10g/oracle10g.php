@@ -24,7 +24,7 @@ class oracle10g {
 
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';
-    dbsteward::console_line(1, "Building complete file " . $build_file);
+    dbsteward::notice("Building complete file " . $build_file);
     $build_file_fp = fopen($build_file, 'w');
     if ($build_file_fp === FALSE) {
       throw new exception("failed to open full file " . $build_file . ' for output');
@@ -36,7 +36,7 @@ class oracle10g {
 
     $build_file_ofs->write("BEGIN TRANSACTION;\n\n");
 
-    dbsteward::console_line(1, "Calculating table foreign key dependency order..");
+    dbsteward::info("Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
     // database-specific implementation refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
@@ -51,12 +51,12 @@ class oracle10g {
 
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
-      dbsteward::console_line(1, "Defining structure");
+      dbsteward::info("Defining structure");
       oracle10g::build_schema($db_doc, $build_file_ofs, $table_dependency);
     }
     if (!dbsteward::$only_schema_sql
       || dbsteward::$only_data_sql) {
-      dbsteward::console_line(1, "Defining data inserts");
+      dbsteward::info("Defining data inserts");
       oracle10g::build_data($db_doc, $build_file_ofs, $table_dependency);
     }
     dbsteward::$new_database = NULL;
@@ -244,11 +244,11 @@ class oracle10g {
     if (!is_array($new_files)) {
       $new_files = array($new_files);
     }
-    dbsteward::console_line(1, "Compositing old XML files..");
+    dbsteward::info("Compositing old XML files..");
     $old_output_prefix = dirname($old_files[0]) . '/' . substr(basename($old_files[0]), 0, -4);
     $old_db_doc = xml_parser::xml_composite($old_output_prefix, $old_files, $old_composite_file);
 
-    dbsteward::console_line(1, "Compositing new XML files..");
+    dbsteward::info("Compositing new XML files..");
     $new_output_prefix = dirname($new_files[0]) . '/' . substr(basename($new_files[0]), 0, -4);
     $new_db_doc = xml_parser::xml_composite($new_output_prefix, $new_files, $new_composite_file);
 
@@ -256,9 +256,9 @@ class oracle10g {
     $upgrade_prefix = $new_output_prefix . '_upgrade';
 
     // oracle10g_diff needs these to intelligently create SQL difference statements in dependency order
-    dbsteward::console_line(1, "Calculating old table foreign key dependency order..");
+    dbsteward::info("Calculating old table foreign key dependency order..");
     oracle10g_diff::$old_table_dependency = xml_parser::table_dependency_order($old_db_doc);
-    dbsteward::console_line(1, "Calculating new table foreign key dependency order..");
+    dbsteward::info("Calculating new table foreign key dependency order..");
     oracle10g_diff::$new_table_dependency = xml_parser::table_dependency_order($new_db_doc);
 
     oracle10g_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);

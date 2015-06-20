@@ -32,7 +32,7 @@ class mysql5_constraint extends sql99_constraint {
     switch ( strtoupper($constraint['type']) ) {
       case 'CHECK':
         // @TODO: Implement compatibility
-        dbsteward::console_line(1, "Ignoring constraint '{$constraint['name']}' on table '{$constraint['table_name']}' because MySQL doesn't support the CHECK constraint");
+        dbsteward::warning("Ignoring constraint '{$constraint['name']}' on table '{$constraint['table_name']}' because MySQL doesn't support the CHECK constraint");
         return "-- Ignoring constraint '{$constraint['name']}' on table '{$constraint['table_name']}' because MySQL doesn't support the CHECK constraint";
         break;
       case 'PRIMARY KEY':
@@ -110,7 +110,7 @@ class mysql5_constraint extends sql99_constraint {
     switch ( strtoupper($constraint['type']) ) {
       case 'CHECK':
         // @TODO: Implement compatibility
-        dbsteward::console_line(1, "Not dropping constraint '{$constraint['name']}' on table '{$constraint['table_name']}' because MySQL doesn't support the CHECK constraint");
+        dbsteward::warning("Not dropping constraint '{$constraint['name']}' on table '{$constraint['table_name']}' because MySQL doesn't support the CHECK constraint");
         return "-- Not dropping constraint '{$constraint['name']}' on table '{$constraint['table_name']}' because MySQL doesn't support the CHECK constraint";
         break;
       case 'UNIQUE':

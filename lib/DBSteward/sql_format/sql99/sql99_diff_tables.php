@@ -52,7 +52,7 @@ class sql99_diff_tables {
     // table['oldTableName'] does not exist in new schema
     if ( format_schema::contains_table($old_schema, $table['oldTableName'])
         && !format_schema::contains_table($schema, $table['oldTableName']) ) {
-      dbsteward::console_line(7, "NOTICE: " . $table['name'] . " used to be called " . $table['oldTableName']);
+      dbsteward::info("NOTICE: " . $table['name'] . " used to be called " . $table['oldTableName']);
       return true;
     }
 
@@ -71,7 +71,7 @@ class sql99_diff_tables {
   public static function constrains_against_renamed_table($db_doc, $schema, $table) {
     foreach(dbx::get_table_constraints($db_doc, $schema, $table, 'constraint') as $constraint) {
       if ( pgsql8_table::constraint_depends_on_renamed_table($db_doc, $constraint) ) {
-        dbsteward::console_line(7, "NOTICE: " . $schema['name'] . "." . $table['name'] . " constrains against a renamed table with constraint " . $constraint['name']);
+        dbsteward::info("NOTICE: " . $schema['name'] . "." . $table['name'] . " constrains against a renamed table with constraint " . $constraint['name']);
         return TRUE;
       }
     }
@@ -141,7 +141,7 @@ class sql99_diff_tables {
   public static function update_table_options($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table) {
     if (strcasecmp(dbsteward::get_sql_format(),'mssql10') === 0
       || strcasecmp(dbsteward::get_sql_format(),'oracle10g') === 0) {
-      dbsteward::console_line(1, "mssql10 and oracle10g tableOptions are not implemented yet");
+      dbsteward::warning("mssql10 and oracle10g tableOptions are not implemented yet");
       return;
     }
     if ($new_schema && $new_table) {

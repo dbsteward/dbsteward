@@ -138,7 +138,7 @@ class pgsql8_dump_loader {
     dbx::set_default_schema($database, 'public');
 
     foreach($files AS $file) {
-      dbsteward::console_line(1, "Loading " . $file);
+      dbsteward::notice("Loading " . $file);
       $fp = fopen($file, 'r');
       if ( $fp === false ) {
         throw new exception("failed to open database dump file " . $file);

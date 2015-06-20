@@ -36,7 +36,8 @@
     "ext-pcre": "*",
     "ext-pgsql": "*",
     "ext-simplexml": "*",
-    "ext-spl": "*"
+    "ext-spl": "*",
+    "monolog/monolog": "^1.14"
   },
   "require-dev": {
     "ext-mysql": "*",

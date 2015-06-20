@@ -367,7 +367,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       // we must recreate the table with out the identity attribute
       if ( preg_match('/int\sidentity.*$/', $old_column['type']) > 0 &&
            ($new_column['type'] == 'int' || $new_column['type'] == 'bigint') ) {
-        dbsteward::console_line(3, "identity()d table " . $new_schema['name'] . "." . $new_table['name'] . " requires rebuild to drop identity property on " . $new_column['name']);
+        dbsteward::warning("identity()d table " . $new_schema['name'] . "." . $new_table['name'] . " requires rebuild to drop identity property on " . $new_column['name']);
 
         // create a "deep copy" of the table so column and rows
         // references are not altered in the original old DOM
@@ -403,7 +403,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         
         // drop FKEYs other tables have to the table
         $other_tables_foreign_keying_constraints = dbx::get_tables_foreign_keying_to_table(dbsteward::$new_database, mssql10_diff::$new_table_dependency, $new_schema, $new_table);
-        dbsteward::console_line(5, "identity()d table " . $new_schema['name'] . "." . $new_table['name'] . " rebuild has " . count($other_tables_foreign_keying_constraints) . " foreign key references to drop and reapply");
+        dbsteward::info("identity()d table " . $new_schema['name'] . "." . $new_table['name'] . " rebuild has " . count($other_tables_foreign_keying_constraints) . " foreign key references to drop and reapply");
         foreach($other_tables_foreign_keying_constraints as $constraint) {
           $identity_transition_commands[] = mssql10_table::get_constraint_drop_sql($constraint);
         }

@@ -177,18 +177,18 @@ class pgsql8_diff extends sql99_diff {
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1BEFORE');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
-    dbsteward::console_line(1, "Drop Old Schemas");
+    dbsteward::info("Drop Old Schemas");
     self::drop_old_schemas($stage3_ofs);
-    dbsteward::console_line(1, "Create New Schemas");
+    dbsteward::info("Create New Schemas");
     self::create_new_schemas($stage1_ofs);
-    dbsteward::console_line(1, "Update Structure");
+    dbsteward::info("Update Structure");
     self::update_structure($stage1_ofs, $stage3_ofs, self::$new_table_dependency);
-    dbsteward::console_line(1, "Update Permissions");
+    dbsteward::info("Update Permissions");
     self::update_permissions($stage1_ofs, $stage3_ofs);
 
     self::update_database_config_parameters($stage1_ofs, dbsteward::$new_database, dbsteward::$old_database);
 
-    dbsteward::console_line(1, "Update Data");
+    dbsteward::info("Update Data");
     if (dbsteward::$generate_slonik) {
       format::set_context_replica_set_to_natural_first(dbsteward::$new_database);
     }
@@ -521,7 +521,7 @@ class pgsql8_diff extends sql99_diff {
 
         // if the table was renamed, get old definition pointers for comparison
         if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) ) {
-          dbsteward::console_line(7, "NOTICE: " . $new_schema['name'] . "." . $new_table['name'] . " used to be called " . $new_table['oldTableName'] . " -- will diff data against that definition");
+          dbsteward::info("NOTICE: " . $new_schema['name'] . "." . $new_table['name'] . " used to be called " . $new_table['oldTableName'] . " -- will diff data against that definition");
           $old_schema = pgsql8_table::get_old_table_schema($new_schema, $new_table);
           $old_table = pgsql8_table::get_old_table($new_schema, $new_table);
         }
