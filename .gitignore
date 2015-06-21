@@ -2,3 +2,5 @@ build
 tests/testdata*
 /nbproject/private/
 vendor
+*_build.sql
+*_composite.xml
