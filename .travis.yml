@@ -4,6 +4,8 @@ php:
   - 5.4
   - 5.5
 
+sudo: false
+
 env:
   # global env vars are injected into the environment of all build configs
   global:
