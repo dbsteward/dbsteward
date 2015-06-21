@@ -37,7 +37,7 @@
     "ext-pgsql": "*",
     "ext-simplexml": "*",
     "ext-spl": "*",
-    "monolog/monolog": "^1.14",
+    "monolog/monolog": "dev-testhandler-improvements",
     "kevinlebrun/colors.php": "^0.4.1"
   },
   "require-dev": {
@@ -47,5 +47,12 @@
     "pirum/pirum": "1.1.*",
     "phpunit/phpunit": "4.4.*"
   },
-  "bin": ["bin/dbsteward"]
+  "bin": ["bin/dbsteward"],
+
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/austinhyde/monolog"
+    }
+  ]
 }
