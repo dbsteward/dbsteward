@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "e8f89d5794f91287c5d91e7dc83120b6",
+    "hash": "e76f33d813062276bb965b498b3468d0",
     "packages": [
         {
             "name": "kevinlebrun/colors.php",
@@ -59,16 +59,16 @@
         },
         {
             "name": "monolog/monolog",
-            "version": "dev-testhandler-improvements",
+            "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/austinhyde/monolog.git",
-                "reference": "f2fea2c3f537a98715b8980c8f4809d8a8c4a988"
+                "url": "https://github.com/Seldaek/monolog.git",
+                "reference": "49f95a2d636ea9e7409c67890ae29730f50bc22a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/austinhyde/monolog/zipball/f2fea2c3f537a98715b8980c8f4809d8a8c4a988",
-                "reference": "f2fea2c3f537a98715b8980c8f4809d8a8c4a988",
+                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/49f95a2d636ea9e7409c67890ae29730f50bc22a",
+                "reference": "49f95a2d636ea9e7409c67890ae29730f50bc22a",
                 "shasum": ""
             },
             "require": {
@@ -113,16 +113,7 @@
                     "Monolog\\": "src/Monolog"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Monolog\\": "tests/Monolog"
-                }
-            },
-            "scripts": {
-                "test": [
-                    "phpunit"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -140,10 +131,7 @@
                 "logging",
                 "psr-3"
             ],
-            "support": {
-                "source": "https://github.com/austinhyde/monolog/tree/testhandler-improvements"
-            },
-            "time": "2015-06-20 23:41:52"
+            "time": "2015-06-21 04:39:17"
         },
         {
             "name": "psr/log",
