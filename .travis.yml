@@ -45,4 +45,6 @@ before_script:
   - composer install --dev --no-interaction
 
 # by default, travis just runs "phpunit", but our tests are in the tests directory
-script: vendor/bin/phpunit --configuration tests/phpunit.xml --verbose --debug --group $PHPUNIT_GROUP tests/
+script: vendor/bin/phpunit --configuration phpunit.xml --verbose --debug --group $PHPUNIT_GROUP --coverage-clover clover.xml tests/
+
+after_script: vendor/bin/coveralls -v

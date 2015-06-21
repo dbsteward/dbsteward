@@ -43,7 +43,8 @@
     "ext-pgsql": "*",
     "phing/phing": "2.7.*",
     "pirum/pirum": "1.1.*",
-    "phpunit/phpunit": "4.4.*"
+    "phpunit/phpunit": "4.4.*",
+    "satooshi/php-coveralls": "dev-master"
   },
   "bin": ["bin/dbsteward"]
 }
