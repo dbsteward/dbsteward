@@ -4,6 +4,7 @@ SQL database definition differencing tool. Structure and data is defined in a DT
 
 [![Latest Stable Version](https://poser.pugx.org/nkiraly/DBSteward/v/stable.png)](https://packagist.org/packages/nkiraly/DBSteward)
 [![nkiraly/DBSteward/master Build Status](https://travis-ci.org/nkiraly/DBSteward.png?branch=master)](https://travis-ci.org/nkiraly/DBSteward)
+[![Coverage Status](https://coveralls.io/repos/nkiraly/DBSteward/badge.svg?branch=master)](https://coveralls.io/r/nkiraly/DBSteward?branch=master)
 [![Dependency Status](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master/badge.png)](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master)
 [![Reference Status](https://www.versioneye.com/php/nkiraly:DBSteward/reference_badge.svg)](https://www.versioneye.com/php/nkiraly:DBSteward/references)
 

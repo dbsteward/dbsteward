@@ -134,6 +134,7 @@ Changes
 * Add additional quotereservednames flag and separate quoteillegalnames to only affect those github/nkiraly/DBSteward PR #69
 * New and Improved Logging features via switching to monolog github/nkiraly/DBSteward PR #82
 * Make foreignSchema attribute optional and default to the current schema github/nkiraly/DBSteward PR #81
+* Add unit test coverage information via Coveralls https://coveralls.io/r/nkiraly/DBSteward github/nkiraly/DBSteward PR #83
 
 
 Supported Platform DDL Generation and Differencing:
