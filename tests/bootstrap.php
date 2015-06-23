@@ -31,7 +31,6 @@ class DI {
 
 // set up our database connection instances
 
-require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 require_once __DIR__ . '/dbsteward_sql99_connection.php';
 require_once __DIR__ . '/dbsteward_pgsql8_connection.php';

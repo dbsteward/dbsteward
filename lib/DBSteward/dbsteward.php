@@ -14,7 +14,17 @@ error_reporting(E_ALL);
 
 define('SQLFORMAT_DIR', __DIR__ . '/sql_format');
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+// composer autoloader
+if (file_exists($fs[] = $f = __DIR__ . '/../../vendor/autoload.php')) {
+  // in a dbsteward checkout
+  require_once $f;
+} else if (file_exists($fs[] = $f = __DIR__ . '/../../../../autoload.php')) {
+  // in a composer install
+  require_once $f;
+} else {
+  throw new Exception("Cannot find composer autoload file, checked:\n- " . implode("\n- ", $fs));
+}
+
 require_once __DIR__ . '/dbx.php';
 require_once __DIR__ . '/xml_parser.php';
 require_once __DIR__ . '/sql_parser.php';
