@@ -131,8 +131,9 @@ http://dbsteward.org/
 DBSteward 1.4.0 Release
 
 Changes
-* Add additional quotereservednames flag and separate quoteillegalnames to only affect those
-* New and Improved Logging features via switching to monolog
+* Add additional quotereservednames flag and separate quoteillegalnames to only affect those github/nkiraly/DBSteward PR #69
+* New and Improved Logging features via switching to monolog github/nkiraly/DBSteward PR #82
+* Make foreignSchema attribute optional and default to the current schema github/nkiraly/DBSteward PR #81
 
 
 Supported Platform DDL Generation and Differencing:
