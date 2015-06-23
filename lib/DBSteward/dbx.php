@@ -334,9 +334,8 @@ class dbx {
       foreach ($node_table->column AS $column) {
         // add column foreign key constraints to the list
         if (isset($column['foreignSchema']) || isset($column['foreignTable'])) {
-          if (strlen($column['foreignSchema']) == 0
-            || strlen($column['foreignTable']) == 0) {
-            throw new exception("Invalid foreignSchema|foreignTable pair for " . dbsteward::string_cast($node_schema['name']) . "." . dbsteward::string_cast($node_table['name']) . "." . dbsteward::string_cast($column['name']));
+          if (strlen($column['foreignTable']) == 0) {
+            throw new exception("Invalid foreignTable for " . dbsteward::string_cast($node_schema['name']) . "." . dbsteward::string_cast($node_table['name']) . "." . dbsteward::string_cast($column['name']));
           }
           if (isset($column['type'])
             || strlen($column['type']) > 0) {
@@ -713,7 +712,8 @@ class dbx {
   }
 
   public static function foreign_key($db_doc, $node_schema, $node_table, $column, &$foreign) {
-    $foreign['schema'] = dbx::get_schema($db_doc, $column['foreignSchema']);
+    $fschema = strlen($column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
+    $foreign['schema'] = dbx::get_schema($db_doc, $fschema);
     if (!$foreign['schema']) {
       throw new exception("Failed to find foreign schema '" . dbsteward::string_cast($column['foreignSchema']) . "' for " . dbsteward::string_cast($node_schema['name']) . "." . dbsteward::string_cast($node_table['name']) . "." . dbsteward::string_cast($column['name']));
     }
