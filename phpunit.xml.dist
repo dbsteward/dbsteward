@@ -1,7 +1,7 @@
 <phpunit
     verbose="true"
     backupGlobals="false"
-    bootstrap="bootstrap.php">
+    bootstrap="tests/bootstrap.php">
   <php>
     <const name="PGSQL8_DBHOST" value="db-pgsql8.dev.pitbpa0"/>
     <const name="PGSQL8_DBPORT" value="5432"/>
@@ -30,4 +30,10 @@
     <const name="MYSQL5_DBUSER_MANAGEMENT" value="deployment"/>
     <const name="MYSQL5_DBPASS_MANAGEMENT" value="password1"/>
   </php>
+  <filter>
+    <blacklist>
+      <directory suffix=".php">./vendor</directory>
+      <directory suffix=".php">./tests</directory>
+    </blacklist>
+  </filter>
 </phpunit>
