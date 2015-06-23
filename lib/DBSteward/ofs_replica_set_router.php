@@ -69,14 +69,14 @@ class ofs_replica_set_router {
     // make sure replica set id to use is known
     if ( !isset($this->ofs[$use_replica_set_id]) ) {
       if ( $this->skip_unknown_set_ids ) {
-        dbsteward::console_line(7, "[OFS RSR] context replica set ID is " . $use_replica_set_id . ", but no replica set by that ID, skipping output");
+        dbsteward::notice("[OFS RSR] context replica set ID is " . $use_replica_set_id . ", but no replica set by that ID, skipping output");
         return FALSE;
       }
       throw new exception("context replica set ID " . $use_replica_set_id . " not defined");
     }
     
     $active_set_ofs = $this->ofs[$use_replica_set_id];
-    //dbsteward::console_line(7, "[OFS RSR] __call calling " . $use_replica_set_id . " ofs::" . $m);
+    dbsteward::debug("[OFS RSR] __call calling " . $use_replica_set_id . " ofs::" . $m);
     return call_user_func_array(array(&$active_set_ofs, $m), $a);
   }
 

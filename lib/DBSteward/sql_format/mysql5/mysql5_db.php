@@ -99,7 +99,7 @@ class mysql5_db {
         );
 
       default:
-        dbsteward::console_line(1, "Unrecognized partition method $method!");
+        dbsteward::error("Unrecognized partition method $method!");
     }
     return null;
   }

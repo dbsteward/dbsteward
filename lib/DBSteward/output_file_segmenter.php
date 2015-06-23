@@ -42,7 +42,7 @@ class output_file_segmenter {
       }
       $this->file_pointer =& $file_pointer;
       $this->current_output_file = $current_output_file;
-      dbsteward::console_line(3, "[File Segment] Fixed output file: " . $this->current_output_file);
+      dbsteward::notice("[File Segment] Fixed output file: " . $this->current_output_file);
       $this->segmenting_enabled = FALSE;
       $this->fixed_file_pointer = TRUE;
       $this->wrote_fixed_file_header = FALSE;
@@ -117,7 +117,7 @@ class output_file_segmenter {
       $this->file_segment += 1;
     }
     $this->current_output_file = $this->base_file_name . $this->file_segment . '.sql';
-    dbsteward::console_line(3, "[File Segment] Opening output file segement " . $this->current_output_file);
+    dbsteward::notice("[File Segment] Opening output file segement " . $this->current_output_file);
     $this->file_pointer = fopen($this->current_output_file, 'w');
     $this->write_header();
     $this->statement_count = 0;

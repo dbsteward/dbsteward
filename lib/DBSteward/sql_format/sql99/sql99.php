@@ -125,7 +125,7 @@ class sql99 {
     if (!$quoted) {
       if (static::is_illegal_identifier($name)) {
         if (dbsteward::$quote_illegal_identifiers) {
-          dbsteward::console_line(3, "Warning: Quoting illegal identifier '$name'");
+          dbsteward::warning("Warning: Quoting illegal identifier '$name'");
           $quoted = true;
         }
         else {
@@ -134,7 +134,7 @@ class sql99 {
       }
       elseif (static::is_identifier_blacklisted($name)) {
         if (dbsteward::$quote_reserved_identifiers) {
-          dbsteward::console_line(3, "Warning: Quoting reserved identifier '$name'");
+          dbsteward::warning("Warning: Quoting reserved identifier '$name'");
           $quoted = true;
         }
         else {

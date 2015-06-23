@@ -223,7 +223,7 @@ class pgsql8_table extends sql99_table {
         if ( strlen($sql) > 0 ) {
           $sql .= "\n";
         }
-        dbsteward::console_line(5, "Specifying skipped " . $column['name'] . " default expression \"" . $column['default'] . "\"");
+        dbsteward::info("Specifying skipped " . $column['name'] . " default expression \"" . $column['default'] . "\"");
         $sql .= "ALTER TABLE " .
           pgsql8::get_quoted_schema_name($node_schema['name']) . '.' .
           pgsql8::get_quoted_table_name($node_table['name']) .

@@ -50,7 +50,7 @@ class pgsql8_permission {
         }
       }
       // if we get here if the right is not found in the in_array comparison for the object
-//dbsteward::console_line(3, "permission_operation " . $permission_operation . " not found in " . $node_object['name'] . " permissions for " . $node_permission['role']);
+      dbsteward::debug("permission_operation " . $permission_operation . " not found in " . $node_object['name'] . " permissions for " . $node_permission['role']);
       return false;
     }
     // if we get here then all rights were found to be provided in the object already

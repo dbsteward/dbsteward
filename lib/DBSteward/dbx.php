@@ -415,7 +415,7 @@ class dbx {
       $db_table = $table_dependency_item['table'];
 
       $table_constraints = static::get_table_constraints($db_doc, $db_schema, $db_table, 'foreignKey');
-//dbsteward::console_line(7, $node_table['name'] . " vs " . $db_table['name'] . " constraints: " . count($table_constraints));
+//dbsteward::trace($node_table['name'] . " vs " . $db_table['name'] . " constraints: " . count($table_constraints));
       foreach($table_constraints AS $table_constraint) {
         // get_table_constraints() will set foreign_key_data for dbsteward-defined foreign keys
         // these are the only ones that self define well enough to be compared here
@@ -427,7 +427,7 @@ class dbx {
         }
       }
     }
-//dbsteward::console_line(7, $node_table['name'] . " applicable constraints: " . count($constraints));
+//dbsteward::trace($node_table['name'] . " applicable constraints: " . count($constraints));
     return $constraints;
   }
 
@@ -496,7 +496,7 @@ class dbx {
       }
       if ($node_function == NULL) {
         //@DEBUG: use this to make sure function declaration comparisons are working properly
-        //dbsteward::console_line(5, "NOTICE: no functions named " . $name . " match passed declaration: " . $declaration);
+        dbsteward::warning("NOTICE: no functions named " . $name . " match passed declaration: " . $declaration);
       }
     }
     else {
@@ -740,7 +740,7 @@ class dbx {
     // column type is missing, and resolved foreign is also a foreign key?
     // recurse and find the cascading foreign key
     if (strlen($foreign['column']['type']) == 0 && isset($foreign['column']['foreignColumn'])) {
-      //dbsteward::console_line(4, "Seeking nested foreign key for " . dbsteward::string_cast($foreign['schema']['name']) . "." . dbsteward::string_cast($foreign['table']['name']) . "." . $foreign['column']['name']);
+      dbsteward::trace("Seeking nested foreign key for " . dbsteward::string_cast($foreign['schema']['name']) . "." . dbsteward::string_cast($foreign['table']['name']) . "." . $foreign['column']['name']);
       $nested_fkey = array();
       self::foreign_key($db_doc, $foreign['schema'], $foreign['table'], $foreign['column'], $nested_fkey);
       //var_dump($nested_fkey['column']);

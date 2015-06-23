@@ -144,16 +144,16 @@ class pgsql8 extends sql99 {
         self::$known_pg_identifiers[$schema][$table] = array();
       }
       if (in_array($ident_name, self::$known_pg_identifiers[$schema][$table])) {
-        //dbsteward::console_line(7, "rename ident_name FROM " . $ident_name);
+        dbsteward::trace("rename ident_name FROM " . $ident_name);
         $inc = 1;
         $ident_column = substr($ident_column, 0, $column_maxlen - 1);
         $ident_name = $ident_table . '_' . $ident_column . $suffix . $inc;
-        //dbsteward::console_line(7, "rename ident_name TO " . $ident_name);
+        dbsteward::trace("rename ident_name TO " . $ident_name);
         while (in_array($ident_name, self::$known_pg_identifiers[$schema][$table])) {
-          //dbsteward::console_line(7, "rename ident_name FROM " . $ident_name);
+          dbsteward::trace("rename ident_name FROM " . $ident_name);
           $inc++;
           $ident_name = $ident_table . '_' . $ident_column . '_' . $suffix . $inc;
-          //dbsteward::console_line(1, "rename ident_name TO " . $ident_name);
+          dbsteward::trace("rename ident_name TO " . $ident_name);
         }
       }
       self::$known_pg_identifiers[$schema][$table][] = $ident_name;
@@ -314,7 +314,7 @@ class pgsql8 extends sql99 {
     }
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';
-    dbsteward::console_line(1, "Building complete file " . $build_file);
+    dbsteward::info("Building complete file " . $build_file);
     $build_file_fp = fopen($build_file, 'w');
     if ($build_file_fp === FALSE) {
       throw new exception("failed to open full file " . $build_file . ' for output');
@@ -327,7 +327,7 @@ class pgsql8 extends sql99 {
       $build_file_ofs->write("BEGIN;\n\n");
     }
 
-    dbsteward::console_line(1, "Calculating table foreign key dependency order..");
+    dbsteward::info("Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
 
     // database-specific implementation code refers to dbsteward::$new_database when looking up roles/values/conflicts etc
@@ -362,7 +362,7 @@ class pgsql8 extends sql99 {
               // turn off check_function_bodies
               $set_check_function_bodies = FALSE;
               $set_check_function_bodies_info = "Detected LANGUAGE SQL function " . $schema['name'] . '.' . $function['name'] . " referring to table " . $table_schema_name . '.' . $node_table['name'] . " in the database definition";
-              dbsteward::console_line(2, $set_check_function_bodies_info);
+              dbsteward::info($set_check_function_bodies_info);
               break 2;
             }
           }
@@ -376,12 +376,12 @@ class pgsql8 extends sql99 {
 
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
-      dbsteward::console_line(1, "Defining structure");
+      dbsteward::info("Defining structure");
       pgsql8::build_schema($db_doc, $build_file_ofs, $table_dependency);
     }
     if (!dbsteward::$only_schema_sql
       || dbsteward::$only_data_sql) {
-      dbsteward::console_line(1, "Defining data inserts");
+      dbsteward::info("Defining data inserts");
       pgsql8::build_data($db_doc, $build_file_ofs, $table_dependency);
     }
     dbsteward::$new_database = NULL;
@@ -408,8 +408,8 @@ class pgsql8 extends sql99 {
         $count += count(self::$sequence_slony_ids[$slony_set_id]);
       }
 
-      dbsteward::console_line(1, "[slony] ID summary: " . count(self::$table_slony_ids) . " tables " . $count . " sequences");
-      dbsteward::console_line(1, "[slony] table ID segments: " . static::slony_id_segment_summary(self::$table_slony_ids));
+      dbsteward::notice("[slony] ID summary: " . count(self::$table_slony_ids) . " tables " . $count . " sequences");
+      dbsteward::notice("[slony] table ID segments: " . static::slony_id_segment_summary(self::$table_slony_ids));
       
       // keep this from bombing on there being no ids in $sequence_slony_ids
       // if there were none returned (i.e. either there weren't any defined
@@ -422,7 +422,7 @@ class pgsql8 extends sql99 {
             $console_line .= " for slonySetId $slony_set_id";
           }
           $console_line .= ": ";
-          dbsteward::console_line(1, $console_line . static::slony_id_segment_summary(self::$sequence_slony_ids[$slony_set_id]));
+          dbsteward::notice($console_line . static::slony_id_segment_summary(self::$sequence_slony_ids[$slony_set_id]));
         }
       }
     }
@@ -658,7 +658,7 @@ class pgsql8 extends sql99 {
           throw new exception('Primary key ' . $table['primaryKey'] . ' does not exist as a column in table ' . $table['name']);
         }
         else {
-          dbsteward::console_line(1, 'Primary key ' . $table['primaryKey'] . ' does not exist as a column in child table ' . $table['name'] . ', but may exist in parent table');
+          dbsteward::info('Primary key ' . $table['primaryKey'] . ' does not exist as a column in child table ' . $table['name'] . ', but may exist in parent table');
         }
       }
     }
@@ -677,7 +677,7 @@ class pgsql8 extends sql99 {
    * @throws exception
    */
   public static function build_slonik_create_set($db_doc, $replica_set, $slonik_file) {
-    dbsteward::console_line(1, "Building slony replication set create file " . $slonik_file);
+    dbsteward::notice("Building slony replication set create file " . $slonik_file);
     $slonik_fp = fopen($slonik_file, 'w');
     if ($slonik_fp === FALSE) {
       throw new exception("failed to open slonik file " . $slonik_file . ' for output');
@@ -743,7 +743,7 @@ class pgsql8 extends sql99 {
    * @throws exception
    */
   public static function build_slonik_subscribe_set_node($db_doc, $replica_set, $slonik_file, $replica_set_node) {
-    dbsteward::console_line(1, "Building slony replication set " . $replica_set['id'] . " node " . $replica_set_node['id'] . " subscription file " . $slonik_file);
+    dbsteward::notice("Building slony replication set " . $replica_set['id'] . " node " . $replica_set_node['id'] . " subscription file " . $slonik_file);
     $slonik_fp = fopen($slonik_file, 'w');
     if ($slonik_fp === FALSE) {
       throw new exception("failed to open slonik file " . $slonik_file . ' for output');
@@ -884,9 +884,9 @@ SLEEP (SECONDS=60);
     $upgrade_prefix = $new_output_prefix . '_upgrade';
 
     // pgsql8_diff needs these to intelligently create SQL difference statements in dependency order
-    dbsteward::console_line(1, "Calculating old table foreign key dependency order..");
+    dbsteward::info("Calculating old table foreign key dependency order..");
     pgsql8_diff::$old_table_dependency = xml_parser::table_dependency_order($old_db_doc);
-    dbsteward::console_line(1, "Calculating new table foreign key dependency order..");
+    dbsteward::info("Calculating new table foreign key dependency order..");
     pgsql8_diff::$new_table_dependency = xml_parser::table_dependency_order($new_db_doc);
 
     pgsql8_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
@@ -894,7 +894,7 @@ SLEEP (SECONDS=60);
     if ( dbsteward::$generate_slonik ) {
       $replica_sets = pgsql8::get_slony_replica_sets($new_db_doc);
       foreach($replica_sets AS $replica_set) {
-        dbsteward::console_line(1, "Generating replica set " . $replica_set['id'] . " upgrade slonik");
+        dbsteward::info("Generating replica set " . $replica_set['id'] . " upgrade slonik");
         // separate upgrade slonik file sets for each replica set
         $slonik_upgrade_prefix = $upgrade_prefix . "_slony_replica_set_" . $replica_set['id'];
         // generate upgrade slonik to apply generated sql changes
@@ -1300,7 +1300,7 @@ SLEEP (SECONDS=60);
     $db_doc = xml_parser::xml_composite($output_prefix, $files, $slony_composite_file);
 
     $slony_compare_file = $output_prefix . '_slonycompare.sql';
-    dbsteward::console_line(1, "Building slony comparison script " . $slony_compare_file);
+    dbsteward::notice("Building slony comparison script " . $slony_compare_file);
     $slony_compare_file_fp = fopen($slony_compare_file, 'w');
     if ($slony_compare_file_fp === FALSE) {
       throw new exception("failed to open slony comparison script " . $slony_compare_file . ' for output');
@@ -1368,28 +1368,28 @@ SLEEP (SECONDS=60);
     foreach ($old_db_doc->schema AS $old_schema) {
       $new_schema = dbx::get_schema($new_db_doc, $old_schema['name']);
       if (!$new_schema) {
-        dbsteward::console_line(1, "new definition missing schema " . $old_schema['name']);
+        dbsteward::warning("new definition missing schema " . $old_schema['name']);
         continue 1;
       }
       foreach ($old_schema->table AS $old_table) {
         $new_table = dbx::get_table($new_schema, $old_table['name']);
         if (!$new_table) {
-          dbsteward::console_line(1, "new definition missing table " . $old_schema['name'] . "." . $old_table['name']);
+          dbsteward::warning("new definition missing table " . $old_schema['name'] . "." . $old_table['name']);
           continue 1;
         }
         if (strcmp($old_table['slonyId'], $new_table['slonyId']) != 0) {
-          dbsteward::console_line(1, "table " . $old_schema['name'] . "." . $old_table['name'] . "\told slonyId " . $old_table['slonyId'] . " new slonyId " . $new_table['slonyId']);
+          dbsteward::info("table " . $old_schema['name'] . "." . $old_table['name'] . "\told slonyId " . $old_table['slonyId'] . " new slonyId " . $new_table['slonyId']);
           continue 1;
         }
       }
       foreach ($old_schema->sequence AS $old_sequence) {
         $new_sequence = dbx::get_sequence($new_schema, $old_sequence['name']);
         if (!$new_sequence) {
-          dbsteward::console_line(1, "new definition missing sequence " . $old_schema['name'] . "." . $old_sequence['name']);
+          dbsteward::warning("new definition missing sequence " . $old_schema['name'] . "." . $old_sequence['name']);
           continue 1;
         }
         if (strcmp($old_sequence['slonyId'], $new_sequence['slonyId']) != 0) {
-          dbsteward::console_line(1, "sequence " . $old_schema['name'] . "." . $old_sequence['name'] . "\told slonyId " . $old_sequence['slonyId'] . " new slonyId " . $new_sequence['slonyId']);
+          dbsteward::info("sequence " . $old_schema['name'] . "." . $old_sequence['name'] . "\told slonyId " . $old_sequence['slonyId'] . " new slonyId " . $new_sequence['slonyId']);
           continue 1;
         }
       }
@@ -1407,10 +1407,10 @@ SLEEP (SECONDS=60);
     if (!is_array($new)) {
       $new = array($new);
     }
-    dbsteward::console_line(1, "Calculating sql differences:");
-    dbsteward::console_line(1, "Old set:  " . implode(', ', $old));
-    dbsteward::console_line(1, "New set:  " . implode(', ', $new));
-    dbsteward::console_line(1, "Upgrade:  " . $upgrade_prefix);
+    dbsteward::notice("Calculating sql differences:");
+    dbsteward::notice("Old set:  " . implode(', ', $old));
+    dbsteward::notice("New set:  " . implode(', ', $new));
+    dbsteward::notice("Upgrade:  " . $upgrade_prefix);
 
     return pgsql8_diff::diff_sql($old, $new, $upgrade_prefix);
   }
@@ -1425,7 +1425,7 @@ SLEEP (SECONDS=60);
     // serials that are implicitly created as part of a table, no need to explicitly create these
     $table_serials = array();
 
-    dbsteward::console_line(1, "Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
+    dbsteward::notice("Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
       // @TODO: mask the password somehow without requiring a PHP extension
@@ -1462,7 +1462,7 @@ SLEEP (SECONDS=60);
     $sequence_cols = array();
     while (($row = pg_fetch_assoc($rs)) !== FALSE) {
 
-      dbsteward::console_line(3, "Analyze table options " . $row['schemaname'] . "." . $row['tablename']);
+      dbsteward::info("Analyze table options " . $row['schemaname'] . "." . $row['tablename']);
 
       // schemaname     |        tablename        | tableowner | tablespace | hasindexes | hasrules | hastriggers
       // create the schema if it is missing
@@ -1518,7 +1518,7 @@ SLEEP (SECONDS=60);
         $node_option->addAttribute('name', 'with');
         $node_option->addAttribute('value', '('.implode(',',$params).')');
 
-        dbsteward::console_line(3, "Analyze table columns " . $row['schemaname'] . "." . $row['tablename']);
+        dbsteward::info("Analyze table columns " . $row['schemaname'] . "." . $row['tablename']);
 
         $column_descriptions_raw = self::parse_sql_array($row['column_descriptions']);
         $column_descriptions = array();
@@ -1585,7 +1585,7 @@ SLEEP (SECONDS=60);
           }
         }
 
-        dbsteward::console_line(3, "Analyze table indexes " . $row['schemaname'] . "." . $row['tablename']);
+        dbsteward::info("Analyze table indexes " . $row['schemaname'] . "." . $row['tablename']);
         // get table INDEXs
         $sql = "SELECT ic.relname, i.indisunique, (
                   -- get the n'th dimension's definition
@@ -1635,7 +1635,7 @@ SLEEP (SECONDS=60);
     $sequence_str = implode(',', $sequence_cols);
 
     foreach ($schemas as $schema) {
-      dbsteward::console_line(3, "Analyze isolated sequences in schema " . $schema['name']);
+      dbsteward::info("Analyze isolated sequences in schema " . $schema['name']);
       // filter by sequences we've defined as part of a table already
       // and get the owner of each sequence
       $seq_list_sql = "
@@ -1684,7 +1684,7 @@ SLEEP (SECONDS=60);
       ORDER BY schemaname, viewname;";
     $rc_views = pgsql8_db::query($sql);
     while (($view_row = pg_fetch_assoc($rc_views)) !== FALSE) {
-      dbsteward::console_line(3, "Analyze view " . $view_row['schemaname'] . "." . $view_row['viewname']);
+      dbsteward::info("Analyze view " . $view_row['schemaname'] . "." . $view_row['viewname']);
 
       // create the schema if it is missing
       $nodes = $doc->xpath("schema[@name='" . $view_row['schemaname'] . "']");
@@ -1712,7 +1712,7 @@ SLEEP (SECONDS=60);
     }
 
     // for all schemas, all tables - get table constraints that are not type 'FOREIGN KEY'
-    dbsteward::console_line(3, "Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
+    dbsteward::info("Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
     $sql = "SELECT constraint_name, constraint_type, table_schema, table_name, array_agg(columns) AS columns
       FROM (
       SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name::text AS columns
@@ -1892,7 +1892,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
   AND pg_catalog.pg_get_function_result(p.oid) NOT IN ( 'trigger' );";
     $rs_functions = pgsql8_db::query($sql);
     while (($row_fxn = pg_fetch_assoc($rs_functions)) !== FALSE) {
-      dbsteward::console_line(3, "Analyze function " . $row_fxn['schema'] . "." . $row_fxn['name']);
+      dbsteward::info("Analyze function " . $row_fxn['schema'] . "." . $row_fxn['name']);
       $node_schema = dbx::get_schema($doc, $row_fxn['schema'], TRUE);
       if ( !isset($node_schema['owner']) ) {
         $sql = "SELECT schema_owner FROM information_schema.schemata WHERE schema_name = '" . $row_fxn['schema'] . "'";
@@ -1943,7 +1943,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       WHERE trigger_schema NOT IN ('pg_catalog', 'information_schema');";
     $rc_trigger = pgsql8_db::query($sql);
     while (($row_trigger = pg_fetch_assoc($rc_trigger)) !== FALSE) {
-      dbsteward::console_line(3, "Analyze trigger " . $row_trigger['event_object_schema'] . "." . $row_trigger['trigger_name']);
+      dbsteward::info("Analyze trigger " . $row_trigger['event_object_schema'] . "." . $row_trigger['trigger_name']);
       $nodes = $doc->xpath("schema[@name='" . $row_trigger['event_object_schema'] . "']");
       if (count($nodes) != 1) {
         throw new exception("failed to find trigger schema '" . $row_trigger['event_object_schema'] . "'");
@@ -1989,7 +1989,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
 
     // find table grants and save them in the xml document
-    dbsteward::console_line(3, "Analyze table permissions ");
+    dbsteward::info("Analyze table permissions ");
     $sql = "SELECT *
       FROM information_schema.table_privileges
       WHERE table_schema NOT IN ('pg_catalog', 'information_schema');";
@@ -2033,7 +2033,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     }
 
     // analyze sequence grants and assign those to the xml document as well
-    dbsteward::console_line(3, "Analyze isolated sequence permissions ");
+    dbsteward::info("Analyze isolated sequence permissions ");
     foreach ($schemas as $schema) {
       $sequences = &dbx::get_sequences($schema);
       foreach ($sequences as $sequence) {
@@ -2080,7 +2080,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         if ( !isset($table['primaryKey']) ) {
           $table->addAttribute('primaryKey', 'dbsteward_primary_key_not_found');
           $table_notice_desc = 'DBSTEWARD_EXTRACTION_WARNING: primary key definition not found for ' . $table['name'] . ' - placeholder has been specified for DTD validity';
-          dbsteward::console_line(1, "WARNING: " . $table_notice_desc);
+          dbsteward::warning("WARNING: " . $table_notice_desc);
           if ( !isset($table['description']) ) {
             $table['description'] = $table_notice_desc;
           }
@@ -2226,7 +2226,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     if (!is_array($files)) {
       $files = array($files);
     }
-    dbsteward::console_line(1, "Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
+    dbsteward::notice("Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
       // @TODO: mask the password somehow without requiring a PHP extension
@@ -2238,7 +2238,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
 
     $db_doc = pgsql8::build($files);
 
-    dbsteward::console_line(1, "Comparing composited dbsteward definition data rows to postgresql database connection table contents");
+    dbsteward::info("Comparing composited dbsteward definition data rows to postgresql database connection table contents");
 
     // compare the composited dbsteward document to the established database connection
     // effectively looking to see if rows are found that match primary keys, and if their contents are the same
@@ -2300,16 +2300,16 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
             // is the row supposed to be deleted?
             if (strcasecmp('true', $row['delete']) == 0) {
               if (pg_num_rows($rs) > 0) {
-                dbsteward::console_line(3,  $table_name . " row marked for DELETE found WHERE " . $primary_key_expression);
+                dbsteward::notice($table_name . " row marked for DELETE found WHERE " . $primary_key_expression);
               }
             }
             else if (pg_num_rows($rs) == 0) {
-              dbsteward::console_line(3, $table_name . " does not contain row WHERE " . $primary_key_expression);
+              dbsteward::notice($table_name . " does not contain row WHERE " . $primary_key_expression);
             }
             else if (pg_num_rows($rs) > 1) {
-              dbsteward::console_line(3, $table_name . " contains more than one row WHERE " . $primary_key_expression);
+              dbsteward::notice($table_name . " contains more than one row WHERE " . $primary_key_expression);
               while (($db_row = pg_fetch($rs)) !== FALSE) {
-                dbsteward::console_line(3,  "\t" . implode(', ', $db_row));
+                dbsteward::notice("\t" . implode(', ', $db_row));
               }
             }
             else {
@@ -2333,7 +2333,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
                 }
 
                 if (!$values_match) {
-                  dbsteward::console_line(1, $table_name . " row column WHERE (" . $primary_key_expression . ") " . $cols[$i] . " data does not match database row column: '" . $xml_value . "' VS '" . $db_value . "'");
+                  dbsteward::warning($table_name . " row column WHERE (" . $primary_key_expression . ") " . $cols[$i] . " data does not match database row column: '" . $xml_value . "' VS '" . $db_value . "'");
                 }
               }
             }
@@ -2541,7 +2541,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
     }
     else {
-      dbsteward::console_line(1, "Warning: " . str_pad($schema['name'] . '.' . $table['name'], 44) . " table missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
+      dbsteward::warning("Warning: " . str_pad($schema['name'] . '.' . $table['name'], 44) . " table missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
       if (dbsteward::$require_slony_id) {
         throw new exception("Table " . $schema['name'] . '.' . $table['name'] . " missing slonyId and slonyIds are required");
       }
@@ -2577,7 +2577,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
     }
     else {
-      dbsteward::console_line(1, "Warning: " . str_pad($schema['name'] . '.' . $sequence['name'], 44) . " sequence missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
+      dbsteward::warning("Warning: " . str_pad($schema['name'] . '.' . $sequence['name'], 44) . " sequence missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
       if (dbsteward::$require_slony_id) {
         throw new exception("Sequence " . $schema['name'] . '.' . $sequence['name'] . " missing slonyId and slonyIds are required!");
       }
@@ -2617,7 +2617,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         }
       }
       else {
-        dbsteward::console_line(1, "Warning: " . str_pad($schema['name'] . '.' . $table['name'] . '.' . $column['name'], 44) . " serial column missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
+        dbsteward::warning("Warning: " . str_pad($schema['name'] . '.' . $table['name'] . '.' . $column['name'], 44) . " serial column missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
         if (dbsteward::$require_slony_id) {
           throw new exception($schema['name'] . '.' . $table['name'] . '.' . $column['name'] . " serial column missing slonyId and slonyIds are required!");
         }

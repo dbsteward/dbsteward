@@ -38,7 +38,11 @@ try {
   $dbg->arg_parse();
 }
 catch (exception $e) {
-  echo "Unhandled exception:\n\n" . $e->getMessage() . "\n\n";
-  echo $e->getTraceAsString() . "\n\n";
+  if (dbsteward::$DEBUG) {
+    dbsteward::error("Unhandled exception: " . $e->getMessage());
+    dbsteward::info($e->getTraceAsString());
+  } else {
+    dbsteward::error($e->getMessage());
+  }
   exit(254);
 }

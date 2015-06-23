@@ -41,18 +41,18 @@ class mssql10_diff extends pgsql8_diff {
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1BEFORE');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
-    dbsteward::console_line(1, "Drop Old Schemas");
+    dbsteward::inf("Drop Old Schemas");
     mssql10_diff::drop_old_schemas($stage3_ofs);
-    dbsteward::console_line(1, "Create New Schemas");
+    dbsteward::info("Create New Schemas");
     mssql10_diff::create_new_schemas($stage1_ofs);
-    dbsteward::console_line(1, "Update Structure");
+    dbsteward::info("Update Structure");
     mssql10_diff::update_structure($stage1_ofs, $stage3_ofs, mssql10_diff::$new_table_dependency);
-    dbsteward::console_line(1, "Update Permissions");
+    dbsteward::info("Update Permissions");
     mssql10_diff::update_permissions($stage1_ofs, $stage3_ofs);
 
     mssql10_diff::update_database_config_parameters($stage1_ofs);
 
-    dbsteward::console_line(1, "Update Data");
+    dbsteward::info("Update Data");
     mssql10_diff::update_data($stage2_ofs, TRUE);
     mssql10_diff::update_data($stage2_ofs, FALSE);
 
@@ -95,7 +95,7 @@ class mssql10_diff extends pgsql8_diff {
   private static function drop_old_schemas($ofs) {
     foreach (dbx::get_schemas(dbsteward::$old_database) AS $old_schema) {
       if (!dbx::get_schema(dbsteward::$new_database, $old_schema['name'])) {
-        dbsteward::console_line(3, "Drop Old Schema " . $old_schema['name']);
+        dbsteward::info("Drop Old Schema " . $old_schema['name']);
         $ofs->write(mssql10_schema::get_drop_sql($old_schema));
       }
     }
@@ -109,7 +109,7 @@ class mssql10_diff extends pgsql8_diff {
   private static function create_new_schemas($ofs) {
     foreach (dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
       if (dbx::get_schema(dbsteward::$old_database, $new_schema['name']) == NULL) {
-        dbsteward::console_line(3, "Crate New Schema " . $new_schema['name']);
+        dbsteward::info("Crate New Schema " . $new_schema['name']);
         $ofs->write(mssql10_schema::get_creation_sql($new_schema));
       }
     }
