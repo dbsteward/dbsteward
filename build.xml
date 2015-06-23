@@ -132,6 +132,7 @@ DBSteward 1.4.0 Release
 
 Changes
 * Add additional quotereservednames flag and separate quoteillegalnames to only affect those
+* New and Improved Logging features via switching to monolog
 
 
 Supported Platform DDL Generation and Differencing:
