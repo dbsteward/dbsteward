@@ -20,6 +20,8 @@ class pgsql8 extends sql99 {
 
   const E_ESCAPE = TRUE;
 
+  const MAX_IDENTIFIER_LENGTH = 63;
+
   /**
    * Pretty much the same as sql99::VALID_IDENTIFIER_REGEX, except it limits it to 63 chars
    * @const string
