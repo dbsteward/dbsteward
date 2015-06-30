@@ -1,6 +1,7 @@
 build
 tests/testdata*
-/nbproject/private/
+/nbproject/
+/tickets/
 vendor
 *_build.sql
 *_composite.xml
