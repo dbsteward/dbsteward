@@ -2583,7 +2583,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     else {
       dbsteward::warning("Warning: " . str_pad($schema['name'] . '.' . $sequence['name'], 44) . " sequence missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
       if (dbsteward::$require_slony_id) {
-        throw new exception("Sequence " . $schema['name'] . '.' . $sequence['name'] . " missing slonyId and slonyIds are required!");
+        throw new exception("Sequence " . $schema['name'] . '.' . $sequence['name'] . " missing slonyId and slonyIds are required");
       }
     }
     return FALSE;
@@ -2623,7 +2623,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       else {
         dbsteward::warning("Warning: " . str_pad($schema['name'] . '.' . $table['name'] . '.' . $column['name'], 44) . " serial column missing slonyId\t" . self::get_slony_next_id_dialogue($db_doc));
         if (dbsteward::$require_slony_id) {
-          throw new exception($schema['name'] . '.' . $table['name'] . '.' . $column['name'] . " serial column missing slonyId and slonyIds are required!");
+          throw new exception($schema['name'] . '.' . $table['name'] . '.' . $column['name'] . " serial column missing slonyId and slonyIds are required");
         }
       }
 
