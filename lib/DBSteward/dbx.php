@@ -276,7 +276,7 @@ class dbx {
           $primary_key_name = dbsteward::string_cast($node_table['primaryKeyName']);
         }
         else {
-          $primary_key_name = pgsql8::index_name($node_table['name'], NULL, 'pkey');
+          $primary_key_name = pgsql8_index::index_name($node_table['name'], NULL, 'pkey');
         }
 
         // quoted column name processing for primary key definitions
@@ -749,7 +749,7 @@ class dbx {
       $foreign['column']['type'] = $nested_fkey['column']['type'];
     }
 
-    $foreign['name'] = pgsql8::index_name($node_table['name'], $column['name'], 'fkey');
+    $foreign['name'] = pgsql8_index::index_name($node_table['name'], $column['name'], 'fkey');
     $table_name = format::get_fully_qualified_table_name($foreign['schema']['name'], $foreign['table']['name']);
     $column_name = format::get_quoted_column_name($foreign['column']['name']);
     $foreign['references'] = "{$table_name}({$column_name})";

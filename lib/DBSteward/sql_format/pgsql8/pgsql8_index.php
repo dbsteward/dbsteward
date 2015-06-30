@@ -121,44 +121,4 @@ class pgsql8_index extends sql99_index {
     }
     return $equal;
   }
-
-
-  public static function index_name($table, $column, $suffix) {
-    $table_len = strlen($table);
-    $column_len = strlen($column);
-    $suffix_len = strlen($suffix);
-
-    // figure out how to build "{$table}_{$column}_{$suffix}"
-    
-    // reserve space for the suffix, at least one underscore
-    $maxlen = pgsql8::MAX_IDENTIFIER_LENGTH - $suffix_len - 1;
-    if ($column_len > 0) {
-      // if there's a column, add another underscore
-      $maxlen -= 1;
-    }
-
-    $table_max = ceil($maxlen / 2);
-    $column_max = floor($maxlen / 2);
-
-    // table is longer than max, but column is shorter
-    if ($table_len > $table_max && $column_len < $column_max) {
-      // give table the extra room from column
-      $table_max += $column_max - $column_len;
-    }
-    // table is shorter than max, but table is longer
-    elseif ($table_len < $table_max && $column_len > $column_max) {
-      // give column the extra room from table
-      $column_max += $table_max - $table_len;
-    }
-
-    $table = substr($table, 0, min($table_max, $table_len));
-    $column = substr($column, 0, min($column_max, $column_len));
-
-    if ($column_len > 0) {
-      return "{$table}_{$column}_{$suffix}";
-    }
-    return "{$table}_{$suffix}";
-  }
 }
-
-?>

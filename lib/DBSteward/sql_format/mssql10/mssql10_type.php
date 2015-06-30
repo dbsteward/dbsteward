@@ -23,7 +23,7 @@ class mssql10_type {
 
     $table_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_table['name']);
     $column_name = mssql10::get_quoted_column_name($column['name']);
-    $constraint_name = pgsql8::index_name($node_table['name'], $column['name'], '_check_enum');
+    $constraint_name = pgsql8_index::index_name($node_table['name'], $column['name'], '_check_enum');
     $enum_list = "'" . implode("','", $enum_values) . "'";
 
     $ddl = "ALTER TABLE " . $table_name . "\n";
@@ -45,7 +45,7 @@ class mssql10_type {
 
     $table_name = mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_table['name']);
     $column_name = mssql10::get_quoted_column_name($column['name']);
-    $constraint_name = pgsql8::index_name($node_table['name'], $column['name'], '_check_enum');
+    $constraint_name = pgsql8_index::index_name($node_table['name'], $column['name'], '_check_enum');
     $enum_list = "'" . implode("','", $enum_values) . "'";
 
     $ddl = "ALTER TABLE " . $table_name . "\n";
