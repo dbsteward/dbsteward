@@ -109,6 +109,10 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
     dbsteward::$always_recreate_views = TRUE;
+    // slony default options
+    dbsteward::$require_slony_id = FALSE;
+    dbsteward::$require_slony_set_id = FALSE;
+    dbsteward::$generate_slonik = FALSE;
   }
   
   protected function build_db_pgsql8() {
