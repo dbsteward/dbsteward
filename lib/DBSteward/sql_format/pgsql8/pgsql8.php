@@ -237,7 +237,11 @@ class pgsql8 extends sql99 {
     }
     // don't esacape columns marked literal sql values
     else if (isset($node_col['sql']) && strcasecmp($node_col['sql'], 'true') == 0) {
-      $value = '(' . $node_col . ')';
+      if (strcasecmp($node_col, 'default') === 0) {
+        $value = 'DEFAULT';
+      } else {
+        $value = '(' . $node_col . ')';
+      }
     }
     // else if col is zero length, make it default, or DB NULL
     else if (strlen($node_col) == 0) {
