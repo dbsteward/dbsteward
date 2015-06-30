@@ -161,8 +161,8 @@ class pgsql8_parser_create_table {
           // );
           // NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_table_pkey" for table "test_table"
           // NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_table_test_table_col_c_key" for table "test_table"
-          dbsteward::debug("NOTICE:  CREATE TABLE with UNIQUE column attribute -- creating implicit index \"" . pgsql8::index_name(sql_parser::get_object_name($node_table->get_name()), sql_parser::get_object_name($tokens[0]), 'key') . "\" for table \"" . $node_schema->get_name() . '.' . $node_table->get_name() . "\"");
-          $node_index = &dbx::create_table_index($node_table, pgsql8::index_name(sql_parser::get_object_name($node_table['name']), sql_parser::get_object_name($tokens[0]), 'key'));
+          dbsteward::debug("NOTICE:  CREATE TABLE with UNIQUE column attribute -- creating implicit index \"" . pgsql8_index::index_name(sql_parser::get_object_name($node_table->get_name()), sql_parser::get_object_name($tokens[0]), 'key') . "\" for table \"" . $node_schema->get_name() . '.' . $node_table->get_name() . "\"");
+          $node_index = &dbx::create_table_index($node_table, pgsql8_index::index_name(sql_parser::get_object_name($node_table['name']), sql_parser::get_object_name($tokens[0]), 'key'));
           dbx::set_attribute($node_index, 'unique', 'true');
           dbx::set_attribute($node_index, 'using', 'btree');
           $node_index->addChild('indexDimension', sql_parser::get_object_name($tokens[0]))
