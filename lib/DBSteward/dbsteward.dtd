@@ -68,7 +68,7 @@
 <!ATTLIST schema description CDATA #IMPLIED>
 <!ATTLIST schema slonySetId CDATA #IMPLIED>
 
-<!ELEMENT table (tablePartition?, tableOption*, column+, index*, constraint*, grant*, rows?)>
+<!ELEMENT table (tablePartition?, tableOption*, column+, index*, constraint*, foreignKey*, grant*, rows?)>
 <!ATTLIST table name CDATA #REQUIRED>
 <!ATTLIST table primaryKey CDATA #REQUIRED>
 <!ATTLIST table primaryKeyName CDATA #IMPLIED>
@@ -140,6 +140,14 @@
 <!ATTLIST constraint foreignIndexName CDATA #IMPLIED>
 <!ATTLIST constraint foreignSchema CDATA #IMPLIED>
 <!ATTLIST constraint foreignTable CDATA #IMPLIED>
+
+<!ELEMENT foreignKey EMPTY>
+<!ATTLIST foreignKey columns CDATA #REQUIRED>
+<!ATTLIST foreignKey foreignSchema CDATA #IMPLIED>
+<!ATTLIST foreignKey foreignTable CDATA #REQUIRED>
+<!ATTLIST foreignKey foreignColumns CDATA #IMPLIED>
+<!ATTLIST foreignKey constraintName CDATA #REQUIRED>
+<!ATTLIST foreignKey indexName CDATA #IMPLIED>
 
 <!ELEMENT rows (row+)>
 <!ATTLIST rows columns CDATA #REQUIRED>
