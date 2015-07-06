@@ -363,11 +363,14 @@ class pgsql8 extends sql99 {
     if ( dbsteward::$generate_slonik ) {
       $replica_sets = static::get_slony_replica_sets($db_doc);
       foreach($replica_sets AS $replica_set) {
-        pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_preamble.slonik");
-        pgsql8::build_slonik_create_set($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_create.slonik');
-        pgsql8::build_slonik_paths($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_paths.slonik");
+        pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_create_nodes.slonik");
+        pgsql8::build_slonik_store_nodes($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_create_nodes.slonik");
+        pgsql8::build_slonik_paths($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_create_nodes.slonik");
+
+        pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_subscribe.slonik");
+        pgsql8::build_slonik_create_set($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_subscribe.slonik');
         foreach($replica_set->slonyReplicaSetNode AS $replica_set_node) {
-          pgsql8::build_slonik_subscribe_set_node($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_subscribe_node_' . $replica_set_node['id'] . '.slonik', $replica_set_node);
+          pgsql8::build_slonik_subscribe_set_node($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_subscribe.slonik", $replica_set_node);
         }
         
         static::slony_ids_required_during_build($replica_set, $db_doc);
@@ -647,8 +650,8 @@ class pgsql8 extends sql99 {
    * @throws exception
    */
   public static function build_slonik_create_set($db_doc, $replica_set, $slonik_file) {
-    dbsteward::notice("Building slony replication set create file " . $slonik_file);
-    $slonik_fp = fopen($slonik_file, 'w');
+    dbsteward::notice("Building slonik CREATE SET for replica set ID " . $replica_set['id'] . " output file " . $slonik_file);
+    $slonik_fp = fopen($slonik_file, 'a');
     if ($slonik_fp === FALSE) {
       throw new exception("failed to open slonik file " . $slonik_file . ' for output');
     }
@@ -656,7 +659,7 @@ class pgsql8 extends sql99 {
     $slonik_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
     $generation_date = date('r');
     $slonik_ofs->write("# DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " create commands generated " . $generation_date . "\n\n");
-    $slonik_ofs->write("ECHO 'DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " create commands generated " . $generation_date . " starting';\n\n");
+    $slonik_ofs->write("ECHO 'DBSteward slony replica set ID " . $replica_set['id'] . " " . $replica_set['comment'] . " create commands generated " . $generation_date . "';\n\n");
     
     $slonik_ofs->write("CREATE SET (ID = " . $replica_set['id'] . ", ORIGIN = " . $replica_set['originNodeId'] . ", COMMENT = '" . $replica_set['comment'] . "');\n\n");
 
@@ -713,8 +716,8 @@ class pgsql8 extends sql99 {
    * @throws exception
    */
   public static function build_slonik_subscribe_set_node($db_doc, $replica_set, $slonik_file, $replica_set_node) {
-    dbsteward::notice("Building slony replication set " . $replica_set['id'] . " node " . $replica_set_node['id'] . " subscription file " . $slonik_file);
-    $slonik_fp = fopen($slonik_file, 'w');
+    dbsteward::notice("Building slonik replica set ID " . $replica_set['id'] . " node ID " . $replica_set_node['id'] . " subscription output file " . $slonik_file);
+    $slonik_fp = fopen($slonik_file, 'a');
     if ($slonik_fp === FALSE) {
       throw new exception("failed to open slonik file " . $slonik_file . ' for output');
     }
@@ -722,7 +725,7 @@ class pgsql8 extends sql99 {
     $slonik_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
     $generation_date = date('r');
     $slonik_ofs->write("# DBSteward slony replica set ID " . $replica_set['id'] . " node " . $replica_set_node['id'] . " subscription commands generated " . $generation_date . "\n\n");
-    $slonik_ofs->write("ECHO 'DBSteward slony replica set ID " . $replica_set['id'] . " node " . $replica_set_node['id'] . " subscription commands generated " . $generation_date . " starting';\n\n");
+    $slonik_ofs->write("ECHO 'DBSteward slony replica set ID " . $replica_set['id'] . " node " . $replica_set_node['id'] . " subscription commands generated " . $generation_date . "';\n\n");
 
     // on the subscriber node
     // wait for sync to come from primary node to provider node
@@ -737,7 +740,7 @@ WAIT FOR EVENT (
   WAIT ON = " . $replica_set_node['providerNodeId'] . ",
   TIMEOUT = 0
 );
-SLEEP (SECONDS=60);
+SLEEP (SECONDS=30);
 
 SUBSCRIBE SET (
   ID = " . $replica_set['id'] . ",
@@ -745,7 +748,7 @@ SUBSCRIBE SET (
   RECEIVER = " . $replica_set_node['id'] . ",
   FORWARD = YES
 );
-SLEEP (SECONDS=60);
+SLEEP (SECONDS=30);
 
 ECHO 'Waiting for replicaNode " . $replica_set_node['id'] . " subscription to providerNodeID " . $replica_set_node['providerNodeId'] . " replica set ID " . $replica_set['id'] . "';
 SYNC (ID = " . $replica_set['originNodeId'] . ");
@@ -755,7 +758,7 @@ WAIT FOR EVENT (
   WAIT ON = " . $replica_set_node['id'] . ",
   TIMEOUT = 0
 );
-SLEEP (SECONDS=60);
+
 ";
     $slonik_ofs->write($subscription);
   }
@@ -880,8 +883,12 @@ SLEEP (SECONDS=60);
   }
   
   public static function build_slonik_preamble($db_doc, $replica_set, $slony_preamble_file) {
+    dbsteward::notice("Building slonik pramble for replica set ID " . $replica_set['id'] . " output file " . $slony_preamble_file);
     $timestamp = date('r');
 
+    // all the other slonik file writers use mode a
+    // have the preamble function to w to overwrite previous slonik command file sets
+    // as the preamble is always the first thing in a slonik file
     $slony_preamble_fp = fopen($slony_preamble_file, 'w');
     if ($slony_preamble_fp === FALSE) {
       throw new exception("failed to open slony preamble output file " . $slony_preamble_file);
@@ -914,14 +921,60 @@ SLEEP (SECONDS=60);
 
     $slony_preamble_ofs->write("\n");
     $slony_preamble_ofs->write("# " . $slony_preamble_file . "\n");
-    $slony_preamble_ofs->write("# DBSteward slony preamble file generated " . $timestamp . "\n");
+    $slony_preamble_ofs->write("# DBSteward slony preamble generated " . $timestamp . "\n");
     $slony_preamble_ofs->write("# Replica Set: " . $replica_set['id'] . "\n\n");
   }
   
-  public static function build_slonik_paths($db_doc, $replica_set, $slony_paths_file) {
+  public static function build_slonik_store_nodes($db_doc, $replica_set, $slony_store_nodes_file) {
+    dbsteward::notice("Building slonik STORE NODEs for replica set ID " . $replica_set['id'] . " output file " . $slony_store_nodes_file);
     $timestamp = date('r');
 
-    $slony_paths_fp = fopen($slony_paths_file, 'w');
+    $slony_paths_fp = fopen($slony_store_nodes_file, 'a');
+    if ($slony_paths_fp === FALSE) {
+      throw new exception("failed to open slony paths output file " . $slony_store_nodes_file);
+    }
+    $slony_paths_ofs = new output_file_segmenter($slony_store_nodes_file, 1, $slony_paths_fp, $slony_store_nodes_file);
+    $slony_paths_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
+    // don't write the fixed file header file name. slony preamble must start with the CLUSTER NAME directive
+    $slony_paths_ofs->disable_fixed_file_header();
+    
+    $slony_paths_ofs->write("# " . $slony_store_nodes_file . "\n");
+    $slony_paths_ofs->write("# DBSteward slony store nodes generated " . $timestamp . "\n");
+    $slony_paths_ofs->write("# Replica Set: " . $replica_set['id'] . "\n\n");
+    
+    if ( ! isset($db_doc->database->slony->slonyNode) ) {
+      $slony_paths_ofs->write("DBSTEWARD: NO SLONY NODES DEFINED\n");
+      return FALSE;
+    }
+    
+    $origin_node = $replica_set['originNodeId'];
+    $slony_paths_ofs->write("# Initialize Cluster with origin node for Replica Set " . $replica_set['id'] . "\n");
+    $slony_paths_ofs->write(
+          "INIT CLUSTER ( ID = " . $origin_node
+          . ", COMMENT = '" . pgsql8::get_slony_replica_set_node_attribute($db_doc, $replica_set, $origin_node, 'comment') . "'"
+          . " );\n\n");
+    
+    $slony_paths_ofs->write("# Store Cluster Nodes for Replica Set " . $replica_set['id'] . "\n");
+    $node_ids = pgsql8::get_slony_replica_set_node_ids($replica_set);
+    for($i = 0; $i < count($node_ids); $i++) {
+      $node_i = $node_ids[$i];
+      // don't STORE NODE the origin node, it was created during INIT CLUSTER
+      if ( $node_i != $origin_node ) {
+        $slony_paths_ofs->write(
+          "STORE NODE ( EVENT NODE = " . $origin_node . ", ID = " . $node_i
+          . ", COMMENT = '" . pgsql8::get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_i, 'comment') . "'"
+          . " );\n");
+      }
+    }
+
+    $slony_paths_ofs->write("\n");
+  }
+  
+  public static function build_slonik_paths($db_doc, $replica_set, $slony_paths_file) {
+    dbsteward::notice("Building slonik STORE PATHs for replica set ID " . $replica_set['id'] . " output file " . $slony_paths_file);
+    $timestamp = date('r');
+
+    $slony_paths_fp = fopen($slony_paths_file, 'a');
     if ($slony_paths_fp === FALSE) {
       throw new exception("failed to open slony paths output file " . $slony_paths_file);
     }
@@ -931,7 +984,7 @@ SLEEP (SECONDS=60);
     $slony_paths_ofs->disable_fixed_file_header();
     
     $slony_paths_ofs->write("# " . $slony_paths_file . "\n");
-    $slony_paths_ofs->write("# DBSteward slony paths file generated " . $timestamp . "\n");
+    $slony_paths_ofs->write("# DBSteward slony paths generated " . $timestamp . "\n");
     $slony_paths_ofs->write("# Replica Set: " . $replica_set['id'] . "\n\n");
     
     if ( ! isset($db_doc->database->slony->slonyNode) ) {
@@ -963,29 +1016,32 @@ SLEEP (SECONDS=60);
   }
 
   public static function build_upgrade_slonik_replica_set($old_db_doc, $new_db_doc, $old_replica_set, $new_replica_set, $slonik_file_prefix, $origin_header = '') {
+    dbsteward::notice("Building slonik upgrade replica set ID " . $new_replica_set['id']);
     $timestamp = date('r');
 
     $slony_stage1_file = $slonik_file_prefix . '_stage1.slonik';
-    $slony_stage1_fp = fopen($slony_stage1_file, 'w');
+    pgsql8::build_slonik_preamble($new_db_doc, $new_replica_set, $slony_stage1_file);
+    $slony_stage1_fp = fopen($slony_stage1_file, 'a');
     if ($slony_stage1_fp === FALSE) {
       throw new exception("failed to open upgrade slony stage 1 output file " . $slony_stage1_file);
     }
     $slony_stage1_ofs = new output_file_segmenter($slony_stage1_file, 1, $slony_stage1_fp, $slony_stage1_file);
     $slony_stage1_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
-    $slony_stage1_ofs->write("# DBSteward slony stage 1 upgrade file generated " . $timestamp . "\n");
+    $slony_stage1_ofs->write("# DBSteward slony stage 1 upgrade generated " . $timestamp . "\n");
     $slony_stage1_ofs->write($origin_header . "\n");
-    $slony_stage1_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $new_replica_set['id'] . " stage 1 file generated " . date('r') . " starting';\n\n");
+    $slony_stage1_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $new_replica_set['id'] . " stage 1 generated " . date('r') . "';\n\n");
 
     $slony_stage3_file = $slonik_file_prefix . '_stage3.slonik';
-    $slony_stage3_fp = fopen($slony_stage3_file, 'w'); 
+    pgsql8::build_slonik_preamble($new_db_doc, $new_replica_set, $slony_stage3_file);
+    $slony_stage3_fp = fopen($slony_stage3_file, 'a');
     if ($slony_stage3_fp === FALSE) {
       throw new exception("failed to open upgrade slony stage 3 output file " . $slony_stage3_file . ' for output');
     }
     $slony_stage3_ofs = new output_file_segmenter($slony_stage3_file, 1, $slony_stage3_fp, $slony_stage3_file);
     $slony_stage3_ofs->set_comment_line_prefix("#");  // keep slonik file comment lines consistent
-    $slony_stage3_ofs->write("# DBSteward slony stage 3 upgrade file generated " . $timestamp . "\n");
+    $slony_stage3_ofs->write("# DBSteward slony stage 3 upgrade generated " . $timestamp . "\n");
     $slony_stage3_ofs->write($origin_header . "\n");
-    $slony_stage3_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $new_replica_set['id'] . " stage 3 file generated " . date('r') . " starting';\n\n");
+    $slony_stage3_ofs->write("ECHO 'DBSteward slony upgrade replica set " . $new_replica_set['id'] . " stage 3 generated " . date('r') . "';\n\n");
 
     // slony replication configuration changes
     // SLONY STAGE 1
