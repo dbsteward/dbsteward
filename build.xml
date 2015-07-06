@@ -137,6 +137,7 @@ Changes
 * Add unit test coverage information via Coveralls https://coveralls.io/r/nkiraly/DBSteward github/nkiraly/DBSteward PR #83
 * Fix pgsql8 DEFAULT parenthesis wrapping github/nkiraly/DBSteward PR #84 
 * Fix pgsql8 index name generation to not exceed maximum length github/nkiraly/DBSteward PR #86
+* Add pgsql8 CREATE INDEX CONCURRENTLY support to definition XML
 
 
 Supported Platform DDL Generation and Differencing:
