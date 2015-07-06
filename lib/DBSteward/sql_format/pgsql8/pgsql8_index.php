@@ -22,8 +22,13 @@ class pgsql8_index extends sql99_index {
       $sql .= "UNIQUE ";
     }
 
-    $sql .= "INDEX "
-      . pgsql8::get_quoted_object_name($node_index['name'])
+    $sql .= "INDEX ";
+
+    if ( isset($node_index['concurrently']) && strcasecmp($node_index['concurrently'], 'true') == 0 ) {
+      $sql .= "CONCURRENTLY ";
+    }
+
+    $sql .= pgsql8::get_quoted_object_name($node_index['name'])
       . " ON "
       . pgsql8::get_quoted_schema_name($node_schema['name']) . '.'
       . pgsql8::get_quoted_table_name($node_table['name']);
@@ -78,6 +83,9 @@ class pgsql8_index extends sql99_index {
       $equal = false;
     }
     else if ( strcasecmp($node_index_a['unique'], $node_index_b['unique']) != 0 ) {
+      $equal = false;
+    }
+    else if ( strcasecmp($node_index_a['concurrently'], $node_index_b['concurrently']) != 0 ) {
       $equal = false;
     }
     else if ( strcasecmp($node_index_a['using'], $node_index_b['using']) != 0 ) {
