@@ -65,7 +65,7 @@ class sql99_diff_indexes {
 
     if (($new_table != null) && ($old_table != null)) {
       foreach(format_index::get_table_indexes($old_schema, $old_table) as $old_index) {
-        $new_index = format_index::get_table_index($new_schema, $new_table, $old_index['name']);
+        $new_index = dbx::get_table_index($new_schema, $new_table, $old_index['name']);
         if ( !format_table::contains_index($new_schema, $new_table, $old_index['name']) ) {
             $list[] = $old_index;
         }

@@ -1311,6 +1311,21 @@ WAIT FOR EVENT (
           $new_replica_set['originNodeId']
         ) . "\n\n");
     }
+    
+    // execute post-slony shaping SQL DDL / DCL commands at the end of stage 1 and 3 .slonik files
+    $slony_stage1_ofs->write("ECHO 'DBSteward upgrade replica set " . $new_replica_set['id'] . " stage 1 SQL EXECUTE SCRIPT';\n");
+    $slony_stage1_ofs->write("EXECUTE SCRIPT (
+  SET ID = " . $new_replica_set['id'] . ",
+  FILENAME = '" . $slony_stage1_file . "',
+  EVENT NODE = " . $new_replica_set['originNodeId'] . "
+);\n\n");
+    
+    $slony_stage3_ofs->write("ECHO 'DBSteward upgrade replica set " . $new_replica_set['id'] . " stage 3 SQL EXECUTE SCRIPT';\n");
+    $slony_stage3_ofs->write("EXECUTE SCRIPT (
+  SET ID = " . $new_replica_set['id'] . ",
+  FILENAME = '" . $slony_stage3_file . "',
+  EVENT NODE = " . $new_replica_set['originNodeId'] . "
+);\n\n");
   }
 
   protected static function create_slonik_upgrade_set($ofs, $doc, $replica_set) {
