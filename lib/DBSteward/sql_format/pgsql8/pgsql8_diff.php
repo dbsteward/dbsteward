@@ -44,8 +44,6 @@ class pgsql8_diff extends sql99_diff {
       $old_set_new_set = "-- Old definition:  " . $old_xml_file . "\n"
         . "-- New definition:  " . $new_xml_file . "\n"
         . "-- Replica Set: " . $replica_set_id . "\n";
-
-      pgsql8::build_slonik_preamble($new_database, $replica_set, $upgrade_prefix . "_slony_replica_set_" . $replica_set_id . "_preamble.slonik");
       
       $ofsm_stage1->set_replica_set_ofs(
         $replica_set_id,
