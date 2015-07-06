@@ -926,7 +926,7 @@ Format-specific options
   public static function get_logger() {
     if (!self::$logger) {
       self::$logger = new Monolog\Logger('dbsteward');
-      self::$logger->pushHandler($sh = new Monolog\Handler\StreamHandler(STDERR, static::$LOG_LEVEL));
+      self::$logger->pushHandler($sh = new Monolog\Handler\StreamHandler('php://stderr', static::$LOG_LEVEL));
       $sh->setFormatter(new DBStewardConsoleLogFormatter);
     }
     return self::$logger;
