@@ -44,8 +44,6 @@ class pgsql8_diff extends sql99_diff {
       $old_set_new_set = "-- Old definition:  " . $old_xml_file . "\n"
         . "-- New definition:  " . $new_xml_file . "\n"
         . "-- Replica Set: " . $replica_set_id . "\n";
-
-      pgsql8::build_slonik_preamble($new_database, $replica_set, $upgrade_prefix . "_slony_replica_set_" . $replica_set_id . "_preamble.slonik");
       
       $ofsm_stage1->set_replica_set_ofs(
         $replica_set_id,
@@ -154,7 +152,7 @@ class pgsql8_diff extends sql99_diff {
         $stage1_ofs->append_footer("\nCOMMIT;\n");
       }
       else {
-        $stage1_ofs->append_header("\n-- generateslonik specified: pgsql8 STAGE1 upgrade omitting BEGIN. slonik EXECUTE SCRIPT will wrap the submission in a transaction\n");
+        $stage1_ofs->append_header("\n-- generateslonik specified: pgsql8 STAGE1 upgrade omitting BEGIN. slonik EXECUTE SCRIPT will wrap stage 1 DDL and DCL in a transaction\n");
       }
       if ( ! dbsteward::$single_stage_upgrade ) {
         $stage2_ofs->append_header("\nBEGIN;\n\n");
@@ -166,7 +164,7 @@ class pgsql8_diff extends sql99_diff {
           $stage3_ofs->append_footer("\nCOMMIT;\n");
         }
         else {
-          $stage3_ofs->append_header("\n-- generateslonik specified: pgsql8 STAGE1 upgrade omitting BEGIN. slonik EXECUTE SCRIPT will wrap the submission in a transaction\n");
+          $stage3_ofs->append_header("\n-- generateslonik specified: pgsql8 STAGE1 upgrade omitting BEGIN. slonik EXECUTE SCRIPT will wrap stage 3 DDL and DCL in a transaction\n");
         }
         $stage4_ofs->append_header("\nBEGIN;\n\n");
         $stage4_ofs->append_footer("\nCOMMIT;\n");

@@ -65,7 +65,7 @@ class mssql10_trigger extends pgsql8_trigger {
    *
    * @return created SQL
    */
-  public function get_drop_sql($node_schema, $node_trigger) {
+  public static function get_drop_sql($node_schema, $node_trigger) {
     $node_table = dbx::get_table($node_schema, $node_trigger['table']);
     if ($node_table == NULL) {
       throw new exception("Failed to find trigger table " . $node_trigger['table'] . " in schema node " . $node_schema['name']);
