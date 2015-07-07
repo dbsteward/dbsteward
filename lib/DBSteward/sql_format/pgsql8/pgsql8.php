@@ -1313,15 +1313,18 @@ WAIT FOR EVENT (
     }
     
     // execute post-slony shaping SQL DDL / DCL commands at the end of stage 1 and 3 .slonik files
+    $sql_stage1_file = $slonik_file_prefix . '_stage1_schema1.sql';
+    // TODO: need to collect sql_stage1_file names from diff_doc() if there is 
+    // more than one as a result of many changes between definition files
     $slony_stage1_ofs->write("ECHO 'DBSteward upgrade replica set " . $new_replica_set['id'] . " stage 1 SQL EXECUTE SCRIPT';\n");
     $slony_stage1_ofs->write("EXECUTE SCRIPT (
-  FILENAME = '" . $slony_stage1_file . "',
+  FILENAME = '" . $sql_stage1_file . "',
   EVENT NODE = " . $new_replica_set['originNodeId'] . "
 );\n\n");
-    
+    $sql_stage3_file = $slonik_file_prefix . '_stage3_schema1.sql';
     $slony_stage3_ofs->write("ECHO 'DBSteward upgrade replica set " . $new_replica_set['id'] . " stage 3 SQL EXECUTE SCRIPT';\n");
     $slony_stage3_ofs->write("EXECUTE SCRIPT (
-  FILENAME = '" . $slony_stage3_file . "',
+  FILENAME = '" . $sql_stage3_file . "',
   EVENT NODE = " . $new_replica_set['originNodeId'] . "
 );\n\n");
   }
