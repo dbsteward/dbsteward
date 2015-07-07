@@ -2551,7 +2551,9 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         return $slony_node;
       }
     }
-    return FALSE;
+    // return FALSE reference variable
+    $node_not_found = FALSE;
+    return $node_not_found;
   }
   
   public static function slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table) {
