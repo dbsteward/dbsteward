@@ -161,7 +161,7 @@ class dbsteward {
     $s = "DBSteward Version " . self::VERSION . "
 Usage:
 Global Switches and Flags
-  --sqlformat=<pgsql8|mssql10|mysql5|oracle10g>
+  --sqlformat=<pgsql8|mssql10|mysql5>
   --requireslonyid                  require tables and sequences to specify a valid slonyId
   --requireslonysetid               require slonyIds to be associated with a slonySetId
   --generateslonik                  generate slonik scripts to subscribe to or upgrade slony replicated db
@@ -739,11 +739,6 @@ Format-specific options
       if (isset($options['useschemaprefix'])) {
         mysql5::$use_schema_name_prefix = TRUE;
       }
-    }
-    else if (strcasecmp($sql_format, 'oracle10g') == 0) {
-      dbsteward::$quote_schema_names = TRUE;
-      dbsteward::$quote_table_names = TRUE;
-      dbsteward::$quote_column_names = TRUE;
     }
     
     if (strcasecmp($sql_format, 'pgsql8') != 0) {

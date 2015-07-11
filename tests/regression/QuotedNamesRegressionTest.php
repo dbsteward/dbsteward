@@ -32,13 +32,6 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
     $this->quoteTestCommon('mysql5', array('in ', 'in-', 'in'.mysql5::QUOTE_CHAR, 'in.'));
   }
 
-  /**
-   * @group oracle10g
-   */
-  public function testOracle10g() {
-    $this->quoteTestCommon('oracle10g');
-  }
-
   protected function quoteTestCommon($format, $additional_invalid = array()) {
     dbsteward::set_sql_format($format);
     dbsteward::$quote_all_names = FALSE;
