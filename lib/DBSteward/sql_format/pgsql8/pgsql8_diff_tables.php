@@ -1107,7 +1107,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         // if it is a renamed table
         if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) ) {
           // remove all constraints and recreate with new table name conventions
-          foreach(dbx::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
+          foreach(pgsql8_constraint::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
             // rewrite the constraint definer to refer to the new table name
             // so the constraint by the old name, but part of the new table
             // will be referenced properly in the drop statement
@@ -1117,7 +1117,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           }
           
           // add all still-define constraints back and any new ones to the table
-          foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
+          foreach(pgsql8_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
             $ofs->write(pgsql8_table::get_constraint_sql($constraint) . "\n");
           }
           // this gets any new constraints as well. 
@@ -1153,8 +1153,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       if ( $old_table->getName() != 'table' ) {
         throw new exception("Unexpected element type: " . $old_table->getName() . " panicing");
       }
-      foreach(dbx::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
-        $new_constraint = dbx::get_table_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name']);
+      foreach(pgsql8_constraint::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
+        $new_constraint = pgsql8_constraint::get_table_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name']);
 
         if ( !pgsql8_table::contains_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name'])
           || !pgsql8_table::constraint_equals($new_constraint, $constraint)
@@ -1182,12 +1182,12 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 
     if ($new_table != null) {
       if ($old_table == null) {
-        foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
+        foreach(pgsql8_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
           $list[] = $constraint;
         }
       } else {
-        foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
-          $old_constraint = dbx::get_table_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name']);
+        foreach(pgsql8_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
+          $old_constraint = pgsql8_constraint::get_table_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name']);
 
           if ( !pgsql8_table::contains_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name'])
             || !pgsql8_table::constraint_equals($old_constraint, $constraint)

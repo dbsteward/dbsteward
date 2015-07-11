@@ -80,16 +80,16 @@ class OptionalForeignSchemaTest extends \PHPUnit_Framework_TestCase {
   }
 
   /** @group pgsql8 */
-  public function testDbxGetTableConstraintsPgsql8() {
+  public function testFormatGetTableConstraintsPgsql8() {
     dbsteward::set_sql_format('pgsql8');
-    $this->_testDbxGetTableConstraints();
+    $this->_testFormatGetTableConstraints();
   }
   /** @group mysql5 */
-  public function testDbxGetTableConstraintsMysql5() {
+  public function testFormatGetTableConstraintsMysql5() {
     dbsteward::set_sql_format('mysql5');
-    $this->_testDbxGetTableConstraints();
+    $this->_testFormatGetTableConstraints();
   }
-  private function _testDbxGetTableConstraints() {
+  private function _testFormatGetTableConstraints() {
     $doc = simplexml_load_string($this->xml);
     $schema = $doc->schema;
     $table1 = $schema->table[0];
@@ -98,7 +98,7 @@ class OptionalForeignSchemaTest extends \PHPUnit_Framework_TestCase {
     $table2 = $schema->table[1];
     $table2_t2id = $table2->column[0];
 
-    $constraints = dbx::get_table_constraints($doc, $schema, $table1, 'foreignKey');
+    $constraints = format_constraint::get_table_constraints($doc, $schema, $table1, 'foreignKey');
     $this->assertCount(1, $constraints);
 
     $foreign = $constraints[0]['foreign_key_data'];
