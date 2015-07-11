@@ -117,13 +117,13 @@ class sql99_constraint {
     $fschema = $foreign_schema;
     $ftable = $foreign_table;
     do {
-      $foreign_column = dbx::get_table_column($foreign_table, $foreign_colname);
+      $foreign_column = dbx::get_table_column($ftable, $foreign_colname);
       if ($ftable['inheritsSchema']) {
-        $fschema = dbx::get_schema($db_doc, $ftable['inheritsSchema']);
+        $fschema = dbx::get_schema($db_doc, (string)$ftable['inheritsSchema']);
       }
 
       if ($ftable['inheritsTable']) {
-        $ftable = dbx::get_table($fschema, $ftable['inheritsTable']);
+        $ftable = dbx::get_table($fschema, (string)$ftable['inheritsTable']);
       } else {
         $ftable = null;
       }
