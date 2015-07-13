@@ -139,9 +139,8 @@ class sql99_diff_tables {
   }
 
   public static function update_table_options($ofs1, $ofs3, $old_schema, $old_table, $new_schema, $new_table) {
-    if (strcasecmp(dbsteward::get_sql_format(),'mssql10') === 0
-      || strcasecmp(dbsteward::get_sql_format(),'oracle10g') === 0) {
-      dbsteward::warning("mssql10 and oracle10g tableOptions are not implemented yet");
+    if (strcasecmp(dbsteward::get_sql_format(),'mssql10') === 0) {
+      dbsteward::warning("mssql10 tableOptions are not implemented yet");
       return;
     }
     if ($new_schema && $new_table) {
