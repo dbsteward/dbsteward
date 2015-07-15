@@ -1318,13 +1318,13 @@ WAIT FOR EVENT (
     // more than one as a result of many changes between definition files
     $slony_stage1_ofs->write("ECHO 'DBSteward upgrade replica set " . $new_replica_set['id'] . " stage 1 SQL EXECUTE SCRIPT';\n");
     $slony_stage1_ofs->write("EXECUTE SCRIPT (
-  FILENAME = '" . $sql_stage1_file . "',
+  FILENAME = '" . basename($sql_stage1_file) . "',
   EVENT NODE = " . $new_replica_set['originNodeId'] . "
 );\n\n");
     $sql_stage3_file = $slonik_file_prefix . '_stage3_schema1.sql';
     $slony_stage3_ofs->write("ECHO 'DBSteward upgrade replica set " . $new_replica_set['id'] . " stage 3 SQL EXECUTE SCRIPT';\n");
     $slony_stage3_ofs->write("EXECUTE SCRIPT (
-  FILENAME = '" . $sql_stage3_file . "',
+  FILENAME = '" . basename($sql_stage3_file) . "',
   EVENT NODE = " . $new_replica_set['originNodeId'] . "
 );\n\n");
   }
