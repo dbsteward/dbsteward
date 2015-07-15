@@ -363,10 +363,12 @@ class pgsql8 extends sql99 {
     if ( dbsteward::$generate_slonik ) {
       $replica_sets = static::get_slony_replica_sets($db_doc);
       foreach($replica_sets AS $replica_set) {
-        // output preamble file on it's own for toolchains that use the premable to do additional slonik commands
+        // output preamble file standalone for tool chains that use the preamble to do additional slonik commands
         pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_preamble.slonik");
-        // output paths file on it's own for toolchains that use the paths specifications separately
+        // output paths specificity standalone for tool chains that use the store path slonik statements separately
         pgsql8::build_slonik_paths($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_paths.slonik");
+        // output create set file standalone for tool chains that use the create_set slonik separately
+        pgsql8::build_slonik_create_set($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_create_set.slonik');
         
         pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_create_nodes.slonik");
         pgsql8::build_slonik_store_nodes($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_create_nodes.slonik");
@@ -1024,7 +1026,7 @@ WAIT FOR EVENT (
     dbsteward::notice("Building slonik upgrade replica set ID " . $new_replica_set['id']);
     $timestamp = date('r');
 
-    // output preamble file on it's own for toolchains that use the premable to do additional slonik commands
+    // output preamble file standalone for tool chains that use the preamble to do additional slonik commands
     $slony_preamble_file = $slonik_file_prefix . '_preamble.slonik';
     pgsql8::build_slonik_preamble($new_db_doc, $new_replica_set, $slony_preamble_file);
 
