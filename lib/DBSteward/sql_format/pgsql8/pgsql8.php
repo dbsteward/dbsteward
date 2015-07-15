@@ -368,14 +368,20 @@ class pgsql8 extends sql99 {
         // output paths specificity standalone for tool chains that use the store path slonik statements separately
         pgsql8::build_slonik_paths($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_paths.slonik");
         // output create set file standalone for tool chains that use the create_set slonik separately
-        pgsql8::build_slonik_create_set($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_create_set.slonik');
+        $create_set_filename = $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_create_set.slonik';
+        pgsql8::build_slonik_create_set($db_doc, $replica_set, $create_set_filename);
         
         pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_create_nodes.slonik");
         pgsql8::build_slonik_store_nodes($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_create_nodes.slonik");
         pgsql8::build_slonik_paths($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_create_nodes.slonik");
 
-        pgsql8::build_slonik_preamble($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_subscribe.slonik");
-        pgsql8::build_slonik_create_set($db_doc, $replica_set, $output_prefix . '_slony_replica_set_' . $replica_set['id'] . '_subscribe.slonik');
+        // build full subscribe steps that creates sets and subscribes nodes
+        $subscribe_filename = $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_subscribe.slonik";
+        pgsql8::build_slonik_preamble($db_doc, $replica_set, $subscribe_filename);
+        // create_set does one time slony configuration comparison.
+        // so inject the content into _subscribe built earlier
+        file_put_contents($subscribe_filename, file_get_contents($create_set_filename));
+        
         foreach($replica_set->slonyReplicaSetNode AS $replica_set_node) {
           pgsql8::build_slonik_subscribe_set_node($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_subscribe.slonik", $replica_set_node);
         }
@@ -678,7 +684,7 @@ class pgsql8 extends sql99 {
         foreach ($table->column AS $column) {
           // is this table column replicated in this replica set?
           if ( static::slony_replica_set_contains_table_column_serial_sequence($db_doc, $replica_set, $schema, $table, $column) ) {
-            self::check_duplicate_sequence_slony_id('column', (string)$column['slonyId']);
+            self::check_duplicate_sequence_slony_id((string)$column['name'], 'column', (string)$column['slonyId']);
             
             self::set_sequence_slony_ids($column, $db_doc);
 
@@ -703,7 +709,7 @@ class pgsql8 extends sql99 {
         foreach ($schema->sequence AS $sequence) {
           // is this sequence replicated in this replica set?
           if ( static::slony_replica_set_contains_sequence($db_doc, $replica_set, $schema, $sequence) ) {
-            self::check_duplicate_sequence_slony_id('sequence', (string)$sequence['slonyId']);
+            self::check_duplicate_sequence_slony_id((string)$sequence['name'], 'sequence', (string)$sequence['slonyId']);
             self::set_sequence_slony_ids($sequence, $db_doc);
 
             $slonik_ofs->write(sprintf(slony1_slonik::script_add_sequence, $replica_set['id'], $replica_set['originNodeId'], $sequence['slonyId'], $schema['name'] . '.' . $sequence['name'], $schema['name'] . '.' . $sequence['name'] . ' sequence replication') . "\n\n");
@@ -1185,7 +1191,7 @@ WAIT FOR EVENT (
           // is this column sequence replicated in this replica set?
           if ( pgsql8::slony_replica_set_contains_table_column_serial_sequence($new_db_doc, $new_replica_set, $new_schema, $new_table, $new_column) ) {
 
-            self::check_duplicate_sequence_slony_id('column', (string)$new_column['slonyId']);
+            self::check_duplicate_sequence_slony_id((string)$new_column['name'], 'column', (string)$new_column['slonyId']);
             self::set_sequence_slony_ids($new_column, $new_db_doc);
 
             // resolve $old_table on our own -- the table itself may not be replicated
@@ -1254,7 +1260,7 @@ WAIT FOR EVENT (
       foreach ($new_schema->sequence AS $new_sequence) {
         // is this sequence replicated in this replica set?
         if ( pgsql8::slony_replica_set_contains_sequence($new_db_doc, $new_replica_set, $new_schema, $new_sequence) ) {
-          self::check_duplicate_sequence_slony_id('sequence', (string)$new_sequence['slonyId']);
+          self::check_duplicate_sequence_slony_id((string)$new_sequence['name'], 'sequence', (string)$new_sequence['slonyId']);
           self::set_sequence_slony_ids($new_sequence, $new_db_doc);
         }
 
@@ -2713,14 +2719,15 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     return FALSE;
   }
 
-  protected static function check_duplicate_sequence_slony_id($type, $slony_id) {
+  protected static function check_duplicate_sequence_slony_id($name, $type, $slony_id) {
+    $name = (string)$name;
     $slony_id = (string)$slony_id;
     if ($type == 'column') {
       $type = 'column sequence';
     }
     foreach (self::$sequence_slony_ids as $set_ids) {
       if (in_array($slony_id, $set_ids)) {
-        throw new exception("$type slonyId $slony_id already in sequence_slony_ids -- duplicates not allowed");
+        throw new exception("$name $type slonyId $slony_id already in sequence_slony_ids -- duplicates not allowed");
       }
     }
   }
