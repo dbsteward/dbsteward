@@ -1157,7 +1157,7 @@ WAIT FOR EVENT (
             throw new exception('table ' . $new_table['name'] . " slonyId " . $new_table['slonyId'] . " is not numeric");
           }
           if (in_array(dbsteward::string_cast($new_table['slonyId']), self::$table_slony_ids)) {
-            throw new exception("new table " . $new_table['name'] . " slonyId " . $new_table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
+            throw new exception("table " . $new_table['name'] . " slonyId " . $new_table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
           }
           self::$table_slony_ids[] = dbsteward::string_cast($new_table['slonyId']);
 
