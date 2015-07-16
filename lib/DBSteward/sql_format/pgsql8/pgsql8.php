@@ -696,7 +696,7 @@ class pgsql8 extends sql99 {
         // is this table replicated in this replica set?
         if ( static::slony_replica_set_contains_table($db_doc, $replica_set, $schema, $table) ) {
           if (in_array(dbsteward::string_cast($table['slonyId']), self::$table_slony_ids)) {
-            throw new exception("table slonyId " . $table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
+            throw new exception("table " . $table['name'] . " slonyId " . $table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
           }
           self::$table_slony_ids[] = dbsteward::string_cast($table['slonyId']);
 
@@ -1157,7 +1157,7 @@ WAIT FOR EVENT (
             throw new exception('table ' . $new_table['name'] . " slonyId " . $new_table['slonyId'] . " is not numeric");
           }
           if (in_array(dbsteward::string_cast($new_table['slonyId']), self::$table_slony_ids)) {
-            throw new exception("table slonyId " . $new_table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
+            throw new exception("new table " . $new_table['name'] . " slonyId " . $new_table['slonyId'] . " already in table_slony_ids -- duplicates not allowed");
           }
           self::$table_slony_ids[] = dbsteward::string_cast($new_table['slonyId']);
 
@@ -2727,7 +2727,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     }
     foreach (self::$sequence_slony_ids as $set_ids) {
       if (in_array($slony_id, $set_ids)) {
-        throw new exception("$name $type slonyId $slony_id already in sequence_slony_ids -- duplicates not allowed");
+        throw new exception("$type $name slonyId $slony_id already in sequence_slony_ids -- duplicates not allowed");
       }
     }
   }

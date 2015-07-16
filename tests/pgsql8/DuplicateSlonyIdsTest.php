@@ -35,7 +35,7 @@ XML;
   <column name="d" type="serial" slonyId="1"/>
 </table>
 XML;
-    $this->common_dups($xml, "column sequence slonyId 1 already in sequence_slony_ids -- duplicates not allowed");
+    $this->common_dups($xml, "column sequence d slonyId 1 already in sequence_slony_ids -- duplicates not allowed");
   }
 
   public function testDuplicateSequenceIds() {
@@ -43,7 +43,7 @@ XML;
 <sequence name="a" owner="ROLE_OWNER" slonyId="1"/>
 <sequence name="b" owner="ROLE_OWNER" slonyId="1"/>
 XML;
-    $this->common_dups($xml, "sequence slonyId 1 already in sequence_slony_ids -- duplicates not allowed");
+    $this->common_dups($xml, "sequence b slonyId 1 already in sequence_slony_ids -- duplicates not allowed");
   }
 
   public function testDuplicateSequenceAndColumnIds() {
@@ -53,7 +53,7 @@ XML;
 </table>
 <sequence name="c" owner="ROLE_OWNER" slonyId="1"/>
 XML;
-    $this->common_dups($xml, "sequence slonyId 1 already in sequence_slony_ids -- duplicates not allowed");
+    $this->common_dups($xml, "sequence c slonyId 1 already in sequence_slony_ids -- duplicates not allowed");
   }
 
   public function testDifferentTableIdsBetweenVersions() {
