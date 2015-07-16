@@ -23,7 +23,7 @@ class DuplicateSlonyIdsTest extends dbstewardUnitTestBase {
   <column name="d" type="serial" slonyId="2"/>
 </table>
 XML;
-    $this->common_dups($xml, "table c slonyId 1 already in table_slony_ids -- duplicates not allowed");
+    $this->common_dups($xml, "new table c slonyId 1 already in table_slony_ids -- duplicates not allowed");
   }
 
   public function testDuplicateColumnIds() {
