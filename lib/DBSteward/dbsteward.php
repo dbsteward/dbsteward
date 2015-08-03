@@ -149,7 +149,12 @@ class dbsteward {
    */
   public static $always_recreate_views = TRUE;
 
-  protected $cli_dbpassword = NULL;
+  /**
+   * the password to use for connecting for database extraction
+   * default FALSE. if FALSE is passed for password to extract_schema, it will prompt for password
+   * @var boolean
+   */
+  protected $cli_dbpassword = FALSE;
 
   public static $old_database = NULL;
   public static $new_database = NULL;
