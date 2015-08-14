@@ -45,7 +45,6 @@
     "ext-pgsql": "*",
     "monolog/monolog": "dev-master#49f95a2d636ea9e7409c67890ae29730f50bc22a",
     "phing/phing": "2.7.*",
-    "pirum/pirum": "1.1.*",
     "phpunit/phpunit": "4.4.*",
     "satooshi/php-coveralls": "dev-master"
   },
