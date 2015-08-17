@@ -131,6 +131,7 @@ http://dbsteward.org/
 DBSteward 1.4.0 Release
 
 Changes
+* Drop PEAR package support. Please use composer: https://github.com/nkiraly/DBSteward/blob/v1.4.0-alpha1/doc/INSTALLING.md
 * Add additional quotereservednames flag and separate quoteillegalnames to only affect those github/nkiraly/DBSteward PR #69
 * New and Improved Logging features via switching to monolog github/nkiraly/DBSteward PR #82
 * Make foreignSchema attribute optional and default to the current schema github/nkiraly/DBSteward PR #81
@@ -140,6 +141,7 @@ Changes
 * Add pgsql8 CREATE INDEX CONCURRENTLY support to definition XML
 * Reoranized slonik output files for --generateslonik slony replication to include preamble github/nkiraly/DBSteward PR #90
 * Include execute script and and subscribe set statements in revamped slonik output files github/nkiraly/DBSteward PR #90
+* XML foreignKey element support and constraint definition refactoring github/nkiraly/DBSteward PR #93 issue #87
 
 
 Supported Platform DDL Generation and Differencing:
