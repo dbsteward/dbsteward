@@ -337,7 +337,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           }
 
           // before altering column, remove any constraint that would stop us from doing so
-          foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, 'constraint') as $constraint) { 
+          foreach(mssql10_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, 'constraint') as $constraint) { 
             if (preg_match('/' . $new_column['name'] . '[\s,=)]/', $constraint['definition']) > 0) {
               $commands[] = array(
                 'stage' => '3',
@@ -352,7 +352,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
           );
 
           // add the constraint back on
-          foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, 'constraint') as $constraint) { 
+          foreach(mssql10_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, 'constraint') as $constraint) { 
             if (preg_match('/' . $new_column['name'] . '[\s,=\)]/', $constraint['definition']) > 0) {
               $commands[] = array(
                 'stage' => '3',
@@ -977,7 +977,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     else {
       // if it is a renamed table, remove all constraints and recreate with new table name conventions
       if ( mssql10_diff_tables::is_renamed_table($new_schema, $new_table) ) {
-        foreach(dbx::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
+        foreach(mssql10_constraint::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
           // rewrite the constraint definer to refer to the new table name
           // so the constraint by the old name, but part of the new table
           // will be referenced properly in the drop statement
@@ -986,7 +986,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
         }
         
         // add all defined constraints back to the new table
-        foreach(dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
+        foreach(mssql10_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
           $ofs->write(mssql10_table::get_constraint_sql($constraint) . "\n");
         }
         return;
@@ -1019,8 +1019,8 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
       if ($old_table->getName() != 'table') {
         throw new exception("Unexpected element type: " . $old_table->getName() . " panicing");
       }
-      foreach (dbx::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
-        $new_constraint = dbx::get_table_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name']);
+      foreach (mssql10_constraint::get_table_constraints(dbsteward::$old_database, $old_schema, $old_table, $type) as $constraint) {
+        $new_constraint = mssql10_constraint::get_table_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name']);
 
         if (!mssql10_table::contains_constraint(dbsteward::$new_database, $new_schema, $new_table, $constraint['name'])
           || !mssql10_table::constraint_equals($new_constraint, $constraint)) {
@@ -1046,13 +1046,13 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
 
     if ($new_table != NULL) {
       if ($old_table == NULL) {
-        foreach (dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
+        foreach (mssql10_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
           $list[] = $constraint;
         }
       }
       else {
-        foreach (dbx::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
-          $old_constraint = dbx::get_table_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name']);
+        foreach (mssql10_constraint::get_table_constraints(dbsteward::$new_database, $new_schema, $new_table, $type) as $constraint) {
+          $old_constraint = mssql10_constraint::get_table_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name']);
 
           if (!mssql10_table::contains_constraint(dbsteward::$old_database, $old_schema, $old_table, $constraint['name'])
            || !mssql10_table::constraint_equals($old_constraint, $constraint)) {

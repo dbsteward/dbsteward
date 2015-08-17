@@ -71,10 +71,10 @@ XML;
 XML;
     $db_doc = simplexml_load_string($xml);
 
-    $constraints = dbx::get_table_constraints($db_doc, $db_doc->schema, $db_doc->schema->table[1], 'foreignKey');
+    $constraints = pgsql8_constraint::get_table_constraints($db_doc, $db_doc->schema, $db_doc->schema->table[1], 'foreignKey');
 
     $sql = trim(pgsql8_table::get_constraint_sql_change_statement($constraints[0]));
-    $expected = 'ADD CONSTRAINT "test2_col1_fkey" FOREIGN KEY ("col1") REFERENCES "test"."test1"("col1")';
+    $expected = 'ADD CONSTRAINT "test2_col1_fkey" FOREIGN KEY ("col1") REFERENCES "test"."test1" ("col1")';
     $this->assertEquals($expected, $sql);
   }
 
