@@ -1,5 +1,13 @@
 # Release Packaging Checklist
 
+NOTICE: DEPRECATED: This packaging guide is for PEAR packaging.
+DBSteward 1.4+ is composer package managed.
+
+https://github.com/nkiraly/DBSteward/blob/v1.4.0/doc/INSTALLING.md
+
+https://packagist.org/packages/nkiraly/dbsteward
+
+
 
 ## 1. Check source code version labels
 
