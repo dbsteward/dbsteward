@@ -143,11 +143,22 @@ How to use DBSteward to test changes in your active development branch or workin
 
 To test changes you may be making to the schema, you can run this to output a full _build.sql file to see how DBSteward is interpreting your table and column elements. This would typically be done to create a development database. Different customer-specific files may be overlaid to create customer-specific information.
 ```bash
-[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --xml=db/someapp.xml --xml=customers/dev/dev_data.xml
-[nkiraly@bludgeon ~/public_html/someapp]$ ls -l db/someapp*
--rw-r--r--  1 nkiraly  nkiraly  2403074 Jul 29 09:59 someapp.xml
--rw-r--r--  1 nkiraly  nkiraly  3041420 Jul 29 10:56 someapp_build.sql
--rw-r--r--  1 nkiraly  nkiraly  2473194 Jul 29 10:55 someapp_composite.xml
+[nicholas.kiraly@bludgeon (master) ~/engineering/DBSteward/xml]$
+
+dbsteward --xml=someapp_v1.xml --xml=customers/acme/acme_data.xml
+NOTICE   DBSteward Version 1.4.0
+NOTICE   Using sqlformat=pgsql8
+NOTICE   Loading XML /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/xml/someapp_v1.xml..
+NOTICE   Compositing XML File someapp_v1.xml
+NOTICE   Loading XML /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/xml/customers/acme/acme_data.xml..
+NOTICE   Compositing XML File customers/acme/acme_data.xml
+NOTICE   Saving composite as ./someapp_v1_composite.xml
+NOTICE   [File Segment] Fixed output file: ./someapp_v1_build.sql
+
+ls -l someapp_v1*
+-rwxr-xr-x  1 nicholas.kiraly  6035   6413 Jun 29 22:12 someapp_v1.xml
+-rw-r--r--  1 nicholas.kiraly  6035  10776 Aug 18 13:44 someapp_v1_build.sql
+-rw-r--r--  1 nicholas.kiraly  6035  10074 Aug 18 13:44 someapp_v1_composite.xml
 ```
 
 
@@ -165,13 +176,28 @@ git archive remotes/origin/v2.1.0 customers | tar -x -C reference-dbs/v2.1.0 -f 
 
 Difference the two definitions:
 ```bash
-[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml
+[nicholas.kiraly@bludgeon (master) ~/engineering/DBSteward/xml]$
+
+dbsteward --oldxml=reference-dbs/v1.0.0/db/someapp_v1.xml --oldxml=reference-dbs/v1.0.0/customers/acme/acme_data.xml --newxml=someapp_v2.xml --newxml=customers/acme/acme_data.xml
+
+NOTICE   DBSteward Version 1.4.0
+NOTICE   Using sqlformat=pgsql8
+NOTICE   Loading XML reference-dbs/v1.0.0/db/someapp_v1.xml..
+NOTICE   Compositing XML File someapp_v1.xml
+NOTICE   Loading XML someapp_v2.xml..
+NOTICE   Compositing XML File someapp_v2.xml
+NOTICE   Saving oldxml composite as ./someapp_v1_composite.xml
+NOTICE   Saving newxml composite as ./someapp_v2_composite.xml
+NOTICE   [File Segment] Opening output file segement ./someapp_v2_upgrade_stage1_schema1.sql
+NOTICE   [File Segment] Opening output file segement ./someapp_v2_upgrade_stage2_data1.sql
+NOTICE   [File Segment] Opening output file segement ./someapp_v2_upgrade_stage3_schema1.sql
+NOTICE   [File Segment] Opening output file segement ./someapp_v2_upgrade_stage4_data1.sql
 
 [nkiraly@bludgeon ~/public_html/someapp]$ ls -l db/someapp_upgrade_*
--rw-r--r--  1 nkiraly  nkiraly  36645 Mar 29 21:26 db/someapp_upgrade_stage1_schema1.sql
--rw-r--r--  1 nkiraly  nkiraly  16545 Mar 29 21:26 db/someapp_upgrade_stage2_data1.sql
--rw-r--r--  1 nkiraly  nkiraly    624 Mar 29 21:26 db/someapp_upgrade_stage3_schema3.sql
--rw-r--r--  1 nkiraly  nkiraly    622 Mar 29 21:26 db/someapp_upgrade_stage4_data1.sql
+-rw-r--r--  1 nicholas.kiraly  6035  2802 Aug 18 13:42 someapp_v2_upgrade_stage1_schema1.sql
+-rw-r--r--  1 nicholas.kiraly  6035   311 Aug 18 13:42 someapp_v2_upgrade_stage2_data1.sql
+-rw-r--r--  1 nicholas.kiraly  6035   688 Aug 18 13:42 someapp_v2_upgrade_stage3_schema1.sql
+-rw-r--r--  1 nicholas.kiraly  6035   696 Aug 18 13:42 someapp_v2_upgrade_stage4_data1.sql
 ```
 
 ### Slony Support / Slonik Script Testing
@@ -179,7 +205,9 @@ Difference the two definitions:
 When testing changes and slony configuration, the --requireslonyid sanity flag can be used to insist that all tables and sequences have slonyId's. Consequently, DBSteward will report the next available slonyId for your convienence:
 
 ```bash
-[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml --generateslonik --requireslonyid --quoteillegalnames
+[nicholas.kiraly@bludgeon (master) ~/public_html/someapp]$
+
+dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml --generateslonik --requireslonyid --quotereservednames
 
 NOTICE   Loading XML /home/nicholas.kiraly/public_html/someapp/db/someapp.xml..
 ...
@@ -192,7 +220,7 @@ ERROR    Table users.devices missing slonyId and slonyIds are required
 With users.devices table assigned slonyId 211:
 
 ```bash
-[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml --generateslonik --requireslonyid --quoteillegalnames
+[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml --generateslonik --requireslonyid --quotereservednames
 
 [nkiraly@bludgeon ~/public_html/someapp]$ ls -l db/someapp_upgrade_*
 -rw-r--r--  1 nkiraly  nkiraly  1543 Mar 29 21:26 db/someapp_upgrade_slony_replica_set_100_preamble.slonik
@@ -239,7 +267,7 @@ WARNING  public.sql_user row column WHERE (user_id = 1) register_date data does 
 NOTICE   public.user_status_list does not contain row WHERE user_status_list_id = 5
 ```
 
-# look at the comparison XML artifact for rows that you might want to include in your repository definition
+look at the comparison XML artifact for rows that you might want to include in your repository definition
 > vi acme_extracted.xml
 ```xml
 ...
