@@ -2279,12 +2279,9 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
   /**
    * compare composite db doc to specified database
    *
-   * @return string
+   * @return string XML
    */
-  public static function compare_db_data($host, $port, $database, $user, $password, $files) {
-    if (!is_array($files)) {
-      $files = array($files);
-    }
+  public static function compare_db_data($db_doc, $host, $port, $database, $user, $password) {
     dbsteward::notice("Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ($password === FALSE) {
@@ -2292,13 +2289,9 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       echo "Password: ";
       $password = fgets(STDIN);
     }
-
     pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
 
-    $db_doc = pgsql8::build($files);
-
     dbsteward::info("Comparing composited dbsteward definition data rows to postgresql database connection table contents");
-
     // compare the composited dbsteward document to the established database connection
     // effectively looking to see if rows are found that match primary keys, and if their contents are the same
     foreach ($db_doc->schema AS $schema) {
@@ -2401,7 +2394,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       }
     }
 
-    xml_parser::validate_xml($db_doc->asXML());
+    //xml_parser::validate_xml($db_doc->asXML());
     return xml_parser::format_xml($db_doc->saveXML());
   }
 

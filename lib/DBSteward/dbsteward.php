@@ -656,7 +656,33 @@ Format-specific options
         break;
 
       case dbsteward::MODE_DB_DATA_DIFF:
-        $output = format::compare_db_data($dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword, $options['dbdatadiff']);
+        // dbdatadiff files are defined with --dbdatadiff not --xml
+        $dbdatadiff_files = (array)$options['dbdatadiff'];
+        
+        dbsteward::info("Compositing XML files..");
+        $addendums_doc = NULL;
+        if ($xml_collect_data_addendums > 0) {
+          dbsteward::info("Collecting $xml_collect_data_addendums data addendums");
+        }
+        $db_doc = xml_parser::xml_composite($dbdatadiff_files, $xml_collect_data_addendums, $addendums_doc);
+
+        if (isset($options['pgdataxml']) && count($options['pgdataxml'])) {
+          $pg_data_files = (array)$options['pgdataxml'];
+          dbsteward::info("Compositing pgdata XML files on top of XML composite..");
+          xml_parser::xml_composite_pgdata($db_doc, $pg_data_files);
+          dbsteward::info("postgres data XML files [" . implode(' ', $pg_data_files) . "] composited.");
+        }
+
+        dbsteward::info("XML files " . implode(' ', $dbdatadiff_files) . " composited");
+
+        $output_prefix = dbsteward::calculate_file_output_prefix($dbdatadiff_files);
+        $composite_file = $output_prefix . '_composite.xml';
+        $db_doc = xml_parser::sql_format_convert($db_doc);
+        xml_parser::vendor_parse($db_doc);
+        dbsteward::notice("Saving composite as " . $composite_file);
+        xml_parser::save_doc($composite_file, $db_doc);
+        
+        $output = format::compare_db_data($db_doc, $dbhost, $dbport, $dbname, $dbuser, $this->cli_dbpassword);
         if (!file_put_contents($output_file, $output)) {
           throw new exception("Failed to save extracted database schema to " . $output_file);
         }

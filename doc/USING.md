@@ -89,12 +89,12 @@ Examining the output files, we have several useful artifacts, and runnable SQL D
 
 To extract the structure of a running PostgreSQL database:
 >  dbsteward --sqlformat=pgsql8 --dbschemadump
->  --dbhost=db.dev --dbname=some_app --dbuser=nkiraly --dbpassword=lol
+>  --dbhost=db-someappdev.dev.facilt1 --dbname=some_app --dbuser=nkiraly --dbpassword=lol
 >  --outputfile=some_app_structure.xml
 
 To extract from a MySQL database is similar:
 >  dbsteward --sqlformat=mysql5 --dbschemadump
->  --dbhost=db.dev --dbname=some_app --dbuser=nkiraly --dbpassword=lol
+>  --dbhost=db-someappdev.dev.facilt1 --dbname=some_app --dbuser=nkiraly --dbpassword=lol
 >  --outputfile=some_app_structure.xml
 
 
@@ -131,7 +131,7 @@ Rename the composite to full.xml:
 >  mv some_app_structure_composite.xml some_app.xml
 
 Compare the full definition to the running database:
->  dbsteward --dbhost=db.dev --dbname=some_app --dbuser=nkiraly --dbpassword=lol --dbport=5432 --dbdatadiff=some_app_structure.xml
+>  dbsteward --dbhost=db-someappdev.dev.facilt1 --dbname=some_app --dbuser=nkiraly --dbpassword=lol --dbport=5432 --dbdatadiff=some_app_structure.xml
 
 
 ## 5. Testing Active Development Branch or Working Copy Changes
@@ -181,15 +181,12 @@ When testing changes and slony configuration, the --requireslonyid sanity flag c
 ```bash
 [nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --oldxml=reference-dbs/v2.1.0/db/someapp.xml --oldxml=reference-dbs/v2.1.0/customers/acme/acme_data.xml --newxml=db/someapp.xml --newxml=customers/acme/acme_data.xml --generateslonik --requireslonyid --quoteillegalnames
 
-[DBSteward-1] Loading XML /home/nicholas.kiraly/public_html/someapp/db/someapp.xml..
+NOTICE   Loading XML /home/nicholas.kiraly/public_html/someapp/db/someapp.xml..
 ...
-[DBSteward-1] Compositing XML File db/someapp.xml
+NOTICE   Compositing XML File db/someapp.xml
 ...
-[DBSteward-1] Building complete file db/someapp_build.sql
-...
-[DBSteward-1] Warning: users.devices                                   table missing slonyId       NEXT ID = 211
-Unhandled exception:
-users.devices table missing slonyId and slonyIds are required!
+WARNING  Warning: users.devices                                table missing slonyId    NEXT ID = 211
+ERROR    Table users.devices missing slonyId and slonyIds are required
 ```
 
 With users.devices table assigned slonyId 211:
@@ -209,41 +206,52 @@ With users.devices table assigned slonyId 211:
 
 ### Comparing a definition to a running database
 
-When comparing and testing upgrades, the dbdatadiff collection arguments allow you to compare the data defined in a dbsteward composited documents to a running postgresql database:
-```bash
-[nkiraly@bludgeon ~/public_html/someapp]$ dbsteward --dbhost=db-someappdev --dbname=someapp_acme_nkiraly --dbuser=someapp --dbdatadiff=db/someapp.xml --dbdatadiff=customers/acme/acme_data.xml
+When comparing and testing upgrades, the dbdatadiff collection arguments allow you to compare the data defined in a dbsteward composited documents to a running postgresql database. The database someapp_acme_nkiraly was created with someapp_v2.xml without the acme_data.xml additions. These files are in the dbsteward xml/ sample directory for examination.
 
-Connecting to db-someappdev:someapp_acme_nkiraly as someapp
-Password:
--- Loading XML /home/nkiraly/public_html/someapp/db/someapp.xml..
--- Validating XML (size = 2375859) against /home/nkiraly/engineering/DBSteward/lib/DBSteward/dtd/dbsteward.dtd .. OK
--- Compositing XML ..
--- Validating XML (size = 1509150) against /home/nkiraly/engineering/DBSteward/lib/DBSteward/dtd/dbsteward.dtd .. OK
--- Loading XML /home/nkiraly/public_html/someapp/customers/acme/acme_data.xml..
--- Compositing XML ..
--- Validating XML (size = 1546776) against /home/nicholas.kiraly/engineering/DBSteward/lib/DBSteward/dtd/dbsteward.dtd .. OK
--- XML files /home/nkiraly/public_html/someapp/db/someapp.xml /home/nkiraly/public_html/someapp/customers/acme/acme_data.xml  composited
--- Saving as db/someapp_composite.xml
--- Building complete file db/someapp_build.sql
--- Sorting tables for foreign key dependencies for data insert generation..
--- Building slonik file db/someapp_slony.slonik
--- Comparing composited dbsteward definition data rows to postgresql database connection table contents
-scheduler.shift_status_list row column WHERE ("shift_status_list_id" = 1) can_see data does not match database row column: 'TRUE' VS ''
-scheduler.shift_status_list row column WHERE ("shift_status_list_id" = 2) can_see data does not match database row column: 'TRUE' VS ''
-scheduler.shift_status_list row column WHERE ("shift_status_list_id" = 3) can_see data does not match database row column: 'FALSE' VS ''
-public.contact_number does not contain row WHERE "contact_number_id" = 1
-public.user row column WHERE ("user_id" = 1) user_status_list_id data does not match database row column: '2' VS '1'
-public.user row column WHERE ("user_id" = 1) user_status_last_update data does not match database row column: '' VS '04/17/2009 19:43:17.734498 UTC'
-public.personal row column WHERE ("user_id" = 1) legal_residence_line1 data does not match database row column: '' VS '1'
-public.personal row column WHERE ("user_id" = 1) city data does not match database row column: '' VS 'city'
-public.personal row column WHERE ("user_id" = 1) county_list_id data does not match database row column: '' VS '2219'
-public.personal row column WHERE ("user_id" = 1) state_list_id data does not match database row column: '' VS '42'
-public.personal row column WHERE ("user_id" = 1) zip data does not match database row column: '' VS '15217'
-public.personal row column WHERE ("user_id" = 1) height data does not match database row column: '' VS '6-0'
-public.personal row column WHERE ("user_id" = 1) birth_date data does not match database row column: '' VS '03/29/1979'
-public.personal row column WHERE ("user_id" = 1) gender data does not match database row column: '' VS 'Male'
-public.personal row column WHERE ("user_id" = 1) residence_type data does not match database row column: '' VS 'county'
-public.user_preferences row column WHERE ("user_id" = 1) results_per_page_list_id data does not match database row column: '3' VS '4'
+```bash
+nicholas.kiraly@bludgeon  (master)
+~/engineering/DBSteward/xml $
+
+# create database for examination by dbdatadiff
+createdb -U deployment someapp_acme_nkiraly
+dbsteward --xml=someapp_v2.xml
+psql -U deployment someapp_acme_nkiraly -f someapp_v2_build.sql
+
+# compare running database to someapp_v2 with acme data additions
+dbsteward --dbhost=db-someappdev.dev.facilt1 --dbname=someapp_acme_nkiraly --dbuser=someapp --dbdatadiff=someapp_v2.xml --dbdatadiff=customers/acme/acme_data.xml --outputfile=acme_extracted.xml -v
+NOTICE   DBSteward Version 1.4.0
+NOTICE   Using sqlformat=pgsql8
+INFO     Compositing XML files..
+NOTICE   Loading XML /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/xml/someapp_v2.xml..
+NOTICE   Compositing XML File someapp_v2.xml
+INFO     Validating XML (size = 8073) against /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/lib/DBSteward/dbsteward.dtd
+INFO     XML Validates (size = 8073) against /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/lib/DBSteward/dbsteward.dtd OK
+NOTICE   Loading XML /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/xml/customers/acme/acme_data.xml..
+NOTICE   Compositing XML File customers/acme/acme_data.xml
+INFO     Validating XML (size = 7553) against /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/lib/DBSteward/dbsteward.dtd
+INFO     XML Validates (size = 7553) against /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/lib/DBSteward/dbsteward.dtd OK
+INFO     XML files someapp_v2.xml customers/acme/acme_data.xml composited
+NOTICE   Saving composite as ./someapp_v2_composite.xml
+NOTICE   Connecting to pgsql8 host db-someappdev:5432 database someapp_acme_nkiraly as someapp
+Password: password1
+INFO     Comparing composited dbsteward definition data rows to postgresql database connection table contents
+WARNING  public.sql_user row column WHERE (user_id = 1) register_date data does not match database row column: 'NOW()' VS '2015-08-18 13:27:30.253881-04'
+NOTICE   public.user_status_list does not contain row WHERE user_status_list_id = 5
+```
+
+# look at the comparison XML artifact for rows that you might want to include in your repository definition
+> vi acme_extracted.xml
+```xml
+...
+    <table name="user_status_list" owner="ROLE_OWNER" slonyId="30" primaryKey="user_status_list_id">
+...
+      <rows columns="user_status_list_id, user_status, is_visible, can_login">
+        <row>
+          <col>5</col>
+          <col>AcmeAudit</col>
+          <col>false</col>
+          <col>true</col>
+        </row>
 ```
 
 Some of these data differences are not relevant to static definition base we want, such as the contact, personal, and user_preference table rows found to be missing.
@@ -255,18 +263,18 @@ But the shift_status_list values are different and should be updated in the defi
 
 ### TSE1
 Composite more than one source xml set ontop of the first, to build full sql and slonik configuration files for the acme specific implementation:
-> dbsteward --xml=db/someapp.xml --xml=customers/acme/acme_data.xmlp
+> dbsteward --xml=someapp_v1.xml --xml=customers/acme/acme_data.xml
 
 ### TSE2
 Overlay postgresql database_to_xml() output onto a dbsteward defintion, alongside xml compositing:
 > psql someapp -c "select database_to_xml(true, false, 'http://dbsteward.org/pgdataxml');" > someapp_pg_data.xml
 
-> dbsteward --xml=db/someapp.xml --xml=customers/rolly/rolly_data.xml --pgdataxml=someapp_pg_data.xml
+> dbsteward --xml=someapp.xml --xml=customers/rolly/rolly_data.xml --pgdataxml=someapp_pg_data.xml
 ```
 
 ### TSE3
 Generate DBSteward-formatted postgresql database schema structure from a running postgresql database:
-> dbsteward --dbschemadump --dbhost=db-stable.dev --dbname=someapp_40 --dbuser=nkiraly_dba --outputfile=out.xml
+> dbsteward --dbschemadump --dbhost=db-someappdev.dev.facilt1 --dbname=someapp_40 --dbuser=nkiraly_dba --outputfile=out.xml
 
 ### TSE4
 Generate slony comparison SQL script for nagios monitoring, etc

@@ -92,7 +92,7 @@
     </table>
     <table name="user_access_level" owner="ROLE_OWNER" slonyId="40" primaryKey="user_access_level_id">
       <column name="user_access_level_id" type="int" />
-      <column name="user_access_level" type="boolean" null="false" default="true" />
+      <column name="user_access_level" type="varchar(10)" null="false" default="true" />
       <column name="can_see_invisible_users" type="boolean" null="false" default="false" />
       <grant role="ROLE_APPLICATION" operation="SELECT" />
       <rows columns="user_access_level_id, user_access_level, can_see_invisible_users">

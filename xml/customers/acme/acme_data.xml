@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ACME customer specific information
+  for the someapp application
+-->
+<dbsteward>
+  <schema name="public">
+    <table name="user_status_list">
+      <rows columns="user_status_list_id, user_status, is_visible, can_login">
+        <row>
+          <col>5</col>
+          <col>AcmeAudit</col>
+          <col>false</col>
+          <col>true</col>
+        </row>
+      </rows>
+    </table>
+  </schema>
+</dbsteward>
