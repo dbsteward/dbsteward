@@ -127,10 +127,11 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
-      <changelog version="1.4.0" date="2015-06-10" license="Simplified BSD License">
+      <changelog version="1.4.0" date="2015-08-21" license="Simplified BSD License">
 DBSteward 1.4.0 Release
 
 Changes
+* Update docs/ to match 1.4 API CLI and output changes
 * Drop PEAR package support. Please use composer: https://github.com/nkiraly/DBSteward/blob/v1.4.0-alpha1/doc/INSTALLING.md
 * Add additional quotereservednames flag and separate quoteillegalnames to only affect those github/nkiraly/DBSteward PR #69
 * New and Improved Logging features via switching to monolog github/nkiraly/DBSteward PR #82
