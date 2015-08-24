@@ -140,7 +140,7 @@ Changes
 * Fix pgsql8 DEFAULT parenthesis wrapping github/nkiraly/DBSteward PR #84 
 * Fix pgsql8 index name generation to not exceed maximum length github/nkiraly/DBSteward PR #86
 * Add pgsql8 CREATE INDEX CONCURRENTLY support to definition XML
-* Reoranized slonik output files for --generateslonik slony replication to include preamble github/nkiraly/DBSteward PR #90
+* Reorganized slonik output files for --generateslonik slony replication to include preamble github/nkiraly/DBSteward PR #90
 * Include execute script and and subscribe set statements in revamped slonik output files github/nkiraly/DBSteward PR #90
 * XML foreignKey element support and constraint definition refactoring github/nkiraly/DBSteward PR #93 issue #87
 
