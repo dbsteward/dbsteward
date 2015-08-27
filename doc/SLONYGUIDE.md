@@ -99,8 +99,8 @@ nicholas.kiraly@bludgeon  (master)
 ```
 
 1. *someapp_v1_build.sql* is the full database create script and should be run on master and all replica node database servers.
-2. *someapp_v1_slony_replica_set_500_create_nodes.slonik* is the slonik that stores cluster node information and the connection paths between them. This initializes the slony nodes and slon processes will then start to operate on them.
-3. *someapp_v1_slony_replica_set_500_subscribe.slonik* is the slonik that will subscribe each node to the specified tables in replica set 500.
+2. *someapp_v1_slony_replica_set_500_create_nodes.slonik* stores cluster node information and the connection paths between them. This initializes the slony nodes and slon processes will then start to operate on them.
+3. *someapp_v1_slony_replica_set_500_subscribe.slonik* subscribes each node to the specified tables in replica set 500.
 
 
 ## 4. someapp Upgrade with Replication

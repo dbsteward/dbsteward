@@ -379,8 +379,8 @@ class pgsql8 extends sql99 {
         $subscribe_filename = $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_subscribe.slonik";
         pgsql8::build_slonik_preamble($db_doc, $replica_set, $subscribe_filename);
         // create_set does one time slony configuration comparison.
-        // so inject the content into _subscribe built earlier
-        file_put_contents($subscribe_filename, file_get_contents($create_set_filename));
+        // so append the content of _create_set into _subscribe built earlier
+        file_put_contents($subscribe_filename, file_get_contents($create_set_filename), FILE_APPEND);
         
         foreach($replica_set->slonyReplicaSetNode AS $replica_set_node) {
           pgsql8::build_slonik_subscribe_set_node($db_doc, $replica_set, $output_prefix . "_slony_replica_set_" . $replica_set['id'] . "_subscribe.slonik", $replica_set_node);
