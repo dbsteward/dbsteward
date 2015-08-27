@@ -1,5 +1,4 @@
 # DBSteward
-
 SQL database definition differencing tool. Structure and data is defined in a DTD-enforced, human-readable XML format. Outputs transactional SQL statement files to apply your changes.
 
 [![Latest Stable Version](https://poser.pugx.org/nkiraly/DBSteward/v/stable.png)](https://packagist.org/packages/nkiraly/DBSteward)
@@ -7,6 +6,14 @@ SQL database definition differencing tool. Structure and data is defined in a DT
 [![Coverage Status](https://coveralls.io/repos/nkiraly/DBSteward/badge.svg?branch=master)](https://coveralls.io/r/nkiraly/DBSteward?branch=master)
 [![Dependency Status](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master/badge.png)](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master)
 [![Reference Status](https://www.versioneye.com/php/nkiraly:DBSteward/reference_badge.svg)](https://www.versioneye.com/php/nkiraly:DBSteward/references)
+
+[![GitHub Release](http://img.shields.io/github/release/nkiraly/DBSteward.svg?style=plastic)][release]
+[![GitHub License](https://img.shields.io/badge/license-BSD-blue.svg?style=plastic)][license]
+[![Twitter](https://img.shields.io/twitter/url/https/github.com/nkiraly/DBSteward.svg?style=plastic)][twitter]
+
+[release]: https://github.com/nkiraly/DBSteward/releases
+[license]: https://raw.githubusercontent.com/nkiraly/DBSteward/master/LICENSE.md
+[twitter]: https://twitter.com/intent/tweet?text=Hey%20@dbsteward%20&url=%5Bobject%20Object%5D
 
 ## Want Updates?
 Subscribe to the [DBSteward Announce](https://groups.google.com/forum/#!forum/dbsteward-announce) mailing list
