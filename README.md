@@ -12,7 +12,7 @@ SQL database definition differencing tool. Structure and data is defined in a DT
 Subscribe to the [DBSteward Announce](https://groups.google.com/forum/#!forum/dbsteward-announce) mailing list
 
 ## Need Help?
-Post and Subscribe to the [DBSteward Users](https://groups.google.com/forum/#!forum/dbsteward-users) mailing list
+Post your question to the [DBSteward Users](https://groups.google.com/forum/#!forum/dbsteward-users) mailing list
 
 
 # What / who is DBSteward for?
