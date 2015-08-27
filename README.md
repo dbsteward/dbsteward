@@ -8,6 +8,12 @@ SQL database definition differencing tool. Structure and data is defined in a DT
 [![Dependency Status](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master/badge.png)](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master)
 [![Reference Status](https://www.versioneye.com/php/nkiraly:DBSteward/reference_badge.svg)](https://www.versioneye.com/php/nkiraly:DBSteward/references)
 
+## Want Updates?
+Subscribe to the [DBSteward Announce](https://groups.google.com/forum/#!forum/dbsteward-announce) mailing list
+
+## Need Help?
+Post and Subscribe to the [DBSteward Users](https://groups.google.com/forum/#!forum/dbsteward-users) mailing list
+
 
 # What / who is DBSteward for?
 
