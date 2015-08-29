@@ -75,6 +75,23 @@ class mysql5_index extends sql99_index {
       }
     }
 
+    // Add explicit foreignKeys to the list
+    foreach ($node_table->foreignKey as $fkey) {
+      $cols = preg_split('/[\s,]+/', $fkey['columns'], -1, PREG_SPLIT_NO_EMPTY);
+
+      $fkey_index = new SimpleXMLElement('<index/>');
+      $fkey_index['name'] = (string)$fkey['indexName'] ?: (string)$fkey['constraintName'] ?: static::get_index_name(implode('_', $cols), $nodes);
+      $fkey_index['unique'] = 'false';
+      $fkey_index['using'] = 'btree';
+
+      foreach ($cols as $i => $col) {
+        $fkey_index->addChild('indexDimension', $col)
+                   ->addAttribute('name', $col . '_' . ($i + 1));
+      }
+
+      $nodes[] = $fkey_index;
+    }
+
     $names = array();
     foreach ($nodes as $node) {
       if (in_array((string)$node['name'], $names)) {
