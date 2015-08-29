@@ -552,18 +552,12 @@ class mysql5 extends sql99 {
             }
             elseif ( count($db_constraint->referenced_columns) > 1
                   && count($db_constraint->referenced_columns) == count($db_constraint->columns) ) {
-              // compound index, define the FK as a constraint node
-              $node_constraint = $node_table->addChild('constraint');
-              $node_constraint['name'] = $db_constraint->constraint_name;
-              $node_constraint['type'] = 'FOREIGN KEY';
-              $node_constraint['foreignSchema'] = $db_constraint->referenced_table_schema;
-              $node_constraint['foreignTable'] = $db_constraint->referenced_table_name;
-              
-              $node_constraint['definition'] = sprintf("(%s) REFERENCES %s (%s) ON DELETE %s ON UPDATE %s",
-                implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns)),
-                mysql5::get_fully_qualified_table_name($db_constraint->referenced_table_schema,$db_constraint->referenced_table_name),
-                implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns)),
-                $db_constraint->delete_rule, $db_constraint->update_rule);
+              $node_fkey = $node_table->addChild('foreignKey');
+              $node_fkey['columns'] = implode(', ', $db_constraint->columns);
+              $node_fkey['foreignSchema'] = $db_constraint->referenced_table_schema;
+              $node_fkey['foreignTable'] = $db_constraint->referenced_table_name;
+              $node_fkey['foreignColumns'] = implode(', ', $db_constraint->referenced_columns);
+              $node_fkey['constraintName'] = $db_constraint->constraint_name;
             }
             else {
               var_dump($db_constraint);
