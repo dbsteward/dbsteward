@@ -22,7 +22,7 @@ ALTER TABLE t1 ADD FOREIGN KEY (c1, c2) REFERENCES t2 (c1, c2);
 SQL;
 
   $expected = <<<XML
-<foreignKey columns="c1, c2" foreignSchema="mysql5extractiontest" foreignTable="t2" foreignColumns="c1, c2" constraintName="t1_ibfk_1"/>
+<foreignKey columns="c1, c2" foreignSchema="Mysql5ExtractionTest" foreignTable="t2" foreignColumns="c1, c2" constraintName="t1_ibfk_1"/>
 XML;
 
     $schema = $this->extract($sql);
