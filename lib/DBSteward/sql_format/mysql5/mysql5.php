@@ -558,6 +558,14 @@ class mysql5 extends sql99 {
               $node_fkey['foreignTable'] = $db_constraint->referenced_table_name;
               $node_fkey['foreignColumns'] = implode(', ', $db_constraint->referenced_columns);
               $node_fkey['constraintName'] = $db_constraint->constraint_name;
+
+              // RESTRICT is the default, leave it implicit if possible
+              if ( strcasecmp($db_constraint->delete_rule, 'restrict') !== 0 ) {
+                $node_fkey['onDelete'] = str_replace(' ', '_', $db_constraint->delete_rule);
+              }
+              if ( strcasecmp($db_constraint->update_rule, 'restrict') !== 0 ) {
+                $node_fkey['onUpdate'] = str_replace(' ', '_', $db_constraint->update_rule);
+              }
             }
             else {
               var_dump($db_constraint);

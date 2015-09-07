@@ -1911,6 +1911,8 @@ WAIT FOR EVENT (
         $node_fkey['foreignTable'] = $fk_row['foreign_table'];
         $node_fkey['foreignColumns'] = implode(', ', $foreign_cols);
         $node_fkey['constraintName'] = $fk_row['constraint_name'];
+        $node_fkey['onUpdate'] = $rules[$fk_row['update_rule']];
+        $node_fkey['onDelete'] = $rules[$fk_row['delete_rule']];
       }
     }
 

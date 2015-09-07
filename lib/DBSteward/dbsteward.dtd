@@ -149,6 +149,8 @@
 <!ATTLIST foreignKey foreignColumns CDATA #IMPLIED>
 <!ATTLIST foreignKey constraintName CDATA #REQUIRED>
 <!ATTLIST foreignKey indexName CDATA #IMPLIED>
+<!ATTLIST foreignKey onUpdate CDATA #IMPLIED>
+<!ATTLIST foreignKey onDelete CDATA #IMPLIED>
 
 <!ELEMENT rows (row+)>
 <!ATTLIST rows columns CDATA #REQUIRED>

@@ -233,7 +233,14 @@ SQL;
     
     $schemaname = __CLASS__;
     $expected = <<<XML
-<foreignKey columns="foo, bar" foreignSchema="$schemaname" foreignTable="dummy" foreignColumns="foo, bar" constraintName="test_foo_fkey"/>
+<foreignKey
+  columns="foo, bar"
+  foreignSchema="$schemaname"
+  foreignTable="dummy"
+  foreignColumns="foo, bar"
+  constraintName="test_foo_fkey"
+  onUpdate="NO_ACTION"
+  onDelete="SET_NULL"/>
 XML;
 
     $schema = $this->extract($sql);
