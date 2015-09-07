@@ -11,9 +11,9 @@ require_once __DIR__ . '/Mysql5ExtractionTest.php';
 /**
  * @group mysql5
  */
-class Mysql5ExtractProcedureTest extends Mysql5ExtractionTest { 
+class Mysql5ExtractCompoundForeignKeyTest extends Mysql5ExtractionTest { 
 
-  public function testExtractProcedure() {
+  public function testCompoundFKeyExtraction() {
     $sql = <<<SQL
 CREATE TABLE t1 (c1 int, c2 int);
 CREATE TABLE t2 (c1 int, c2 int);

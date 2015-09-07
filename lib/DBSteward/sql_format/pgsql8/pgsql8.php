@@ -1905,19 +1905,12 @@ WAIT FOR EVENT (
         unset($node_column['type']);
       }
       elseif (count($local_cols) > 1) {
-        // separately on table
-        $node_constraint = $node_table->addChild('constraint');
-        $node_constraint['name'] = $fk_row['constraint_name'];
-        $node_constraint['type'] = 'FOREIGN KEY';
-        $node_constraint['definition'] = sprintf("(%s) REFERENCES %s (%s) ON UPDATE %s ON DELETE %s",
-          implode(', ', array_map('pgsql8::get_quoted_column_name', $local_cols)),
-          pgsql8::get_fully_qualified_table_name($fk_row['foreign_schema'],$fk_row['foreign_table']),
-          implode(', ', array_map('pgsql8::get_quoted_column_name', $foreign_cols)),
-          pgsql8_constraint::get_reference_option_sql($rules[$fk_row['update_rule']]),
-          pgsql8_constraint::get_reference_option_sql($rules[$fk_row['delete_rule']])
-        );
-        $node_constraint['foreignSchema'] = $fk_row['foreign_schema'];
-        $node_constraint['foreignTable'] = $fk_row['foreign_table'];
+        $node_fkey = $node_table->addChild('foreignKey');
+        $node_fkey['columns'] = implode(', ', $local_cols);
+        $node_fkey['foreignSchema'] = $fk_row['foreign_schema'];
+        $node_fkey['foreignTable'] = $fk_row['foreign_table'];
+        $node_fkey['foreignColumns'] = implode(', ', $foreign_cols);
+        $node_fkey['constraintName'] = $fk_row['constraint_name'];
       }
     }
 

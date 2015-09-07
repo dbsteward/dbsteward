@@ -230,12 +230,16 @@ CREATE TABLE test (
     ON DELETE SET NULL
 );
 SQL;
-    $schema = $this->extract($sql);
+    
     $schemaname = __CLASS__;
+    $expected = <<<XML
+<foreignKey columns="foo, bar" foreignSchema="$schemaname" foreignTable="dummy" foreignColumns="foo, bar" constraintName="test_foo_fkey"/>
+XML;
+
+    $schema = $this->extract($sql);
     foreach ($schema->table as $table) {
       if ((string)$table['name'] == 'test') {
-        $this->assertEquals("(foo, bar) REFERENCES $schemaname.dummy (foo, bar) ON UPDATE NO ACTION ON DELETE SET NULL",
-          (string)$table->constraint['definition']);
+        $this->assertEquals(simplexml_load_string($expected), $table->foreignKey);
         return;
       }
     }
