@@ -127,6 +127,24 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
+      <changelog version="1.4.1" date="2015-12-01" license="Simplified BSD License">
+DBSteward 1.4.1 Release
+
+Changes
+* Slony ID numbering tools --slonyid et al github/nkiraly/DBSteward PR #102 issue #101
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8, 9
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8, 9
+* mysql5    - MySQL 5
+
+      </changelog>
+
       <changelog version="1.4.0" date="2015-08-21" license="Simplified BSD License">
 DBSteward 1.4.0 Release
 
