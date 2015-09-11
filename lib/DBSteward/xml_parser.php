@@ -1767,10 +1767,6 @@ class xml_parser {
       }
     }
 
-    // if slony IDs are required
-    //if (dbsteward::$require_slony_id) {
-      // set any unspecified slonySetIds to --slonyidstartvalue=
-
     return $outdoc;
   }
   
