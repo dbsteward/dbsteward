@@ -1718,6 +1718,80 @@ class xml_parser {
       $column['default'] = "'1970-01-01'";
     }
   }
-}
+  
+  /**
+   * Insert any missing slonyId and slonySetId as specifeid by dbsteward mode variables
+   * 
+   * @param SimpleXML $indoc
+   * @return SimpleXML
+   */
+  public static function slonyid_number($indoc) {
+    $outdoc = clone $indoc;
+    
+    // start with --slonyidsetvalue=
+    $slony_set_id = dbsteward::$slonyid_set_value;
+    // start slony ID at --slonyidstartvalue=
+    $slony_id = dbsteward::$slonyid_start_value;
+    
+    foreach ($outdoc->schema AS $schema) {
+      xml_parser::slonyid_number_set($schema, $slony_set_id);
 
-?>
+      foreach ($schema->table AS $table) {
+        xml_parser::slonyid_number_set($table, $slony_set_id);
+        xml_parser::slonyid_number_id($table, $slony_id);
+
+        foreach ($table->column as $column) {
+          // make sure any serial columns have slonySetId
+          if (sql99_column::is_serial($column['type'])) {
+            xml_parser::slonyid_number_set($column, $slony_set_id);
+            xml_parser::slonyid_number_id($column, $slony_id);
+          }
+        }
+      }
+
+      foreach ($schema->trigger AS $trigger) {
+        xml_parser::slonyid_number_set($trigger, $slony_set_id);
+      }
+
+      foreach ($schema->sequence AS $sequence) {
+        xml_parser::slonyid_number_set($sequence, $slony_set_id);
+        xml_parser::slonyid_number_id($sequence, $slony_id);
+      }
+
+      foreach ($schema->function AS $function) {
+        xml_parser::slonyid_number_set($function, $slony_set_id);
+      }
+
+      foreach ($schema->sql AS $sql) {
+        xml_parser::slonyid_number_set($sql, $slony_set_id);
+      }
+    }
+
+    return $outdoc;
+  }
+  
+  protected static function slonyid_number_set(&$element, &$id) {
+    // if slony set IDs are required
+    if (dbsteward::$require_slony_set_id) {
+      // if slonySetId is not specified
+      if (!isset($element['slonySetId'])) {
+        // set unspecified slonySetIds to $id
+        $element['slonySetId'] = $id;
+      }
+    }
+  }
+
+  protected static function slonyid_number_id(&$element, &$id) {
+    // if slony IDs are required
+    if (dbsteward::$require_slony_id) {
+      // if slonyId is not specified
+      if (!isset($element['slonyId'])) {
+        // set unspecified slonyIds to $id
+        $element['slonyId'] = $id;
+        // and increment it
+        $id++;
+      }
+    }
+  }
+
+}
