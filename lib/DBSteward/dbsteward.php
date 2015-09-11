@@ -53,6 +53,7 @@ class dbsteward {
   const MODE_DIFF = 16;
   const MODE_EXTRACT = 32;
   const MODE_DB_DATA_DIFF = 64;
+  const MODE_XML_SLONY_ID = 73;
   const MODE_SQL_DIFF = 128;
   const MODE_SLONIK_CONVERT = 256;
   const MODE_SLONY_COMPARE = 512;
@@ -92,6 +93,8 @@ class dbsteward {
   public static $require_slony_id = FALSE;
   public static $require_slony_set_id = FALSE;
   public static $generate_slonik = FALSE;
+  public static $slonyid_start_value = 1;
+  public static $slonyid_set_value = 1;
   public static $output_file_statement_limit = 900;
   public static $ignore_custom_roles = FALSE;
   public static $ignore_primary_key_errors = FALSE;
@@ -219,6 +222,10 @@ Slony utils
   --slonycompare=<database.xml> ...     generate table SELECT statements for database health comparison between replicas
   --slonydiffold=<olddatabase.xml> ...  compare table slonyId assignment between two versions of a database definition
   --slonydiffnew=<newdatabase.xml> ...
+  --slonyidin=<database.xml>            read this file's definition
+  --slonyidout=<compositeoutput.xml>    output it here with slonyids specified, based on requireslonyid and requireslonysetid
+  --slonyidstartvalue=1                 start slony IDs at this number
+  --slonyidsetvalue=1                   use this slony set ID for any unspecified slonySetId attributes
 Database definition extraction utilities
   --dbschemadump
   --dbdatadiff=<againstdatabase.xml> ...
@@ -250,6 +257,10 @@ Format-specific options
       "slonycompare::",
       "slonydiffold::",
       "slonydiffnew::",
+      "slonyidin::",
+      "slonyidout::",
+      "slonyidstartvalue::",
+      "slonyidsetvalue::",
       "oldsql::",
       "newsql::",
       "dbhost::",
@@ -414,6 +425,18 @@ Format-specific options
     if (isset($options["generateslonik"])) {
       dbsteward::$generate_slonik = TRUE;
     }
+    if (isset($options["slonyidstartvalue"])) {
+      if ( $options["slonyidstartvalue"] < 1 ) {
+        throw new exception("slonyidstartvalue must be greater than 0");
+      }
+      dbsteward::$slonyid_start_value = $options["slonyidstartvalue"];
+    }
+    if (isset($options["slonyidsetvalue"])) {
+      if ( $options["slonyidsetvalue"] < 1 ) {
+        throw new exception("slonyidsetvalue must be greater than 0");
+      }
+      dbsteward::$slonyid_set_value = $options["slonyidsetvalue"];
+    }
 
     ///// determine the operation and check arguments for each
     $mode = dbsteward::MODE_UNKNOWN;
@@ -477,7 +500,16 @@ Format-specific options
     elseif (isset($options["slonydiffold"])) {
       $mode = dbsteward::MODE_SLONY_DIFF;
     }
-    
+    elseif (isset($options["slonyidin"])) {
+      // check to make sure output is not same as input
+      if (isset($options["slonyidout"])) {
+        if (strcmp($options["slonyidin"], $options["slonyidout"]) == 0) {
+          throw new exception("slonyidin and slonyidout file paths should not be the same");
+        }
+      }
+      $mode = dbsteward::MODE_XML_SLONY_ID;
+    }
+
     ///// File output location specificity
     if ( isset($options['outputdir']) ) {
       if ( strlen($options['outputdir']) == 0 ) {
@@ -577,6 +609,32 @@ Format-specific options
 
       case dbsteward::MODE_XML_CONVERT:
         dbsteward::xml_convert($options['xmlconvert']);
+        break;
+      
+      case dbsteward::MODE_XML_SLONY_ID:
+        dbsteward::info("Compositing XML file for Slony ID processing..");
+        $files = (array)$options['slonyidin'];
+        $db_doc = xml_parser::xml_composite($files);
+        dbsteward::info("XML files " . implode(' ', $files) . " composited");
+
+        $output_prefix = dbsteward::calculate_file_output_prefix($files);
+        $composite_file = $output_prefix . '_composite.xml';
+        $db_doc = xml_parser::sql_format_convert($db_doc);
+        xml_parser::vendor_parse($db_doc);
+        dbsteward::notice("Saving composite as " . $composite_file);
+        xml_parser::save_doc($composite_file, $db_doc);
+        
+        dbsteward::notice("Slony ID numbering any missing attributes");
+        dbsteward::info("slonyidstartvalue = " . dbsteward::$slonyid_start_value);
+        dbsteward::info("slonyidsetvalue = " . dbsteward::$slonyid_set_value);
+        $slonyid_doc = xml_parser::slonyid_number($db_doc);
+        $slonyid_numbered_file = $output_prefix . '_slonyid_numbered.xml';
+        // if specified, use output file value instead of auto suffix
+        if (isset($options["slonyidout"])) {
+          $slonyid_numbered_file = $options["slonyidout"];
+        }
+        dbsteward::notice("Saving Slony ID numbered XML as " . $slonyid_numbered_file);
+        xml_parser::save_doc($slonyid_numbered_file, $slonyid_doc);
         break;
 
       case dbsteward::MODE_BUILD:
@@ -947,6 +1005,10 @@ Format-specific options
     $def_file_modified = $def_file . '.xmldatainserted';
     dbsteward::notice("Saving modified dbsteward definition as " . $def_file_modified);
     return xml_parser::save_xml($def_file_modified, $def_doc->saveXML());
+  }
+  
+  public static function xml_slony_id_number($infile, $outfile) {
+    
   }
 
   public static function get_logger() {

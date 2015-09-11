@@ -401,3 +401,109 @@ Addendums, to specify that for the last N XML files specified collect all change
 > --xmlcollectdataaddendums=N to specify that
 > For the purpose of someapp config exports, this allows developers to separate SomeApp config exports from SomeApp BASE + customer definitions
 
+
+### TSE10
+Use --slonyidin with --slonyidsetvalue to auto-number all slony replicatable things with a slonyId and slonySetId based on --requireslonyid and --requireslonysetid settings
+
+To output an XML with slonyId specified, starting at 9001
+```bash
+[nicholas.kiraly@bludgeon ~/engineering/DBSteward/xml]
+$ dbsteward --requireslonyid --slonyidstartvalue=9001 --slonyidin=slonyid_example_someapp_v2.xml
+NOTICE   DBSteward Version 1.4.0
+NOTICE   Using sqlformat=pgsql8
+NOTICE   Loading XML /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/xml/slonyid_example_someapp_v2.xml..
+NOTICE   Compositing XML File slonyid_example_someapp_v2.xml
+NOTICE   Saving composite as ./slonyid_example_someapp_v2_composite.xml
+NOTICE   Slony ID numbering any missing attributes
+NOTICE   Saving Slony ID numbered XML as ./slonyid_example_someapp_v2_slonyid_numbered.xml
+
+$ diff slonyid_example_someapp_v2_composite.xml slonyid_example_someapp_v2_slonyid_numbered.xml
+121,122c121,122
+<     <table name="group_list" owner="ROLE_OWNER" primaryKey="group_list_id">
+<       <column name="group_list_id" type="bigserial"/>
+---
+>     <table name="group_list" owner="ROLE_OWNER" primaryKey="group_list_id" slonyId="9001">
+>       <column name="group_list_id" type="bigserial" slonyId="9002"/>
+```
+
+To output an XML with slonyId and slonySetId specified, with slonyIds starting at 9001 and slonySetIds starting at 5001
+```bash
+$ dbsteward --requireslonysetid --requireslonyid --slonyidstartvalue=9001 --slonyidin=slonyid_example_someapp_v2.xml
+NOTICE   DBSteward Version 1.4.0
+NOTICE   Using sqlformat=pgsql8
+NOTICE   Loading XML /usr/home/nfs/nicholas.kiraly/engineering/DBSteward/xml/slonyid_example_someapp_v2.xml..
+NOTICE   Compositing XML File slonyid_example_someapp_v2.xml
+NOTICE   Saving composite as ./slonyid_example_someapp_v2_composite.xml
+NOTICE   Slony ID numbering any missing attributes
+NOTICE   Saving Slony ID numbered XML as ./slonyid_example_someapp_v2_slonyid_numbered.xml
+
+$ diff slonyid_example_someapp_v2_composite.xml slonyid_example_someapp_v2_slonyid_numbered.xml
+21,22c21,22
+<   <schema name="public" owner="ROLE_OWNER">
+<     <table name="sql_user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="10">
+---
+>   <schema name="public" owner="ROLE_OWNER" slonySetId="1">
+>     <table name="sql_user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="10" slonySetId="1">
+29c29
+<       <column name="user_id" type="bigserial" slonyId="10"/>
+---
+>       <column name="user_id" type="bigserial" slonyId="10" slonySetId="1"/>
+49,50c49,50
+<     <trigger name="user_audit" sqlFormat="mysql5" table="sql_user" when="BEFORE" event="INSERT" function="EXECUTE xyz"/>
+<     <table name="user_status_list" owner="ROLE_OWNER" slonyId="30" primaryKey="user_status_list_id">
+---
+>     <trigger name="user_audit" sqlFormat="mysql5" table="sql_user" when="BEFORE" event="INSERT" function="EXECUTE xyz" slonySetId="1"/>
+>     <table name="user_status_list" owner="ROLE_OWNER" slonyId="30" primaryKey="user_status_list_id" slonySetId="1">
+77c77
+<     <table name="user_access_level" owner="ROLE_OWNER" slonyId="40" primaryKey="user_access_level_id">
+---
+>     <table name="user_access_level" owner="ROLE_OWNER" slonyId="40" primaryKey="user_access_level_id" slonySetId="1">
+100c100
+<     <table name="session_information" description="Information regarding a user's current session" primaryKey="session_id" owner="ROLE_OWNER" slonyId="20">
+---
+>     <table name="session_information" description="Information regarding a user's current session" primaryKey="session_id" owner="ROLE_OWNER" slonyId="20" slonySetId="1">
+113c113
+<     <function name="destroy_session" owner="ROLE_OWNER" returns="VOID" description="Deletes session data from the database">
+---
+>     <function name="destroy_session" owner="ROLE_OWNER" returns="VOID" description="Deletes session data from the database" slonySetId="1">
+121,122c121,122
+<     <table name="group_list" owner="ROLE_OWNER" primaryKey="group_list_id">
+<       <column name="group_list_id" type="bigserial"/>
+---
+>     <table name="group_list" owner="ROLE_OWNER" primaryKey="group_list_id" slonySetId="1" slonyId="9001">
+>       <column name="group_list_id" type="bigserial" slonySetId="1" slonyId="9002"/>
+136c136
+<     <trigger name="sql_user_part_trg" sqlFormat="pgsql8" event="INSERT" when="BEFORE" table="sql_user" forEach="ROW" function="_p_public_sql_user.insert_trigger()"/>
+---
+>     <trigger name="sql_user_part_trg" sqlFormat="pgsql8" event="INSERT" when="BEFORE" table="sql_user" forEach="ROW" function="_p_public_sql_user.insert_trigger()" slonySetId="1"/>
+138,139c138,139
+<   <schema name="search_results" owner="ROLE_OWNER">
+<     <sequence name="result_tables_unique_id_seq" start="1" inc="1" max="99999" cycle="true" cache="1" owner="ROLE_OWNER" slonyId="346">
+---
+>   <schema name="search_results" owner="ROLE_OWNER" slonySetId="1">
+>     <sequence name="result_tables_unique_id_seq" start="1" inc="1" max="99999" cycle="true" cache="1" owner="ROLE_OWNER" slonyId="346" slonySetId="1">
+144c144
+<   <schema name="_p_public_sql_user">
+---
+>   <schema name="_p_public_sql_user" slonySetId="1">
+146c146
+<     <table name="partition_0" owner="ROLE_OWNER" primaryKey="user_id" inheritsTable="sql_user" inheritsSchema="public" slonyId="347">
+---
+>     <table name="partition_0" owner="ROLE_OWNER" primaryKey="user_id" inheritsTable="sql_user" inheritsSchema="public" slonyId="347" slonySetId="1">
+155c155
+<     <table name="partition_1" owner="ROLE_OWNER" primaryKey="user_id" inheritsTable="sql_user" inheritsSchema="public" slonyId="348">
+---
+>     <table name="partition_1" owner="ROLE_OWNER" primaryKey="user_id" inheritsTable="sql_user" inheritsSchema="public" slonyId="348" slonySetId="1">
+164c164
+<     <table name="partition_2" owner="ROLE_OWNER" primaryKey="user_id" inheritsTable="sql_user" inheritsSchema="public" slonyId="349">
+---
+>     <table name="partition_2" owner="ROLE_OWNER" primaryKey="user_id" inheritsTable="sql_user" inheritsSchema="public" slonyId="349" slonySetId="1">
+173c173
+<     <table name="partition_3" owner="ROLE_OWNER" primaryKey="user_id" inheritsTable="sql_user" inheritsSchema="public" slonyId="350">
+---
+>     <table name="partition_3" owner="ROLE_OWNER" primaryKey="user_id" inheritsTable="sql_user" inheritsSchema="public" slonyId="350" slonySetId="1">
+182c182
+<     <function name="insert_trigger" returns="TRIGGER" owner="ROLE_OWNER" description="DBSteward auto-generated for table partition">
+---
+>     <function name="insert_trigger" returns="TRIGGER" owner="ROLE_OWNER" description="DBSteward auto-generated for table partition" slonySetId="1">
+```
