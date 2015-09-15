@@ -127,11 +127,13 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
-      <changelog version="1.4.1" date="2015-12-01" license="Simplified BSD License">
+      <changelog version="1.4.1" date="2015-09-15" license="Simplified BSD License">
 DBSteward 1.4.1 Release
 
 Changes
 * Slony ID numbering tools --slonyid et al github/nkiraly/DBSteward PR #102 issue #101
+* mysql5 foreign key index extraction and handling improvements github/nkiraly/DBSteward PR #103 issue #88
+* foreign key definition additions for ON DELETE, ON UPDATE github/nkiraly/DBSteward PR #103 issue #100
 
 
 Supported Platform DDL Generation and Differencing:
