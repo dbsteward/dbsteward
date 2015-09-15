@@ -3,7 +3,7 @@
     backupGlobals="false"
     bootstrap="tests/bootstrap.php">
   <php>
-    <const name="PGSQL8_DBHOST" value="db-pgsql8.dev.pitbpa0"/>
+    <const name="PGSQL8_DBHOST" value="localhost"/>
     <const name="PGSQL8_DBPORT" value="5432"/>
     <const name="PGSQL8_DBNAME" value="dbsteward_phpunit"/>
     <const name="PGSQL8_DBUSER" value="deployment"/>
@@ -12,7 +12,7 @@
     <const name="PGSQL8_DBUSER_MANAGEMENT" value="deployment"/>
     <const name="PGSQL8_DBPASS_MANAGEMENT" value="password1"/>
     
-    <const name="MSSQL10_DBHOST" value="db-mssql10.dev.pitbpa0"/>
+    <const name="MSSQL10_DBHOST" value="localhost"/>
     <const name="MSSQL10_DBPORT" value="1433"/>
     <const name="MSSQL10_DBNAME" value="dbsteward_phpunit"/>
     <const name="MSSQL10_DBUSER" value="deployment"/>
@@ -21,7 +21,7 @@
     <const name="MSSQL10_DBUSER_MANAGEMENT" value="deployment"/>
     <const name="MSSQL10_DBPASS_MANAGEMENT" value="password1"/>
     
-    <const name="MYSQL5_DBHOST" value="db-mysql5.dev.pitbpa0"/>
+    <const name="MYSQL5_DBHOST" value="localhost"/>
     <const name="MYSQL5_DBPORT" value="3306"/>
     <const name="MYSQL5_DBNAME" value="dbsteward_phpunit"/>
     <const name="MYSQL5_DBUSER" value="deployment"/>

@@ -259,7 +259,7 @@ class sql99_constraint {
         $local_cols = preg_split('/[\s,]+/', $node_fkey['columns'], -1, PREG_SPLIT_NO_EMPTY);
         $quoted_cols = implode(', ', array_map('format::get_quoted_column_name', $local_cols));
 
-        $constraints[] = array(
+        $constraint = array(
           'name' => (string)$node_fkey['constraintName'],
           'schema_name' => (string)$node_schema['name'],
           'table_name' => (string)$node_table['name'],
@@ -267,6 +267,16 @@ class sql99_constraint {
           'definition' => "($quoted_cols) REFERENCES {$foreign['references']}",
           'foreign_key_data' => $foreign
         );
+        if (isset($node_fkey['onDelete'])) {
+          $constraint['foreignOnDelete'] = (string)$node_fkey['onDelete'];
+        }
+        if (isset($node_fkey['onUpdate'])) {
+          $constraint['foreignOnUpdate'] = (string)$node_fkey['onUpdate'];
+        }
+        if (isset($node_fkey['indexName'])) {
+          $constraint['foreignIndexName'] = (string)$node_fkey['foreignIndexName'];
+        }
+        $constraints[] = $constraint;
       }
 
       // look for constraints in columns: foreign key and unique
