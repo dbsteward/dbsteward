@@ -160,6 +160,14 @@ class pgsql8_xml_parser extends sql99_xml_parser {
           $index->addChild('indexDimension', (string)$orig_dimension)
             ->addAttribute('name', ((string)$orig_dimension) . '_' . $odi++);
         }
+        foreach ($orig_index->indexWhere AS $orig_where) {
+          $indexWhere = $index->addChild('indexWhere', (string)$orig_where);
+          $orig_where_attributes = $orig_where->attributes();
+          // Make sure sqlFormat and other indexWhere attributes get added
+          foreach ($orig_where_attributes AS $orig_where_key => $orig_where_value) {
+            $indexWhere->addAttribute($orig_where_key, $orig_where_value);
+          }
+        }
       }
       // Copy unique constraints
       // Other types of constraints are inherited from the parent table,

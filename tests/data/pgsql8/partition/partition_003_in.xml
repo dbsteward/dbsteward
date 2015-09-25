@@ -1,0 +1,16 @@
+<dbsteward>
+  <schema name="test_schema" owner="ROLE_OWNER">
+    <table name="test_table" primaryKey="primary_id" owner="ROLE_OWNER">
+      <tablePartition type="MODULO">
+        <tablePartitionOption name="number" value="8" />
+        <tablePartitionOption name="column" value="partition_id" />
+      </tablePartition>
+      <column name="primary_id" type="serial" />
+      <column name="partition_id" type="bigint" null="false" />
+      <index name="primary_id_idx" using="btree">
+        <indexDimension name="primary_id">primary_id</indexDimension>
+        <indexWhere sqlFormat="pgsql8">primary_id IS NOT NULL</indexWhere>
+      </index>
+    </table>
+  </schema>
+</dbsteward>
