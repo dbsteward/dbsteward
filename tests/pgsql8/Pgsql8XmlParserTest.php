@@ -13,7 +13,24 @@ require_once __DIR__ . '/../dbstewardUnitTestBase.php';
  * @group pgsql8
  */
 class Pgsql8XmlParserTest extends dbstewardUnitTestBase {
-  
+
+  /**
+   * 
+   */
+  public function setUp() {
+    parent::setUp();
+    static::$last_quote_all_names = dbsteward::$quote_all_names;
+    dbsteward::$quote_all_names = TRUE;
+  }
+
+  /**
+   * 
+   */
+  public function tearDown() {
+    dbsteward::$quote_all_names = static::$last_quote_all_names;
+    parent::tearDown();
+  }
+
   /**
    * @dataProvider processProvider()
    */
