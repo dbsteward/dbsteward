@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<dbsteward>
+  <schema name="test_schema" owner="ROLE_OWNER">
+    <table name="test_table" primaryKey="primary_id" owner="ROLE_OWNER">
+      <tablePartition type="MODULO">
+        <tablePartitionOption name="number" value="8"/>
+        <tablePartitionOption name="column" value="partition_id"/>
+      </tablePartition>
+      <column name="primary_id" type="serial"/>
+      <column name="partition_id" type="bigint" null="false"/>
+      
+    </table>
+  <trigger name="test_table_part_trg" sqlFormat="pgsql8" event="INSERT" when="BEFORE" table="test_table" forEach="ROW" function="_p_test_schema_test_table.insert_trigger()"/></schema>
+<schema name="_p_test_schema_test_table"><table name="partition_0" owner="ROLE_OWNER" primaryKey="primary_id" inheritsTable="test_table" inheritsSchema="test_schema"><constraint type="CHECK" name="test_table_p_0_chk" definition="((partition_id % 8) = 0)"/><index name="primary_id_idx_p0" using="btree"><indexDimension name="primary_id_1">primary_id</indexDimension></index></table><table name="partition_1" owner="ROLE_OWNER" primaryKey="primary_id" inheritsTable="test_table" inheritsSchema="test_schema"><constraint type="CHECK" name="test_table_p_1_chk" definition="((partition_id % 8) = 1)"/><index name="primary_id_idx_p1" using="btree"><indexDimension name="primary_id_1">primary_id</indexDimension></index></table><table name="partition_2" owner="ROLE_OWNER" primaryKey="primary_id" inheritsTable="test_table" inheritsSchema="test_schema"><constraint type="CHECK" name="test_table_p_2_chk" definition="((partition_id % 8) = 2)"/><index name="primary_id_idx_p2" using="btree"><indexDimension name="primary_id_1">primary_id</indexDimension></index></table><table name="partition_3" owner="ROLE_OWNER" primaryKey="primary_id" inheritsTable="test_table" inheritsSchema="test_schema"><constraint type="CHECK" name="test_table_p_3_chk" definition="((partition_id % 8) = 3)"/><index name="primary_id_idx_p3" using="btree"><indexDimension name="primary_id_1">primary_id</indexDimension></index></table><table name="partition_4" owner="ROLE_OWNER" primaryKey="primary_id" inheritsTable="test_table" inheritsSchema="test_schema"><constraint type="CHECK" name="test_table_p_4_chk" definition="((partition_id % 8) = 4)"/><index name="primary_id_idx_p4" using="btree"><indexDimension name="primary_id_1">primary_id</indexDimension></index></table><table name="partition_5" owner="ROLE_OWNER" primaryKey="primary_id" inheritsTable="test_table" inheritsSchema="test_schema"><constraint type="CHECK" name="test_table_p_5_chk" definition="((partition_id % 8) = 5)"/><index name="primary_id_idx_p5" using="btree"><indexDimension name="primary_id_1">primary_id</indexDimension></index></table><table name="partition_6" owner="ROLE_OWNER" primaryKey="primary_id" inheritsTable="test_table" inheritsSchema="test_schema"><constraint type="CHECK" name="test_table_p_6_chk" definition="((partition_id % 8) = 6)"/><index name="primary_id_idx_p6" using="btree"><indexDimension name="primary_id_1">primary_id</indexDimension></index></table><table name="partition_7" owner="ROLE_OWNER" primaryKey="primary_id" inheritsTable="test_table" inheritsSchema="test_schema"><constraint type="CHECK" name="test_table_p_7_chk" definition="((partition_id % 8) = 7)"/><index name="primary_id_idx_p7" using="btree"><indexDimension name="primary_id_1">primary_id</indexDimension></index></table><function name="insert_trigger" returns="TRIGGER" owner="ROLE_OWNER" description="DBSteward auto-generated for table partition"><functionDefinition language="PLPGSQL" sqlFormat="pgsql8">DECLARE
+	mod_result INT;
+BEGIN
+	mod_result := NEW.partition_id % 8;
+	IF (mod_result = 0) THEN
+		INSERT INTO _p_test_schema_test_table.partition_0 VALUES (NEW.*);
+	ELSEIF (mod_result = 1) THEN
+		INSERT INTO _p_test_schema_test_table.partition_1 VALUES (NEW.*);
+	ELSEIF (mod_result = 2) THEN
+		INSERT INTO _p_test_schema_test_table.partition_2 VALUES (NEW.*);
+	ELSEIF (mod_result = 3) THEN
+		INSERT INTO _p_test_schema_test_table.partition_3 VALUES (NEW.*);
+	ELSEIF (mod_result = 4) THEN
+		INSERT INTO _p_test_schema_test_table.partition_4 VALUES (NEW.*);
+	ELSEIF (mod_result = 5) THEN
+		INSERT INTO _p_test_schema_test_table.partition_5 VALUES (NEW.*);
+	ELSEIF (mod_result = 6) THEN
+		INSERT INTO _p_test_schema_test_table.partition_6 VALUES (NEW.*);
+	ELSEIF (mod_result = 7) THEN
+		INSERT INTO _p_test_schema_test_table.partition_7 VALUES (NEW.*);
+	END IF;
+	RETURN NULL;
+END;</functionDefinition><grant operation="EXECUTE" role="ROLE_APPLICATION"/></function></schema></dbsteward>
