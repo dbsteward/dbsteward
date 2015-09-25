@@ -1,4 +1,4 @@
-#!/usr/bin/env php-cli
+#!/usr/bin/env php
 <?php
 /**
  * DBSteward
