@@ -25,6 +25,8 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
   // Directory containing data files used for testing
   protected static $test_data_dir = NULL;
+  // LOL Right?
+  protected static $last_quote_all_names;
 
   // test cases need to define $this->xml_content_a and $this->xml_content_b for their scenarios
   protected $xml_content_a = "XML_CONTENT_A_UNDEFINED";
