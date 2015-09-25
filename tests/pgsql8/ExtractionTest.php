@@ -7,9 +7,7 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
-require_once __DIR__ . '/../mock_output_file_segmenter.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
  * @group pgsql8
@@ -211,6 +209,47 @@ SQL;
   public function testDoNotExtractSequenceFromTable() {
     $schema = $this->extract("CREATE TABLE test(id serial, blah serial);");
     $this->assertEquals(0, (string)$schema->sequence->count());
+  }
+
+  public function testCompositeForeignKeyReferentialConstraints() {
+    dbsteward::$quote_all_names = false;
+    dbsteward::$quote_schema_names = false;
+    dbsteward::$quote_table_names = false;
+    dbsteward::$quote_column_names = false;
+    dbsteward::$quote_function_names = false;
+    dbsteward::$quote_object_names = false;
+    
+    $sql = <<<SQL
+CREATE TABLE dummy (foo int, bar varchar(32), PRIMARY KEY (foo, bar));
+CREATE TABLE test (
+  id int PRIMARY KEY,
+  foo int,
+  bar varchar(32),
+  FOREIGN KEY (foo, bar) REFERENCES dummy (foo, bar)
+    ON UPDATE NO ACTION
+    ON DELETE SET NULL
+);
+SQL;
+    
+    $schemaname = __CLASS__;
+    $expected = <<<XML
+<foreignKey
+  columns="foo, bar"
+  foreignSchema="$schemaname"
+  foreignTable="dummy"
+  foreignColumns="foo, bar"
+  constraintName="test_foo_fkey"
+  onUpdate="NO_ACTION"
+  onDelete="SET_NULL"/>
+XML;
+
+    $schema = $this->extract($sql);
+    foreach ($schema->table as $table) {
+      if ((string)$table['name'] == 'test') {
+        $this->assertEquals(simplexml_load_string($expected), $table->foreignKey);
+        return;
+      }
+    }
   }
 
   protected function extract($sql, $in_schema = TRUE) {

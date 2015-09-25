@@ -58,10 +58,18 @@ class dbx {
     return $nodes;
   }
 
-  public static function &get_configuration_parameter(&$node_database, $name, $create_if_not_exist = FALSE) {
-    $nodes = $node_database->xpath("configurationParameter[@name='" . $name . "']");
+  public static function get_configuration_parameter($db_doc, $name, $create_if_not_exist = FALSE) {
+    if ($db_doc == null) {
+      return null;
+    }
+
+    $nodes = $db_doc->xpath("database/configurationParameter[@name='" . $name . "']");
     if (count($nodes) == 0) {
       if ($create_if_not_exist) {
+        $node_database = $db_doc->database;
+        if (empty($node_database)) {
+          $node_database = $db_doc->addChild('configurationParameter');
+        }
         // schema not found, caller wants the schema created in the db
         $node_param = $node_database->addChild('configurationParameter');
         $node_param->addAttribute('name', $name);
@@ -79,12 +87,17 @@ class dbx {
     return $node_param;
   }
 
-  public static function &get_configuration_parameters(&$node_database) {
-    $nodes = $node_database->xpath("configurationParameter");
-    return $nodes;
+  public static function get_configuration_parameters($db_doc) {
+    if ($db_doc == null) {
+      return null;
+    }
+    return $db_doc->xpath("database/configurationParameter");
   }
 
-  public static function &get_schema(&$node_db, $name, $create_if_not_exist = FALSE) {
+  public static function get_schema(&$node_db, $name, $create_if_not_exist = FALSE) {
+    if ($node_db == null && !$create_if_not_exist) {
+      return null;
+    }
     if (!is_object($node_db)) {
       throw new exception("node_db is not an object!");
     }
@@ -207,178 +220,12 @@ class dbx {
     return $node_rows;
   }
 
-  /**
-   * @NOTE: because this gets the defintion from the composite list returned by get_table_constraints
-   * the constraint is not returned by reference as it is not modifiable like other get functions in this class
-   * when saving changes to constraints, need to lookup the child where they would come from explicitly
-   */
-  public static function get_table_constraint($db_doc, $node_schema, $node_table, $name) {
-    $constraints = self::get_table_constraints($db_doc, $node_schema, $node_table, 'all');
-    $return_constraint = NULL;
-    foreach ($constraints AS $constraint) {
-      if (strcasecmp($constraint['name'], $name) == 0) {
-        if ($return_constraint == NULL) {
-          $return_constraint = $constraint;
-        }
-        else {
-          var_dump($constraints);
-          throw new exception("more than one table " . $node_schema['name'] . '.' . $node_table['name'] . " constraint called " . $name . " found");
-        }
-      }
-    }
-    return $return_constraint;
-  }
-
   public function &create_table_constraint(&$node_table, $name) {
     $node_constraint = $node_table->addChild('constraint');
     $node_constraint->addAttribute('name', $name);
     return $node_constraint;
   }
 
-  /**
-   * return collection of arrays representing all of the constraints on a table
-   * this is more than just the <constraint> discret children of a table element
-   * this is also primary key, inline column foreign keys, and inline column unique constraints
-   * everything comparing the constraints of a table should be calling this
-   */
-  public static function get_table_constraints($db_doc, $node_schema, $node_table, $type = 'all') {
-    if ( !is_object($node_table) ) {
-      var_dump($node_table);
-      throw new exception("node_table is not an object, check trace for bad table pointer");
-    }
-    switch ($type) {
-      case 'all':
-      case 'primaryKey':
-      case 'constraint':
-      case 'foreignKey':
-      break;
-      default:
-        throw new exception("unknown type " . $type . " encountered");
-    }
-    $constraints = array();
-    if ($type == 'all' || $type == 'primaryKey') {
-      if (isset($node_table['primaryKey'])) {
-        if (isset($node_table['primaryKeyName'])
-          && strlen($node_table['primaryKeyName']) > 0) {
-          $primary_key_name = dbsteward::string_cast($node_table['primaryKeyName']);
-        }
-        else {
-          $primary_key_name = pgsql8::index_name($node_table['name'], NULL, 'pkey');
-        }
-
-        // quoted column name processing for primary key definitions
-        $primary_key_columns = preg_split("/[\,\s]+/", $node_table['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
-        $primary_key_list = '';
-        foreach ($primary_key_columns AS $primary_key_column) {
-          $primary_key_list .= pgsql8::get_quoted_column_name($primary_key_column) . ', ';
-        }
-        $primary_key_list = substr($primary_key_list, 0, -2);
-
-        $constraints[] = array(
-          'name' => $primary_key_name,
-          'schema_name' => (string)$node_schema['name'],
-          'table_name' => (string)$node_table['name'],
-          'type' => 'PRIMARY KEY',
-          'definition' => '(' . $primary_key_list . ')'
-        );
-      }
-    }
-    if ($type == 'all'
-      || $type == 'constraint'
-      || $type == 'foreignKey' ) {
-      $nodes = $node_table->xpath("constraint");
-      foreach ($nodes AS $node_constraint) {
-        // sanity check node definition constraint types
-        switch ((string)$node_constraint['type']) {
-          case 'CHECK':
-          case 'FOREIGN KEY':
-          case 'PRIMARY KEY':
-          case 'UNIQUE':
-            break;
-          default:
-            throw new exception('unknown constraint type ' . $node_constraint['type'] . ' encountered');
-            break;
-        }
-        
-        if ( $type == 'foreignKey' && strcasecmp($node_constraint['type'], 'FOREIGN KEY') != 0 ) {
-          // requested type is foreignKey yet node type is not FOREIGN KEY, continue on
-          continue;
-        }
-
-        $constraints[] = array(
-          'name' => (string)$node_constraint['name'],
-          'schema_name' => (string)$node_schema['name'],
-          'table_name' => (string)$node_table['name'],
-          'type' => (string)$node_constraint['type'],
-          'definition' => (string)$node_constraint['definition']
-        );
-      }
-    }
-
-    if ($type == 'all'
-      || $type == 'constraint'
-      || $type == 'foreignKey' ) {
-      foreach ($node_table->column AS $column) {
-        // add column foreign key constraints to the list
-        if (isset($column['foreignSchema']) || isset($column['foreignTable'])) {
-          if (strlen($column['foreignSchema']) == 0
-            || strlen($column['foreignTable']) == 0) {
-            throw new exception("Invalid foreignSchema|foreignTable pair for " . dbsteward::string_cast($node_schema['name']) . "." . dbsteward::string_cast($node_table['name']) . "." . dbsteward::string_cast($column['name']));
-          }
-          if (isset($column['type'])
-            || strlen($column['type']) > 0) {
-            throw new exception("Foreign-Keyed columns should not specify a type for " . dbsteward::string_cast($node_schema['name']) . "." . dbsteward::string_cast($node_table['name']) . "." . dbsteward::string_cast($column['name']));
-          }
-
-          $foreign = array();
-          dbx::foreign_key($db_doc, $node_schema, $node_table, $column, $foreign);
-          if (isset($column['foreignKeyName'])
-            && strlen($column['foreignKeyName']) > 0) {
-            // explicitly name the foreign key if specified in the node
-            $foreign['name'] = (string)$column['foreignKeyName'];
-          }
-
-          $column_fkey_constraint = array(
-            'name' => (string)$foreign['name'],
-            'schema_name' => (string)$node_schema['name'],
-            'table_name' => (string)$node_table['name'],
-            'type' => 'FOREIGN KEY',
-            'definition' => '(' . dbsteward::quote_column_name($column['name']) . ') REFERENCES ' . $foreign['references'],
-            'foreign_key_data' => $foreign
-          );
-
-          if (isset($column['foreignOnDelete']) && strlen($column['foreignOnDelete'])) {
-            $column_fkey_constraint['foreignOnDelete'] = (string)$column['foreignOnDelete'];
-          }
-          if (isset($column['foreignOnUpdate']) && strlen($column['foreignOnUpdate'])) {
-            $column_fkey_constraint['foreignOnUpdate'] = (string)$column['foreignOnUpdate'];
-          }
-
-          $constraints[] = $column_fkey_constraint;
-        }
-      }
-    }
-
-    if ($type == 'all'
-      || $type == 'constraint'
-      || $type == 'check' ) {
-      foreach ($node_table->column AS $column) {
-        // add column check constraints to the list
-        if ( isset($column['check']) ) {
-          $column_check_constraint = array(
-            'name' => $column['name'] . '_check',
-            'schema_name' => (string)$node_schema['name'],
-            'table_name' => (string)$node_table['name'],
-            'type' => 'CHECK',
-            'definition' => $column['check']
-          );
-          $constraints[] = $column_check_constraint;
-        }
-      }
-    }
-    return $constraints;
-  }
-  
   /**
    * return the constraints of other tables that refer to the table specified
    *
@@ -402,7 +249,7 @@ class dbx {
       $db_table = $table_dependency_item['table'];
 
       $table_constraints = static::get_table_constraints($db_doc, $db_schema, $db_table, 'foreignKey');
-//dbsteward::console_line(7, $node_table['name'] . " vs " . $db_table['name'] . " constraints: " . count($table_constraints));
+//dbsteward::trace($node_table['name'] . " vs " . $db_table['name'] . " constraints: " . count($table_constraints));
       foreach($table_constraints AS $table_constraint) {
         // get_table_constraints() will set foreign_key_data for dbsteward-defined foreign keys
         // these are the only ones that self define well enough to be compared here
@@ -414,7 +261,7 @@ class dbx {
         }
       }
     }
-//dbsteward::console_line(7, $node_table['name'] . " applicable constraints: " . count($constraints));
+//dbsteward::trace($node_table['name'] . " applicable constraints: " . count($constraints));
     return $constraints;
   }
 
@@ -483,7 +330,7 @@ class dbx {
       }
       if ($node_function == NULL) {
         //@DEBUG: use this to make sure function declaration comparisons are working properly
-        //dbsteward::console_line(5, "NOTICE: no functions named " . $name . " match passed declaration: " . $declaration);
+        dbsteward::warning("NOTICE: no functions named " . $name . " match passed declaration: " . $declaration);
       }
     }
     else {
@@ -503,6 +350,13 @@ class dbx {
       }
     }
     return $filtered_nodes;
+  }
+
+  public static function get_functions_with_dependent_type(&$node_schema, $name) {
+    return $node_schema->xpath('function/functionParameter[@type="' . $node_schema['name'] . '.' . $name . '"]/..' .
+                               '|function/functionParameter[@type="' . $node_schema['name'] . '.' . $name . '[]" ]/..' .
+                               '|function[@returns="' . $node_schema['name'] . '.' . $name . '"]' .
+                               '|function[@returns="' . $node_schema['name'] . '.' . $name . '[]" ]');
   }
 
   public static function &get_function_parameter(&$node_function, $name, $create_if_not_exist = FALSE) {
@@ -643,7 +497,10 @@ class dbx {
     return $nodes;
   }
 
-  public static function &get_view(&$node_schema, $name, $create_if_not_exist = FALSE) {
+  public static function get_view(&$node_schema, $name, $create_if_not_exist = FALSE) {
+    if ($node_schema == null && !$create_if_not_exist) {
+      return null;
+    }
     $nodes = $node_schema->xpath("view[@name='" . $name . "']");
     if (count($nodes) == 0) {
       if ($create_if_not_exist) {
@@ -665,6 +522,9 @@ class dbx {
   }
 
   public static function &get_views(&$node_schema) {
+    if ($node_schema == null) {
+      return array();
+    }
     $nodes = $node_schema->xpath("view");
     return $nodes;
   }
@@ -687,7 +547,8 @@ class dbx {
   }
 
   public static function foreign_key($db_doc, $node_schema, $node_table, $column, &$foreign) {
-    $foreign['schema'] = dbx::get_schema($db_doc, $column['foreignSchema']);
+    $fschema = strlen($column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
+    $foreign['schema'] = dbx::get_schema($db_doc, $fschema);
     if (!$foreign['schema']) {
       throw new exception("Failed to find foreign schema '" . dbsteward::string_cast($column['foreignSchema']) . "' for " . dbsteward::string_cast($node_schema['name']) . "." . dbsteward::string_cast($node_table['name']) . "." . dbsteward::string_cast($column['name']));
     }
@@ -714,7 +575,7 @@ class dbx {
     // column type is missing, and resolved foreign is also a foreign key?
     // recurse and find the cascading foreign key
     if (strlen($foreign['column']['type']) == 0 && isset($foreign['column']['foreignColumn'])) {
-      //dbsteward::console_line(4, "Seeking nested foreign key for " . dbsteward::string_cast($foreign['schema']['name']) . "." . dbsteward::string_cast($foreign['table']['name']) . "." . $foreign['column']['name']);
+      dbsteward::trace("Seeking nested foreign key for " . dbsteward::string_cast($foreign['schema']['name']) . "." . dbsteward::string_cast($foreign['table']['name']) . "." . $foreign['column']['name']);
       $nested_fkey = array();
       self::foreign_key($db_doc, $foreign['schema'], $foreign['table'], $foreign['column'], $nested_fkey);
       //var_dump($nested_fkey['column']);
@@ -723,7 +584,7 @@ class dbx {
       $foreign['column']['type'] = $nested_fkey['column']['type'];
     }
 
-    $foreign['name'] = pgsql8::index_name($node_table['name'], $column['name'], 'fkey');
+    $foreign['name'] = pgsql8_index::index_name($node_table['name'], $column['name'], 'fkey');
     $table_name = format::get_fully_qualified_table_name($foreign['schema']['name'], $foreign['table']['name']);
     $column_name = format::get_quoted_column_name($foreign['column']['name']);
     $foreign['references'] = "{$table_name}({$column_name})";
@@ -772,7 +633,7 @@ class dbx {
     }
     foreach ($db_doc->sql AS $sql_statement) {
       pgsql8::set_context_replica_set_id($sql_statement);
-      if ((isset($sql_statement['stage']) && strcasecmp($sql_statement['stage'], $stage) == 0) || (!isset($sql_statement['stage']) && $stage === NULL)) {
+      if ((isset($sql_statement['stage']) && strcasecmp($sql_statement['stage'], $stage) === 0) || (!isset($sql_statement['stage']) && $stage === NULL)) {
         if (isset($sql_statement['comment'])
           && strlen($sql_statement['comment'])) {
           $ofs->write("-- " . $sql_statement['comment'] . "\n");

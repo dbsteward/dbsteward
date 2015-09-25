@@ -9,6 +9,13 @@
  */
 
 class sql99_view {
+  public static function get_creation_sql($db_doc, $node_schema, $node_view) {
+    throw new Exception("Not implemented");
+  }
+  public static function get_drop_sql($node_schema, $node_view) {
+    throw new Exception("Not implemented");
+  }
+
   public static function get_view_query($node_view) {
     $q = '';
     foreach($node_view->viewQuery AS $query) {
@@ -39,5 +46,14 @@ class sql99_view {
 
     return $q;
   }
+
+  public static function get_dependencies($node_schema, $node_view) {
+    return array_map(function($s) use ($node_schema) {
+      $parts = explode('.', $s, 2);
+      if (count($parts) == 1) {
+        return array((string)$node_schema['name'], $parts[0]);
+      }
+      return $parts;
+    }, preg_split('/[\,\s]+/', $node_view['dependsOnViews'], -1, PREG_SPLIT_NO_EMPTY));
+  }
 }
-?>

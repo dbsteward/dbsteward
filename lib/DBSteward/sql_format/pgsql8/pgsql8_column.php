@@ -65,7 +65,7 @@ class pgsql8_column extends sql99_column {
         // if the default is a nextval expression, don't specify it in the regular full definition
         // because if the sequence has not been defined yet,
         // the nextval expression will be evaluated inline and fail
-        dbsteward::console_line(5, "Skipping " . $node_column['name'] . " default expression \"" . $node_column['default'] . "\" - this default expression will be applied after all sequences have been created");
+        dbsteward::info("Skipping " . $node_column['name'] . " default expression \"" . $node_column['default'] . "\" - this default expression will be applied after all sequences have been created");
       }
       else {
         $definition .= " DEFAULT " . $node_column['default'];
@@ -109,7 +109,7 @@ class pgsql8_column extends sql99_column {
         // if the default is a nextval expression, don't specify it in the regular full definition
         // because if the sequence has not been defined yet,
         // the nextval expression will be evaluated inline and fail
-        dbsteward::console_line(5, "Skipping " . $node_column['name'] . " default expression \"" . $node_column['default'] . "\" - this default expression will be applied after all sequences have been created");
+        dbsteward::info("Skipping " . $node_column['name'] . " default expression \"" . $node_column['default'] . "\" - this default expression will be applied after all sequences have been created");
         return $changes;
       }
       else {

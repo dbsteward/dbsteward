@@ -7,10 +7,7 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once 'PHPUnit/Framework/TestSuite.php';
-
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
 
@@ -33,13 +30,6 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
    */
   public function testMysql5() {
     $this->quoteTestCommon('mysql5', array('in ', 'in-', 'in'.mysql5::QUOTE_CHAR, 'in.'));
-  }
-
-  /**
-   * @group oracle10g
-   */
-  public function testOracle10g() {
-    $this->quoteTestCommon('oracle10g');
   }
 
   protected function quoteTestCommon($format, $additional_invalid = array()) {
@@ -71,10 +61,10 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
               call_user_func("$format::get_quoted_{$object}_name",$invalid_name);
             }
             catch ( Exception $ex ) {
-              $this->assertContains('Invalid identifier', $ex->getMessage());
+              $this->assertContains('Illegal identifier', $ex->getMessage());
               continue;
             }
-            $this->fail("Expected 'Invalid identifier' exception, but no exception was thrown for identifier '$invalid_name'");
+            $this->fail("Expected 'Illegal identifier' exception, but no exception was thrown for identifier '$invalid_name'");
           }
         }
 

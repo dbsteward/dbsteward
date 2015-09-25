@@ -22,8 +22,13 @@ class pgsql8_index extends sql99_index {
       $sql .= "UNIQUE ";
     }
 
-    $sql .= "INDEX "
-      . pgsql8::get_quoted_object_name($node_index['name'])
+    $sql .= "INDEX ";
+
+    if ( isset($node_index['concurrently']) && strcasecmp($node_index['concurrently'], 'true') == 0 ) {
+      $sql .= "CONCURRENTLY ";
+    }
+
+    $sql .= pgsql8::get_quoted_object_name($node_index['name'])
       . " ON "
       . pgsql8::get_quoted_schema_name($node_schema['name']) . '.'
       . pgsql8::get_quoted_table_name($node_table['name']);
@@ -32,10 +37,9 @@ class pgsql8_index extends sql99_index {
     }
     $sql .= ' (';
     foreach($node_index->indexDimension AS $dimension) {
-      // if the index dimension is an expression
-      // and not a single token identifier
-      // don't column quote it
-      if ( !format::is_valid_identifier($dimension) ) {
+      // don't quote the identifier if it's defined as being sql, e.g. '<indexDimension>X + 1</indexDimension>' -> "X + 1"
+      //                                                               '<indexDimension sql="true">X + 1</indexDimension> -> X + 1
+      if ( (isset($dimension['sql']) && strcasecmp($dimension['sql'], 'true') == 0) ) {
         $sql .= $dimension . ', ';
       }
       else {
@@ -81,6 +85,9 @@ class pgsql8_index extends sql99_index {
     else if ( strcasecmp($node_index_a['unique'], $node_index_b['unique']) != 0 ) {
       $equal = false;
     }
+    else if ( strcasecmp($node_index_a['concurrently'], $node_index_b['concurrently']) != 0 ) {
+      $equal = false;
+    }
     else if ( strcasecmp($node_index_a['using'], $node_index_b['using']) != 0 ) {
       $equal = false;
     }
@@ -122,43 +129,4 @@ class pgsql8_index extends sql99_index {
     }
     return $equal;
   }
-
-
-  public static function index_name($table, $column, $suffix) {
-    // figure out the name of the index from table and column names
-    // maxlen of pg identifiers is 63
-    // so the table and column are each limited to 29 chars, if they both longer
-    $table_maxlen = 29;
-    $column_maxlen = 29;
-    // but if one is shorter pg seems to bonus the longer with the remainder from the shorter:
-    // background_check_status_list_background_check_status_list_i_seq
-    // program_membership_status_lis_program_membership_status_lis_seq
-    // Shift/re calculate maxes based on one side being oversized:
-    if (strlen($table) > $table_maxlen
-      && strlen($column) < $column_maxlen) {
-      // table is longer than max, column is not
-      $table_maxlen += $column_maxlen - strlen($column);
-    }
-    else if (strlen($column) > $column_maxlen && strlen($table) < $table_maxlen) {
-      // column is longer than max, table is not
-      $column_maxlen += $table_maxlen - strlen($table);
-    }
-
-    if (strlen($table) > $table_maxlen) {
-      $table = substr($table, 0, $table_maxlen);
-    }
-
-    if (strlen($column) > $column_maxlen) {
-      $column = substr($column, 0, $column_maxlen);
-    }
-
-    $index_name = (string)$table;
-    if (strlen($column) > 0) {
-      $index_name .= '_' . $column;
-    }
-    $index_name .= '_' . $suffix;
-    return $index_name;
-  }
 }
-
-?>

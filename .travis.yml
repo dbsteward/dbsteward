@@ -3,6 +3,9 @@ php:
   - 5.3
   - 5.4
   - 5.5
+  - 5.6
+
+sudo: false
 
 env:
   # global env vars are injected into the environment of all build configs
@@ -34,11 +37,18 @@ env:
 #     - dev-travis
 
 before_script:
+  # psql is failing to connect here sometimes, sleep a little
+  # - sleep 2
+  - composer install --dev --no-interaction
   - if [[ "$PHPUNIT_GROUP" == "pgsql8" ]]; then psql -U postgres -d postgres -c "CREATE USER deployment WITH SUPERUSER CREATEDB CREATEROLE PASSWORD 'password1';"; fi
   - if [[ "$PHPUNIT_GROUP" == "pgsql8" ]]; then psql -U postgres -d postgres -c "CREATE ROLE dbsteward_phpunit_app;"; fi
   - if [[ "$PHPUNIT_GROUP" == "pgsql8" ]]; then PGPASSWORD=password1 psql -U deployment -d postgres -c "CREATE DATABASE dbsteward_phpunit;"; fi
   - if [[ "$PHPUNIT_GROUP" == "pgsql8" ]]; then psql -U postgres -d dbsteward_phpunit -c "CREATE OR REPLACE LANGUAGE plpgsql;"; fi
   - if [[ "$PHPUNIT_GROUP" == "mysql5" ]]; then mysql -u root -D mysql -e "GRANT ALL ON *.* TO travis@'%', dbsteward_pu_app@'%', deployment@'%' WITH GRANT OPTION;"; fi
+  - if [[ "$PHPUNIT_GROUP" == "mysql5" ]]; then mysql -u root -D mysql -e "DROP DATABASE IF EXISTS dbsteward_phpunit; CREATE DATABASE dbsteward_phpunit;"; fi
+  - composer install --dev --no-interaction
 
 # by default, travis just runs "phpunit", but our tests are in the tests directory
-script: phpunit --configuration tests/phpunit.xml --verbose --debug --group $PHPUNIT_GROUP tests/
+script: vendor/bin/phpunit --verbose --debug --group $PHPUNIT_GROUP --coverage-clover clover.xml tests/
+
+after_script: vendor/bin/coveralls -v

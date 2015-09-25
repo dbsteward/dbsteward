@@ -15,7 +15,7 @@ class mssql10_view extends pgsql8_view {
    *
    * @return string
    */
-  public function get_creation_sql($node_schema, $node_view) {
+  public static function get_creation_sql($node_schema, $node_view) {
     if (isset($node_view['description']) && strlen($node_view['description']) > 0) {
       $ddl = "-- " . dbsteward::string_cast($node_view['description']) . "\n";
     }

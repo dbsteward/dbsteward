@@ -7,10 +7,7 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once 'PHPUnit/Framework/TestSuite.php';
-
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
  * @group mysql5
@@ -55,7 +52,7 @@ XML;
 CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `view`
   AS SELECT * FROM sometable;
 SQL;
-    $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql($schema, $schema->view)));
+    $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql(dbsteward::$new_database, $schema, $schema->view)));
     $this->assertEquals($expected, $actual);
 
     $expected = "DROP VIEW IF EXISTS `view`;";
@@ -78,7 +75,7 @@ XML;
 CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `view`
   AS SELECT * FROM mysql5table;
 SQL;
-    $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql($schema, $schema->view)));
+    $actual = trim(preg_replace('/--.*\n?/','',mysql5_view::get_creation_sql(dbsteward::$new_database, $schema, $schema->view)));
     $this->assertEquals($expected, $actual);
 
     $expected = "DROP VIEW IF EXISTS `view`;";
@@ -95,7 +92,7 @@ XML;
     $schema = new SimpleXMLElement($xml);
 
     try {
-      mysql5_view::get_creation_sql($schema, $schema->view);
+      mysql5_view::get_creation_sql(dbsteward::$new_database, $schema, $schema->view);
     }
     catch ( Exception $ex ) {
       if ( stripos($ex->getMessage(),'failed to find viewquery') === FALSE ) {

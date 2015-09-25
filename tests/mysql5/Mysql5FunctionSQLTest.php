@@ -7,10 +7,7 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once 'PHPUnit/Framework/TestSuite.php';
-
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
  * @group mysql5
@@ -99,7 +96,65 @@ SQL;
     $this->assertEquals($expected, $actual);
   }
 
-  public function testCachePolicy() {
+
+  public function testProcedure() {
+    $xml = <<<XML
+<schema name="test" owner="ROLE_OWNER">
+    <function name="why_would_i_do_this" owner="ROLE_OWNER" returns="" procedure="true">
+      <functionParameter name="str" type="varchar(25)" direction="IN"/>
+      <functionParameter name="len" type="int(11)" direction="OUT"/>
+      <functionDefinition language="sql" sqlFormat="mysql5">BEGIN
+  SELECT length(str)
+  INTO len;
+END</functionDefinition>
+    </function>
+  </schema>
+XML;
+    $schema = new SimpleXMLElement($xml);
+
+    $expected = <<<SQL
+DROP PROCEDURE IF EXISTS `why_would_i_do_this`;
+CREATE DEFINER = the_owner PROCEDURE `why_would_i_do_this` (IN `str` varchar(25), OUT `len` int(11))
+LANGUAGE SQL
+MODIFIES SQL DATA
+NOT DETERMINISTIC
+SQL SECURITY INVOKER
+BEGIN
+  SELECT length(str)
+  INTO len;
+END;
+SQL;
+
+    $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
+
+    $this->assertEquals($expected, $actual);
+  }
+
+  /**
+   * @dataProvider characteristicsProvider
+   */
+  public function testCharacteristics($cachePolicy, $evalType, $expected) {
+    $this->assertEquals($expected, mysql5_function::get_characteristics($cachePolicy, $evalType));
+  }
+
+  public function characteristicsProvider() {
+    return array(
+      // basic behavior, no evalType specified
+      array('IMMUTABLE', '', array('NO SQL', 'DETERMINISTIC')),
+      array('STABLE', '', array('READS SQL DATA', 'NOT DETERMINISTIC')),
+      array('VOLATILE', '', array('MODIFIES SQL DATA', 'NOT DETERMINISTIC')),
+
+      // neither specified
+      array('', '', array('MODIFIES SQL DATA', 'NOT DETERMINISTIC')),
+
+      // custom evalType
+      array('IMMUTABLE', 'CONTAINS SQL', array('CONTAINS SQL', 'DETERMINISTIC')),
+      array('STABLE', 'MODIFIES SQL DATA', array('MODIFIES SQL DATA', 'NOT DETERMINISTIC')),
+      array('VOLATILE', 'NO SQL', array('NO SQL', 'NOT DETERMINISTIC'))
+    );
+  }
+
+  public function testCharacteristicsSQL() {
     $xml = <<<XML
 <schema name="test" owner="ROLE_OWNER">
   <function name="test_fn" returns="text" cachePolicy="IMMUTABLE">

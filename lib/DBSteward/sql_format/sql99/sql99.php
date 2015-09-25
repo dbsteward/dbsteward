@@ -19,10 +19,10 @@ class sql99 {
    * translate explicit role names a meta ROLE_ enumeration, etc
    *
    * @param  string $role   username
-   *
+   * @param SimpleXMLElement $doc document
    * @return string         translated ROLE_ enumeration
    */
-  public static function translate_role_name($role) {
+  public static function translate_role_name($role, $doc = null) {
     switch (strtolower($role)) {
       /* examples for extraction extensions:
       case 'pgsql':
@@ -80,7 +80,11 @@ class sql99 {
    * @return boolean
    */
   public static function is_valid_identifier($name) {
-    return preg_match(static::VALID_IDENTIFIER_REGEX, $name) > 0 && !static::is_identifier_blacklisted($name);
+    return !static::is_illegal_identifier($name) && !static::is_identifier_blacklisted($name);
+  }
+
+  public static function is_illegal_identifier($name) {
+    return preg_match(static::VALID_IDENTIFIER_REGEX, $name) == 0;
   }
 
   public static function get_identifier_blacklist_file() {
@@ -117,20 +121,32 @@ class sql99 {
    */
   public static function get_quoted_name($name, $quoted, $quote_char) {
     $quoted = $quoted || dbsteward::$quote_all_names;
-    
-    // only verify identifier correctness if we aren't quoting it
-    if ( !$quoted && !static::is_valid_identifier($name) ) {
-      if (dbsteward::$quote_illegal_identifiers) {
-        dbsteward::console_line(3, "WARNING: Quoting illegal identifer $name");
-        return $quote_char . $name . $quote_char;
-      } else {
-        throw new exception("Invalid identifier: '$name' - To use it, you will need to quote it with --quoteallnames");
+
+    if (!$quoted) {
+      if (static::is_illegal_identifier($name)) {
+        if (dbsteward::$quote_illegal_identifiers) {
+          dbsteward::warning("Warning: Quoting illegal identifier '$name'");
+          $quoted = true;
+        }
+        else {
+          throw new Exception("Illegal identifier: '$name' - turn on quoting of illegal identifiers with --quoteillegalnames");
+        }
+      }
+      elseif (static::is_identifier_blacklisted($name)) {
+        if (dbsteward::$quote_reserved_identifiers) {
+          dbsteward::warning("Warning: Quoting reserved identifier '$name'");
+          $quoted = true;
+        }
+        else {
+          throw new Exception("Reserved identifier: '$name' - turn on quoting of reserved identifiers with --quotereservednames");
+        }
       }
     }
 
-    if ( $quoted ) {
+    if ($quoted) {
       return ($quote_char . $name . $quote_char);
-    } else {
+    }
+    else {
       return $name;
     }
   }
@@ -162,6 +178,8 @@ class sql99 {
   public static function get_fully_qualified_column_name($schema_name, $table_name, $column_name) {
     return static::get_fully_qualified_table_name($schema_name, $table_name) . '.' . static::get_quoted_column_name($column_name);
   }
-}
 
-?>
+  /** No-op. Overridden for pgsql8 slony stuffs */
+  public static function set_context_replica_set_id($obj) {
+  }
+}

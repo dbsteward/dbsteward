@@ -43,40 +43,42 @@ class sql99_index {
     return $using;
   }
 
+  
   public static function index_name($table, $column, $suffix) {
-    // figure out the name of the index from table and column names
-    // maxlen of pg identifiers is 63
-    // so the table and column are each limited to 29 chars, if they both longer
-    $table_maxlen = 29;
-    $column_maxlen = 29;
-    // but if one is shorter pg seems to bonus the longer with the remainder from the shorter:
-    // background_check_status_list_background_check_status_list_i_seq
-    // program_membership_status_lis_program_membership_status_lis_seq
-    // Shift/re calculate maxes based on one side being oversized:
-    if (strlen($table) > $table_maxlen
-      && strlen($column) < $column_maxlen) {
-      // table is longer than max, column is not
-      $table_maxlen += $column_maxlen - strlen($column);
-    }
-    else if (strlen($column) > $column_maxlen && strlen($table) < $table_maxlen) {
-      // column is longer than max, table is not
-      $column_maxlen += $table_maxlen - strlen($table);
+    $table_len = strlen($table);
+    $column_len = strlen($column);
+    $suffix_len = strlen($suffix);
+
+    // figure out how to build "{$table}_{$column}_{$suffix}"
+    
+    // reserve space for the suffix, at least one underscore
+    $maxlen = pgsql8::MAX_IDENTIFIER_LENGTH - $suffix_len - 1;
+    if ($column_len > 0) {
+      // if there's a column, add another underscore
+      $maxlen -= 1;
     }
 
-    if (strlen($table) > $table_maxlen) {
-      $table = substr($table, 0, $table_maxlen);
+    $table_max = ceil($maxlen / 2);
+    $column_max = floor($maxlen / 2);
+
+    // table is longer than max, but column is shorter
+    if ($table_len > $table_max && $column_len < $column_max) {
+      // give table the extra room from column
+      $table_max += $column_max - $column_len;
+    }
+    // table is shorter than max, but table is longer
+    elseif ($table_len < $table_max && $column_len > $column_max) {
+      // give column the extra room from table
+      $column_max += $table_max - $table_len;
     }
 
-    if (strlen($column) > $column_maxlen) {
-      $column = substr($column, 0, $column_maxlen);
-    }
+    $table = substr($table, 0, min($table_max, $table_len));
+    $column = substr($column, 0, min($column_max, $column_len));
 
-    $index_name = (string)$table;
-    if (strlen($column) > 0) {
-      $index_name .= '_' . $column;
+    if ($column_len > 0) {
+      return "{$table}_{$column}_{$suffix}";
     }
-    $index_name .= '_' . $suffix;
-    return $index_name;
+    return "{$table}_{$suffix}";
   }
 
   public static function get_table_indexes($node_schema, $node_table) {

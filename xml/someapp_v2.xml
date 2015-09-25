@@ -18,13 +18,21 @@
       <slonyNode id="103" comment="someapp remote replica db" dbName="someapp" dbHost="someapp-db.remote" dbUser="someapp_slony" dbPassword="lol" />
       <slonyReplicaSet id="500" originNodeId="101" upgradeSetId="501" comment="user table replication">
         <slonyReplicaSetNode id="102" providerNodeId="101" />
-        <slonyReplicaSetNode id="103" providerNodeId="102" />
+        <slonyReplicaSetNode id="103" providerNodeId="102" dbHost="someapp-db-2ndNIC.backup" />
+        <!--
+          dbHost usage example:
+          when defining how slons should connect to node 103
+          use the alternate host name someapp-db-2ndNIC.backup
+          this will be used in someapp_slony_replica_set_500_paths.slonik file generation
+          but not in the someapp_slony_replica_set_500_preamble.slonik
+          to see this in action, use dbsteward \-\-format=pgsql8 \-\-generateslonik \-\-xml=someapp_v2.xml
+        -->
         <slonyReplicaSetNode id="104" providerNodeId="103" />
       </slonyReplicaSet>
     </slony>
   </database>
   <schema name="public" owner="ROLE_OWNER">
-    <table name="user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="10">
+    <table name="sql_user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="10">
       <tablePartition type="MODULO">
         <tablePartitionOption name="number" value="4" />
         <tablePartitionOption name="column" value="user_id" />
@@ -54,7 +62,7 @@
         </row>
       </rows>
     </table>
-    <trigger name="user_audit" sqlFormat="mysql5" table="user" when="before" event="insert" function="EXECUTE xyz"/>
+    <trigger name="user_audit" sqlFormat="mysql5" table="sql_user" when="BEFORE" event="INSERT" function="EXECUTE xyz"/>
     <table name="user_status_list" owner="ROLE_OWNER" slonyId="30" primaryKey="user_status_list_id">
       <column name="user_status_list_id" type="int" />
       <column name="is_visible" type="boolean" null="false" default="true" />
@@ -84,7 +92,7 @@
     </table>
     <table name="user_access_level" owner="ROLE_OWNER" slonyId="40" primaryKey="user_access_level_id">
       <column name="user_access_level_id" type="int" />
-      <column name="user_access_level" type="boolean" null="false" default="true" />
+      <column name="user_access_level" type="varchar(10)" null="false" default="true" />
       <column name="can_see_invisible_users" type="boolean" null="false" default="false" />
       <grant role="ROLE_APPLICATION" operation="SELECT" />
       <rows columns="user_access_level_id, user_access_level, can_see_invisible_users">
@@ -107,7 +115,7 @@
     </table>
     <table name="session_information" description="Information regarding a user's current session" primaryKey="session_id" owner="ROLE_OWNER" slonyId="20">
       <column name="session_id" type="varchar(255)" null="false" />
-      <column name="user_id" foreignSchema="public" foreignTable="user" foreignColumn="user_id" />
+      <column name="user_id" foreignSchema="public" foreignTable="sql_user" foreignColumn="user_id" />
       <column name="login_time" type="timestamp with time zone" />
       <column name="logout_time" type="timestamp with time zone" />
       <column name="last_active_time" type="timestamp with time zone" />

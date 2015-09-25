@@ -130,7 +130,7 @@ class pgsql8_parser_alter_table {
         if (preg_match(self::PATTERN_ADD_CONSTRAINT_FOREIGN_KEY, $subCommand, $matches) > 0) {
           $column_name = trim($matches[3]);
           $constraint_name = trim($matches[1]);
-          $node_constraint = &dbx::get_table_constraint($db_doc, $node_table, $constraint_name, true);
+          $node_constraint = pgsql8_constraint::get_table_constraint($db_doc, $node_table, $constraint_name, true);
           dbx::set_attribute($node_constraint, 'definition', trim($matches[2]));
           $subCommand = "";
         }
@@ -138,7 +138,7 @@ class pgsql8_parser_alter_table {
 
       if (preg_match(self::PATTERN_ADD_CONSTRAINT, $subCommand, $matches) > 0) {
         $constraint_name = trim($matches[1]);
-        $node_constraint = &dbx::get_table_constraint($db_doc, $node_table, $constraint_name, true);
+        $node_constraint = pgsql8_constraint::get_table_constraint($db_doc, $node_table, $constraint_name, true);
         dbx::set_attribute($node_constraint, 'definition', trim($matches[2]));
         $subCommand = "";
       }
@@ -157,7 +157,7 @@ class pgsql8_parser_alter_table {
         if (preg_match(self::PATTERN_ADD_FOREIGN_KEY, $subCommand, $matches) > 0) {
           $column_name = trim($matches[2]);
           $constraint_name = pgsql8::identifier_name($node_schema['name'], $node_table['name'], $column_name, '_fkey');
-          $node_constraint = &dbx::get_table_constraint($db_doc, $node_table, $constraint_name, true);
+          $node_constraint = pgsql8_constraint::get_table_constraint($db_doc, $node_table, $constraint_name, true);
           dbx::set_attribute($node_constraint, 'definition', trim($matches[1]));
           $subCommand = "";
         }

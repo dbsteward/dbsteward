@@ -13,9 +13,12 @@ class mssql10 {
   const QUOTE_CHAR = '"';
 
   public static function build($output_prefix, $db_doc) {
+    if ( strlen($output_prefix) == 0 ) {
+      throw new exception("mssql10::build() sanity failure: output_prefix is blank");
+    }
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';
-    dbsteward::console_line(1, "Building complete file " . $build_file);
+    dbsteward::notice("Building complete file " . $build_file);
     $build_file_fp = fopen($build_file, 'w');
     if ($build_file_fp === FALSE) {
       throw new exception("failed to open full file " . $build_file . ' for output');
@@ -35,7 +38,7 @@ class mssql10 {
           throw new exception("assembly file " . $assembly_file_name . " not readable");
         }
         $assembly_name = substr(basename($assembly_file_name), 0, -4);
-        dbsteward::console_line(1, "Including " . $assembly_name . " assembly inline from " . $assembly_file_name);
+        dbsteward::info("Including " . $assembly_name . " assembly inline from " . $assembly_file_name);
         $afh = fopen($assembly_file_name, "rb");
         $assembly_contents = fread($afh, filesize($assembly_file_name));
         fclose($afh);
@@ -50,7 +53,7 @@ class mssql10 {
 
     $build_file_ofs->write("BEGIN TRANSACTION;\n\n");
 
-    dbsteward::console_line(1, "Calculating table foreign key dependency order..");
+    dbsteward::info("Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
     // database-specific implementation refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
@@ -65,12 +68,12 @@ class mssql10 {
 
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
-      dbsteward::console_line(1, "Defining structure");
+      dbsteward::notice("Defining structure");
       mssql10::build_schema($db_doc, $build_file_ofs, $table_dependency);
     }
     if (!dbsteward::$only_schema_sql
       || dbsteward::$only_data_sql) {
-      dbsteward::console_line(1, "Defining data inserts");
+      dbsteward::notice("Defining data inserts");
       mssql10::build_data($db_doc, $build_file_ofs, $table_dependency);
     }
     dbsteward::$new_database = NULL;
@@ -256,9 +259,9 @@ class mssql10 {
     $upgrade_prefix = $new_output_prefix . '_upgrade';
 
     // mssql10_diff needs these to intelligently create SQL difference statements in dependency order
-    dbsteward::console_line(1, "Calculating old table foreign key dependency order..");
+    dbsteward::info("Calculating old table foreign key dependency order..");
     mssql10_diff::$old_table_dependency = xml_parser::table_dependency_order($old_db_doc);
-    dbsteward::console_line(1, "Calculating new table foreign key dependency order..");
+    dbsteward::info("Calculating new table foreign key dependency order..");
     mssql10_diff::$new_table_dependency = xml_parser::table_dependency_order($new_db_doc);
 
     mssql10_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);

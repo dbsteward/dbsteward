@@ -7,9 +7,7 @@
  * @author Rusty Hamilton <rusty@shrub3.net>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once __DIR__ . '/../mock_output_file_segmenter.php';
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
  * @group pgsql8
@@ -90,15 +88,18 @@ XML;
     parent::setUp();
     dbsteward::set_sql_format('pgsql8');
     
+    // reset these flags before each test
+    pgsql8_diff::$as_transaction = TRUE;
+    dbsteward::$generate_slonik = FALSE;
+    
     // clear these before each test so we don't run into conflicts
     pgsql8::$table_slony_ids = array();
     pgsql8::$sequence_slony_ids = array();
-    dbsteward::$generate_slonik = TRUE;
     pgsql8_diff::$new_table_dependency = null;
     pgsql8_diff::$old_table_dependency = null;
   }
   
-  protected function transaction_statement_check($expected) {
+  protected function transaction_statement_check($is_transactional) {
     dbsteward::$old_database = new SimpleXMLElement($this->oldxml);
     dbsteward::$new_database = new SimpleXMLElement($this->newxml);
     pgsql8_diff::$new_table_dependency = xml_parser::table_dependency_order(dbsteward::$new_database);
@@ -107,15 +108,29 @@ XML;
     $ofs = new mock_output_file_segmenter();
 
     pgsql8_diff::diff_doc_work($ofs, $ofs, $ofs, $ofs);
-    $this->assertEquals($expected, stripos(trim($ofs->_get_output()), 'BEGIN') === FALSE);
-    $this->assertEquals($expected, stripos(trim($ofs->_get_output()), 'COMMIT') === FALSE);
+    
+    if ( $is_transactional ) {
+      $this->assertRegExp('/^BEGIN;/im', $ofs->_get_output(), 'output contains BEGIN statement');
+      $this->assertRegExp('/^COMMIT;/im', $ofs->_get_output(), 'output contains COMMIT statement');
+    }
+    else {
+      $this->assertRegExp('/^(?!BEGIN;).*$/im', $ofs->_get_output(), 'output contains BEGIN statement');
+      $this->assertRegExp('/^(?!COMMIT;).*$/im', $ofs->_get_output(), 'output contains COMMIT statement');
+    }
   }
   
   public function testGenerateSlonikRemovesTransactionStatements() {
+    pgsql8_diff::$as_transaction = FALSE;
+    dbsteward::$generate_slonik = TRUE;
+    $this->transaction_statement_check(FALSE);
+
+    pgsql8_diff::$as_transaction = TRUE;
+    dbsteward::$generate_slonik = FALSE;
+    $this->transaction_statement_check(TRUE);
+    
+    pgsql8_diff::$as_transaction = TRUE;
     dbsteward::$generate_slonik = TRUE;
     $this->transaction_statement_check(TRUE);
-    dbsteward::$generate_slonik = FALSE;
-    $this->transaction_statement_check(FALSE);
   }
 
   

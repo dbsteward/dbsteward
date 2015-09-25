@@ -7,9 +7,7 @@
  * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
-require_once __DIR__ . '/../mock_output_file_segmenter.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 class TypeQuotingTest extends PHPUnit_Framework_TestCase {
 

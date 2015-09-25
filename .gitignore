@@ -1,3 +1,10 @@
 build
 tests/testdata*
-/nbproject/private/
+/nbproject/
+/tickets/
+vendor
+*_build.sql
+*_composite.xml
+clover.xml
+coveralls-upload.json
+phpunit.xml

@@ -15,7 +15,7 @@ class mssql10_index extends pgsql8_index {
    *
    * @return created SQL
    */
-  public function get_creation_sql($node_schema, $node_table, $node_index) {
+  public static function get_creation_sql($node_schema, $node_table, $node_index) {
     try {
       $sql = "CREATE ";
 
@@ -93,7 +93,7 @@ class mssql10_index extends pgsql8_index {
           && strcasecmp($node_index['unique'], 'true') == 0) {
           $node_column = dbx::get_table_column($node_table, $dimension_name);
           if (mssql10_column::null_allowed($node_table, $node_column)) {
-            //dbsteward::console_line(7, "dimension_name = " . $dimension_name);
+            dbsteward::error("dimension_name = " . $dimension_name);
             //var_dump($node_column);
             throw new exception("nulled column index found");
           }

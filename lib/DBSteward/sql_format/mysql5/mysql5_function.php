@@ -16,6 +16,10 @@ class mysql5_function extends sql99_function {
     return strcasecmp($language, 'sql') == 0;
   }
 
+  public static function is_procedure($node_function) {
+    return (isset($node_function['procedure']) && $node_function['procedure']);
+  }
+
   public static function get_creation_sql($node_schema, $node_function) {
     $name = static::get_declaration($node_schema, $node_function);
 
@@ -28,12 +32,14 @@ class mysql5_function extends sql99_function {
       $sql .= 'DELIMITER ' . static::ALT_DELIMITER . "\n";
     }
 
-    $sql .= "CREATE DEFINER = $definer FUNCTION $name (";
+    $function_type = static::is_procedure($node_function) ? 'PROCEDURE' : 'FUNCTION';
+
+    $sql .= "CREATE DEFINER = $definer $function_type $name (";
 
     if ( isset($node_function->functionParameter) ) {
       $params = array();
       foreach ( $node_function->functionParameter as $param ) {
-        if ( isset($param['direction']) ) {
+        if ( isset($param['direction']) && ! static::is_procedure($node_function) ) {
           throw new exception("Parameter directions are not supported in MySQL functions");
         }
         if ( empty($param['name']) ) {
@@ -45,30 +51,32 @@ class mysql5_function extends sql99_function {
           $type = mysql5_type::get_enum_type_declaration($node_type);
         }
 
-        $params[] = mysql5::get_quoted_function_parameter($param['name']) . ' ' . $type;
+        $sparam = '';
+        if (isset($param['direction'])) {
+          $sparam .= (string)$param['direction'] . ' ';
+        }
+
+        $sparam .= mysql5::get_quoted_function_parameter($param['name']) . ' ' . $type;
+        $params[] = $sparam;
       }
       $sql .= implode(', ', $params);
     }
 
-    $returns = $node_function['returns'];
-    if ( $node_type = mysql5_type::get_type_node(dbsteward::$new_database, $node_schema, $returns) ) {
-      $returns = mysql5_type::get_enum_type_declaration($node_type);
-    }
+    $sql .= ")\n";
 
-    $sql .= ")\nRETURNS " . $returns . "\nLANGUAGE SQL\n";
-
-    switch ( strtoupper($node_function['cachePolicy']) ) {
-      case 'IMMUTABLE':
-        $sql .= "NO SQL\nDETERMINISTIC\n";
-        break;
-      case 'STABLE':
-        $sql .= "READS SQL DATA\nNOT DETERMINISTIC\n";
-        break;
-      case 'VOLATILE':
-      default:
-        $sql .= "MODIFIES SQL DATA\nNOT DETERMINISTIC\n";
-        break;
+    // Procedures don't have a return statement
+    if (!static::is_procedure($node_function)) {
+      $returns = $node_function['returns'];
+      if ( $node_type = mysql5_type::get_type_node(dbsteward::$new_database, $node_schema, $returns) ) {
+        $returns = mysql5_type::get_enum_type_declaration($node_type);
+      }
+      $sql .= "RETURNS " . $returns . "\n";
     }
+    $sql .= "LANGUAGE SQL\n";
+
+    list($eval_type, $determinism) = static::get_characteristics((string)$node_function['cachePolicy'], (string)$node_function['mysqlEvalType']);
+    $eval_type = str_replace('_', ' ', $eval_type);
+    $sql .= "$eval_type\n$determinism\n";
 
     // unlike pgsql8, mysql5 defaults to SECURITY DEFINER, so we need to set it to INVOKER unless explicitly told to leave it DEFINER
     if ( ! isset($node_function['securityDefiner']) || strcasecmp($node_function['securityDefiner'], 'false') == 0 ) {
@@ -96,13 +104,75 @@ class mysql5_function extends sql99_function {
     return $sql;
   }
 
+  public static function get_characteristics($cache_policy, $eval_type) {
+    switch (strtoupper($cache_policy)) {
+      case 'IMMUTABLE':
+        if (!$eval_type) {
+          $eval_type = 'NO SQL';
+        }
+        return array($eval_type, 'DETERMINISTIC');
+      case 'STABLE':
+        if (!$eval_type) {
+          $eval_type = 'READS SQL DATA';
+        }
+        return array($eval_type, 'NOT DETERMINISTIC');
+      case 'VOLATILE':
+      default:
+        if (!$eval_type) {
+          $eval_type = 'MODIFIES SQL DATA';
+        }
+        return array($eval_type, 'NOT DETERMINISTIC');
+    }
+  }
+
+  public static function get_cache_policy_from_characteristics($determinism, $eval_type) {
+    // See:
+    // http://www.postgresql.org/docs/9.3/static/sql-createfunction.html
+    // http://dev.mysql.com/doc/refman/5.5/en/create-procedure.html
+
+    // mysql:
+    // A routine is considered “deterministic” if it always produces the same result for the same input parameters, and “not deterministic” otherwise.
+    // CONTAINS SQL indicates that the routine does not contain statements that read or write data
+    // NO SQL indicates that the routine contains no SQL statements.
+    // READS SQL DATA indicates that the routine contains statements that read data, but not statements that write data.
+    // MODIFIES SQL DATA indicates that the routine contains statements that may write data
+
+    // pgsql:
+    // IMMUTABLE indicates that the function cannot modify the database and always returns the same result when given the same argument values
+    // STABLE indicates that the function cannot modify the database, and that within a single table scan it will consistently return the same result for the same argument values
+    // VOLATILE indicates that the function value can change even within a single table scan
+
+    //                   | NO SQL    | CONTAINS SQL | READS SQL DATA | MODIFIES SQL DATA
+    // ------------------+-----------+--------------+----------------+-------------------
+    // DETERMINISTIC     | IMMUTABLE | STABLE       | STABLE         | VOLATILE
+    // NOT DETERMINISTIC | VOLATILE  | VOLATILE     | VOLATILE       | VOLATILE
+
+    switch (strtoupper($determinism)) {
+      case 'DETERMINISTIC':
+        switch (strtoupper(str_replace('_', ' ', $eval_type))) {
+          case 'NO SQL':
+            return 'IMMUTABLE';
+          case 'CONTAINS SQL':
+          case 'READS SQL DATA':
+            return 'STABLE';
+          case 'MODIFIES SQL DATA':
+          default:
+            return 'VOLATILE';
+        }
+      case 'NOT DETERMINISTIC':
+      default:
+        return 'VOLATILE';
+    }
+  }
+
   public static function get_drop_sql($node_schema, $node_function) {
     if ( ! static::has_definition($node_function) ) {
       $note = "Not dropping function '{$node_function['name']}' - no definitions for mysql5";
-      dbsteward::console_line(1, $note);
+      dbsteward::warning($note);
       return "-- $note\n";
     }
-    return "DROP FUNCTION IF EXISTS " . mysql5::get_fully_qualified_object_name($node_schema['name'], $node_function['name'], 'function') . ";";
+    $function_type = static::is_procedure($node_function) ? 'PROCEDURE' : 'FUNCTION';
+    return "DROP $function_type IF EXISTS " . mysql5::get_fully_qualified_object_name($node_schema['name'], $node_function['name'], 'function') . ";";
   }
 
   public static function get_declaration($node_schema, $node_function) {

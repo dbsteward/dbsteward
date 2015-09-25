@@ -7,11 +7,7 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once 'PHPUnit/Framework/TestSuite.php';
-
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
-require_once __DIR__ . '/../mock_output_file_segmenter.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
  * @group mysql5
@@ -143,6 +139,38 @@ ALTER TABLE `test`
   ADD UNIQUE INDEX `test_idxa` (`a`);
 SQL;
     $this->common($this->xml_1a, $this->xml_1b, $expected);
+  }
+
+  public function testAddDimension() {
+  $old_xml = <<<XML
+<schema name="oldtest1a" owner="NOBODY">
+  <table name="test" owner="NOBODY">
+    <column name="a" null="false" foreignSchema="test1a" foreignTable="test2" foreignColumn="a" default="0"/>
+    <column name="b"/>
+    <index name="test_idxa" using="hash">
+      <indexDimension name="a_1">a</indexDimension>
+    </index>
+  </table>
+</schema>
+XML;
+  $new_xml = <<<XML
+<schema name="test1a" owner="NOBODY">
+  <table name="test" owner="NOBODY">
+    <column name="a" null="false" foreignSchema="test1a" foreignTable="test2" foreignColumn="a" default="0"/>
+    <column name="b" type="varchar(40)" default="NULL" null="true"/>
+    <index name="test_idxnew" using="btree" unique="false">
+      <indexDimension name="a_1">a</indexDimension>
+      <indexDimension name="b_1">b</indexDimension>
+    </index>
+  </table>
+  <table name="test2">
+    <column name="a"/>
+  </table>
+</schema>
+XML;
+
+    $expected = "ALTER TABLE `test`\n  DROP INDEX `test_idxa`,\n  ADD INDEX `test_idxnew` (`a`, `b`) USING BTREE;";
+    $this->common($old_xml, $new_xml, $expected);
   }
 
   public function testAddSomeAndChange() {

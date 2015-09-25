@@ -7,10 +7,7 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once 'PHPUnit/Framework/TestSuite.php';
-
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
  * @group mysql5
@@ -285,5 +282,31 @@ XML;
 
     $this->assertEquals(array(), $indexes, "There should be no indexes created when the fkey is on the pkey");
   }
+
+  public function testCompoundForeignKeyCreatesIndex() {
+    $xml = <<<XML
+<schema name="public" owner="ROLE_OWNER">
+  <table name="table1" owner="ROLE_OWNER" primaryKey="col1">
+    <column name="col1" type="int"/>
+    <column name="col2" type="int"/>
+    <column name="col3" type="int"/>
+    <foreignKey columns="col2, col3" foreignTable="table2" />
+  </table>
+  <table name="table2" owner="ROLE_OWNER" primaryKey="col2">
+    <column name="col2" type="int"/>
+    <column name="col3" type="int"/>
+  </table>
+</schema>
+XML;
+    
+    $schema = simplexml_load_string($xml);
+    $table = $schema->table;
+
+    $indexes = mysql5_index::get_table_indexes($schema, $table);
+    $expected = array(
+      simplexml_load_string('<index name="col2_col3" unique="false" using="btree"><indexDimension name="col2_1">col2</indexDimension><indexDimension name="col3_2">col3</indexDimension></index>')
+    );
+
+    $this->assertEquals($expected, $indexes, "There should be a compound index for the explicit foreignKey element");
+  }
 }
-?>

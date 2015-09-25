@@ -12,7 +12,9 @@ class sql99_constraint {
 
   public static function foreign_key_lookup($db_doc, $node_schema, $node_table, $column, $visited = array()) {
     $foreign = array();
-    $foreign['schema'] = dbx::get_schema($db_doc, $column['foreignSchema']);
+
+    $fschema = strlen($column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
+    $foreign['schema'] = dbx::get_schema($db_doc, $fschema);
     if ( ! $foreign['schema'] ) {
       throw new Exception("Failed to find foreign schema '{$column['foreignSchema']}' for {$node_schema['name']}.{$node_table['name']}.{$column['name']}");
     }
@@ -31,34 +33,126 @@ class sql99_constraint {
       $foreignColumn = $column['name'];
     }
 
-    $foreign['column'] = dbx::get_table_column($foreign['table'], $foreignColumn);
-    if ( ! $foreign['column'] ) {
-      var_dump($foreign['column']);
-      throw new Exception("Failed to find foreign column '{$foreignColumn}' for {$node_schema['name']}.{$node_table['name']}.{$column['name']}");
-    }
+    $foreign['column'] = self::resolve_foreign_column($db_doc,
+      $node_schema, $node_table, (string)$column['name'],
+      $foreign['schema'], $foreign['table'], $foreignColumn, $visited);
 
-    // column type is missing, and resolved foreign is also a foreign key?
-    // recurse and find the cascading foreign key
-    if ( empty($foreign['column']['type']) && !empty($foreign['column']['foreignColumn']) ) {
-      // make sure we don't visit the same column twice
-      $foreign_col = format::get_fully_qualified_column_name($foreign['schema']['name'], $foreign['table']['name'], $foreign['column']['name']);
-      if ( in_array($foreign_col, $visited) ) {
-        $local = format::get_fully_qualified_column_name($node_schema['name'], $node_table['name'], $column['name']);
-        throw new Exception("Foreign key cyclic dependency detected! Local column $local pointing to foreign column $foreign_col");
-      }
-      $visited[] = $foreign_col;
-
-      $nested_fkey = self::foreign_key_lookup($db_doc, $foreign['schema'], $foreign['table'], $foreign['column'], $visited);
-
-      // make a separate clone of the column element because we are specifying the type only for foreign key type referencing
-      $foreign['column'] = new SimpleXMLElement($foreign['column']->asXML());
-      $foreign['column']['type'] = $nested_fkey['column']['type'];
-    }
+    $table = $foreign['table'];
+    $schema = $foreign['schema'];
 
     $foreign['name'] = format_index::index_name($node_table['name'], $column['name'], 'fkey');
     $foreign['references'] = static::get_foreign_key_reference_sql($foreign);
 
     return $foreign;
+  }
+
+  public static function foreign_key_lookup_compound($db_doc, $node_schema, $node_table, $node_fkey) {
+    $lschema_name = (string)$node_schema['name'];
+    $ltable_name = (string)$node_table['name'];
+
+    $lcol_names = (string)$node_fkey['columns'];
+    $lcol_names = preg_split('/[\s,]+/', $lcol_names, -1, PREG_SPLIT_NO_EMPTY);
+    if (empty($lcol_names)) {
+      throw new Exception("Columns list on foreignKey on table $lschema_name.$ltable_name is empty or missing");
+    }
+
+    // fall back to local column names of foreign columns aren't defined
+    $fcol_names = (string)$node_fkey['foreignColumns'];
+    if (strlen($fcol_names)) {
+      $fcol_names = preg_split('/[\s,]+/', $fcol_names, -1, PREG_SPLIT_NO_EMPTY);
+    } else {
+      $fcol_names = $lcol_names;
+    }
+
+    $index_name = strlen($node_fkey['indexName']) ? (string)$node_fkey['indexName'] : format_index::index_name($ltable_name, $lcol_names[0], 'fkey');
+
+    if (($f=count($fcol_names)) !== ($l=count($lcol_names))) {
+      throw new Exception("Column mismatch on foreignKey $lschema_name.$ltable_name.$index_name: $l local columns, $f foreign columns");
+    }
+
+    // fall back to current schema name if not explicit
+    $fschema_name = strlen($node_fkey['foreignSchema']) ? (string)$node_fkey['foreignSchema'] : (string)$node_schema['name'];
+    $fschema = dbx::get_schema($db_doc, $fschema_name);
+    if (!$fschema) {
+      throw new Exception("Failed to find foreign schema '$fschema_name' for foreignKey $lschema_name.$ltable_name.$index_name");
+    }
+
+    $ftable_name = (string)$node_fkey['foreignTable'];
+    if (!strlen($ftable_name)) {
+      throw new Exception("foreignTable attribute is required on foreignKey $lschema_name.$ltable_name.$index_name");
+    }
+    $ftable = dbx::get_table($fschema, $ftable_name);
+    if (!$ftable) {
+      throw new Exception("Failed to find foreign table '$ftable_name' for foreignKey $lschema_name.$ltable_name.$index_name");
+    }
+
+    $fcols = array();
+    foreach ($fcol_names as $i => $fcol_name) {
+      $fcols[] = self::resolve_foreign_column($db_doc,
+        $node_schema, $node_table, $lcol_names[$i],
+        $fschema, $ftable, $fcol_name);
+    }
+
+    $quoted_fcols = implode(', ', array_map('format::get_quoted_column_name', $fcol_names));
+
+    return array(
+      'schema' => $fschema,
+      'table' => $ftable,
+      'column' => $fcols,
+      'name' => $index_name,
+      'references' => format::get_fully_qualified_table_name($fschema['name'], $ftable['name']) . " ($quoted_fcols)"
+    );
+  }
+
+  /**
+   * Attepts to find a column on a foreign table.
+   * Walks up table inheritance chains.
+   * If the foreign column is itself a foreign key, resolves the type of that column before returning.
+   */
+  private static function resolve_foreign_column($db_doc,
+    $local_schema, $local_table, $local_colname,
+    $foreign_schema, $foreign_table, $foreign_colname, $visited=array()) {
+
+    // walk up the foreign table inheritance chain to find the foreign column definition
+    $fschema = $foreign_schema;
+    $ftable = $foreign_table;
+    do {
+      $foreign_column = dbx::get_table_column($ftable, $foreign_colname);
+      if ($ftable['inheritsSchema']) {
+        $fschema = dbx::get_schema($db_doc, (string)$ftable['inheritsSchema']);
+      }
+
+      if ($ftable['inheritsTable']) {
+        $ftable = dbx::get_table($fschema, (string)$ftable['inheritsTable']);
+      } else {
+        $ftable = null;
+      }
+    } while (!$foreign_column && !!$fschema && !!$ftable);
+    
+    if (!$foreign_column) {
+      // column wasn't found in any referenced tables
+      throw new Exception("Local column {$local_schema['name']}.{$local_table['name']}.$local_colname references unknown column {$foreign_schema['name']}.{$foreign_table['name']}.$foreign_colname");
+    }
+
+    // column type is missing, and resolved foreign is also a foreign key?
+    // recurse and find the cascading foreign key
+    if ( empty($foreign_column['type']) && !empty($foreign_column['foreignTable']) ) {
+      // make sure we don't visit the same column twice
+      $foreign_col = format::get_fully_qualified_column_name($foreign_schema['name'], $foreign_table['name'], $foreign_column['name']);
+      if ( in_array($foreign_col, $visited) ) {
+        $local = format::get_fully_qualified_column_name($local_schema['name'], $local_table['name'], $local_colname);
+        throw new Exception("Foreign key cyclic dependency detected! Local column $local pointing to foreign column $foreign_col");
+      }
+      $visited[] = $foreign_col;
+
+      $nested_fkey = self::foreign_key_lookup($db_doc, $foreign_schema, $foreign_table, $foreign_column, $visited);
+
+      // make a separate clone of the column element because we are specifying the type only for foreign key type referencing
+      $foreign_column = new SimpleXMLElement($foreign_column->asXML());
+      $foreign_column['type'] = (string)$nested_fkey['column']['type'];
+    }
+
+    return $foreign_column;
   }
 
   public static function get_foreign_key_reference_sql($foreign) {
@@ -159,11 +253,37 @@ class sql99_constraint {
         }
       }
 
+      // look for explicit <foreignKey> elements
+      foreach ($node_table->foreignKey as $node_fkey) {
+        $foreign = self::foreign_key_lookup_compound($db_doc, $node_schema, $node_table, $node_fkey);
+        $local_cols = preg_split('/[\s,]+/', $node_fkey['columns'], -1, PREG_SPLIT_NO_EMPTY);
+        $quoted_cols = implode(', ', array_map('format::get_quoted_column_name', $local_cols));
+
+        $constraint = array(
+          'name' => (string)$node_fkey['constraintName'],
+          'schema_name' => (string)$node_schema['name'],
+          'table_name' => (string)$node_table['name'],
+          'type' => 'FOREIGN KEY',
+          'definition' => "($quoted_cols) REFERENCES {$foreign['references']}",
+          'foreign_key_data' => $foreign
+        );
+        if (isset($node_fkey['onDelete'])) {
+          $constraint['foreignOnDelete'] = (string)$node_fkey['onDelete'];
+        }
+        if (isset($node_fkey['onUpdate'])) {
+          $constraint['foreignOnUpdate'] = (string)$node_fkey['onUpdate'];
+        }
+        if (isset($node_fkey['indexName'])) {
+          $constraint['foreignIndexName'] = (string)$node_fkey['foreignIndexName'];
+        }
+        $constraints[] = $constraint;
+      }
+
       // look for constraints in columns: foreign key and unique
       foreach ($node_table->column AS $column) {
-        if ( isset($column['foreignSchema']) || isset($column['foreignTable']) ) {
+        if ( isset($column['foreignTable']) ) {
 
-          if ( empty($column['foreignSchema']) || empty($column['foreignTable']) ) {
+          if ( empty($column['foreignTable']) ) {
             throw new Exception("Invalid foreignSchema|foreignTable pair for {$node_schema['name']}.{$node_table['name']}.{$column['name']}");
           }
           if ( ! empty($column['type']) ) {

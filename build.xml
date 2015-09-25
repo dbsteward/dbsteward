@@ -115,7 +115,7 @@ http://dbsteward.org/
       <developer user="ajette" name="Adam Jette" email="jettea46@yahoo.com" />
       <developer user="rhamilton" name="Rusty Hamilton" email="rusty@shrub3.net" />
 
-      <license>http://www.opensource.org/licenses/bsd-license.php Simplified BSD License</license>
+      <license>BSD 2 Clause http://opensource.org/licenses/BSD-2-Clause</license>
 
       <version release="${package.version}" api="${package.api_version}" />
       <stability release="stable" api="stable" />
@@ -126,6 +126,143 @@ http://dbsteward.org/
       </dependencies>
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
+
+      <changelog version="1.4.1" date="2015-09-15" license="Simplified BSD License">
+DBSteward 1.4.1 Release
+
+Changes
+* Slony ID numbering tools --slonyid et al github/nkiraly/DBSteward PR #102 issue #101
+* mysql5 foreign key index extraction and handling improvements github/nkiraly/DBSteward PR #103 issue #88
+* foreign key definition additions for ON DELETE, ON UPDATE github/nkiraly/DBSteward PR #103 issue #100
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8, 9
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8, 9
+* mysql5    - MySQL 5
+
+      </changelog>
+
+      <changelog version="1.4.0" date="2015-08-21" license="Simplified BSD License">
+DBSteward 1.4.0 Release
+
+Changes
+* Update docs/ to match 1.4 API CLI and output changes
+* Drop PEAR package support. Please use composer: https://github.com/nkiraly/DBSteward/blob/v1.4.0-alpha1/doc/INSTALLING.md
+* Add additional quotereservednames flag and separate quoteillegalnames to only affect those github/nkiraly/DBSteward PR #69
+* New and Improved Logging features via switching to monolog github/nkiraly/DBSteward PR #82
+* Make foreignSchema attribute optional and default to the current schema github/nkiraly/DBSteward PR #81
+* Add unit test coverage information via Coveralls https://coveralls.io/r/nkiraly/DBSteward github/nkiraly/DBSteward PR #83
+* Fix pgsql8 DEFAULT parenthesis wrapping github/nkiraly/DBSteward PR #84 
+* Fix pgsql8 index name generation to not exceed maximum length github/nkiraly/DBSteward PR #86
+* Add pgsql8 CREATE INDEX CONCURRENTLY support to definition XML
+* Reorganized slonik output files for --generateslonik slony replication to include preamble github/nkiraly/DBSteward PR #90
+* Include execute script and and subscribe set statements in revamped slonik output files github/nkiraly/DBSteward PR #90
+* XML foreignKey element support and constraint definition refactoring github/nkiraly/DBSteward PR #93 issue #87
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8, 9
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8, 9
+* mysql5    - MySQL 5
+
+      </changelog>
+      
+      <changelog version="1.3.12" date="2015-04-29" license="Simplified BSD License">
+DBSteward 1.3.12 Release
+
+Changes
+* allow infinite includeFile depth of definition fragment XML files
+* update outdated sample XML
+* View definition dependency support with new view element dependsOnViews attribute github/nkiraly/DBSteward PR #75
+* fix SQL output file transactionality when generating stage files for execution by slonik github/nkiraly/DBSteward PR #76
+* mysql5 column default removal fix github/nkiraly/DBSteward PR #77
+* Contextualize pgsql8 VIEW Slony Replica Set ID DROP / CREATE
+* Drop and recreate pgsql8 functions referring to types modified in the definition github/nkiraly/DBSteward PR #78
+* Optional tabrow delimiter specificity github/nkiraly/DBSteward PR #79
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
+
+      <changelog version="1.3.11" date="2014-08-28" license="Simplified BSD License">
+DBSteward 1.3.11 Release
+
+Changes
+* fix cross-schema references of table-inherited columns
+* fix double quote support in sql tags
+* pgsql8 fix extraction of foreign key ON actions
+* mysql5 function characteristic definition and extraction support
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
+
+      <changelog version="1.3.10" date="2014-06-24" license="Simplified BSD License">
+DBSteward 1.3.10 Release
+
+Changes
+* psql8 inherited table static row definition bugfixes
+* mysql5 table partition support for extracton and diffing
+* mysql5 stored procedure extraction and diffing support
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
+
+      <changelog version="1.3.9" date="2014-05-18" license="Simplified BSD License">
+DBSteward 1.3.9 Release
+
+Changes
+* mysql5 duplicate implicit index create statement bug fix
+* pgsql8 index extraction PHP runtime error
+* miscellaneous PHP runtime warning polish
+* fix for slonyId slony set association to be consistent between sequences and tables
+* fix for parent table dependency order calculations when diffing
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8
+* mysql5    - MySQL 5
+
+      </changelog>
 
       <changelog version="1.3.8" date="2014-04-01" license="Simplified BSD License">
 DBSteward 1.3.8 Release
@@ -540,22 +677,23 @@ Supported db structure dump into DBSteward XML:
 
   <target name="clean">
     <echo message="Removing build directory..." />
-    <delete dir="${directory.build}/**" />
-    <delete dir="${directory.build}/" />
+    <delete dir="${directory.build}" />
     <echo message="" />
 
     <echo message="Removing package directory..." />
-    <delete dir="${directory.package}/**" />
-    <delete dir="${directory.package}/" />
+    <delete dir="${directory.package}" />
     <echo message="" />
 
     <echo message="Removing apidocs directory..." />
-    <delete dir="${directory.apidocs}/**" />
-    <delete dir="${directory.apidocs}/" />
+    <delete dir="${directory.apidocs}" />
     <echo message="" />
 
     <echo message="Removing testdata contents..." />
-    <delete dir="${project.basedir}/tests/testdata/**" />
+    <delete>
+      <fileset dir="${project.basedir}/tests/testdata/">
+        <include name="**" />
+      </fileset>
+    </delete>
     <echo message="" />
   </target>
 

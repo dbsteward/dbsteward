@@ -68,7 +68,7 @@
 <!ATTLIST schema description CDATA #IMPLIED>
 <!ATTLIST schema slonySetId CDATA #IMPLIED>
 
-<!ELEMENT table (tablePartition?, tableOption*, column+, index*, constraint*, grant*, rows?)>
+<!ELEMENT table (tablePartition?, tableOption*, column+, index*, constraint*, foreignKey*, grant*, rows?)>
 <!ATTLIST table name CDATA #REQUIRED>
 <!ATTLIST table primaryKey CDATA #REQUIRED>
 <!ATTLIST table primaryKeyName CDATA #IMPLIED>
@@ -126,9 +126,11 @@
 <!ELEMENT index (indexDimension+, indexWhere?)>
 <!ATTLIST index name CDATA #REQUIRED>
 <!ATTLIST index unique (true|false) #IMPLIED>
+<!ATTLIST index concurrently (true|false) #IMPLIED>
 <!ATTLIST index using (hash|btree|gist|gin|KEY) #REQUIRED>
 <!ELEMENT indexDimension (#PCDATA)>
 <!ATTLIST indexDimension name CDATA #REQUIRED>
+<!ATTLIST indexDimension sql (true|false) #IMPLIED>
 <!ELEMENT indexWhere (#PCDATA)>
 <!ATTLIST indexWhere sqlFormat CDATA #REQUIRED>
 
@@ -139,6 +141,16 @@
 <!ATTLIST constraint foreignIndexName CDATA #IMPLIED>
 <!ATTLIST constraint foreignSchema CDATA #IMPLIED>
 <!ATTLIST constraint foreignTable CDATA #IMPLIED>
+
+<!ELEMENT foreignKey EMPTY>
+<!ATTLIST foreignKey columns CDATA #REQUIRED>
+<!ATTLIST foreignKey foreignSchema CDATA #IMPLIED>
+<!ATTLIST foreignKey foreignTable CDATA #REQUIRED>
+<!ATTLIST foreignKey foreignColumns CDATA #IMPLIED>
+<!ATTLIST foreignKey constraintName CDATA #REQUIRED>
+<!ATTLIST foreignKey indexName CDATA #IMPLIED>
+<!ATTLIST foreignKey onUpdate CDATA #IMPLIED>
+<!ATTLIST foreignKey onDelete CDATA #IMPLIED>
 
 <!ELEMENT rows (row+)>
 <!ATTLIST rows columns CDATA #REQUIRED>
@@ -154,12 +166,17 @@
 <!ATTLIST tableOption name CDATA #REQUIRED>
 <!ATTLIST tableOption value CDATA #IMPLIED>
 
-<!ELEMENT tablePartition (tablePartitionOption*)>
+<!ELEMENT tablePartition (tablePartitionOption*, tablePartitionSegment*)>
 <!ATTLIST tablePartition type CDATA #REQUIRED>
+<!ATTLIST tablePartition sqlFormat CDATA #IMPLIED>
 
 <!ELEMENT tablePartitionOption EMPTY>
 <!ATTLIST tablePartitionOption name CDATA #REQUIRED>
 <!ATTLIST tablePartitionOption value CDATA #REQUIRED>
+
+<!ELEMENT tablePartitionSegment EMPTY>
+<!ATTLIST tablePartitionSegment name CDATA #REQUIRED>
+<!ATTLIST tablePartitionSegment value CDATA #REQUIRED>
 
 <!ELEMENT sequence (grant*)>
 <!ATTLIST sequence name CDATA #REQUIRED>
@@ -180,11 +197,12 @@
 <!ATTLIST function description CDATA #IMPLIED>
 <!ATTLIST function procedure (true) #IMPLIED>
 <!ATTLIST function cachePolicy (IMMUTABLE|STABLE|VOLATILE) "VOLATILE">
+<!ATTLIST function mysqlEvalType (CONTAINS_SQL|NO_SQL|READS_SQL_DATA|MODIFIES_SQL_DATA) #IMPLIED>
 <!ATTLIST function securityDefiner (true|false) #IMPLIED>
 <!ATTLIST function forceRedefine (true|false) #IMPLIED>
 <!ATTLIST function slonySetId CDATA #IMPLIED>
 <!ELEMENT functionParameter EMPTY>
-<!ATTLIST functionParameter direction (IN|OUT) #IMPLIED>
+<!ATTLIST functionParameter direction (IN|OUT|INOUT) #IMPLIED>
 <!ATTLIST functionParameter name CDATA #IMPLIED>
 <!ATTLIST functionParameter type CDATA #REQUIRED>
 <!ELEMENT functionDefinition (#PCDATA)>
@@ -223,5 +241,6 @@
 <!ATTLIST view owner CDATA #REQUIRED>
 <!ATTLIST view description CDATA #IMPLIED>
 <!ATTLIST view slonySetId CDATA #IMPLIED>
+<!ATTLIST view dependsOnViews CDATA #IMPLIED>
 <!ELEMENT viewQuery (#PCDATA)>
 <!ATTLIST viewQuery sqlFormat CDATA #IMPLIED>

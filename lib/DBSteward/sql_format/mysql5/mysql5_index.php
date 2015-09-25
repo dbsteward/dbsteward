@@ -53,12 +53,13 @@ class mysql5_index extends sql99_index {
         $found = (string)$node_table['primaryKey'] == (string)$column['name'];
         if (!$found) {
           foreach ($nodes as $node) {
-            if (count($node->indexDimension) == 1 && (string)$node->indexDimension[0] == (string)$column['name']) {
+            if ((string)$node->indexDimension[0] == (string)$column['name']) {
               $found = true;
               break;
             }
           }
         }
+ 
         if (!$found) {
           // no? then create one
           $fkey_index = new SimpleXMLElement('<index/>');
@@ -72,6 +73,23 @@ class mysql5_index extends sql99_index {
           $nodes[] = $fkey_index;
         }
       }
+    }
+
+    // Add explicit foreignKeys to the list
+    foreach ($node_table->foreignKey as $fkey) {
+      $cols = preg_split('/[\s,]+/', $fkey['columns'], -1, PREG_SPLIT_NO_EMPTY);
+
+      $fkey_index = new SimpleXMLElement('<index/>');
+      $fkey_index['name'] = (string)$fkey['indexName'] ?: (string)$fkey['constraintName'] ?: static::get_index_name(implode('_', $cols), $nodes);
+      $fkey_index['unique'] = 'false';
+      $fkey_index['using'] = 'btree';
+
+      foreach ($cols as $i => $col) {
+        $fkey_index->addChild('indexDimension', $col)
+                   ->addAttribute('name', $col . '_' . ($i + 1));
+      }
+
+      $nodes[] = $fkey_index;
     }
 
     $names = array();
@@ -199,7 +217,7 @@ class mysql5_index extends sql99_index {
         break;
 
       default:
-        dbsteward::console_line(1, "MySQL does not support the $using index type, defaulting to BTREE");
+        dbsteward::warning("MySQL does not support the $using index type, defaulting to BTREE");
         return 'BTREE';
         break;
     }

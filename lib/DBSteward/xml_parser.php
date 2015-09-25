@@ -41,7 +41,6 @@ class xml_parser {
 
   /**
    * Composite a list of XML files into one dbsteward definition
-   * @NOTICE: only 'base' XML files, those listed in the $files list should contain includeFile entries
    *
    * @param  array     $files                       list of files to composite
    * @param  integer   $xml_collect_data_addendums  number of files at the end of the list to collate for addendum
@@ -63,7 +62,7 @@ class xml_parser {
 
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
-      dbsteward::console_line(1, "Loading XML " . realpath($file_name) . "..");
+      dbsteward::notice("Loading XML " . realpath($file_name) . "..");
       $xml_contents = @file_get_contents($file_name);
       if ($xml_contents === FALSE) {
         throw new exception("Failed to load XML from disk: " . $file_name);
@@ -74,7 +73,7 @@ class xml_parser {
         throw new Exception("failed to simplexml_load_string() contents of " . $file_name);
       }
 
-      dbsteward::console_line(1, "Compositing XML File " . $file_name);
+      dbsteward::notice("Compositing XML File " . $file_name);
 
       $composite = self::composite_doc($composite, $doc, $i, $file_name, $start_addendums_idx, $addendums_doc);
     }
@@ -140,7 +139,7 @@ class xml_parser {
       if ( isset($doc_clone->inlineAssembly) ) {
         $doc_clone_ila = clone $doc_clone;
         unset($doc_clone_ila->database);
-        self::xml_composite_children($base, $doc_clone_ila);
+        self::xml_composite_children($base, $doc_clone_ila, $file_name);
       }
       
       // if not defined in the base yet
@@ -149,40 +148,19 @@ class xml_parser {
         $base->addChild('database');
       }
     }
-
-    // do overlay includes first, to allow definer to overwrite included file values at the same level
-    while (isset($overlay->includeFile)) {
-      foreach ($overlay->includeFile AS $includeFile) {
-        $include_file_name = (string)($includeFile['name']);
-        // if include_file_name does not appear to be absolute, make it relative to its parent
-        if (substr($include_file_name, 0, 1) != '/') {
-          $include_file_name = dirname($file_name) . '/' . $include_file_name;
-        }
-        dbsteward::console_line(1, "Compositing XML includeFile " . $include_file_name);
-        $include_doc = simplexml_load_file($include_file_name);
-        if ($include_doc === FALSE) {
-          throw new Exception("failed to simplexml_load_file() includeFile " . $include_file_name);
-        }
-        $include_doc = xml_parser::expand_tabrow_data($include_doc);
-        $include_doc = xml_parser::sql_format_convert($include_doc);
-        self::xml_composite_children($base, $include_doc);
-      }
-      unset($overlay->includeFile);
-      unset($base->includeFile);
-    }
     
     // if doc_clone is defined, there were database element values to overlay.
     // now that includeFile has been processed, put these values overlaid "last"
     if ( $doc_clone ) {
-      self::xml_composite_children($base->database, $doc_clone->database);
+      self::xml_composite_children($base->database, $doc_clone->database, $file_name);
     }
 
     // includes done, now put $overlay values in, to allow definer to overwrite included file values at the same level
     if ($addendums_doc != NULL && $i >= $start_addendums_idx) {
-      self::xml_composite_children($base, $overlay, $addendums_doc);
+      self::xml_composite_children($base, $overlay, $file_name, $addendums_doc);
     }
     else {
-      self::xml_composite_children($base, $overlay);
+      self::xml_composite_children($base, $overlay, $file_name);
     }
 
     return $base;
@@ -202,7 +180,28 @@ class xml_parser {
     }
   }
 
-  public static function xml_composite_children(&$base, &$overlay, &$addendum = NULL) {
+  public static function xml_composite_children(&$base, &$overlay, $file_name, &$addendum = NULL) {
+    // do overlay includes first, to allow definer to overwrite included file values at the same level
+    while (isset($overlay->includeFile)) {
+      foreach ($overlay->includeFile AS $includeFile) {
+        $include_file_name = (string)($includeFile['name']);
+        // if include_file_name does not appear to be absolute, make it relative to its parent
+        if (substr($include_file_name, 0, 1) != '/') {
+          $include_file_name = dirname($file_name) . '/' . $include_file_name;
+        }
+        dbsteward::notice("Compositing XML includeFile " . $include_file_name);
+        $include_doc = simplexml_load_file($include_file_name);
+        if ($include_doc === FALSE) {
+          throw new Exception("failed to simplexml_load_file() includeFile " . $include_file_name);
+        }
+        $include_doc = xml_parser::expand_tabrow_data($include_doc);
+        $include_doc = xml_parser::sql_format_convert($include_doc);
+        self::xml_composite_children($base, $include_doc, $include_file_name);
+      }
+      unset($overlay->includeFile);
+      unset($base->includeFile);
+    }
+
     // overlay elements found in the overlay node
     foreach ($overlay->children() AS $child) {
       // always reset the base relative node to null to prevent loop carry-over
@@ -313,7 +312,7 @@ class xml_parser {
         }
         // doesn't exist
         if (count($nodes) == 0) {
-          //dbsteward::console_line(7, "DEBUG: Add missing trigger: " . $child->asXML());
+          dbsteward::debug("DEBUG: Add missing trigger: " . $child->asXML());
           $node = $base->addChild($tag_name, dbsteward::string_cast($child));
           $node->addAttribute('name', $child['name']);
         }
@@ -374,7 +373,9 @@ class xml_parser {
       }
       // add / compare sql tags based on their contents making them unique, not their name
       else if (strcasecmp($tag_name, 'sql') == 0) {
-        $nodes = $base->xpath('sql[. ="' . $child . '"]');
+        // just replace the " with &quote; since we're embedding it, DOMDocument text nodes won't escape for
+        // this specific purpose
+        $nodes = $base->xpath('sql[. ="' . str_replace('"', '&quote;', $child) . '"]');
         if ($nodes === FALSE) {
           throw new exception("xpath to lookup sql match for sql element inner text '" . $child . "' returned error");
         }
@@ -465,7 +466,7 @@ class xml_parser {
 
       // recurse if child has children
       if (count($child->children()) > 0) {
-        self::xml_composite_children($node, $child, $node2);
+        self::xml_composite_children($node, $child, $file_name, $node2);
       }
     }
 
@@ -570,7 +571,7 @@ class xml_parser {
       // sanity check the overlay's rows columns list against the col count of the row
       $overlay_row_count = count($overlay_row->col);
       if (count($overlay_cols) != $overlay_row_count) {
-        dbsteward::console_line(1, count($overlay_cols) . " elements != " . $overlay_row_count . " elements");
+        dbsteward::error(count($overlay_cols) . " overlay columns != " . $overlay_row_count . " overlay elements");
         var_dump($overlay_cols);
         foreach ($overlay_row->col AS $olcol) {
           var_dump($olcol);
@@ -582,7 +583,7 @@ class xml_parser {
       // if the node had no ->row's to start
       // don't try to match any of the children we are considering in this loop
       if ($base_table_rows_count == 0) {
-        //dbsteward::console_line(7, "DEBUG: skipping " . $base_table['name'] . " overlay -- no base table rows");
+        dbsteward::debug("DEBUG: skipping " . $base_table['name'] . " overlay -- no base table rows");
         $row_match = FALSE;
       }
       else {
@@ -599,18 +600,6 @@ class xml_parser {
         }
         // $row_match = self::data_row_overlay_key_search($base_table_rows, $overlay_row, $primary_key_index, $base_row_index);
       }
-      
-/* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
-if ( strcasecmp($base_table['name'], 'ponderoustable') == 0 ) {
-  $pkv = '';
-  foreach($primary_key_index AS $pki_table => $pki_table_map) {
-    $pkv .= $overlay_cols[$pki_table_map['overlay_index']] . ' = ' . $overlay_row->col[$pki_table_map['overlay_index']] . ', ';
-  }
-  $pkv = substr($pkv, 0, -2);
-  $pkv = "(" . $pkv . ")";
-  dbsteward::console_line(4, "DEBUG: " . $base_table['name'] . " primary key " . $pkv . " match at " . $base_row_index);
-}
-/**/
 
       if ($row_match) {
         // $base_row_index is set to $i in _match() when a match is found, so use it to overlay the matched row
@@ -666,11 +655,6 @@ if ( strcasecmp($base_table['name'], 'ponderoustable') == 0 ) {
         var_dump($overlay_row);
         throw new exception("failed to find overlay_col " . $overlay_cols[$j] . " in base_cols");
       }
-/* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
-if ( strcasecmp($base['name'], 'ponderoustable') == 0 && strcasecmp($overlay_cols[$j], 'ponderouscolumn') == 0 ) {
-  dbsteward::console_line(6, "DEBUG: " . $base['name'] . " base index match for " . $overlay_cols[$j] . " at " . $base_col_index);
-}
-/**/
 
       // if has null="true" set, null the column
       if (isset($overlay_row->col[$j]['null']) && strcasecmp($overlay_row->col[$j]['null'], 'true') == 0) {
@@ -693,11 +677,6 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 && strcasecmp($overlay_col
         // it seems in the late versions of PHP 5.2, that LESS ampersand magic is required, albeit some in other places still is
         // see the ampersand_magic function docblock for more confusion
         //$node_row->col[$base_col_index] = self::ampersand_magic($overlay_row->col[$j]);
-/* DATA OVERLAY DEBUG TACTICAL WEAPON. UNCOMMENT TO BRING THE RAIN. Search for companion blocks of code
-if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
-  dbsteward::console_line(6, "DEBUG: overwrite " . $overlay_cols[$j] . " value " . $node_row->col[$base_col_index] . " as " . $overlay_row->col[$j]);
-}
-/**/
         $node_row->col[$base_col_index] = $overlay_row->col[$j];
       }
       // the overlay column is empty
@@ -752,7 +731,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
 
     // attempt to verify that xmllint exists on the system
     if ($echo_status) {
-      dbsteward::console_line(1, "Locating xmllint executable...");
+      dbsteward::debug("Locating xmllint executable...");
     }
 
     // which will return 1 on failure to find executable, so dbsteward::cmd will throw an exception
@@ -764,13 +743,13 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
     }
 
     if ($echo_status) {
-      dbsteward::console_line(1, "Found xmllint");
+      dbsteward::debug("Found xmllint");
     }
 
     // realpath the dtd_file so when it is announced it is simplified to remove relative directory pathing
     $dtd_file = realpath($dtd_file);
     if ($echo_status) {
-      dbsteward::console_line(1, "Validating XML (size = " . strlen($xml) . ") against $dtd_file");
+      dbsteward::info("Validating XML (size = " . strlen($xml) . ") against $dtd_file");
     }
     $tmp_file = tempnam(sys_get_temp_dir(), 'dbsteward_validate_');
     if (file_put_contents($tmp_file, $xml) === FALSE) {
@@ -778,7 +757,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
     }
     dbsteward::cmd("xmllint --noout --dtdvalid " . $dtd_file . " " . $tmp_file . " 2>&1");
     if ($echo_status) {
-      dbsteward::console_line(1, "XML Validates (size = " . strlen($xml) . ") against $dtd_file OK");
+      dbsteward::info("XML Validates (size = " . strlen($xml) . ") against $dtd_file OK");
     }
     unlink($tmp_file);
   }
@@ -810,11 +789,11 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
         if ( self::table_has_dependency($table_list[$i], $table_list[$j]) ) {
           // if the table has been visited more than 3 times the number of tables, stop trying
           if ( isset($visited[$visited_index]) && $visited[$visited_index] > $table_list_count * 3 ) {
-            dbsteward::console_line(4, "table " . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " has been processed as a dependency more than 3 times as many total tables; skipping further reordering");
+            dbsteward::warning("table " . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " has been processed as a dependency more than 3 times as many total tables; skipping further reordering");
             break 1;
           }
 
-          // dbsteward::console_line(7, "table_dependency_order i = $i j = $j    i (" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . ") has dependency on j (" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . ")");
+          dbsteward::trace("table_dependency_order i = $i j = $j    i (" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . ") has dependency on j (" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . ")");
 
           // increment that i table dependency was visited
           if ( !isset($visited[$visited_index]) ) {
@@ -871,17 +850,18 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    * @return boolean
    */
   public static function table_has_dependency($a, $b) {
+
     // does b contain a column that a references?
     $columns = $a['table']->xpath('column');
     foreach ($columns AS $column) {
       // column is a foreignKey column ?
       if (isset($column['foreignTable'])) {
         // talking about the same schema?
-        if (strcasecmp($column['foreignSchema'], $b['schema']['name']) == 0) {
+        if (strlen($column['foreignSchema']) === 0 || strcasecmp($column['foreignSchema'], $b['schema']['name']) == 0) {
           // talking about the same table?
           if (strcasecmp($column['foreignTable'], $b['table']['name']) == 0) {
             // so yes, a has a dependency on b via column inline foreign key definition
-            //dbsteward::console_line(7, $a['schema']['name'] . '.' . $a['table']['name'] . '.' . $column['name'] . "\thas inline fkey dep on\t" . $b['schema']['name'] . '.' . $b['table']['name']);
+            dbsteward::debug($a['schema']['name'] . '.' . $a['table']['name'] . '.' . $column['name'] . "\thas inline fkey dep on\t" . $b['schema']['name'] . '.' . $b['table']['name']);
             return TRUE;
           }
         }
@@ -899,19 +879,29 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
             // talking about the same table?
             if (strcasecmp($constraint['foreignTable'], $b['table']['name']) == 0) {
               // so yes, a has a dependency on b via constraint definition
-              //dbsteward::console_line(7, $a['schema']['name'] . '.' . $a['table']['name'] . '.' . $column['name'] . "\thas constraint dep on\t" . $b['schema']['name'] . '.' . $b['table']['name']);
+              dbsteward::trace($a['schema']['name'] . '.' . $a['table']['name'] . '.' . $column['name'] . "\thas constraint dep on\t" . $b['schema']['name'] . '.' . $b['table']['name']);
               return TRUE;
             }
           }
         }
       }
     }
+
+    // does table A inherit from table B? If so, obviously dependent on it
+    if (isset($a['table']->attributes()->inheritsSchema) || isset($a['table']->attributes()->inheritsTable)) {
+       if (strcasecmp($a['table']->attributes()->inheritsSchema, $b['schema']['name']) == 0 &&
+           strcasecmp($a['table']->attributes()->inheritsTable, $b['table']['name']) == 0) {
+
+           return TRUE;
+       }
+    }
+
     return FALSE;
   }
 
   public static $table_dependency_sort_depth = 0;
   public static function table_dependency_sort(&$table_list, $recursion_index = FALSE) {
-    dbsteward::console_line(6, "DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "ENTER table_dependency_sort()");
+    dbsteward::debug("DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "ENTER table_dependency_sort()");
     self::$table_dependency_sort_depth++;
     for ($i = 0; $i < floor(count($table_list) / 2); $i++) {
       $append_list = array();
@@ -922,7 +912,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
         }
         // i depends on j ?
         if (self::table_has_dependency($table_list[$i], $table_list[$j])) {
-          dbsteward::console_line(6, "DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . " " . $i . "\tDEPENDS ON\t" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " " . $j);
+          dbsteward::debug("DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . " " . $i . "\tDEPENDS ON\t" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " " . $j);
           $append_list = array_merge($append_list, array($table_list[$i]));
           // discard the i entry in main array
           unset($table_list[$i]);
@@ -954,7 +944,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
       }
     }
     self::$table_dependency_sort_depth--;
-    dbsteward::console_line(6, "DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "RETURN table_dependency_sort()");
+    dbsteward::debug("DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "RETURN table_dependency_sort()");
   }
 
   /**
@@ -984,7 +974,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
 
     foreach ($pgdatafiles AS $file) {
       $file_name = realpath($file);
-      dbsteward::console_line(1, "Loading postgres data XML " . $file_name);
+      dbsteward::notice("Loading postgres data XML " . $file_name);
       $xml_contents = @file_get_contents($file_name);
       if ($xml_contents === FALSE) {
         throw new exception("Failed to load postgres data XML from disk: " . $file_name);
@@ -994,7 +984,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
         throw new Exception("failed to simplexml_load_string() contents of " . $file_name);
       }
 
-      dbsteward::console_line(1, "Compositing postgres data (size=" . strlen($xml_contents) . ")");
+      dbsteward::info("Compositing postgres data (size=" . strlen($xml_contents) . ")");
       foreach ($doc AS $schema) {
         foreach ($schema AS $table) {
           $table_xpath = "schema[@name='" . $schema->getName() . "']/table[@name='" . $table->getName() . "']";
@@ -1060,6 +1050,47 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
   }
 
   /**
+   * Go up the parent chain until the default value is found
+  */
+  protected static function recurse_inheritance_get_column($table_node, $column_name) {
+    $inherit_schema = $table_node->attributes()->inheritsSchema;
+    $inherit_table = $table_node->attributes()->inheritsTable;
+    $parent = $table_node->xpath('parent::*');
+    if ((string)$parent[0]->attributes()->name == (string)$inherit_schema) {
+      $nodes = $table_node->xpath('parent::*/table[@name="' . $inherit_table . '"]/column[@name="' . $column_name . '"]');
+      if (empty($nodes)) {
+        $grandparent = $table_node->xpath('parent::*/table[@name="' . $inherit_table . '"]');
+        if (count($grandparent) == 1 && isset($grandparent[0]->attributes()->inheritsSchema)) {
+          return static::recurse_inheritance_get_column($grandparent[0], $column_name);
+        }
+      }
+      return $nodes;
+    }
+    return NULL;
+  }
+
+  /**
+   * Gets the column present within a table, if it isn't present go up the inheritance
+   * chain to find it.
+   *
+  */
+  public static function inheritance_get_column($table_node, $column_name) {
+    $xpath = 'column[@name="' . $column_name . '"]';
+    $nodes = $table_node->xpath($xpath);
+    if (count($nodes) != 1) {
+      // if couldn't be found, check the inheritance chain and see if the column exists there
+      if (isset($table_node->attributes()->inheritsSchema)) {
+        $nodes = static::recurse_inheritance_get_column($table_node, $column_name);
+      }
+      else if (count($nodes) == 0) {
+        throw new exception("Could not find column " . $column_name . " in table " . $table_node['name'] . " or in its parents -- panic!");
+      }
+    }
+
+    return $nodes;
+  }
+
+  /**
    * return the column default value if it is defined
    *
    * @param SimpleXMLNode  $table_name   table definition xml node
@@ -1069,11 +1100,11 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
    */
   public static function column_default_value(&$table_node, $column_name, &$node) {
     // find the column node in the table
-    $xpath = 'column[@name="' . $column_name . '"]';
-    $nodes = $table_node->xpath($xpath);
-    if (count($nodes) != 1) {
+    $nodes = static::inheritance_get_column($table_node, $column_name);
+    if (is_null($nodes) || count($nodes) != 1) {
       throw new exception(count($nodes) . " column elements found via xpath '" . 'column[@name="' . $column_name . '"]' . "' - unexpected!");
     }
+
     $column_node = &$nodes[0];
 
     $default_value = NULL;
@@ -1084,11 +1115,11 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
       if (strcasecmp($column_node['default'], 'null') == 0) {
         // the column is allowed to be null and the definition of default is null
         // so instead of setting the value, mark the column null
-        //dbsteward::console_line(7, 'column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default null');
+        dbsteward::trace('column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default null');
         $node['null'] = 'true';
       }
       else {
-        ////dbsteward::console_line(7, 'column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default value ' . $column_node['default']);
+        dbsteward::trace('column_default_value ' . $table_node['name'] . '.' . $column_node['name'] . ' default value ' . $column_node['default']);
         $default_value = format::strip_string_quoting($default_value);
       }
     }
@@ -1336,7 +1367,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
           // MySQL doesn't have a "public" role, and will attempt to create the user "PUBLIC"
           // instead, warn and alias to ROLE_APPLICATION
           $role = dbsteward::string_cast($db_doc->database->role->application);
-          dbsteward::console_line(1, "Warning: MySQL doesn't support the PUBLIC role, using ROLE_APPLICATION ('$role') instead.");
+          dbsteward::warning("Warning: MySQL doesn't support the PUBLIC role, using ROLE_APPLICATION ('$role') instead.");
         }
         else {
           $role = 'PUBLIC';
@@ -1367,7 +1398,7 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
             // without having to modify the 450000 calls to role_enum
             // return role->owner when a role macro is not found and there is no custom role called $role
             $owner = $db_doc->database->role->owner;
-            dbsteward::console_line(1, "Warning: Ignoring custom roles. Role '$role' is being overridden by ROLE_OWNER ('$owner').");
+            dbsteward::warning("Warning: Ignoring custom roles. Role '$role' is being overridden by ROLE_OWNER ('$owner').");
             return $owner;
           }
         }
@@ -1388,10 +1419,22 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
     foreach ($doc->schema AS $schema) {
       foreach ($schema->table as $table) {
         if (isset($table->rows)) {
+          $delimiter = "\t";
+          if (!empty($table->rows['tabrowDelimiter'])) {
+            $delimiter = (string)$table->rows['tabrowDelimiter'];
+            if ($delimiter == '\t') {
+              $delimiter = "\t";
+            }
+            elseif ($delimiter == '\n') {
+              $delimiter = "\n";
+            }
+            unset($table->rows['tabrowDelimiter']);
+          }
+
           if (isset($table->rows->tabrow)) {
             foreach ($table->rows->tabrow AS $tabrow) {
               $row = $table->rows->addChild('row');
-              $cols = explode("\t", $tabrow);
+              $cols = explode($delimiter, $tabrow);
               foreach ($cols AS $col) {
                 // similar to pgsql \N notation, make the column value explicitly null
                 if (strcmp($col, '\N') == 0) {
@@ -1675,6 +1718,80 @@ if ( strcasecmp($base['name'], 'ponderoustable') == 0 ){
       $column['default'] = "'1970-01-01'";
     }
   }
-}
+  
+  /**
+   * Insert any missing slonyId and slonySetId as specifeid by dbsteward mode variables
+   * 
+   * @param SimpleXML $indoc
+   * @return SimpleXML
+   */
+  public static function slonyid_number($indoc) {
+    $outdoc = clone $indoc;
+    
+    // start with --slonyidsetvalue=
+    $slony_set_id = dbsteward::$slonyid_set_value;
+    // start slony ID at --slonyidstartvalue=
+    $slony_id = dbsteward::$slonyid_start_value;
+    
+    foreach ($outdoc->schema AS $schema) {
+      xml_parser::slonyid_number_set($schema, $slony_set_id);
 
-?>
+      foreach ($schema->table AS $table) {
+        xml_parser::slonyid_number_set($table, $slony_set_id);
+        xml_parser::slonyid_number_id($table, $slony_id);
+
+        foreach ($table->column as $column) {
+          // make sure any serial columns have slonySetId
+          if (sql99_column::is_serial($column['type'])) {
+            xml_parser::slonyid_number_set($column, $slony_set_id);
+            xml_parser::slonyid_number_id($column, $slony_id);
+          }
+        }
+      }
+
+      foreach ($schema->trigger AS $trigger) {
+        xml_parser::slonyid_number_set($trigger, $slony_set_id);
+      }
+
+      foreach ($schema->sequence AS $sequence) {
+        xml_parser::slonyid_number_set($sequence, $slony_set_id);
+        xml_parser::slonyid_number_id($sequence, $slony_id);
+      }
+
+      foreach ($schema->function AS $function) {
+        xml_parser::slonyid_number_set($function, $slony_set_id);
+      }
+
+      foreach ($schema->sql AS $sql) {
+        xml_parser::slonyid_number_set($sql, $slony_set_id);
+      }
+    }
+
+    return $outdoc;
+  }
+  
+  protected static function slonyid_number_set(&$element, &$id) {
+    // if slony set IDs are required
+    if (dbsteward::$require_slony_set_id) {
+      // if slonySetId is not specified
+      if (!isset($element['slonySetId'])) {
+        // set unspecified slonySetIds to $id
+        $element['slonySetId'] = $id;
+      }
+    }
+  }
+
+  protected static function slonyid_number_id(&$element, &$id) {
+    // if slony IDs are required
+    if (dbsteward::$require_slony_id) {
+      // if slonyId is not specified
+      if (!isset($element['slonyId'])) {
+        // set unspecified slonyIds to $id
+        $element['slonyId'] = $id;
+        // and increment it
+        $id++;
+      }
+    }
+  }
+
+}

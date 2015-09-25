@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  someapp_v2.xml
+  DBSteward database structure definition example
+  Upgrade definition with changes
+-->
+<dbsteward>
+  <database>
+    <role>
+      <application>someapp</application>
+      <owner>pgsql</owner>
+      <replication>someapp_slony</replication>
+      <readonly>someapp_readonly</readonly>
+    </role>
+    <slony clusterName="someapp">
+      <slonyNode id="101" comment="someapp primary db" dbName="someapp" dbHost="someapp-db.dev" dbUser="someapp_slony" dbPassword="lol" />
+      <slonyNode id="102" comment="someapp local replica db" dbName="someapp" dbHost="someapp-db.backup" dbUser="someapp_slony" dbPassword="lol" />
+      <slonyNode id="103" comment="someapp remote replica db" dbName="someapp" dbHost="someapp-db.remote" dbUser="someapp_slony" dbPassword="lol" />
+      <slonyReplicaSet id="500" originNodeId="101" upgradeSetId="501" comment="user table replication">
+        <slonyReplicaSetNode id="102" providerNodeId="101" />
+        <slonyReplicaSetNode id="103" providerNodeId="102" dbHost="someapp-db-2ndNIC.backup" />
+        <!--
+          dbHost usage example:
+          when defining how slons should connect to node 103
+          use the alternate host name someapp-db-2ndNIC.backup
+          this will be used in someapp_slony_replica_set_500_paths.slonik file generation
+          but not in the someapp_slony_replica_set_500_preamble.slonik
+          to see this in action, use dbsteward \-\-format=pgsql8 \-\-generateslonik \-\-xml=someapp_v2.xml
+        -->
+        <slonyReplicaSetNode id="104" providerNodeId="103" />
+      </slonyReplicaSet>
+    </slony>
+  </database>
+  <schema name="public" owner="ROLE_OWNER">
+    <table name="sql_user" owner="ROLE_OWNER" primaryKey="user_id" slonyId="10">
+      <tablePartition type="MODULO">
+        <tablePartitionOption name="number" value="4" />
+        <tablePartitionOption name="column" value="user_id" />
+        <tablePartitionOption name="firstSlonyId" value="347" />
+        <tablePartitionOption name="lastSlonyId" value="350" />
+      </tablePartition>
+      <column name="user_id" type="bigserial" slonyId="10" />
+      <column name="user_name" type="character varying(40)" />
+      <column name="password" type="text" />
+      <column name="email" type="text" />
+      <column name="import_id" type="character varying(32)" />
+      <column name="register_date" type="timestamp with time zone" />
+      <column name="user_status_list_id" foreignSchema="public" foreignTable="user_status_list" foreignColumn="user_status_list_id" />
+      <column name="user_access_level_id" null="false" default="1" foreignSchema="public" foreignTable="user_access_level" foreignColumn="user_access_level_id" />
+      <index name="user_name" using="btree">
+        <indexDimension name="user_name1">user_name</indexDimension>
+      </index>
+      <grant operation="SELECT,UPDATE,DELETE,INSERT" role="ROLE_APPLICATION" />
+      <rows columns="user_id, user_name, password, user_status_list_id, import_id, register_date">
+        <row>
+          <col>1</col>
+          <col>someapp_admin</col>
+          <col>7c6a180b36896a0a8c02787eeafb0e4c</col>
+          <col>3</col>
+          <col>DEFAULT_USER</col>
+          <col sql="true">NOW()</col>
+        </row>
+      </rows>
+    </table>
+    <trigger name="user_audit" sqlFormat="mysql5" table="sql_user" when="BEFORE" event="INSERT" function="EXECUTE xyz"/>
+    <table name="user_status_list" owner="ROLE_OWNER" slonyId="30" primaryKey="user_status_list_id">
+      <column name="user_status_list_id" type="int" />
+      <column name="is_visible" type="boolean" null="false" default="true" />
+      <column name="can_login" type="boolean" null="false" default="true" />
+      <column name="user_status" type="character varying(40)" null="false" />
+      <grant role="ROLE_APPLICATION" operation="SELECT" />
+      <rows columns="user_status_list_id, user_status, is_visible, can_login">
+        <row>
+          <col>1</col>
+          <col>Active</col>
+          <col>true</col>
+          <col>true</col>
+        </row>
+        <row>
+          <col>2</col>
+          <col>Inactive</col>
+          <col>false</col>
+          <col>true</col>
+        </row>
+        <row>
+          <col>3</col>
+          <col>Closed</col>
+          <col>false</col>
+          <col>false</col>
+        </row>
+      </rows>
+    </table>
+    <table name="user_access_level" owner="ROLE_OWNER" slonyId="40" primaryKey="user_access_level_id">
+      <column name="user_access_level_id" type="int" />
+      <column name="user_access_level" type="varchar(10)" null="false" default="true" />
+      <column name="can_see_invisible_users" type="boolean" null="false" default="false" />
+      <grant role="ROLE_APPLICATION" operation="SELECT" />
+      <rows columns="user_access_level_id, user_access_level, can_see_invisible_users">
+        <row>
+          <col>1</col>
+          <col>User</col>
+          <col>false</col>
+        </row>
+        <row>
+          <col>10</col>
+          <col>Moderator</col>
+          <col>false</col>
+        </row>
+        <row>
+          <col>50</col>
+          <col>Admin</col>
+          <col>true</col>
+        </row>
+      </rows>
+    </table>
+    <table name="session_information" description="Information regarding a user's current session" primaryKey="session_id" owner="ROLE_OWNER" slonyId="20">
+      <column name="session_id" type="varchar(255)" null="false" />
+      <column name="user_id" foreignSchema="public" foreignTable="sql_user" foreignColumn="user_id" />
+      <column name="login_time" type="timestamp with time zone" />
+      <column name="logout_time" type="timestamp with time zone" />
+      <column name="last_active_time" type="timestamp with time zone" />
+      <column name="ip" type="inet" />
+      <column name="page" type="varchar(40)" />
+      <column name="start_time" type="timestamp with time zone" />
+      <column name="last_time" type="timestamp with time zone" />
+      <column name="data" type="text" />
+      <grant operation="ALL" role="ROLE_APPLICATION" />
+    </table>
+    <function name="destroy_session" owner="ROLE_OWNER" returns="VOID" description="Deletes session data from the database">
+      <functionParameter type="character varying" />
+      <functionDefinition language="sql" sqlFormat="pgsql8">
+        DELETE FROM session_information WHERE session_id=$1;
+      </functionDefinition>
+      <grant operation="EXECUTE" role="ROLE_APPLICATION" />
+    </function>
+    <grant operation="USAGE" role="ROLE_APPLICATION" />
+    <table name="group_list" owner="ROLE_OWNER" primaryKey="group_list_id" >
+      <column name="group_list_id" type="bigserial" />
+      <column name="group_create_time" type="timestamp with time zone" null="false" />
+      <column name="group_description" type="text" null="false" description="type text and not null in v2" />
+      <column name="group_name" type="character varying(50)" />
+      <column name="group_permission" type="boolean" default="true" />
+      <column name="group_deleted" type="boolean" default="false" />
+      <column name="group_visible" type="boolean" default="TRUE" description="new in v2" />
+      <grant role="ROLE_APPLICATION" operation="SELECT, INSERT, UPDATE" />
+    </table>
+    <view name="group_list_view" owner="ROLE_OWNER">
+      <!-- in v2, where clause expanded to specify AND group_visible = TRUE -->
+      <viewQuery sqlFormat="pgsql8">SELECT * FROM public.group_list WHERE group_deleted = FALSE AND group_visible = TRUE</viewQuery>
+      <viewQuery sqlFormat="mssql10">SELECT * FROM dbo.group_list WHERE group_deleted = 'f' AND group_visible = 't'</viewQuery>
+      <grant operation="SELECT" role="ROLE_APPLICATION" />
+    </view>
+  </schema>
+  <schema name="search_results" owner="ROLE_OWNER">
+    <sequence name="result_tables_unique_id_seq" start="1" inc="1" max="99999" cycle="true" cache="1" owner="ROLE_OWNER" slonyId="346">
+      <grant operation="USAGE,SELECT,UPDATE" role="ROLE_APPLICATION" />
+    </sequence>
+    <grant operation="ALL, CREATE TABLE, ALTER" role="ROLE_APPLICATION" />
+  </schema>
+</dbsteward>

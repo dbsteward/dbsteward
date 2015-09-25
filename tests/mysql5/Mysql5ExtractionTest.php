@@ -7,27 +7,22 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
-require_once __DIR__ . '/../mock_output_file_segmenter.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
  * @group mysql5
  */
 class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
 
-  public function setUp() {
-    // disable pesky output buffering
-    while (ob_get_level()) ob_end_clean();
+  const DEBUG = false;
 
+  public function setUp() {
     $this->conn = $GLOBALS['db_config']->mysql5_conn;
     $this->createSchema();
   }
+
   public function tearDown() {
     $this->dropSchema();
-
-    // re-enable output buffering so phpunit doesn't bitch
-    ob_start();
   }
 
   // public function testSchema() {
@@ -40,7 +35,7 @@ class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
     $schemaname = __CLASS__;
     
     $sql = rtrim($sql, ';');
-    $sql = "USE $schemaname;\n$sql;";
+    $sql = "DROP DATABASE IF EXISTS $schemaname;\nCREATE DATABASE $schemaname;\nUSE $schemaname;\n$sql;";
     $this->query($sql);
 
     $xml = mysql5::extract_schema($this->conn->get_dbhost(), $this->conn->get_dbport(), $schemaname, $this->conn->get_dbuser(), $this->conn->get_dbpass());
@@ -48,7 +43,7 @@ class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
 
     foreach ($dbdoc->schema as $schema) {
       if (strcmp($schema['name'], $schemaname) == 0) {
-        echo "Got schema:\n" . $schema->asXML() . "\n";
+        if (static::DEBUG) echo "Got schema:\n" . $schema->asXML() . "\n";
         return $schema;
       }
     }
@@ -68,7 +63,7 @@ class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
   }
 
   protected function query($sql) {
-    echo "Running query:\n$sql\n\n";
+    if (static::DEBUG) echo "Running query:\n$sql\n\n";
     $this->conn->query($sql);
   }
 }

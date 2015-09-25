@@ -25,7 +25,7 @@ class mysql5_diff extends sql99_diff {
    */
   public static function diff_doc_work($stage1_ofs, $stage2_ofs, $stage3_ofs, $stage4_ofs) {
     if (mysql5_diff::$as_transaction) {
-      dbsteward::console_line(1, "Most MySQL DDL implicitly commits transactions, so using them is pointless.");
+      dbsteward::warning("Most MySQL DDL implicitly commits transactions, so using them is pointless.");
     }
 
     // start with pre-upgrade sql statements that prepare the database to take on its changes
@@ -33,18 +33,18 @@ class mysql5_diff extends sql99_diff {
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
 
-    dbsteward::console_line(1, "Revoke Permissions");
+    dbsteward::info("Revoke Permissions");
     self::revoke_permissions($stage1_ofs, $stage3_ofs);
 
-    dbsteward::console_line(1, "Update Structure");
+    dbsteward::info("Update Structure");
     self::update_structure($stage1_ofs, $stage3_ofs, self::$new_table_dependency);
 
-    dbsteward::console_line(1, "Update Permissions");
+    dbsteward::info("Update Permissions");
     self::update_permissions($stage1_ofs, $stage3_ofs);
 
     // self::update_database_config_parameters($stage1_ofs);
 
-    dbsteward::console_line(1, "Update Data");
+    dbsteward::info("Update Data");
     self::update_data($stage2_ofs, TRUE);
     self::update_data($stage4_ofs, FALSE);
 
@@ -128,9 +128,6 @@ class mysql5_diff extends sql99_diff {
           if (!in_array(trim($old_schema['name']), $processed_schemas)) {
             // this schema hasn't been processed yet, go ahead and drop views, types, functions, sequences
             // only do it once per schema
-            foreach ($old_schema->view as $node_view) {
-              $ofs->write(mysql5_view::get_drop_sql($old_schema, $node_view) . "\n");
-            }
             foreach ($old_schema->type as $node_type) {
               $ofs->write(mysql5_type::get_drop_sql($old_schema, $node_type) . "\n");
             }
@@ -166,9 +163,6 @@ class mysql5_diff extends sql99_diff {
     else {
       foreach (dbsteward::$old_database->schema as $old_schema) {
         if (!dbx::get_schema(dbsteward::$new_database, $old_schema['name'])) {
-          foreach ($old_schema->view as $node_view) {
-            $ofs->write(mysql5_view::get_drop_sql($old_schema, $node_view) . "\n");
-          }
           foreach ($old_schema->type as $node_type) {
             $ofs->write(mysql5_type::get_drop_sql($old_schema, $node_type) . "\n");
           }
@@ -209,16 +203,11 @@ class mysql5_diff extends sql99_diff {
       }
     }
     else {
-      dbsteward::console_line(1, "Drop Old Schemas");
+      dbsteward::info("Drop Old Schemas");
       self::drop_old_schemas($ofs3);
     }
 
-    // drop all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      mysql5_diff_views::drop_views($ofs1, $old_schema, $new_schema);
-    }
+    mysql5_diff_views::drop_views_ordered($ofs1, dbsteward::$old_database, dbsteward::$new_database);
     
     //@TODO: implement mysql5_language ? no relevant conversion exists see other TODO's stating this
     //mysql5_diff_languages::diff_languages($ofs1);
@@ -364,12 +353,7 @@ class mysql5_diff extends sql99_diff {
       }
     }
     
-    // create all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      mysql5_diff_views::create_views($ofs1, $old_schema, $new_schema);
-    }
+    mysql5_diff_views::create_views_ordered($ofs3, dbsteward::$old_database, dbsteward::$new_database);
   }
 
   /**

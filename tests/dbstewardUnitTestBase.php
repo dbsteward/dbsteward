@@ -7,8 +7,11 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once 'PHPUnit/Framework/TestSuite.php';
+/*
+this file includes the dbsteward class and autoloader.
+the PHPUnit classes and autoloader are expected to be available by running tests from phpunit commandline, such as
+phpunit --verbose --group pgsql8 regression/
+*/
 
 require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 
@@ -16,6 +19,7 @@ require_once __DIR__ . '/dbsteward_sql99_connection.php';
 require_once __DIR__ . '/dbsteward_pgsql8_connection.php';
 require_once __DIR__ . '/dbsteward_mssql10_connection.php';
 require_once __DIR__ . '/dbsteward_mysql5_connection.php';
+require_once __DIR__ . '/mock_output_file_segmenter.php';
 
 class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
@@ -47,7 +51,12 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->mssql10 = $GLOBALS['db_config']->mssql10_conn;
     $this->mysql5 = $GLOBALS['db_config']->mysql5_conn;
     
-    // be sure to reset dbsteward runtime tracking variables every time
+    // reset dbsteward runtime mode flags for each test
+    dbsteward::$single_stage_upgrade = FALSE;
+    dbsteward::$generate_slonik = FALSE;
+    pgsql8_diff::$as_transaction = TRUE;
+
+    // reset dbsteward runtime tracking variables for each test
     pgsql8::$table_slony_ids = array();
     pgsql8::$sequence_slony_ids = array();
     pgsql8::$known_pg_identifiers = array();
@@ -99,6 +108,11 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
+    dbsteward::$always_recreate_views = TRUE;
+    // slony default options
+    dbsteward::$require_slony_id = FALSE;
+    dbsteward::$require_slony_set_id = FALSE;
+    dbsteward::$generate_slonik = FALSE;
   }
   
   protected function build_db_pgsql8() {
@@ -110,6 +124,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->pgsql8->create_db();
 
     // build initial "A" database
+    $this->assertStringNotEqualsFile($this->output_prefix . '_build.sql', '');
     $this->pgsql8->run_file($this->output_prefix . '_build.sql');
   }
 
@@ -127,6 +142,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     pgsql8::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array()); 
 
     // upgrade database to "B" with each stage file
+    $this->assertStringNotEqualsFile($this->output_prefix . '_upgrade_stage1_schema1.sql', '');
     $this->pgsql8->run_file($this->output_prefix . '_upgrade_stage1_schema1.sql');
     $this->pgsql8->run_file($this->output_prefix . '_upgrade_stage2_data1.sql');
     $this->pgsql8->run_file($this->output_prefix . '_upgrade_stage3_schema1.sql');

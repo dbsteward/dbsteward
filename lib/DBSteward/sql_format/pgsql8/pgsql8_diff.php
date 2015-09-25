@@ -44,8 +44,6 @@ class pgsql8_diff extends sql99_diff {
       $old_set_new_set = "-- Old definition:  " . $old_xml_file . "\n"
         . "-- New definition:  " . $new_xml_file . "\n"
         . "-- Replica Set: " . $replica_set_id . "\n";
-
-      pgsql8::build_slonik_preamble($new_database, $replica_set, $upgrade_prefix . "_slony_replica_set_" . $replica_set_id . "_preamble.slonik");
       
       $ofsm_stage1->set_replica_set_ofs(
         $replica_set_id,
@@ -146,15 +144,29 @@ class pgsql8_diff extends sql99_diff {
       format::set_context_replica_set_to_natural_first(dbsteward::$new_database);
     }
     
-    if (self::$as_transaction && !dbsteward::$generate_slonik) {
-      $stage1_ofs->append_header("BEGIN;\n");
-      $stage1_ofs->append_footer("\nCOMMIT;\n");
+    if (self::$as_transaction) {
+      // stage 1 and 3 should not be in a transaction 
+      // as they will be submitted via slonik EXECUTE SCRIPT
+      if ( ! dbsteward::$generate_slonik ) {
+        $stage1_ofs->append_header("\nBEGIN;\n");
+        $stage1_ofs->append_footer("\nCOMMIT;\n");
+      }
+      else {
+        $stage1_ofs->append_header("\n-- generateslonik specified: pgsql8 STAGE1 upgrade omitting BEGIN. slonik EXECUTE SCRIPT will wrap stage 1 DDL and DCL in a transaction\n");
+      }
       if ( ! dbsteward::$single_stage_upgrade ) {
-        $stage2_ofs->append_header("BEGIN;\n\n");
-        $stage3_ofs->append_header("BEGIN;\n\n");
-        $stage4_ofs->append_header("BEGIN;\n\n");
+        $stage2_ofs->append_header("\nBEGIN;\n\n");
         $stage2_ofs->append_footer("\nCOMMIT;\n");
-        $stage3_ofs->append_footer("\nCOMMIT;\n");
+        // if generating slonik, stage 1 and 3 should not be in a transaction
+        // as they will be submitted via slonik EXECUTE SCRIPT
+        if ( ! dbsteward::$generate_slonik ) {
+          $stage3_ofs->append_header("\nBEGIN;\n\n");
+          $stage3_ofs->append_footer("\nCOMMIT;\n");
+        }
+        else {
+          $stage3_ofs->append_header("\n-- generateslonik specified: pgsql8 STAGE1 upgrade omitting BEGIN. slonik EXECUTE SCRIPT will wrap stage 3 DDL and DCL in a transaction\n");
+        }
+        $stage4_ofs->append_header("\nBEGIN;\n\n");
         $stage4_ofs->append_footer("\nCOMMIT;\n");
       }
     }
@@ -163,18 +175,18 @@ class pgsql8_diff extends sql99_diff {
     dbx::build_staged_sql(dbsteward::$new_database, $stage1_ofs, 'STAGE1BEFORE');
     dbx::build_staged_sql(dbsteward::$new_database, $stage2_ofs, 'STAGE2BEFORE');
 
-    dbsteward::console_line(1, "Drop Old Schemas");
+    dbsteward::info("Drop Old Schemas");
     self::drop_old_schemas($stage3_ofs);
-    dbsteward::console_line(1, "Create New Schemas");
+    dbsteward::info("Create New Schemas");
     self::create_new_schemas($stage1_ofs);
-    dbsteward::console_line(1, "Update Structure");
+    dbsteward::info("Update Structure");
     self::update_structure($stage1_ofs, $stage3_ofs, self::$new_table_dependency);
-    dbsteward::console_line(1, "Update Permissions");
+    dbsteward::info("Update Permissions");
     self::update_permissions($stage1_ofs, $stage3_ofs);
 
-    self::update_database_config_parameters($stage1_ofs);
+    self::update_database_config_parameters($stage1_ofs, dbsteward::$new_database, dbsteward::$old_database);
 
-    dbsteward::console_line(1, "Update Data");
+    dbsteward::info("Update Data");
     if (dbsteward::$generate_slonik) {
       format::set_context_replica_set_to_natural_first(dbsteward::$new_database);
     }
@@ -221,18 +233,13 @@ class pgsql8_diff extends sql99_diff {
    * @param $ofs1  stage1 output file segmenter
    * @param $ofs3  stage3 output file segmenter
    */
-  private static function update_structure($ofs1, $ofs3) {
+  public static function update_structure($ofs1, $ofs3) {
     $type_modified_columns = array();
     
     pgsql8_diff_languages::diff_languages($ofs1);
     
     // drop all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      pgsql8::set_context_replica_set_id($new_schema);
-      pgsql8_diff_views::drop_views($ofs1, $old_schema, $new_schema);
-    }
+    pgsql8_diff_views::drop_views_ordered($ofs1, dbsteward::$old_database, dbsteward::$new_database);
 
     // if the table dependency order is unknown, bang them in natural order
     if ( ! is_array(self::$new_table_dependency) ) {
@@ -396,13 +403,7 @@ class pgsql8_diff extends sql99_diff {
       }
     }
     
-    // create all views in all schemas, regardless whether dependency order is known or not
-    foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
-      $old_schema = dbx::get_schema(dbsteward::$old_database, $new_schema['name']);
-      $new_schema = dbx::get_schema(dbsteward::$new_database, $new_schema['name']);
-      pgsql8::set_context_replica_set_id($new_schema);
-      pgsql8_diff_views::create_views($ofs3, $old_schema, $new_schema);
-    }
+    pgsql8_diff_views::create_views_ordered($ofs3, dbsteward::$old_database, dbsteward::$new_database);
   }
 
   protected static function update_permissions($ofs1, $ofs3) {
@@ -470,7 +471,7 @@ class pgsql8_diff extends sql99_diff {
           || !pgsql8_permission::has_permission($old_view, $new_permission)
           // OR if the view has changed, as that means it has been recreated
           || pgsql8_diff_views::is_view_modified($old_view, $new_view) ) {
-            // view permissions are in schema stage 2 file because views are (re)created in that file for SELECT * expansion
+            // view permissions are in schema stage 3 file because views are (re)created in that stage for SELECT * expansion
             $ofs3->write(pgsql8_permission::get_sql(dbsteward::$new_database, $new_schema, $new_view, $new_permission) . "\n");
           }
         }
@@ -518,7 +519,7 @@ class pgsql8_diff extends sql99_diff {
 
         // if the table was renamed, get old definition pointers for comparison
         if ( pgsql8_diff_tables::is_renamed_table($new_schema, $new_table) ) {
-          dbsteward::console_line(7, "NOTICE: " . $new_schema['name'] . "." . $new_table['name'] . " used to be called " . $new_table['oldTableName'] . " -- will diff data against that definition");
+          dbsteward::info("NOTICE: " . $new_schema['name'] . "." . $new_table['name'] . " used to be called " . $new_table['oldTableName'] . " -- will diff data against that definition");
           $old_schema = pgsql8_table::get_old_table_schema($new_schema, $new_table);
           $old_table = pgsql8_table::get_old_table($new_schema, $new_table);
         }
@@ -547,11 +548,11 @@ class pgsql8_diff extends sql99_diff {
    *
    * @return void
    */
-  public static function update_database_config_parameters($ofs) {
-    foreach(dbx::get_configuration_parameters(dbsteward::$new_database->database) AS $new_param) {
+  public static function update_database_config_parameters($ofs, $db_doc_old, $db_doc_new) {
+    foreach(dbx::get_configuration_parameters($db_doc_new) AS $new_param) {
       $old_param = null;
       if ( is_object(dbsteward::$old_database) ) {
-        $old_param = &dbx::get_configuration_parameter(dbsteward::$old_database->database, $new_param['name']);
+        $old_param = dbx::get_configuration_parameter($db_doc_old, $new_param['name']);
       }
 
       if ( $old_param == null || strcmp($old_param['value'], $new_param['value']) != 0 ) {

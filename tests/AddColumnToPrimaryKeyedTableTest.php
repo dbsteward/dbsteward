@@ -1,6 +1,13 @@
 <?php
+/**
+ * Column NULL / NOT NULL enforcement and modification regression tests
+ *
+ * @package DBSteward
+ * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
+ * @author Austin Hyde <austin109@gmail.com>
+ */
 
-require_once dirname(__FILE__) . '/dbstewardUnitTestBase.php';
+require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
 class AddColumnToPrimaryKeyedTableTest extends dbstewardUnitTestBase {
 

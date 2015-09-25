@@ -45,7 +45,7 @@ class sql99_permission {
         }
       }
       // if we get here if the right is not found in the in_array comparison for the object
-//dbsteward::console_line(3, "permission_operation " . $permission_operation . " not found in " . $node_object['name'] . " permissions for " . $node_permission['role']);
+      dbsteward::warning("permission_operation " . $permission_operation . " not found in " . $node_object['name'] . " permissions for " . $node_permission['role']);
       return false;
     }
     // if we get here then all rights were found to be provided in the object already
@@ -71,7 +71,7 @@ class sql99_permission {
     if ( !empty($node_permission['with']) ) {
         // @TODO: Support MAX_*_PER_HOUR grant options
         if ( strcasecmp($node_permission['with'], 'grant') != 0 ) {
-          dbsteward::console_line(1, "Ignoring WITH option '{$node_permission['with']}' because MySQL only supports WITH GRANT OPTION.");
+          dbsteward::warning("Ignoring WITH option '{$node_permission['with']}' because MySQL only supports WITH GRANT OPTION.");
         }
         else {
           return " WITH GRANT OPTION";

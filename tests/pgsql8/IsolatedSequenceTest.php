@@ -1,17 +1,13 @@
 <?php
 /**
- *
+ * Sequence definition in a schema without tables regression test
  *
  * @package DBSteward
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  * @author Rusty Hamilton <rusty@shrub3.net>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
-require_once(dirname(__FILE__) . '/../../lib/DBSteward/sql_format/sql99/sql99.php');
-require_once(dirname(__FILE__) . '/../../lib/DBSteward/sql_format/pgsql8/pgsql8.php');
 
 /**
  * @group pgsql8
@@ -65,23 +61,15 @@ XML;
     $user = $this->pgsql8->get_dbuser();
     $password = $this->pgsql8->get_dbpass();
 
-    pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
+    // github PR#76 - connection is already handled and established by pgsql8::extract_schema()
+    // don't need to establish a connection and let it block testing framework operations
+    // pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
   }
 
   public function tearDown() {
-    pgsql8_db::disconnect();
-  }
-
-  protected function query_db($sql) {
-    $rs = pgsql8_db::query($sql);
-
-    $rows = array();
-
-    while (($row = pg_fetch_assoc($rs)) !== FALSE) {
-      $rows[] = $row;
-    }
-    pgsql8_db::disconnect();
-    return $rows;
+    // github PR#76 - connection is already handled and established by pgsql8::extract_schema()
+    // don't need to establish a connection and let it block testing framework operations
+    // pgsql8_db::disconnect();
   }
 
   protected function set_up_sequence_testing($schema_name = 'public') {

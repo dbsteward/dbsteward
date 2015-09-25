@@ -56,9 +56,12 @@ class mysql5 extends sql99 {
   }
 
   public static function build($output_prefix, $db_doc) {
+    if ( strlen($output_prefix) == 0 ) {
+      throw new exception("mysql5::build() sanity failure: output_prefix is blank");
+    }
     // build full db creation script
     $build_file = $output_prefix . '_build.sql';
-    dbsteward::console_line(1, "Building complete file " . $build_file);
+    dbsteward::notice("Building complete file " . $build_file);
     $build_file_fp = fopen($build_file, 'w');
     if ($build_file_fp === FALSE) {
       throw new exception("failed to open full file " . $build_file . ' for output');
@@ -70,7 +73,7 @@ class mysql5 extends sql99 {
 
     // $build_file_ofs->write("START TRANSACTION;\n\n");
 
-    dbsteward::console_line(1, "Calculating table foreign key dependency order..");
+    dbsteward::info("Calculating table foreign key dependency order..");
     $table_dependency = xml_parser::table_dependency_order($db_doc);
     // database-specific implementation refers to dbsteward::$new_database when looking up roles/values/conflicts etc
     dbsteward::$new_database = $db_doc;
@@ -78,18 +81,18 @@ class mysql5 extends sql99 {
     // language defintions
     if (dbsteward::$create_languages) {
       foreach ($db_doc->language AS $language) {
-        dbsteward::console_line(1, "Ignoring language declarations because MySQL does not support languages other than 'sql'");
+        dbsteward::warning("Ignoring language {$language['name']} declaration because MySQL does not support languages other than 'sql'");
       }
     }
 
     if (dbsteward::$only_schema_sql
       || !dbsteward::$only_data_sql) {
-      dbsteward::console_line(1, "Defining structure");
+      dbsteward::info("Defining structure");
       mysql5::build_schema($db_doc, $build_file_ofs, $table_dependency);
     }
     if (!dbsteward::$only_schema_sql
       || dbsteward::$only_data_sql) {
-      dbsteward::console_line(1, "Defining data inserts");
+      dbsteward::info("Defining data inserts");
       mysql5::build_data($db_doc, $build_file_ofs, $table_dependency);
     }
     dbsteward::$new_database = NULL;
@@ -102,7 +105,7 @@ class mysql5 extends sql99 {
   public static function build_schema($db_doc, $ofs, $table_depends) {
     // schema creation
     if (static::$use_schema_name_prefix) {
-      dbsteward::console_line(1, "MySQL schema name prefixing mode turned on");
+      dbsteward::info("MySQL schema name prefixing mode turned on");
     }
     else {
       if (count($db_doc->schema) > 1) {
@@ -214,12 +217,11 @@ class mysql5 extends sql99 {
     }
     $ofs->write("\n");
 
-    foreach ( $db_doc->schema as $schema ) {
-      // view creation
-      foreach ($schema->view AS $view) {
-        $ofs->write(mysql5_view::get_creation_sql($schema, $view)."\n");
+    mysql5_diff_views::create_views_ordered($ofs, null, $db_doc);
 
-        // view permission grants
+    // view permission grants
+    foreach ($db_doc->schema as $schema) {
+      foreach ($schema->view AS $view) {
         if (isset($view->grant)) {
           foreach ($view->grant AS $grant) {
             $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $view, $grant) . "\n");
@@ -303,9 +305,9 @@ class mysql5 extends sql99 {
     $upgrade_prefix = $new_output_prefix . '_upgrade';
 
     // mysql5_diff needs these to intelligently create SQL difference statements in dependency order
-    dbsteward::console_line(1, "Calculating old table foreign key dependency order..");
+    dbsteward::info("Calculating old table foreign key dependency order..");
     mysql5_diff::$old_table_dependency = xml_parser::table_dependency_order($old_db_doc);
-    dbsteward::console_line(1, "Calculating new table foreign key dependency order..");
+    dbsteward::info("Calculating new table foreign key dependency order..");
     mysql5_diff::$new_table_dependency = xml_parser::table_dependency_order($new_db_doc);
 
     mysql5_diff::diff_doc($old_composite_file, $new_composite_file, $old_db_doc, $new_db_doc, $upgrade_prefix);
@@ -316,7 +318,7 @@ class mysql5 extends sql99 {
   public static function extract_schema($host, $port, $database, $user, $password) {
     $databases = explode(',', $database);
 
-    dbsteward::console_line(1, "Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user . ' with password ' . var_export($password, TRUE));
+    dbsteward::notice("Connecting to mysql5 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
     if ( $password === FALSE ) {
       echo "Password: ";
@@ -336,7 +338,7 @@ class mysql5 extends sql99 {
     $node_role->addChild('readonly', $user);
 
     foreach ($databases as $database) {
-      dbsteward::console_line(3, "Analyzing database $database");
+      dbsteward::info("Analyzing database $database");
       $db->use_database($database);
 
       $node_schema = $doc->addChild('schema');
@@ -348,7 +350,7 @@ class mysql5 extends sql99 {
         $node_grant = $node_schema->addChild('grant');
         // There are 28 permissions encompassed by the GRANT ALL statement
         $node_grant['operation'] = $db_grant->num_ops == 28 ? 'ALL' : $db_grant->operations;
-        $node_grant['role'] = self::translate_role_name($doc, $user);
+        $node_grant['role'] = self::translate_role_name($user, $doc);
 
         if ( $db_grant->is_grantable ) {
           $node_grant['with'] = 'GRANT';
@@ -371,12 +373,57 @@ class mysql5 extends sql99 {
         return $name;
       };
       foreach ( $db->get_tables() as $db_table ) {
-        dbsteward::console_line(3, "Analyze table options " . $db_table->table_name);
+        dbsteward::info("Analyze table options/partitions " . $db_table->table_name);
         $node_table = $node_schema->addChild('table');
         $node_table['name'] = $db_table->table_name;
         $node_table['owner'] = 'ROLE_OWNER'; // because mysql doesn't have object owners
         $node_table['description'] = $db_table->table_comment;
         $node_table['primaryKey'] = '';
+
+        if (stripos($db_table->create_options, 'partitioned') !== FALSE &&
+            ($partition_info = $db->get_partition_info($db_table))) {
+
+          $node_partition = $node_table->addChild('tablePartition');
+          $node_partition['sqlFormat'] = 'mysql5';
+          $node_partition['type'] = $partition_info->type;
+          switch ($partition_info->type) {
+            case 'HASH':
+            case 'LINEAR HASH':
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'expression');
+              $opt->addAttribute('value', $partition_info->expression);
+            
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'number');
+              $opt->addAttribute('value', $partition_info->number);
+              break;
+
+            case 'KEY':
+            case 'LINEAR KEY':
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'columns');
+              $opt->addAttribute('value', $partition_info->columns);
+            
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', 'number');
+              $opt->addAttribute('value', $partition_info->number);
+              break;
+
+            case 'LIST':
+            case 'RANGE':
+            case 'RANGE COLUMNS':
+              $opt = $node_partition->addChild('tablePartitionOption');
+              $opt->addAttribute('name', $partition_info->type == 'RANGE COLUMNS' ? 'columns' : 'expression');
+              $opt->addAttribute('value', $partition_info->expression);
+
+              foreach ($partition_info->segments as $segment) {
+                $node_seg = $node_partition->addChild('tablePartitionSegment');
+                $node_seg->addAttribute('name', $segment->name);
+                $node_seg->addAttribute('value', $segment->value);
+              }
+              break;
+          }
+        }
 
         foreach ( $db->get_table_options($db_table) as $name => $value ) {
           if (strcasecmp($name, 'auto_increment') === 0 && !static::$use_auto_increment_table_options) {
@@ -389,7 +436,7 @@ class mysql5 extends sql99 {
           $node_option['value'] = $value;
         }
 
-        dbsteward::console_line(3, "Analyze table columns " . $db_table->table_name);
+        dbsteward::info("Analyze table columns " . $db_table->table_name);
         foreach ( $db->get_columns($db_table) as $db_column ) {
           $node_column = $node_table->addChild('column');
           $node_column['name'] = $db_column->column_name;
@@ -432,7 +479,7 @@ class mysql5 extends sql99 {
         }
 
         // get all plain and unique indexes
-        dbsteward::console_line(3, "Analyze table indexes " . $db_table->table_name);
+        dbsteward::info("Analyze table indexes " . $db_table->table_name);
         foreach ( $db->get_indices($db_table) as $db_index ) {
 
           // don't process primary key indexes here
@@ -468,7 +515,7 @@ class mysql5 extends sql99 {
         }
 
         // get all primary/foreign keys
-        dbsteward::console_line(3, "Analyze table constraints " . $db_table->table_name);
+        dbsteward::info("Analyze table constraints " . $db_table->table_name);
         foreach ( $db->get_constraints($db_table) as $db_constraint ) {
           if ( strcasecmp($db_constraint->constraint_type, 'primary key') === 0 ) {
             $node_table['primaryKey'] = implode(',', $db_constraint->columns);
@@ -505,18 +552,20 @@ class mysql5 extends sql99 {
             }
             elseif ( count($db_constraint->referenced_columns) > 1
                   && count($db_constraint->referenced_columns) == count($db_constraint->columns) ) {
-              // compound index, define the FK as a constraint node
-              $node_constraint = $node_table->addChild('constraint');
-              $node_constraint['name'] = $db_constraint->constraint_name;
-              $node_constraint['type'] = 'FOREIGN KEY';
-              $node_constraint['foreignSchema'] = $db_constraint->referenced_table_schema;
-              $node_constraint['foreignTable'] = $db_constraint->referenced_table_name;
-              
-              $node_constraint['definition'] = sprintf("(%s) REFERENCES %s (%s) ON DELETE %s ON UPDATE %s",
-                implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->columns)),
-                mysql5::get_fully_qualified_table_name($db_constraint->referenced_table_schema,$db_constraint->referenced_table_name),
-                implode(', ', array_map('mysql5::get_quoted_column_name', $db_constraint->referenced_columns)),
-                $db_constraint->delete_rule, $db_constraint->update_rule);
+              $node_fkey = $node_table->addChild('foreignKey');
+              $node_fkey['columns'] = implode(', ', $db_constraint->columns);
+              $node_fkey['foreignSchema'] = $db_constraint->referenced_table_schema;
+              $node_fkey['foreignTable'] = $db_constraint->referenced_table_name;
+              $node_fkey['foreignColumns'] = implode(', ', $db_constraint->referenced_columns);
+              $node_fkey['constraintName'] = $db_constraint->constraint_name;
+
+              // RESTRICT is the default, leave it implicit if possible
+              if ( strcasecmp($db_constraint->delete_rule, 'restrict') !== 0 ) {
+                $node_fkey['onDelete'] = str_replace(' ', '_', $db_constraint->delete_rule);
+              }
+              if ( strcasecmp($db_constraint->update_rule, 'restrict') !== 0 ) {
+                $node_fkey['onUpdate'] = str_replace(' ', '_', $db_constraint->update_rule);
+              }
             }
             else {
               var_dump($db_constraint);
@@ -524,7 +573,7 @@ class mysql5 extends sql99 {
             }
           }
           elseif ( strcasecmp($db_constraint->constraint_type, 'unique') === 0 ) {
-            dbsteward::console_line(1, "Ignoring UNIQUE constraint '{$db_constraint->constraint_name}' because they are implemented as indices");
+            dbsteward::warning("Ignoring UNIQUE constraint '{$db_constraint->constraint_name}' because they are implemented as indices");
           }
           elseif ( strcasecmp($db_constraint->constraint_type, 'check') === 0 ) {
             // @TODO: implement CHECK constraints
@@ -535,10 +584,10 @@ class mysql5 extends sql99 {
         }
 
         foreach ( $db->get_table_grants($db_table, $user) as $db_grant ) {
-          dbsteward::console_line(3, "Analyze table permissions " . $db_table->table_name);
+          dbsteward::info("Analyze table permissions " . $db_table->table_name);
           $node_grant = $node_table->addChild('grant');
           $node_grant['operation'] = $db_grant->operations;
-          $node_grant['role'] = self::translate_role_name($doc, $user);
+          $node_grant['role'] = self::translate_role_name($user, $doc);
 
           if ( $db_grant->is_grantable ) {
             $node_grant['with'] = 'GRANT';
@@ -570,7 +619,7 @@ class mysql5 extends sql99 {
       }
 
       foreach ( $db->get_functions() as $db_function ) {
-        dbsteward::console_line(3, "Analyze function " . $db_function->routine_name);
+        dbsteward::info("Analyze function " . $db_function->routine_name);
         $node_fn = $node_schema->addChild('function');
         $node_fn['name'] = $db_function->routine_name;
         $node_fn['owner'] = 'ROLE_OWNER';
@@ -582,10 +631,18 @@ class mysql5 extends sql99 {
         }
         $node_fn['description'] = $db_function->routine_comment;
 
+        if (isset($db_function->procedure) && $db_function->procedure) {
+          $node_fn['procedure'] = 'true';
+        }
+
         // $node_fn['procedure'] = 'false';
 
-        // I just don't trust mysql enough to make guarantees about data safety
-        $node_fn['cachePolicy'] = 'VOLATILE';
+        $eval_type = $db_function->sql_data_access;
+        // srsly mysql? is_deterministic varchar(3) not null default '', contains YES or NO
+        $determinism = strcasecmp($db_function->is_deterministic, 'YES') === 0 ? 'DETERMINISTIC' : 'NOT DETERMINISTIC';
+
+        $node_fn['cachePolicy'] = mysql5_function::get_cache_policy_from_characteristics($determinism, $eval_type);
+        $node_fn['mysqlEvalType'] = str_replace(' ', '_', $eval_type);
 
         // INVOKER is the default, leave it implicit when possible
         if ( strcasecmp($db_function->security_type, 'definer') === 0 ) {
@@ -603,6 +660,9 @@ class mysql5 extends sql99 {
                                              $param->parameter_name,
                                              $db->parse_enum_values($param->dtd_identifier));
           }
+          if (isset($param->direction)) {
+            $node_param['direction'] = $param->direction;
+          }
         }
 
         $node_def = $node_fn->addChild('functionDefinition', $db_function->routine_definition);
@@ -611,7 +671,7 @@ class mysql5 extends sql99 {
       }
 
       foreach ( $db->get_triggers() as $db_trigger ) {
-        dbsteward::console_line(3, "Analyze trigger " . $db_trigger->name);
+        dbsteward::info("Analyze trigger " . $db_trigger->name);
         $node_trigger = $node_schema->addChild('trigger');
         foreach ( (array)$db_trigger as $k => $v ) {
           $node_trigger->addAttribute($k, $v);
@@ -620,7 +680,7 @@ class mysql5 extends sql99 {
       }
 
       foreach ( $db->get_views() as $db_view ) {
-        dbsteward::console_line(3, "Analyze view " . $db_view->view_name);
+        dbsteward::info("Analyze view " . $db_view->view_name);
         if ( !empty($db_view->view_name) && empty($db_view->view_query) ) {
           throw new Exception("Found a view in the database with an empty query. User '$user' problaby doesn't have SELECT permissions on tables referenced by the view.");
         }
@@ -648,26 +708,30 @@ class mysql5 extends sql99 {
     return xml_parser::format_xml($doc->saveXML());
   }
 
-  public static function translate_role_name($doc, $name) {
+  public static function translate_role_name($role, $doc = null) {
+    if ($doc === null) {
+      throw new exception('Expected $doc param to not be null');
+    }
+
     $node_role = $doc->database->role;
 
-    if ( strcasecmp($name, $node_role->application) == 0 ) {
+    if ( strcasecmp($role, $node_role->application) == 0 ) {
       return 'ROLE_APPLICATION';
     }
 
-    if ( strcasecmp($name, $node_role->owner) == 0 ) {
+    if ( strcasecmp($role, $node_role->owner) == 0 ) {
       return 'ROLE_OWNER';
     }
 
-    if ( strcasecmp($name, $node_role->replication) == 0 ) {
+    if ( strcasecmp($role, $node_role->replication) == 0 ) {
       return 'ROLE_REPLICATION';
     }
 
-    if ( strcasecmp($name, $node_role->readonly) == 0 ) {
+    if ( strcasecmp($role, $node_role->readonly) == 0 ) {
       return 'ROLE_READONLY';
     }
 
-    return $name;
+    return $role;
   }
 
   /**

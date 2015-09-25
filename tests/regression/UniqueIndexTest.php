@@ -7,9 +7,7 @@
  * @author Adam Jette <jettea46@yahoo.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once __DIR__ . '/../../lib/DBSteward/dbsteward.php';
-require_once __DIR__ . '/../mock_output_file_segmenter.php';
+require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 class UniqueIndexTest extends PHPUnit_Framework_TestCase {
 

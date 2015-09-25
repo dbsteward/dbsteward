@@ -7,9 +7,7 @@
  * @author Nicholas J Kiraly <kiraly.nicholas@gmail.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-require_once __DIR__ . '/mock_output_file_segmenter.php';
-require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
+require_once __DIR__ . '/dbstewardUnitTestBase.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/pgsql8/pgsql8.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/pgsql8/pgsql8_diff.php';
 

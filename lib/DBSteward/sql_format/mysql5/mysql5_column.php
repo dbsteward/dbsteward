@@ -67,7 +67,7 @@ class mysql5_column extends sql99_column {
     if ( strlen($node_column['default']) > 0 ) {
       if ( static::is_serial($node_column['type']) ) {
         $note = "Ignoring default '{$node_column['default']}' on {$node_schema['name']}.{$node_table['name']}.{$node_column['name']} because it is a serial type";
-        dbsteward::console_line(1, $note."\n");
+        dbsteward::warning($note."\n");
       }
       else {
         $definition .= " DEFAULT " . $node_column['default'];

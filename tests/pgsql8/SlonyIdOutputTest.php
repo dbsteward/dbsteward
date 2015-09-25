@@ -7,8 +7,6 @@
  * @author <jettea46@yahoo.com>
  */
 
-require_once 'PHPUnit/Framework/TestCase.php';
-
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
@@ -17,9 +15,16 @@ require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 class SlonyIdOutputTest extends dbstewardUnitTestBase {
 
   public function setUp() {
+    $this->testHandler = new Monolog\Handler\TestHandler;
+    dbsteward::get_logger()->pushHandler($this->testHandler);
+
     dbsteward::set_sql_format('pgsql8');
     pgsql8::$table_slony_ids = array();
     pgsql8::$sequence_slony_ids = array();
+  }
+
+  public function tearDown() {
+    dbsteward::get_logger()->popHandler();
   }
 
   public function testSlonikOutputIsCorrect() {
@@ -74,17 +79,19 @@ OUTXML;
       $old_db_doc = simplexml_load_string($xml);
       dbsteward::$generate_slonik = TRUE;
 
-      ob_start();
-      pgsql8::build('', $old_db_doc);
-      $output = ob_get_contents();
-      ob_end_clean();
-      preg_match('/sequence ID segments:\s(.*)\n/', $output, $matches);
-      $this->assertEquals("1098", $matches[1]);
-      preg_match('/101:\s(.*)\n/', $output, $matches);
-      $this->assertEquals("101-102", $matches[1]);
-      preg_match('/201:\s(.*)\n/', $output, $matches);
-      $this->assertEquals("105-106", $matches[1]);
+      $output_prefix_path = dirname(__FILE__) . '/../testdata/' . 'slony_id_output';
+      pgsql8::build($output_prefix_path, $old_db_doc);
+
+      $this->assertLogged(Monolog\Logger::NOTICE, '/101:\s101-102/');
+      // before 1098 wasn't getting put into first natural order, now it should be
+      $this->assertLogged(Monolog\Logger::NOTICE, '/101:\s[\d\-]+,\s*1098/', "SlonyIds without slonySetIds are not put into first natural order slonySet");
+      $this->assertLogged(Monolog\Logger::NOTICE, '/201:\s105-106/');
   }
   
+
+  private function assertLogged($level, $regex, $message = null) {
+    $this->assertTrue($this->testHandler->hasRecordThatMatches($regex, $level),
+      "Expected to find a log matching $regex\n$message");
+  }
 }
 ?>
