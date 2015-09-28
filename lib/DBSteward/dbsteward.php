@@ -35,7 +35,7 @@ require_once __DIR__ . '/DBStewardConsoleLogFormatter.php';
 
 class dbsteward {
 
-  const VERSION = '1.4.1';
+  const VERSION = '1.4.2';
   const API_VERSION = '1.4';
 
   const PATTERN_KNOWN_TYPES = "/^bigint.*|^bigserial|^bool.*|^bytea.*|^char.*|^date|^double precision|^inet$|^interval|^int.*|^oid|^smallint|^serial|^string|^text|^time$|^time with.*|^timestamp.*|^varchar.*|^uuid$/i";

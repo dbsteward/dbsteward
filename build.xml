@@ -127,6 +127,24 @@ http://dbsteward.org/
 
       <!-- there must be a changelog entry for the package.version or pear package manager will be angry -->
 
+<changelog version="1.4.2" date="2015-11-30" license="Simplified BSD License">
+DBSteward 1.4.2 Release
+
+Changes
+* Fix pgsql8 partial index where clause output SQL  github/nkiraly/DBSteward PR #105
+
+
+Supported Platform DDL Generation and Differencing:
+* pgsql8    - PostgreSQL 8, 9
+* mssql10   - Microsoft SQL Server 2008
+* mysql5    - MySQL 5
+
+Supported Platform Structure Extraction into XML:
+* pgsql8    - PostgreSQL 8, 9
+* mysql5    - MySQL 5
+
+      </changelog>
+
       <changelog version="1.4.1" date="2015-09-15" license="Simplified BSD License">
 DBSteward 1.4.1 Release
 
