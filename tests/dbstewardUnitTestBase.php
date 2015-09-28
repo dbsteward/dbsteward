@@ -23,6 +23,11 @@ require_once __DIR__ . '/mock_output_file_segmenter.php';
 
 class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
 
+  // Directory containing data files used for testing
+  protected static $test_data_dir = NULL;
+  // LOL Right?
+  protected static $last_quote_all_names;
+
   // test cases need to define $this->xml_content_a and $this->xml_content_b for their scenarios
   protected $xml_content_a = "XML_CONTENT_A_UNDEFINED";
   protected $xml_content_b = "XML_CONTENT_B_UNDEFINED";
@@ -242,6 +247,19 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->mysql5->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
     
     //@TODO: confirm tables defined in B are present
+  }
+
+  /**
+   * Get / cache the location of the testing data directory
+   *
+   * This is a good place to put XML files testing instead of loading a ton of
+   * XML data via PHPUnit data providers
+   */
+  protected static function getTestDataDir() {
+    if (is_null(static::$test_data_dir)) {
+      static::$test_data_dir = __DIR__ . '/data';
+    }
+    return static::$test_data_dir;
   }
 
 }
