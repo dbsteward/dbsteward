@@ -20,8 +20,14 @@ However, some examples are always nice. Here we go.
   <schema name="public" owner="ROLE_OWNER">
     <table name="test_table" primaryKey="id" owner="ROLE_OWNER">
       <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
-      <column name="id" type="int auto_increment" null="false"/>
+      <column name="id" type="int" null="false"/>
       <column name="description" type="varchar(255)" null="false"/>
+      <column name="group_id" type="int" null="false"/>
+      <index name="description_group_idx" using="btree">
+        <indexDimension name="description_dim">description</indexDimension>
+        <indexDimension name="group_dim">group_id</indexDimension>
+      </index>
+      <constraint name="description_length" type="check" definition="(length(description) > 5)"/>
     </table>
   </schema>
 </dbsteward>
