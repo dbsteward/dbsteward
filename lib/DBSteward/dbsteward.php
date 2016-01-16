@@ -348,9 +348,14 @@ Format-specific options
       && strlen($options["dbuser"]) > 0) {
       $dbuser = $options["dbuser"];
     }
-    if (isset($options['dbpassword'])
-      && strlen($options['dbpassword']) > 0) {
-      $this->cli_dbpassword = $options['dbpassword'];
+    if (isset($options['dbpassword'])) {
+      if ($options['dbpassword'] === false) {
+        // treat --dbpassword as the empty password, because
+        // --dbpassword='' doesn't show up in $options
+        $this->cli_dbpassword = '';
+      } else {
+        $this->cli_dbpassword = $options['dbpassword'];
+      }
     }
 
     ///// SQL DDL DML DCL output flags
