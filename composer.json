@@ -37,14 +37,12 @@
     "ext-pgsql": "*",
     "ext-simplexml": "*",
     "ext-spl": "*",
-    "monolog/monolog": "^1.14",
+    "monolog/monolog": "1.16.0",
     "kevinlebrun/colors.php": "^0.4.1"
   },
   "require-dev": {
     "ext-mysql": "*",
     "ext-pgsql": "*",
-    "monolog/monolog": "dev-master#49f95a2d636ea9e7409c67890ae29730f50bc22a",
-    "phing/phing": "2.7.*",
     "phpunit/phpunit": "4.4.*",
     "satooshi/php-coveralls": "dev-master"
   },
