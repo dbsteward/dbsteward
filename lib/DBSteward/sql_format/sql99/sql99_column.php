@@ -38,7 +38,7 @@ class sql99_column {
   public static function get_default_value($type) {
     $default_value = NULL;
 
-    if ( preg_match("/^smallint$|^int.*|^bigint.*|^decimal.*|^numeric.*|^real|^double precision$|^float.*|^double.*|^money.*/i", $type) > 0 ) {
+    if ( preg_match("/^smallint$|^(tiny|big)?int.*|^decimal.*|^numeric.*|^real|^double precision$|^float.*|^double.*|^money.*/i", $type) > 0 ) {
       $default_value = "0";
     }
     else if ( preg_match("/^character varying.*|^varchar.*|^char.*|^text.*/i", $type) > 0 ) {

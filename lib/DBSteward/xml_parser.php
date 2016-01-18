@@ -1523,7 +1523,10 @@ class xml_parser {
         foreach ($schema->table as $table) {
           foreach ($table->column as $column) {
             if (isset($column['type'])) {
-              list($column['type'], $column['default']) = self::mysql5_type_convert($column['type'], $column['default']);
+              list($column['type'], $d) = self::mysql5_type_convert($column['type'], $column['default']);
+              if (isset($column['default'])) {
+                $column['default'] = $d;
+              }
             }
           }
         }
@@ -1558,7 +1561,7 @@ class xml_parser {
     switch (strtolower($type)) {
       case 'bool':
       case 'boolean':
-        // $type = 'tinyint';
+        $type = 'tinyint(1)';
         if ($value) {
           switch (strtolower($value)) {
             case "'t'":

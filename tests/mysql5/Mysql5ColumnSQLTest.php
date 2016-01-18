@@ -159,6 +159,7 @@ XML;
 
   public function testTypesAndDefaults() {
     $xml = <<<XML
+<dbsteward>
 <schema name="public" owner="NOBODY">
   <table name="test" primaryKey="id" owner="NOBODY">
     <column name="integer" type="integer" null="false"/>
@@ -170,10 +171,16 @@ XML;
     <column name="text" type="text" null="false"/>
     <column name="varchar80" type="varchar(80)" null="false"/>
     <column name="char" type="char" null="false"/>
+
+    <column name="boolean" type="boolean" null="false"/>
+    <column name="boolean" type="boolean" null="false" default="false"/>
+    <column name="boolean" type="boolean" null="false" default="true"/>
   </table>
 </schema>
+</dbsteward>
 XML;
-    $schema = new SimpleXMLElement($xml);
+    $doc = new SimpleXMLElement($xml);
+    $schema = xml_parser::sql_format_convert($doc)->schema;
 
     $def = function ($col, $add_default, $include_null_def) use (&$schema) {
       return mysql5_column::get_full_definition($schema, $schema, $schema->table, $col, $add_default, $include_null_def);
@@ -187,6 +194,13 @@ XML;
       $col = $schema->table->column[$i];
       $this->assertEquals("`{$col['name']}` {$col['type']} NOT NULL DEFAULT ''", $def($col, true, true));
     }
+
+    $col = $schema->table->column[8];
+    $this->assertEquals("`{$col['name']}` tinyint(1) NOT NULL DEFAULT 0", $def($col, true, true));
+    $col = $schema->table->column[9];
+    $this->assertEquals("`{$col['name']}` tinyint(1) NOT NULL DEFAULT 0", $def($col, true, true));
+    $col = $schema->table->column[10];
+    $this->assertEquals("`{$col['name']}` tinyint(1) NOT NULL DEFAULT 1", $def($col, true, true));
   }
 
   public function testSerials() {
