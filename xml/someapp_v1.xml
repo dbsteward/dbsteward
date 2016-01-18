@@ -33,6 +33,7 @@
       <column name="user_id" type="bigserial" slonyId="10" />
       <column name="user_name" type="character varying(40)" />
       <column name="password" type="text" />
+      <column name="somecol" type="text" />
       <column name="import_id" type="character varying(32)" />
       <column name="register_date" type="timestamp with time zone" />
       <column name="user_status_list_id" foreignSchema="public" foreignTable="user_status_list" foreignColumn="user_status_list_id" />
