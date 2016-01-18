@@ -24,18 +24,8 @@ try {
     require_once 'DBSteward/dbsteward.php';
   }
 
-  if (isset($argv[1]) && strcasecmp($argv[1], '--help') == 0) {
-    echo dbsteward::usage_extended();
-    exit(0);
-  }
-  
-  if (!isset($argv[1]) || strlen($argv[1]) == 0) {
-    echo dbsteward::usage();
-    exit(0);
-  }
-
   $dbg = new dbsteward();
-  $dbg->arg_parse();
+  $dbg->arg_parse($argv);
 }
 catch (exception $e) {
   if (dbsteward::$DEBUG) {

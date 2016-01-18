@@ -166,84 +166,14 @@ class dbsteward {
   }
 
   public static function usage() {
-    $s = "DBSteward Version " . self::VERSION . "
-Usage:
-Global Switches and Flags
-  --sqlformat=<pgsql8|mssql10|mysql5>
-  --requireslonyid                  require tables and sequences to specify a valid slonyId
-  --requireslonysetid               require slonyIds to be associated with a slonySetId
-  --generateslonik                  generate slonik scripts to subscribe to or upgrade slony replicated db
-  --quoteschemanames                quote schema names in SQL output
-  --quotetablenames                 quote table names in SQL output
-  --quotecolumnnames                quote column names in SQL output
-  --quoteallnames                   quote ALL identifiers in SQL output
-  --quoteillegalnames               quote illegal identifiers and treat as a warning, rather than an error.
-  --quotereservednames              quote reserved identifiers and treat as a warning, rather than an error.
-  -v[v[v]]                          see more detail (verbose). -vvv is not advised for normal use.
-  -q[q]                             see less detail (quiet).
-  --debug                           display extended information about errors. Automatically implies -vv.
-Generating SQL DDL / DML / DCL
-  --xml=<database.xml> ...
-  --pgdataxml=<pgdata.xml> ...      postgresql SELECT database_to_xml() result to overlay in composite definition
-Generating SQL DDL / DML / DCL difference statements to upgrade an 'old' database to the 'new' XML definition
-  --oldxml=<database.xml> ...
-  --newxml=<newdatabase.xml> ...
-  --onlyschemasql
-  --onlydatasql
-  --onlytable=<schema.table> ...
-  --singlestageupgrade              combine upgrade stages into one file
-  --maxstatementsperfile            how many DDL / DML / DCL statements per upgrade file segment
-  --ignoreoldnames                  ignore oldSchemaName oldTableName oldColumnName attributes when differencing
-  --ignorecustomroles               ignore grants for custom roles
-  --ignoreprimarykeyerrors          ignore primary key errors when diffing two definitions
-XML utilities
-  --xmlsort=<database.xml> ...
-  --xmlconvert=<database.xml> ...
-  --xmldatainsert=<tabledata.xml>
-  --xmlcollectdataaddendums=N       collect the last N xml files specified during a build into an aggregate file
-Output options
-  --outputdir                       directory to write all output files
-                                    default is location of --xml or --newxml file
-  --outputfileprefix                output file prefix to use for artifact files
-                                    default is first XML file basename
-";
-    return $s;
-  }
-  
-  public static function usage_extended() {
-    $s = dbsteward::usage();
-    $s .= "DBSteward Conversion and Comparison tools:
-SQL diffing
-  --oldsql=<old.sql> ...
-  --newsql=<old.sql> ...
-  --outputfile=<outputfile.ext>
-Slony utils
-  --slonikconvert=<slonyconfig.slonik>
-  --slonycompare=<database.xml> ...     generate table SELECT statements for database health comparison between replicas
-  --slonydiffold=<olddatabase.xml> ...  compare table slonyId assignment between two versions of a database definition
-  --slonydiffnew=<newdatabase.xml> ...
-  --slonyidin=<database.xml>            read this file's definition
-  --slonyidout=<compositeoutput.xml>    output it here with slonyids specified, based on requireslonyid and requireslonysetid
-  --slonyidstartvalue=1                 start slony IDs at this number
-  --slonyidsetvalue=1                   use this slony set ID for any unspecified slonySetId attributes
-Database definition extraction utilities
-  --dbschemadump
-  --dbdatadiff=<againstdatabase.xml> ...
-  --dbhost=<hostname>
-  --dbport=<TCP-port>
-  --dbname=<database_name>              for mysql5, specify a comma-separated list of databases. e.g. --dbname=one,two,three
-  --dbuser=<username>
-  --dbpassword=<password>
-Format-specific options
-  --useautoincrementoptions             mysql5: Apply AUTO_INCREMENT tableOptions. By default these are ignored.
-  --useschemaprefix                     mysql5: Instead of merging schemas together (mysql5 default behavior),
-                                                prefix each database object with the schema name.
-";
-    return $s;
+    $VERSION = self::VERSION;
+    ob_start();
+    include __DIR__ . '/usage.php';
+    return ob_get_clean();
   }
 
-  public function arg_parse() {
-    $short_opts = 'vq';
+  public function arg_parse($argv) {
+    $short_opts = 'hvq';
     $long_opts = array(
       "sqlformat::",
       "xml::",
@@ -297,6 +227,17 @@ Format-specific options
     );
     $options = getopt($short_opts, $long_opts);
     self::set_verbosity($options);
+
+    if (count($argv) == 1 || isset($options['help']) || isset($options['h'])) {
+      $c = new Colors\Color();
+      $c->setTheme(array(
+        'header' => array('underline', 'dark_gray'),
+        'keyword' => array('green'),
+        'value' => array('yellow')
+      ));
+      echo $c->colorize(self::usage()) . PHP_EOL;
+      exit(1);
+    }
 
     $files = array(
       'old' => array(),
