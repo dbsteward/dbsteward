@@ -55,9 +55,9 @@
                                           is used. If omitted entirely, you will be prompted for a password.
 
 <header>XML utilities</header>
-  <keyword>--xmlsort=</keyword><value><database.xml></value><keyword> ...</keyword>
-  <keyword>--xmlconvert=</keyword><value><database.xml></value><keyword> ...</keyword>
-  <keyword>--xmldatainsert=</keyword><value><tabledata.xml></value>
+  <keyword>--xmlsort=</keyword><value><database.xml></value><keyword> ...</keyword>      sort a DBSteward definition file alphabetically
+  <keyword>--xmlconvert=</keyword><value><database.xml></value><keyword> ...</keyword>   convert older DBSteward API version XML file to current standard
+  <keyword>--xmldatainsert=</keyword><value><tabledata.xml></value>          insert / overlay data definitions into the specified XML base definition file
   <keyword>--xmlcollectdataaddendums=</keyword><value>N</value>          collect the last N xml files specified during a build into an aggregate file.
                                        this is useful for advanced deployment strategies and out-of-band processing.
 
