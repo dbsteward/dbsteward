@@ -8,6 +8,7 @@ New
 Changes
   - Fix pgsql8 partial index where clause output SQL  https://github.com/nkiraly/DBSteward/pull/105
   - One usage mode, with pretty colors  https://github.com/nkiraly/DBSteward/pull/116
+  - Fix --dbpassword usage for blank passwords  https://github.com/nkiraly/DBSteward/pull/115
 
 
 ## 1.4.1 - 2015-09-15
