@@ -747,7 +747,7 @@ class xml_parser {
     }
 
     // realpath the dtd_file so when it is announced it is simplified to remove relative directory pathing
-    $dtd_file = realpath($dtd_file);
+    $dtd_file = str_replace("\\", "/", realpath($dtd_file));
     if ($echo_status) {
       dbsteward::info("Validating XML (size = " . strlen($xml) . ") against $dtd_file");
     }
