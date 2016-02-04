@@ -73,6 +73,9 @@ class dbsteward {
     if ( dbsteward::sql_format_exists($format) ) {
       active_sql_format_autoloader::init($format);
       dbsteward::$sql_format = $format;
+      if($format == "h2"){
+        dbsteward::notice("You're using format for h2. Only build mode is supported.");
+      }
     }
     else {
       throw new exception("Unknown SQL format mode: " . $format);
