@@ -1,0 +1,7 @@
+1. Removing tag: zerofill
+2. Clearing type of timestamp
+3. Removing COMMENT from table
+4. ENUM(...) changing to varchar(255)
+5. Separating ALTER TABLE query blocks
+6. Changing ADD FOREIGN KEY query
+7. Changing '' to "" in comments

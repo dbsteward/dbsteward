@@ -3,17 +3,20 @@
   <database>
     <sqlformat>h2</sqlformat>
     <role>
-      <application>mysql5_test</application>
+      <application>h2_test</application>
       <owner>root</owner>
       <replication>replication</replication>
       <readonly>readonly</readonly>
     </role>
   </database>
-  <schema name="test_mysql" owner="ROLE_OWNER">
+  <schema name="h2" owner="ROLE_OWNER">
     <table name="Department" owner="ROLE_OWNER" description="test" primaryKey="DepartmentID">
       <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
       <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
-      <column name="DepartmentID" description="test" type="int(11) AUTO_INCREMENT" null="false"/>
+      <column name="LiabilityEmployment" type="ENUM('Y', 'N')" default="'N'" null="false"/>
+      <column name="LiabilityAutoAccident" type="ENUM('Y', 'N')" default="'N'" null="false"/>
+      <column name="LiabilityOtherAccident" type="ENUM('Y', 'N')" default="'N'" null="false"/>
+      <column name="DepartmentID" description="t'e'st" type="int(11) AUTO_INCREMENT" null="false"/>
       <column name="FullName" description="test" type="varchar(60)" default="NULL" null="true"/>
       <column name="ShortName" description="test" type="varchar(20)" default="''" null="false"/>
       <column name="Abbreviation" description="test" type="varchar(8)" default="''" null="false"/>
@@ -30,14 +33,14 @@
       <column name="Longitude" description="test" type="decimal(10,6)" default="NULL" null="true"/>
       <column name="TimeZone" description="test" type="varchar(100)" default="''" null="false"/>
       <column name="Updated" description="test" type="timestamp ON UPDATE CURRENT_TIMESTAMP" default="CURRENT_TIMESTAMP" null="false"/>
-      <column name="Created" description="test" type="timestamp" default="'0000-00-00 00:00:00'" null="false"/>
+      <column name="Created" description="test" type="TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" default="'0000-00-00 00:00:00'" null="false"/>
       <column name="Deleted" type="timestamp" default="NULL" null="true"/>
     </table>
     <table name="DepartmentPhoneNumber" owner="ROLE_OWNER" description="" primaryKey="PhoneNumberTypeID,DepartmentID">
       <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
       <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
-      <column name="PhoneNumberTypeID" description="test" default="0" null="false" foreignSchema="test_mysql" foreignTable="PhoneNumberTypes" foreignColumn="PhoneNumberTypeID" foreignKeyName="PhoneNumberTypeID_FK" foreignOnDelete="NO_ACTION" foreignOnUpdate="NO_ACTION"/>
-      <column name="DepartmentID" description="test" default="0" null="false" foreignSchema="test_mysql" foreignTable="Department" foreignColumn="DepartmentID" foreignKeyName="DepartmentPhoneNumber_FK" foreignOnDelete="NO_ACTION" foreignOnUpdate="NO_ACTION"/>
+      <column name="PhoneNumberTypeID" description="test" default="0" null="false" foreignSchema="h2" foreignTable="PhoneNumberTypes" foreignColumn="PhoneNumberTypeID" foreignKeyName="PhoneNumberTypeID_FK" foreignOnDelete="NO_ACTION" foreignOnUpdate="NO_ACTION"/>
+      <column name="DepartmentID" description="test" default="0" null="false" foreignSchema="h2" foreignTable="Department" foreignColumn="DepartmentID" foreignKeyName="DepartmentPhoneNumber_FK" foreignOnDelete="NO_ACTION" foreignOnUpdate="NO_ACTION"/>
       <column name="PhoneNumber" description="test" type="varchar(30)" default="''" null="false"/>
       <index name="DepartmentPhoneNumber_FK" using="btree" unique="false">
         <indexDimension name="DepartmentID_1">DepartmentID</indexDimension>
@@ -46,8 +49,8 @@
     <table name="DepartmentProductType" owner="ROLE_OWNER" description="" primaryKey="ProductTypeID,DepartmentID">
       <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
       <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
-      <column name="ProductTypeID" description="test" default="0" null="false" foreignSchema="test_mysql" foreignTable="ProductTypes" foreignColumn="ProductTypeID" foreignKeyName="ProductTypeID_FK" foreignOnDelete="NO_ACTION" foreignOnUpdate="NO_ACTION"/>
-      <column name="DepartmentID" description="FK to Department DepartmentID" default="0" null="false" foreignSchema="test_mysql" foreignTable="Department" foreignColumn="DepartmentID" foreignKeyName="DepartmentID_FK" foreignOnDelete="NO_ACTION" foreignOnUpdate="NO_ACTION"/>
+      <column name="ProductTypeID" description="test" default="0" null="false" foreignSchema="h2" foreignTable="ProductTypes" foreignColumn="ProductTypeID" foreignKeyName="ProductTypeID_FK" foreignOnDelete="NO_ACTION" foreignOnUpdate="NO_ACTION"/>
+      <column name="DepartmentID" description="FK to Department DepartmentID" default="0" null="false" foreignSchema="h2" foreignTable="Department" foreignColumn="DepartmentID" foreignKeyName="DepartmentID_FK" foreignOnDelete="NO_ACTION" foreignOnUpdate="NO_ACTION"/>
       <index name="DepartmentID_FK" using="btree" unique="false">
         <indexDimension name="DepartmentID_1">DepartmentID</indexDimension>
       </index>
@@ -57,15 +60,15 @@
       <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
       <column name="FaxGUID" description="test" type="varchar(64)" null="false"/>
       <column name="UserID" description="test" type="varchar(20)" default="NULL" null="true"/>
-      <column name="DepartmentID" description="test" null="false" foreignSchema="test_mysql" foreignTable="Department" foreignColumn="DepartmentID" foreignKeyName="Fax_ibfk1"/>
+      <column name="DepartmentID" description="test" null="false" foreignSchema="h2" foreignTable="Department" foreignColumn="DepartmentID" foreignKeyName="Fax_ibfk1"/>
       <column name="UniqueIdentifier" description="test" type="varchar(64)" default="NULL" null="true"/>
-      <column name="ProductTypeID" description="test" null="false" foreignSchema="test_mysql" foreignTable="ProductTypes" foreignColumn="ProductTypeID" foreignKeyName="Fax_ibfk2"/>
-      <column name="Created" description="test" type="timestamp" default="'0000-00-00 00:00:00'" null="true"/>
+      <column name="ProductTypeID" description="test" null="false" foreignSchema="h2" foreignTable="ProductTypes" foreignColumn="ProductTypeID" foreignKeyName="Fax_ibfk2"/>
+      <column name="Created" description="test" type="TIMESTAMP" default="'0000-00-00 00:00:00'" null="true"/>
       <column name="Updated" description="test" type="timestamp ON UPDATE CURRENT_TIMESTAMP" default="CURRENT_TIMESTAMP" null="true"/>
       <column name="Deleted" description="test" type="timestamp" default="NULL" null="true"/>
       <column name="Success" description="test" type="timestamp" default="NULL" null="true"/>
       <column name="Attempts" description="test" type="int(11)" default="0" null="false"/>
-      <column name="FaxStatusTypeID" description="test" default="1" null="false" foreignSchema="test_mysql" foreignTable="FaxStatusTypes" foreignColumn="FaxStatusTypeID" foreignKeyName="Fax_ibfk3"/>
+      <column name="FaxStatusTypeID" description="test" default="1" null="false" foreignSchema="h2" foreignTable="FaxStatusTypes" foreignColumn="FaxStatusTypeID" foreignKeyName="Fax_ibfk3"/>
       <column name="InterFAXID" description="test" type="int(11)" default="NULL" null="true"/>
       <column name="Priority" description="test" type="int(11)" default="0" null="false"/>
       <column name="EmailNotify" description="test" type="tinyint(1)" default="0" null="false"/>
@@ -84,7 +87,7 @@
       <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
       <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
       <column name="FaxDocumentGUID" description="testtest" type="varchar(64)" null="false"/>
-      <column name="FaxGUID" description="test" null="false" foreignSchema="test_mysql" foreignTable="Fax" foreignColumn="FaxGUID" foreignKeyName="FaxDocuments_ibfk1"/>
+      <column name="FaxGUID" description="test" null="false" foreignSchema="h2" foreignTable="Fax" foreignColumn="FaxGUID" foreignKeyName="FaxDocuments_ibfk1"/>
       <column name="FileOnDiskLocation" description="test" type="varchar(255)" null="false"/>
       <column name="FileOnDiskName" description="test" type="varchar(255)" null="false"/>
       <column name="Created" description="test" type="timestamp" default="'0000-00-00 00:00:00'" null="true"/>
@@ -97,7 +100,7 @@
       <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
       <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
       <column name="FaxHistoryGUID" type="varchar(64)" null="false"/>
-      <column name="FaxGUID" null="false" foreignSchema="test_mysql" foreignTable="Fax" foreignColumn="FaxGUID" foreignKeyName="FaxHistory_ibfk1"/>
+      <column name="FaxGUID" null="false" foreignSchema="h2" foreignTable="Fax" foreignColumn="FaxGUID" foreignKeyName="FaxHistory_ibfk1"/>
       <column name="InterFAXID" type="int(11)" null="false"/>
       <column name="SubmitTime" type="datetime" default="NULL" null="true"/>
       <column name="CompletionTime" type="datetime" default="NULL" null="true"/>
@@ -107,7 +110,7 @@
       <column name="AttemptsToPerform" type="int(11)" default="NULL" null="true"/>
       <column name="AttemptsMade" type="int(11)" default="NULL" null="true"/>
       <column name="Priority" type="int(11)" default="NULL" null="true"/>
-      <column name="Status" description="test" default="NULL" null="true" foreignSchema="test_mysql" foreignTable="InterFaxStatusCodes" foreignColumn="InterfaxStatusCode" foreignKeyName="FaxHistory_Status"/>
+      <column name="Status" description="test" default="NULL" null="true" foreignSchema="h2" foreignTable="InterFaxStatusCodes" foreignColumn="InterfaxStatusCode" foreignKeyName="FaxHistory_Status"/>
       <index name="FaxHistory_ibfk1" using="btree" unique="false">
         <indexDimension name="FaxGUID_1">FaxGUID</indexDimension>
       </index>
@@ -173,7 +176,7 @@
       <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
       <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
       <column name="RoleID" description="test" type="varchar(20)" null="false"/>
-      <column name="NotificationTemplateTypeID" description="test" null="false" foreignSchema="test_mysql" foreignTable="notificationTemplateTypes" foreignColumn="NotificationTemplateTypeID" foreignKeyName="notificationTemplateTypes_ibfk1"/>
+      <column name="NotificationTemplateTypeID" description="test" null="false" foreignSchema="h2" foreignTable="notificationTemplateTypes" foreignColumn="NotificationTemplateTypeID" foreignKeyName="notificationTemplateTypes_ibfk1"/>
       <column name="Created" type="timestamp" default="'0000-00-00 00:00:00'" null="true"/>
       <column name="Updated" type="timestamp ON UPDATE CURRENT_TIMESTAMP" default="CURRENT_TIMESTAMP" null="true"/>
       <column name="Deleted" type="timestamp" default="NULL" null="true"/>
@@ -194,7 +197,7 @@
       <tableOption sqlFormat="mysql5" name="engine" value="InnoDB"/>
       <tableOption sqlFormat="mysql5" name="default charset" value="latin1"/>
       <column name="NotificationTemplateVariableID" type="int(11) AUTO_INCREMENT" null="false"/>
-      <column name="NotificationTemplateTypeID" default="NULL" null="true" foreignSchema="test_mysql" foreignTable="notificationTemplateTypes" foreignColumn="NotificationTemplateTypeID" foreignKeyName="notificationTemplateVariables_ibfk_1"/>
+      <column name="NotificationTemplateTypeID" default="NULL" null="true" foreignSchema="h2" foreignTable="notificationTemplateTypes" foreignColumn="NotificationTemplateTypeID" foreignKeyName="notificationTemplateVariables_ibfk_1"/>
       <column name="Name" type="varchar(255)" default="''" null="false"/>
       <column name="Description" type="varchar(255)" default="''" null="false"/>
       <column name="Variable" type="varchar(255)" default="''" null="false"/>

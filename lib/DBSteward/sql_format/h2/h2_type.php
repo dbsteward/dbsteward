@@ -24,7 +24,8 @@ class h2_type extends sql99_type {
   }
 
   public static function get_enum_type_declaration($node_type) {
-    return "ENUM('" . implode("','", dbx::to_array($node_type->enum, 'name')) . "')";
+    return "varchar(255)";
+   // return "ENUM('" . implode("','", dbx::to_array($node_type->enum, 'name')) . "')";
   }
 
   /**

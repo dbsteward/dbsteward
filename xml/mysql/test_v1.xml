@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <dbsteward>
   <database>
-    <sqlformat>h2</sqlformat>
+    <sqlformat>mysql5</sqlformat>
     <role>
       <application>mysql5_test</application>
       <owner>root</owner>

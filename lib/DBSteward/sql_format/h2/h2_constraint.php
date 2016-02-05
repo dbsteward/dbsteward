@@ -6,12 +6,7 @@ class h2_constraint extends sql99_constraint {
     return "PRIMARY";
   }
 
-  /**
-   * create SQL To create the constraint passed in the $constraint array
-   *
-   * @return string
-   */
-  public static function get_constraint_sql($constraint, $with_alter_table=TRUE) {
+  public static function get_constraint_sql($constraint, $with_alter_table=FALSE) {
     if ( ! is_array($constraint) ) {
       throw new exception("constraint is not an array?");
     }
@@ -43,15 +38,14 @@ class h2_constraint extends sql99_constraint {
         // naming the FK index and not the constraint (... ADD FOREIGN KEY name ...) results in the named index and an implicitly named constraint being created
         // naming the constraint and not the index (... ADD CONSTRAINT name FOREIGN KEY ...) results in both the index and constraint having the same name
 
-        $constraint_name = h2::get_quoted_object_name($constraint['name']);
-        $index_name = !empty($constraint['foreignIndexName']) ? h2::get_quoted_object_name($constraint['foreignIndexName']) : $constraint_name;
+        //$constraint_name = h2::get_quoted_object_name($constraint['name']);
+        //$index_name = !empty($constraint['foreignIndexName']) ? h2::get_quoted_object_name($constraint['foreignIndexName']) : $constraint_name;
 
         $sql = '';
         if ($with_alter_table) {
           $sql .= "ALTER TABLE " . h2::get_fully_qualified_table_name($constraint['schema_name'], $constraint['table_name']) . " ";
         }
-        $sql .=  "ADD CONSTRAINT ";
-        $sql .= "$constraint_name FOREIGN KEY $index_name {$constraint['definition']}";
+        $sql .= "ADD FOREIGN KEY {$constraint['definition']}";
 
         // FOREIGN KEY ON DELETE / ON UPDATE handling
         if ( strcasecmp($constraint['type'], 'FOREIGN KEY') == 0 && !empty($constraint['foreignOnDelete']) ) {
