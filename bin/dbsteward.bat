@@ -1,8 +1,6 @@
 @if "%DEBUG%" == "" @echo off
 @rem ##########################################################################
-@rem
-@rem  dbsteward startup script for windows, works for me...
-@rem  %DBSTEWARD_HOME% should be the root directory of dbsteward project
+@rem  dbsteward startup script for windows
 @rem ##########################################################################
 
 @rem Set local scope for the variables with windows NT shell
@@ -36,7 +34,8 @@ goto execute
 set CMD_LINE_ARGS=%$
 
 :execute
-php %DBSTEWARD_HOME%\bin\dbsteward %CMD_LINE_ARGS%
+@php %DBSTEWARD_HOME%\bin\dbsteward %CMD_LINE_ARGS%
+php %DIRNAME%\dbsteward %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
