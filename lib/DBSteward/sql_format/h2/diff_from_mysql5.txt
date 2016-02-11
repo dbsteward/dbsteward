@@ -1,7 +1,9 @@
-1. Removing tag: zerofill
-2. Clearing type of timestamp
-3. Removing COMMENT from table
-4. ENUM(...) changing to varchar(255)
-5. Separating ALTER TABLE query blocks
-6. Changing ADD FOREIGN KEY query
-7. Changing '' to "" in comments
+This H2 support was created to build specific project schema .sql, which runs and builds schema in H2 without issues.
+1. Removes 'zerofill' tag
+2. Clears type of timestamp
+3. Modifies type ENUM(...) to varchar(255)
+4. Removes COMMENT tag from table
+5. Separates ALTER TABLE query block to separate ALTER TABLE blocks
+6. Modifies ADD FOREIGN KEY query
+7. Modifies quotes '' to "" in comments
+Other cases are not tested.
