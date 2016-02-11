@@ -7,3 +7,9 @@
 	hideDotFiles = dotGitOnly
 [remote "origin"]
 	url = https://github.com/auriseu/DBSteward.git
+<<<<<<< HEAD
+=======
+	fetch = +refs/*:refs/*
+	mirror = true
+	pushurl = ssh://git@git.priv.intermedix.com:22/edi/imx-edi-dbsteward-mirror.git
+>>>>>>> 2590083d3f348d1c4a2a708bb428c1bf3f8c1383
