@@ -9,3 +9,4 @@
 	url = https://github.com/auriseu/DBSteward.git
 	fetch = +refs/*:refs/*
 	mirror = true
+	pushurl = ssh://git@git.priv.intermedix.com:22/edi/imx-edi-dbsteward-mirror.git
