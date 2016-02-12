@@ -747,6 +747,7 @@ class xml_parser {
     }
 
     // realpath the dtd_file so when it is announced it is simplified to remove relative directory pathing
+	// Issues occuring on windows when using \\ in this path
     $dtd_file = str_replace("\\", "/", realpath($dtd_file));
     if ($echo_status) {
       dbsteward::info("Validating XML (size = " . strlen($xml) . ") against $dtd_file");
