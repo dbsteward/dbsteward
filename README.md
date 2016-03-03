@@ -15,6 +15,8 @@ SQL database definition differencing tool. Structure and data is defined in a DT
 [license]: https://raw.githubusercontent.com/nkiraly/DBSteward/master/LICENSE.md
 [twitter]: https://twitter.com/intent/tweet?text=Hey%20@dbsteward%20&url=%5Bobject%20Object%5D
 
+NOTICE: Due to dependency updates, DBSteward 1.4.0 was the last version to support PHP 5.3 and 5.4. Please upgrade your run-times to at least PHP 5.5 before upgrading to DBSteward 1.4.2+
+
 ## Want Updates?
 Subscribe to the [DBSteward Announce](https://groups.google.com/forum/#!forum/dbsteward-announce) mailing list
 
