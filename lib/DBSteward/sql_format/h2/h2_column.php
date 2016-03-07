@@ -163,7 +163,7 @@ class h2_column extends sql99_column
     // There is no better solution for H2 with this issue
     public static function current_timestamp_on_update_for_h2($node_column, $definition)
     {
-        return str_replace("ON UPDATE CURRENT_TIMESTAMP", 'AS CURRENT_TIMESTAMP', $definition);
+        return str_replace("ON UPDATE CURRENT_TIMESTAMP", "AS CURRENT_TIMESTAMP", $definition);
     }
 
 }
