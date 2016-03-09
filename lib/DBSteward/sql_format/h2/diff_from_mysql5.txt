@@ -1,6 +1,6 @@
 This H2 support was created to build specific project schema .sql, which runs and builds schema in H2 without issues.
 1. Removes 'zerofill' tag
-2. Modifies timestamp, replaces 'ON UPDATE CURRENT_TIMESTAMP' with 'AS CURRENT_TIMESTAMP'
+2. Modifies timestamp, replaces 'ON UPDATE CURRENT_TIMESTAMP' with 'AS CURRENT_TIMESTAMP' and default zero values to NOW()
 3. Modifies type ENUM(...) to varchar(255)
 4. Removes COMMENT tag from table
 5. Separates ALTER TABLE query block to separate ALTER TABLE blocks
