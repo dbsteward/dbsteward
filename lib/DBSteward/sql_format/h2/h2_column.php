@@ -8,9 +8,9 @@ class h2_column extends sql99_column
         return stripos($node_column['type'], 'timestamp') === 0;
     }
 
-    public static function is_current_timestamp_on_update($node_column)
+    public static function is_date($node_column)
     {
-        return static::is_timestamp($node_column) && stripos($node_column['type'], 'ON UPDATE CURRENT_TIMESTAMP') !== FALSE;
+        return stripos($node_column['type'], 'date') === 0;
     }
 
     public static function null_allowed($node_table, $node_column)
@@ -27,7 +27,6 @@ class h2_column extends sql99_column
 
     public static function get_full_definition($db_doc, $node_schema, $node_table, $node_column, $add_defaults, $include_null_definition = true, $include_auto_increment = false)
     {
-        // ignore AUTO_INCREMENT flags for now
         $is_auto_increment = static::is_auto_increment($node_column['type']);
         $orig_type = (string)$node_column['type'];
         $node_column['type'] = static::un_auto_increment($node_column['type']);
@@ -36,7 +35,8 @@ class h2_column extends sql99_column
         $definition = h2::get_quoted_column_name($node_column['name']) . ' ' . $column_type;
         $nullable = static::null_allowed($node_table, $node_column);
         $is_timestamp = static::is_timestamp($node_column);
-        $is_current_timestamp_on_update = static::is_current_timestamp_on_update($node_column);
+        $is_date = static::is_date($node_column);
+
 
         if ($include_null_definition && !$nullable) {
             $definition .= " NOT NULL";
@@ -51,34 +51,24 @@ class h2_column extends sql99_column
                 $note = "Ignoring default '{$node_column['default']}' on {$node_schema['name']}.{$node_table['name']}.{$node_column['name']} because it is a serial type";
                 dbsteward::warning($note . "\n");
             } else {
-                if ($is_current_timestamp_on_update) {
-                    $definition = static::current_timestamp_on_update_for_h2($node_column, $definition);
-                } else {
-                    $definition .= " DEFAULT " . $node_column['default'];
+                $definition .= " DEFAULT " . $node_column['default'];
+            }
+        } else {
+            if (!$nullable && $add_defaults) {
+                ;
+                $default_col_value = self::get_default_value($node_column['type']);
+                if ($default_col_value != null) {
+                    $definition .= " DEFAULT " . $default_col_value;
                 }
             }
-        } else
-            if ($add_defaults && $is_timestamp) {
-                if ($nullable) {
-                    $definition .= " DEFAULT NULL";
-                } else {
-                    if ($is_current_timestamp_on_update) {
-                        $definition = static::current_timestamp_on_update_for_h2($node_column, $definition);
-                    } else {
-                        $definition .= " DEFAULT CURRENT_TIMESTAMP";
-                    }
-                }
-            } else
-                if (!$nullable && $add_defaults) {
-                    ;
-                    $default_col_value = self::get_default_value($node_column['type']);
-                    if ($default_col_value != null) {
-                        $definition .= " DEFAULT " . $default_col_value;
-                    }
-                }
+        }
 
         if (strlen($node_column['description']) > 0) {
             $definition .= " COMMENT " . h2::quote_string_value($node_column['description']);
+        }
+
+        if($is_timestamp || $is_date){
+            $definition = self::time_adjust_definition($node_column, $definition, $column_type);
         }
 
         // restore the original type of the column
@@ -159,11 +149,40 @@ class h2_column extends sql99_column
         return "SELECT $setval;";
     }
 
-    // AS CURRENT_TIMESTAMP only updates timestamp, and not allows to insert specific value.
-    // There is no better solution for H2 with this issue
-    public static function current_timestamp_on_update_for_h2($node_column, $definition)
+    public static function time_adjust_definition($node_column, $definition, $column_type)
     {
-        return str_replace("ON UPDATE CURRENT_TIMESTAMP", "AS CURRENT_TIMESTAMP", $definition);
+        if (self::time_is_current_timestamp_on_update($definition)) {
+            return self::time_timestamp_on_update_to_as_current_timestamp($node_column, $definition, $column_type);
+        }
+
+        return self::time_default_zeros_to_now($definition);
+    }
+
+    public static function time_is_zeros_in_default_value($definition)
+    {
+        return stripos($definition, "'0000-00-00'") !== FALSE || stripos($definition, "'0000-00-00 00:00:00'") !== FALSE;
+    }
+
+    public static function time_default_zeros_to_now($definition)
+    {
+        $def = str_replace("'0000-00-00'", "NOW()", $definition);
+        return str_replace("'0000-00-00 00:00:00'", "NOW()", $def);
+    }
+
+    public static function time_is_current_timestamp_on_update($definition)
+    {
+        return stripos($definition, 'ON UPDATE CURRENT_TIMESTAMP') !== FALSE;
+    }
+
+    public static function time_timestamp_on_update_to_as_current_timestamp($node_column, $definition, $column_type)
+    {
+        $def = h2::get_quoted_column_name($node_column['name']) . ' ' . $column_type;
+
+        if (stripos($definition, "NOT NULL") !== FALSE) {
+            $def .= " NOT NULL";
+        }
+
+        return str_replace("ON UPDATE CURRENT_TIMESTAMP", "AS CURRENT_TIMESTAMP", $def);
     }
 
 }
