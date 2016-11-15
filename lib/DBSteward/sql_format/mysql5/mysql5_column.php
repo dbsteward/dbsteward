@@ -81,7 +81,7 @@ class mysql5_column extends sql99_column {
         $definition .= " DEFAULT CURRENT_TIMESTAMP";
       }
     }
-    else if ( !$nullable && $add_defaults ) {;
+    else if ( !$nullable && $add_defaults ) {
       $default_col_value = self::get_default_value($node_column['type']);
       if ($default_col_value != null) {
         $definition .= " DEFAULT " . $default_col_value;
