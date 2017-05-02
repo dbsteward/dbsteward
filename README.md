@@ -9,9 +9,9 @@ SQL database definition differencing tool. Structure and data is defined in a DT
 
 [![GitHub Release](http://img.shields.io/github/release/nkiraly/DBSteward.svg?style=plastic)][release]
 [![GitHub License](https://img.shields.io/badge/license-BSD-blue.svg?style=plastic)][license]
-[![Twitter](https://img.shields.io/twitter/url/https/github.com/nkiraly/DBSteward.svg?style=plastic)][twitter]
+[![Twitter](https://img.shields.io/twitter/url/https/github.com/dbsteward/dbsteward.svg?style=plastic)][twitter]
 
-[release]: https://github.com/nkiraly/DBSteward/releases
+[release]: https://github.com/dbsteward/dbsteward/releases
 [license]: https://raw.githubusercontent.com/nkiraly/DBSteward/master/LICENSE.md
 [twitter]: https://twitter.com/intent/tweet?text=Hey%20@dbsteward%20&url=%5Bobject%20Object%5D
 
@@ -32,15 +32,15 @@ Many developers maintain complete and upgrade script versions of their applicati
 
 # Are you technical and tired of reading this FAQ already?
 
-Using DBSteward to generate or difference a database definition: https://github.com/nkiraly/DBSteward/blob/master/doc/USING.md
+Using DBSteward to generate or difference a database definition: https://github.com/dbsteward/dbsteward/blob/master/doc/USING.md
 
-Installing DBSteward with Composer / PEAR: https://github.com/nkiraly/DBSteward/blob/master/doc/INSTALLING.md
+Installing DBSteward with Composer / PEAR: https://github.com/dbsteward/dbsteward/blob/master/doc/INSTALLING.md
 
-XML Format examples and ancedotes: https://github.com/nkiraly/DBSteward/blob/master/doc/XMLGUIDE.md
+XML Format examples and ancedotes: https://github.com/dbsteward/dbsteward/blob/master/doc/XMLGUIDE.md
 
-Software development best practices: https://github.com/nkiraly/DBSteward/blob/master/doc/DEVGUIDE.md
+Software development best practices: https://github.com/dbsteward/dbsteward/blob/master/doc/DEVGUIDE.md
 
-Slony configuration management examples: https://github.com/nkiraly/DBSteward/blob/master/doc/SLONYGUIDE.md
+Slony configuration management examples: https://github.com/dbsteward/dbsteward/blob/master/doc/SLONYGUIDE.md
 
 
 ***
@@ -51,7 +51,7 @@ There can be nuances to working with DBSteward for the purpose of generating or 
 
 ## 1. What are these input and output files?
 
-In the following examples, the definition file is *someapp_v1.xml*. For more information on the DBSteward XML format, see https://github.com/nkiraly/DBSteward/blob/master/doc/XMLGUIDE.md
+In the following examples, the definition file is *someapp_v1.xml*. For more information on the DBSteward XML format, see https://github.com/dbsteward/dbsteward/blob/master/doc/XMLGUIDE.md
 
 When building a full definition ( _dbsteward --xml=someapp.xml_ ), DBSteward will output a someapp_v1_full_build.sql file. This SQL file contains all of the DDL DML DCL to create a instance of your database definition, **with all operations in foreign-key dependency order**.
 
@@ -99,22 +99,22 @@ DBSteward currently supports output files in Postgresql 8 / 9, MySQL 5.5, and Mi
 
 
 ## 5. How do I get started?
-To start tinkering with the possibilities, install DBSteward with Composer with https://github.com/nkiraly/DBSteward/blob/master/doc/INSTALLING.md
+To start tinkering with the possibilities, install DBSteward with Composer with https://github.com/dbsteward/dbsteward/blob/master/doc/INSTALLING.md
 
 You will also need to have the `xmllint` executable installed in your PATH, available from [libxml2](http://xmlsoft.org).
 
-You can also of get a checkout at git://github.com/nkiraly/DBSteward.git
+You can also of get a checkout at git://github.com/dbsteward/dbsteward.git
 It is runnable in source-checkout form, as php bin/dbsteward.php
 
 
 ## 6. How do I convert an existing database to DBSteward definition?
 ## 7. I have an existing project how do I migrate to using DBSteward?
-Examples of structure and data extraction can be found on the Using DBSteward article https://github.com/nkiraly/DBSteward/blob/master/doc/USING.md
+Examples of structure and data extraction can be found on the Using DBSteward article https://github.com/dbsteward/dbsteward/blob/master/doc/USING.md
 
 
 ## 8. Can I define static data in DBSteward XML?
 
-Yes you can. Static data rows will be differenced and changes DML generated in stage 2 and 4 .sql files. You can find examples of defining static data in the table _user_status_list_ of the [someapp_v1.xml sample definition](https://github.com/nkiraly/DBSteward/blob/master/xml/someapp_v1.xml). Be sure to leave your static data rows each version. They are compared for changes, additions, and deletions each time you build an upgrade.
+Yes you can. Static data rows will be differenced and changes DML generated in stage 2 and 4 .sql files. You can find examples of defining static data in the table _user_status_list_ of the [someapp_v1.xml sample definition](https://github.com/dbsteward/dbsteward/blob/master/xml/someapp_v1.xml). Be sure to leave your static data rows each version. They are compared for changes, additions, and deletions each time you build an upgrade.
 
 
 ## 9. How do I define legacy object names such as columns named order or tables called group without getting 'Invalid identifier'
@@ -139,10 +139,10 @@ slonyIds can be completely arbitrary, but are recommended to be allocated in seg
 
 ## 13. How do I define replicate, and upgrade a database I have defined with DBSteward and want to replicate with Slony?
 
-See the Slony slonik output usage guide https://github.com/nkiraly/DBSteward/blob/master/doc/SLONYGUIDE.md for examples.
+See the Slony slonik output usage guide https://github.com/dbsteward/dbsteward/blob/master/doc/SLONYGUIDE.md for examples.
 
 
 ## 14. What are some recommended best practices for the software development lifecycle?
 
-See the DBSteward Development guide https://github.com/nkiraly/DBSteward/blob/master/doc/DEVGUIDE.md for detailed examples.
+See the DBSteward Development guide https://github.com/dbsteward/dbsteward/blob/master/doc/DEVGUIDE.md for detailed examples.
 

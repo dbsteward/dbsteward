@@ -39,7 +39,7 @@ On the origin database server, for each replication set,
 
 ## 3. someapp Deployment with Replication
 
-The XML examples that come with DBSteward have slony replication configuration in them. Here is the process for building and deploying them. In addition the [DBSteward maven plugin](https://github.com/nkiraly/dbsteward-maven-plugin) is being worked on to streamline deployment as a series maven lifecycle tasks.
+The XML examples that come with DBSteward have slony replication configuration in them. Here is the process for building and deploying them. In addition the [DBSteward maven plugin](https://github.com/dbsteward/dbsteward-maven-plugin) is being worked on to streamline deployment as a series maven lifecycle tasks.
 
 Build someapp v1
 ```bash

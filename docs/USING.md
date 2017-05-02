@@ -5,7 +5,7 @@
 ## 1. Compiling someapp_v1.xml
 Some application, version 1, has a database backend, defined in someapp_v1.xml
 
-https://github.com/nkiraly/DBSteward/blob/master/xml/someapp_v1.xml
+https://github.com/dbsteward/dbsteward/blob/master/xml/someapp_v1.xml
 
 This definition of a database contains 3 tables in the public schema, a session garbage collector function, and a search_results schema for the creation of temporary results tables.
 
@@ -37,9 +37,9 @@ Now you will see the artifacts from creating this database, and the SQL build fi
 ## 2. Comparing someapp_v1.xml to someapp_v2.xml
 New features and database constraints have been added to someapp, in someapp version 2, defined as someapp_v2.xml.
 
-https://github.com/nkiraly/DBSteward/blob/master/xml/someapp_v1.xml
+https://github.com/dbsteward/dbsteward/blob/master/xml/someapp_v1.xml
 
-https://github.com/nkiraly/DBSteward/blob/master/xml/someapp_v2.xml
+https://github.com/dbsteward/dbsteward/blob/master/xml/someapp_v2.xml
 
 someapp_v2.xml contains a new foreign key to a new table, user_access_level. In this example we see that a new column, email, has been added to the user table. A new table has also been added, and a new column user_access_level_id, keying to it. The new column has the same type as it's foreign key column. This is consistency enforcement by DBSteward. You cannot specify a column type when specifying a foreign keyed column.
 

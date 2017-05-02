@@ -40,7 +40,7 @@ ALTER TABLE user
   ADD COLUMN user_location geography('POINT');
 ```
 
-For details on differencing two versions of an application, see [Using DBSteward](https://github.com/nkiraly/DBSteward/blob/master/doc/USING.md)
+For details on differencing two versions of an application, see [Using DBSteward](https://github.com/dbsteward/dbsteward/blob/master/doc/USING.md)
 
 
 ## Bugfix example

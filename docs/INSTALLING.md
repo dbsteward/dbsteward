@@ -18,7 +18,7 @@ export PATH=$PATH:~/.composer/vendor/bin
 ```
 
 With the composer global vendor binary installed, now you can run by just referring to the vendor binary as **dbsteward**. See [Using DBSteward](
-https://github.com/nkiraly/DBSteward/blob/master/doc/USING.md) for examples.
+https://github.com/dbsteward/dbsteward/blob/master/doc/USING.md) for examples.
 
 ## Updating via Composer
 Updating your composer global package is as easy as re-requiring the global nkiraly/dbsteward package and specifying the version you want to switch to using:

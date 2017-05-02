@@ -1,9 +1,11 @@
 # DBSteward Changelog
 
-## 1.4.2 - 2016-00-00
+## 1.4.2 - 2017-00-00
 
 New
   - Switch to CHANGEs.md for change log entries
+  - Project moved to https://github.com/dbsteward/dbsteward
+  - Check out updated documentation at https://github.com/dbsteward/dbsteward
 
 Changes
   - Fix pgsql8 partial index where clause output SQL  https://github.com/nkiraly/DBSteward/pull/105
