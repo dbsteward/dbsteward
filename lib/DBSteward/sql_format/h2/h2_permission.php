@@ -1,0 +1,104 @@
+<?php
+
+class h2_permission extends sql99_permission {
+
+  public static function get_permission_sql($db_doc, $node_schema, $node_object, $node_permission, $action='grant') {
+    if ( strcasecmp($node_permission->getName(), 'grant') != 0 && strcasecmp($node_permission->getName(), 'revoke') != 0 ) {
+      throw new exception("Cannot extract permission rights from node that is not grant or revoke");
+    }
+    if ( !isset($node_permission['operation']) || strlen($node_permission['operation']) == 0 ) {
+      throw new exception("node_permission operation definition is empty");
+    }
+
+    $object_name = '';
+    $object_type = strtoupper($node_object->getName());
+    $privileges = array_map(function ($p) use ($object_type){
+      return h2_permission::get_real_privilege($p, $object_type);
+    }, static::get_permission_privileges($node_permission));
+    $roles = static::get_permission_roles($db_doc, $node_permission);
+    $with = static::get_permission_options_sql($node_permission);
+
+    switch ( $object_type ) {
+      case 'SCHEMA':
+        // all tables on current database, because no schemas
+        $object_name = '*';
+        break;
+      case 'VIEW':
+        return "-- Ignoring permissions on view '{$node_object['name']}' because MySQL uses SQL SECURITY DEFINER semantics\n";
+      case 'TABLE':
+        $object_name = h2::get_fully_qualified_table_name($node_schema['name'],$node_object['name']);
+        break;
+      case 'FUNCTION':
+        $object_name = "FUNCTION " . h2::get_fully_qualified_object_name($node_schema['name'], $node_object['name'], 'function');
+        break;
+      case 'SEQUENCE':
+        // sequences exist as rows in a table for mysql
+        $object_name = h2::get_fully_qualified_table_name($node_schema['name'],h2_sequence::TABLE_NAME);
+        break;
+      default:
+        throw new exception("unknown object type encountered: " . $object_type);
+    }
+
+    $sql = static::get_sql(strtoupper($action), $object_name, $privileges, array_map('h2::get_quoted_object_name', $roles), $with) . "\n";
+    
+    return $sql;
+  }
+
+  /**
+   * Get sql for GRANTing/REVOKEing all given priveleges, for all given users(roles) on all given objects
+   * 
+   * @param string $action GRANT/REVOKE
+   * @param array $objects
+   * @param array $privileges
+   * @param array $roles
+   * @param string $option_sql optional option sql
+   */
+  public static function get_sql($action, $objects, $privileges, $roles, $with_grant) {
+    $sql = array();
+    $privileges = (array)$privileges;
+    $roles = (array)$roles;
+
+    if ($with_grant) {
+      $privileges[] = "GRANT OPTION";
+
+      if ($objects != '*') {
+        throw new Exception("Invalid object(s) $objects for GRANT OPTION privilege. GRANT OPTION can only be applied to schemas");
+      }
+    }
+
+    $objects = (array)$objects;
+
+    $str = strcasecmp($action, 'REVOKE') == 0 ? "REVOKE %s ON %s FROM %s;" : "GRANT %s ON %s TO %s;";
+
+    foreach ( $objects as $object ) {
+      $sql[] = sprintf($str, implode(', ', $privileges), $object, implode(', ', $roles));
+    }
+
+    return implode("\n",$sql);
+  }
+
+  /**
+   * Attempt to translate DBSteward standard privileges into their corresponding MySQL privileges
+   * 
+   * @param string $privilege The privilege as specified in the XML file
+   * @param string $obj_type The type of the object the privilege is for
+   * @return string The valid MySQL privilege for GRANT/REVOKE statements
+   */
+  public static function get_real_privilege($privilege, $obj_type) {
+    switch ( $privilege=strtoupper($privilege) ) {
+      case 'TRUNCATE': // pgsql's TRUNCATE is roughly included in mysql's DROP
+        return 'DROP';
+
+      case 'ALTER':
+        if ( strcasecmp($obj_type, 'function') === 0 ) {
+          // different permission for ALTERing functions
+          return 'ALTER ROUTINE';
+        }
+        // fallthru
+      default:            // whatever you say, boss
+        return $privilege;
+
+    }
+  }
+}
+?>

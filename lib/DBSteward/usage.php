@@ -11,7 +11,7 @@
 <keyword>DBSteward</keyword> version <value><?php echo $VERSION ?></value>
 
 <header>Global Switches and Flags</header>
-  <keyword>--sqlformat=</keyword><value><pgsql8|mssql10|mysql5></value>  change the SQL dialect to operate in. If not specified or cannot be derived
+  <keyword>--sqlformat=</keyword><value><pgsql8|mssql10|mysql5|h2></value>  change the SQL dialect to operate in. If not specified or cannot be derived
                                        from input, pgsql8 will be used by default.
   <keyword>-v[v[v]]</keyword>                             see more detail (verbose). -vvv is not advised for normal use.
   <keyword>-q[q]</keyword>                                see less detail (quiet).
