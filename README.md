@@ -32,15 +32,15 @@ Many developers maintain complete and upgrade script versions of their applicati
 
 # Are you technical and tired of reading this FAQ already?
 
-Using DBSteward to generate or difference a database definition: https://github.com/dbsteward/dbsteward/blob/master/doc/USING.md
+Using DBSteward to generate or difference a database definition: https://github.com/dbsteward/dbsteward/blob/master/docs/USING.md
 
-Installing DBSteward with Composer / PEAR: https://github.com/dbsteward/dbsteward/blob/master/doc/INSTALLING.md
+Installing DBSteward with Composer / PEAR: https://github.com/dbsteward/dbsteward/blob/master/docs/INSTALLING.md
 
-XML Format examples and ancedotes: https://github.com/dbsteward/dbsteward/blob/master/doc/XMLGUIDE.md
+XML Format examples and ancedotes: https://github.com/dbsteward/dbsteward/blob/master/docs/XMLGUIDE.md
 
-Software development best practices: https://github.com/dbsteward/dbsteward/blob/master/doc/DEVGUIDE.md
+Software development best practices: https://github.com/dbsteward/dbsteward/blob/master/docs/DEVGUIDE.md
 
-Slony configuration management examples: https://github.com/dbsteward/dbsteward/blob/master/doc/SLONYGUIDE.md
+Slony configuration management examples: https://github.com/dbsteward/dbsteward/blob/master/docs/SLONYGUIDE.md
 
 
 ***
@@ -51,7 +51,7 @@ There can be nuances to working with DBSteward for the purpose of generating or 
 
 ## 1. What are these input and output files?
 
-In the following examples, the definition file is *someapp_v1.xml*. For more information on the DBSteward XML format, see https://github.com/dbsteward/dbsteward/blob/master/doc/XMLGUIDE.md
+In the following examples, the definition file is *someapp_v1.xml*. For more information on the DBSteward XML format, see https://github.com/dbsteward/dbsteward/blob/master/docs/XMLGUIDE.md
 
 When building a full definition ( _dbsteward --xml=someapp.xml_ ), DBSteward will output a someapp_v1_full_build.sql file. This SQL file contains all of the DDL DML DCL to create a instance of your database definition, **with all operations in foreign-key dependency order**.
 
@@ -99,7 +99,7 @@ DBSteward currently supports output files in Postgresql 8 / 9, MySQL 5.5, and Mi
 
 
 ## 5. How do I get started?
-To start tinkering with the possibilities, install DBSteward with Composer with https://github.com/dbsteward/dbsteward/blob/master/doc/INSTALLING.md
+To start tinkering with the possibilities, install DBSteward with Composer with https://github.com/dbsteward/dbsteward/blob/master/docs/INSTALLING.md
 
 You will also need to have the `xmllint` executable installed in your PATH, available from [libxml2](http://xmlsoft.org).
 
@@ -109,7 +109,7 @@ It is runnable in source-checkout form, as php bin/dbsteward.php
 
 ## 6. How do I convert an existing database to DBSteward definition?
 ## 7. I have an existing project how do I migrate to using DBSteward?
-Examples of structure and data extraction can be found on the Using DBSteward article https://github.com/dbsteward/dbsteward/blob/master/doc/USING.md
+Examples of structure and data extraction can be found on the Using DBSteward article https://github.com/dbsteward/dbsteward/blob/master/docs/USING.md
 
 
 ## 8. Can I define static data in DBSteward XML?
@@ -139,10 +139,10 @@ slonyIds can be completely arbitrary, but are recommended to be allocated in seg
 
 ## 13. How do I define replicate, and upgrade a database I have defined with DBSteward and want to replicate with Slony?
 
-See the Slony slonik output usage guide https://github.com/dbsteward/dbsteward/blob/master/doc/SLONYGUIDE.md for examples.
+See the Slony slonik output usage guide https://github.com/dbsteward/dbsteward/blob/master/docs/SLONYGUIDE.md for examples.
 
 
 ## 14. What are some recommended best practices for the software development lifecycle?
 
-See the DBSteward Development guide https://github.com/dbsteward/dbsteward/blob/master/doc/DEVGUIDE.md for detailed examples.
+See the DBSteward Development guide https://github.com/dbsteward/dbsteward/blob/master/docs/DEVGUIDE.md for detailed examples.
 

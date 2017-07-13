@@ -28,7 +28,7 @@ Changes
 
 New
   - Improved Logging features from switching to monolog https://github.com/nkiraly/DBSteward/pull/82
-  - Drop PEAR package support. Please use composer: https://github.com/nkiraly/DBSteward/blob/v1.4.0-alpha1/doc/INSTALLING.md
+  - Drop PEAR package support. Please use composer: https://github.com/nkiraly/DBSteward/blob/v1.4.0-alpha1/docs/INSTALLING.md
   - Add unit test coverage information via Coveralls https://coveralls.io/r/nkiraly/DBSteward https://github.com/nkiraly/DBSteward/pull/83
   - Reorganized slonik output files for --generateslonik slony replication to include preamble https://github.com/nkiraly/DBSteward/pull/90
   - Include execute script and and subscribe set statements in revamped slonik output files https://github.com/nkiraly/DBSteward/pull/90
