@@ -261,7 +261,7 @@ class pgsql8 extends sql99 {
       }
 
       // data types that should be quoted
-      if (preg_match("/^bool.*|^character.*|^string|^text|^date|^time.*|^(?:var)?char.*|^interval|^money.*|^inet|uuid" . $enum_regex . "/i", $type) > 0) {
+      if (preg_match("/^bool.*|^character.*|^string|^text|^date|^time.*|^(?:var)?char.*|^interval|^money.*|^inet|uuid|ltree" . $enum_regex . "/i", $type) > 0) {
         $value = "'" . pg_escape_string($value) . "'";
 
         // data types that should have E prefix to their quotes
