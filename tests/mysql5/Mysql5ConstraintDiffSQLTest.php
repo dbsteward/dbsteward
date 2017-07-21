@@ -280,6 +280,54 @@ XML;
     $this->common($notauto, $auto, "", 'primaryKey');
   }
 
+  public function testChangeColumnTypeWithForeignKey() {
+    $old = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="pka">
+    <column name="pka"/>
+    <column name="ifkd"
+      foreignSchema="public"
+      foreignTable="other"
+      foreignColumn="pka"
+      foreignKeyName="test_ifkd_fk"/>
+  </table>
+  <table name="other" primaryKey="pka">
+    <column name="pka" type="int"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+
+    // changed type of pka in table other from int to text
+    $new = <<<XML
+<dbsteward>
+<schema name="public" owner="NOBODY">
+  <table name="test" primaryKey="pka">
+    <column name="pka"/>
+    <column name="ifkd"
+      foreignSchema="public"
+      foreignTable="other"
+      foreignColumn="pka"
+      foreignKeyName="test_ifkd_fk"/>
+  </table>
+  <table name="other" primaryKey="pka">
+    <column name="pka" type="text"/>
+  </table>
+</schema>
+</dbsteward>
+XML;
+
+    $expected = <<<SQL
+ALTER TABLE `test`
+  DROP FOREIGN KEY `test_ifkd_fk`;
+ALTER TABLE `test`
+  ADD CONSTRAINT `test_ifkd_fk` FOREIGN KEY `test_ifkd_fk` (`ifkd`) REFERENCES `other` (`pka`);
+SQL;
+
+    $this->common($old, $new, $expected);
+  }
+
   private function common($a, $b, $expected, $type = 'all') {
     $dbs_a = new SimpleXMLElement($a);
     $dbs_b = new SimpleXMLElement($b);
