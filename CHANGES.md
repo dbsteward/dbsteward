@@ -12,6 +12,8 @@ Changes
   - Fix mysql5 type conversion for boolean to tinyint(1)  https://github.com/nkiraly/DBSteward/pull/107
   - One usage mode, with pretty colors  https://github.com/nkiraly/DBSteward/pull/116
   - Fix --dbpassword usage for blank passwords  https://github.com/nkiraly/DBSteward/pull/115
+  - Add pgsql8 ltree type support  https://github.com/dbsteward/dbsteward/pull/129
+  - Drop and Re-add mysql5 and pgsql8 foreign key constraints when target column type changes  https://github.com/dbsteward/dbsteward/pull/132
 
 
 ## 1.4.1 - 2015-09-15
