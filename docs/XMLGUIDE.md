@@ -148,7 +148,7 @@ New database XML definition with renamed table and column:
 
 Previous database XML definition:
 ```XML
-<table name="refinedTableA" oldTableName="tableA" primaryKey="tableA_id">
+<table name="refinedTableA" oldSchemaName="public" oldTableName="tableA" primaryKey="tableA_id">
   <column name="tableA_id" type="int"/>
   <column name="tableA_name" type="varchar(100)"/>
 </table>
