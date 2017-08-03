@@ -355,6 +355,19 @@ class sql99_constraint {
       return false;
     }
 
+    $a_column_type = null;
+    $b_column_type = null;
+    if ( isset($constraint_a['foreign_key_data']) ) {
+      $a_column_type = $constraint_a['foreign_key_data']['column']->attributes()['type'];
+    }
+    if ( isset($constraint_b['foreign_key_data']) ) {
+      $b_column_type = $constraint_b['foreign_key_data']['column']->attributes()['type'];
+    }
+
+    if ( strcasecmp($a_column_type, $b_column_type) != 0 ) {
+      return false;
+    }
+
     $a_foreign_on_delete = null;
     $b_foreign_on_delete = null;
     if ( isset($constraint_a['foreignOnDelete']) ) {

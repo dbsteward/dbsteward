@@ -1,6 +1,6 @@
 <?php
 /**
- * DBSteward unit test for mysql5 constraint diffing
+ * DBSteward unit test for pgsql8 constraint diffing
  *
  * @package DBSteward
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
@@ -10,20 +10,18 @@
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 /**
- * @group mysql5
+ * @group pgsql8
  * @group nodb
  */
-class Mysql5ConstraintDiffSQLTest extends PHPUnit_Framework_TestCase {
+class Pgsql8ConstraintDiffSQLTest extends PHPUnit_Framework_TestCase {
 
   public function setUp() {
-    dbsteward::set_sql_format('mysql5');
+    dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
     dbsteward::$quote_function_names = TRUE;
     dbsteward::$quote_object_names = TRUE;
-    mysql5::$use_auto_increment_table_options = FALSE;
-    mysql5::$use_schema_name_prefix = FALSE;
   }
 
   private $xml_pka = <<<XML
@@ -63,7 +61,7 @@ XML;
     <column name="uqc"/>
     <column name="ifkd"/>
     <column name="cfke"/>
-    <constraint name="test_uqc_idx" type="unique" definition="(`uqc`)"/>
+    <constraint name="test_uqc_idx" type="unique" definition="(uqc)"/>
   </table>
 </schema>
 </dbsteward>
@@ -107,7 +105,7 @@ XML;
       foreignColumn="pka"
       foreignKeyName="test_ifkd_fk"/>
     <column name="cfke"/>
-    <constraint name="test_uqc_idx" type="unique" definition="(`uqc`)"/>
+    <constraint name="test_uqc_idx" type="unique" definition="(uqc)"/>
   </table>
   <table name="other" primaryKey="pka">
     <column name="pka"/>
@@ -129,7 +127,7 @@ XML;
     <column name="uqc"/>
     <column name="ifkd"/>
     <column name="cfke"/>
-    <constraint name="test_cfke_fk" type="foreign key" definition="(`cfke`) REFERENCES `other` (`pka`)"/>
+    <constraint name="test_cfke_fk" type="foreign key" definition="(cfke) REFERENCES public.other (pka)"/>
   </table>
   <table name="other" primaryKey="pka">
     <column name="pka"/>
@@ -155,8 +153,8 @@ XML;
       foreignColumn="pka"
       foreignKeyName="test_ifkd_fk"/>
     <column name="cfke"/>
-    <constraint name="test_cfke_fk" type="foreign key" definition="(`cfke`) REFERENCES `other` (`pka`)"/>
-    <constraint name="test_uqc_idx" type="unique" definition="(`uqc`)"/>
+    <constraint name="test_cfke_fk" type="foreign key" definition="(cfke) REFERENCES public.other (pka)"/>
+    <constraint name="test_uqc_idx" type="unique" definition="(uqc)"/>
   </table>
   <table name="other" primaryKey="pka">
     <column name="pka"/>
@@ -175,49 +173,52 @@ XML;
 
   public function testAddSome() {
     $expected = <<<SQL
-ALTER TABLE `test`
-  ADD UNIQUE INDEX `test_uqc_idx` (`uqc`);
+ALTER TABLE "public"."test"
+\tADD CONSTRAINT "test_uqc_idx" UNIQUE (uqc);
 SQL;
     $this->common($this->xml_pka, $this->xml_pka_uqc, $expected);
   }
 
   public function testDropSome() {
     $expected = <<<SQL
-ALTER TABLE `test`
-  DROP INDEX `test_uqc_idx`;
+ALTER TABLE "public"."test"
+\tDROP CONSTRAINT "test_uqc_idx";
 SQL;
     $this->common($this->xml_pka_uqc, $this->xml_pka, $expected);
   }
 
   public function testChangeOne() {
     $expected = <<<SQL
-ALTER TABLE `test`
-  DROP PRIMARY KEY;
-ALTER TABLE `test`
-  ADD PRIMARY KEY (`pkb`);
+ALTER TABLE "public"."test"
+\tDROP CONSTRAINT "test_pkey";
+ALTER TABLE "public"."test"
+\tADD CONSTRAINT "test_pkey" PRIMARY KEY ("pkb");
 SQL;
     $this->common($this->xml_pka, $this->xml_pkb, $expected);
   }
 
   public function testAddSomeAndChange() {
     $expected = <<<SQL
-ALTER TABLE `test`
-  DROP PRIMARY KEY;
-ALTER TABLE `test`
-  ADD PRIMARY KEY (`pkb`),
-  ADD CONSTRAINT `test_cfke_fk` FOREIGN KEY `test_cfke_fk` (`cfke`) REFERENCES `other` (`pka`);
+ALTER TABLE "public"."test"
+\tDROP CONSTRAINT "test_pkey";
+ALTER TABLE "public"."test"
+\tADD CONSTRAINT "test_pkey" PRIMARY KEY ("pkb");
+ALTER TABLE "public"."test"
+\tADD CONSTRAINT "test_cfke_fk" FOREIGN KEY (cfke) REFERENCES public.other (pka);
 SQL;
     $this->common($this->xml_pka, $this->xml_pkb_cfke, $expected);
   }
 
   public function testDropSomeAndChange() {
     $expected = <<<SQL
-ALTER TABLE `test`
-  DROP PRIMARY KEY,
-  DROP INDEX `test_uqc_idx`,
-  DROP FOREIGN KEY `test_ifkd_fk`;
-ALTER TABLE `test`
-  ADD PRIMARY KEY (`pkb`);
+ALTER TABLE "public"."test"
+\tDROP CONSTRAINT "test_pkey";
+ALTER TABLE "public"."test"
+\tDROP CONSTRAINT "test_uqc_idx";
+ALTER TABLE "public"."test"
+\tDROP CONSTRAINT "test_ifkd_fk";
+ALTER TABLE "public"."test"
+\tADD CONSTRAINT "test_pkey" PRIMARY KEY ("pkb");
 SQL;
     $this->common($this->xml_pka_uqc_ifkd_cfke, $this->xml_pkb_cfke, $expected);
   }
@@ -235,21 +236,34 @@ XML;
     $new = <<<XML
 <dbsteward>
 <schema name="public" owner="NOBODY">
-  <table name="newtable" owner="NOBODY" primaryKey="pkb" oldTableName="test">
+  <table name="newtable" owner="NOBODY" primaryKey="pkb" oldSchemaName="public" oldTableName="test">
     <column name="pkb" type="int" oldColumnName="pka"/>
   </table>
 </schema>
 </dbsteward>
 XML;
-    // drop the PK on test *before* diffing the table
-    // add the renamed PK on the renamed table *after* diffing the table
+    // PK is dropped and added after the table is renamed
     $expected = <<<SQL
-ALTER TABLE `test`
-  DROP PRIMARY KEY;
-ALTER TABLE `newtable`
-  ADD PRIMARY KEY (`pkb`);
+ALTER TABLE "public"."newtable"
+\tDROP CONSTRAINT "test_pkey";
+ALTER TABLE "public"."newtable"
+\tADD CONSTRAINT "newtable_pkey" PRIMARY KEY ("pkb");
 SQL;
-    $this->common($old, $new, $expected);
+
+    $dbs_a = new SimpleXMLElement($old);
+    $dbs_b = new SimpleXMLElement($new);
+
+    $ofs = new mock_output_file_segmenter();
+
+    dbsteward::$old_database = $dbs_a;
+    dbsteward::$new_database = $dbs_b;
+
+    // in psql8_diff::update_structure() when the new schema doesn't contain the old table name,
+    // $new_table is set to null for the first diff_constraints_table() call, adjusted this test accordingly
+    pgsql8_diff_tables::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, null, 'primaryKey', true);
+    pgsql8_diff_tables::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, 'primaryKey', false);
+    $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
+    $this->assertEquals($expected, $actual);
   }
 
   public function testAutoIncrement() {
@@ -319,10 +333,10 @@ XML;
 XML;
 
     $expected = <<<SQL
-ALTER TABLE `test`
-  DROP FOREIGN KEY `test_ifkd_fk`;
-ALTER TABLE `test`
-  ADD CONSTRAINT `test_ifkd_fk` FOREIGN KEY `test_ifkd_fk` (`ifkd`) REFERENCES `other` (`pka`);
+ALTER TABLE "public"."test"
+\tDROP CONSTRAINT "test_ifkd_fk";
+ALTER TABLE "public"."test"
+\tADD CONSTRAINT "test_ifkd_fk" FOREIGN KEY ("ifkd") REFERENCES "public"."other" ("pka");
 SQL;
 
     $this->common($old, $new, $expected);
@@ -337,10 +351,9 @@ SQL;
     dbsteward::$old_database = $dbs_a;
     dbsteward::$new_database = $dbs_b;
 
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, $type, true);
-    mysql5_diff_constraints::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, $type, false);
+    pgsql8_diff_tables::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, $type, true);
+    pgsql8_diff_tables::diff_constraints_table($ofs, $dbs_a->schema, $dbs_a->schema->table, $dbs_b->schema, $dbs_b->schema->table, $type, false);
     $actual = trim(preg_replace("/--.*\n/",'',$ofs->_get_output()));
     $this->assertEquals($expected, $actual);
   }
 }
-?>
