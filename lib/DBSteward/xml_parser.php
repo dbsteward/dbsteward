@@ -755,7 +755,11 @@ class xml_parser {
     if (file_put_contents($tmp_file, $xml) === FALSE) {
       throw new exception("Failed to write to temporary validation file: " . $tmp_file);
     }
-    dbsteward::cmd("xmllint --noout --dtdvalid " . $dtd_file . " " . $tmp_file . " 2>&1");
+    // There is a quirk / bug in libxml2-2.7.8 for Windows that prevents xmllint from recognizing
+    // backslash characters as valid path separators.  An easy work-around is to just use
+    // forward slash everywhere since Windows and xmllint both agree on these.
+    dbsteward::cmd("xmllint --noout --dtdvalid " . str_replace('\\', '/', $dtd_file) . " " . $tmp_file . " 2>&1");
+    // dbsteward::cmd("xmllint --noout --dtdvalid " . $dtd_file . " " . $tmp_file . " 2>&1");
     if ($echo_status) {
       dbsteward::info("XML Validates (size = " . strlen($xml) . ") against $dtd_file OK");
     }
