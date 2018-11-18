@@ -479,6 +479,7 @@ class xml_parser {
       static::file_sort_reappend_child($base, 'column');
       static::file_sort_reappend_child($base, 'index');
       static::file_sort_reappend_child($base, 'constraint');
+      static::file_sort_reappend_child($base, 'foreignKey');
       static::file_sort_reappend_child($base, 'grant');
       static::file_sort_reappend_child($base, 'rows');
     }
