@@ -872,6 +872,7 @@ class xml_parser {
         }
       }
     }
+
     // does b contain a column that a constraints against?
     $constraints = $a['table']->xpath('constraint');
     foreach ($constraints AS $constraint) {
@@ -888,6 +889,20 @@ class xml_parser {
               return TRUE;
             }
           }
+        }
+      }
+    }
+      
+    // does b contain a column that a has a foreign key on?
+    $foreignKeys = $a['table']->xpath('foreignKey');
+    foreach ($foreignKeys AS $foreignKey) {
+      // talking about the same schema?
+      if (strlen($foreignKey['foreignSchema']) === 0 || strcasecmp($foreignKey['foreignSchema'], $b['schema']['name']) == 0) {
+        // talking about the same table?
+        if (strcasecmp($foreignKey['foreignTable'], $b['table']['name']) == 0) {
+          // so yes, a has a dependency on b via foreign key definition
+          dbsteward::debug($a['schema']['name'] . '.' . $a['table']['name'] . '.' . $foreignKey['name'] . "\thas foreignKey dep on\t" . $b['schema']['name'] . '.' . $b['table']['name']);
+          return TRUE;
         }
       }
     }
