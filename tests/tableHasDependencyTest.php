@@ -14,6 +14,13 @@ require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
 class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
 
+  /**
+   * confirm that table dependencies are detected through inheritsSchema on the table element
+   * 
+   * @group nodb
+   * @group psql8
+   * @group mysql5
+   */
   public function testDependencyOfChildViaInheritsSchema() {
     $parent = '<schema name="parentSchema" />';
     $parent_table = '
@@ -33,7 +40,14 @@ class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
     $this->assertTrue(xml_parser::table_has_dependency($child_obj, $parent_obj));
     $this->assertFalse(xml_parser::table_has_dependency($parent_obj, $child_obj));
   }
-
+  
+  /**
+   * confirm that table dependencies are detected through foreignSchema/foreignTable/foreignColumn inline in column element
+   * 
+   * @group nodb
+   * @group psql8
+   * @group mysql5
+   */
   public function testDependencyOfChildViaColumnInlineForeignKey() {
     $parent = '<schema name="parentSchema" />';
     $parent_table = '
@@ -56,6 +70,13 @@ class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
     $this->assertFalse(xml_parser::table_has_dependency($parent_obj, $child_obj));
   }
 
+  /**
+   * confirm that table dependencies are detected through foreignKey elements
+   * 
+   * @group nodb
+   * @group psql8
+   * @group mysql5
+   */
   public function testDependencyOfChildViaForeignKey() {
     $parent = '<schema name="parentSchema" />';
     $parent_table = '
