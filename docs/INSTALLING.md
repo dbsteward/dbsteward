@@ -9,7 +9,7 @@ composer global require nkiraly/dbsteward:dev-master
 
 Or, install a particular version:
 ```bash
-composer global require nkiraly/dbsteward:1.4.2
+composer global require nkiraly/dbsteward:1.4.3
 ```
 
 You may need to add the composer bin path to your PATH environment variable to streamline dbsteward usage:
@@ -23,7 +23,7 @@ https://github.com/dbsteward/dbsteward/blob/master/doc/USING.md) for examples.
 ## Updating via Composer
 Updating your composer global package is as easy as re-requiring the global nkiraly/dbsteward package and specifying the version you want to switch to using:
 ```bash
-composer global require nkiraly/dbsteward:1.4.2
+composer global require nkiraly/dbsteward:1.4.3
 ```
 
 Or, if you have several global composer dependencies, do a global update:
