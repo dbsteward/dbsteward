@@ -18,7 +18,7 @@ class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
    * confirm that table dependencies are detected through inheritsSchema on the table element
    * 
    * @group nodb
-   * @group psql8
+   * @group pgsql8
    * @group mysql5
    */
   public function testDependencyOfChildViaInheritsSchema() {
@@ -45,7 +45,7 @@ class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
    * confirm that table dependencies are detected through foreignSchema/foreignTable/foreignColumn inline in column element
    * 
    * @group nodb
-   * @group psql8
+   * @group pgsql8
    * @group mysql5
    */
   public function testDependencyOfChildViaColumnInlineForeignKey() {
@@ -74,7 +74,7 @@ class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
    * confirm that table dependencies are detected through foreignKey elements
    * 
    * @group nodb
-   * @group psql8
+   * @group pgsql8
    * @group mysql5
    */
   public function testDependencyOfChildViaForeignKey() {
