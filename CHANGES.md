@@ -1,5 +1,10 @@
 # DBSteward Changelog
 
+## 1.4.3 - 2020-02-04
+
+Changes
+  - Fix for table ordering not properly calculated when using foreignKey element  https://github.com/dbsteward/dbsteward/pull/137
+
 ## 1.4.2 - 2017-11-19
 
 New
