@@ -182,7 +182,7 @@ XML;
 </schema>
 XML;
 
-  private $create_fn_a = <<<SQL
+  private $create_fn_a = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_a`;
 CREATE DEFINER = the_owner FUNCTION `fn_a` (`arg0` text, `arg1` text)
 RETURNS text
@@ -191,8 +191,8 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
-  private $create_fn_a_own = <<<SQL
+ENDSQL;
+  private $create_fn_a_own = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_a`;
 CREATE DEFINER = SOMEBODY FUNCTION `fn_a` (`arg0` text, `arg1` text)
 RETURNS text
@@ -201,8 +201,8 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
-  private $create_fn_a_argn = <<<SQL
+ENDSQL;
+  private $create_fn_a_argn = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_a`;
 CREATE DEFINER = the_owner FUNCTION `fn_a` (`a` text, `arg1` text)
 RETURNS text
@@ -211,8 +211,8 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
-  private $create_fn_a_argt = <<<SQL
+ENDSQL;
+  private $create_fn_a_argt = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_a`;
 CREATE DEFINER = the_owner FUNCTION `fn_a` (`arg0` int, `arg1` text)
 RETURNS text
@@ -221,8 +221,8 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
-  private $create_fn_a_ret = <<<SQL
+ENDSQL;
+  private $create_fn_a_ret = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_a`;
 CREATE DEFINER = the_owner FUNCTION `fn_a` (`arg0` text, `arg1` text)
 RETURNS int
@@ -231,8 +231,8 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
-  private $create_fn_a_def = <<<SQL
+ENDSQL;
+  private $create_fn_a_def = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_a`;
 CREATE DEFINER = the_owner FUNCTION `fn_a` (`arg0` text, `arg1` text)
 RETURNS text
@@ -241,11 +241,11 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN '123';
-SQL;
-  private $drop_fn_a = <<<SQL
+ENDSQL;
+  private $drop_fn_a = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_a`;
-SQL;
-  private $create_fn_b = <<<SQL
+ENDSQL;
+  private $create_fn_b = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_b`;
 CREATE DEFINER = the_owner FUNCTION `fn_b` (`arg0` text, `arg1` text)
 RETURNS text
@@ -254,11 +254,11 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'abc';
-SQL;
-  private $drop_fn_b = <<<SQL
+ENDSQL;
+  private $drop_fn_b = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_b`;
-SQL;
-  private $create_fn_c = <<<SQL
+ENDSQL;
+  private $create_fn_c = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_c`;
 CREATE DEFINER = SOMEBODY FUNCTION `fn_c` (`a` text, `b` text)
 RETURNS text
@@ -267,10 +267,10 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN '123';
-SQL;
-  private $drop_fn_c = <<<SQL
+ENDSQL;
+  private $drop_fn_c = <<<ENDSQL
 DROP FUNCTION IF EXISTS `fn_c`;
-SQL;
+ENDSQL;
 
   public function testNoneToNone() {
     $this->common($this->xml_0, $this->xml_0, '', '');
