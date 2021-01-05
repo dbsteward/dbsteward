@@ -152,7 +152,7 @@ XML;
 
     // check that we validate the number of partitions
     $table->tablePartition->tablePartitionOption[0]['value'] = 'id';
-    $table->tablePartition->tablePartitionOption[1]['value'] = 'x';
+    $table->tablePartition->tablePartitionOption[1]['value'] = '-1';
     $this->expect("tablePartitionOption 'number' must be an integer greater than 0", $get_sql);
 
     // check that using an expression does NOT quote the value
@@ -195,7 +195,7 @@ XML;
 
     // check that we validate the number of partitions
     $table->tablePartition->tablePartitionOption[0]['value'] = 'id';
-    $table->tablePartition->tablePartitionOption[1]['value'] = 'x';
+    $table->tablePartition->tablePartitionOption[1]['value'] = '-1';
     $this->expect("tablePartitionOption 'number' must be an integer greater than 0", $get_sql);
 
     // check that using an expression does NOT quote the value
