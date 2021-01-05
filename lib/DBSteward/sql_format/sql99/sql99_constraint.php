@@ -230,15 +230,11 @@ class sql99_constraint {
             throw new Exception("Primary keys are not allowed to be defined in a <constraint>");
             break;
 
-          default:
-            throw new Exception('unknown constraint type ' . $node_constraint['type'] . ' encountered');
-            break;
-
           case 'CHECK':
           case 'UNIQUE':
             // if we're ONLY looking for foreign keys, ignore everything else
             if ( $type == 'foreignKey' ) {
-              continue;
+              continue 2;
             }
             // fallthru
           case 'FOREIGN KEY':
@@ -249,6 +245,10 @@ class sql99_constraint {
               'type' => strtoupper((string)$node_constraint['type']),
               'definition' => (string)$node_constraint['definition']
             );
+            break;
+
+          default:
+            throw new Exception('unknown constraint type ' . $node_constraint['type'] . ' encountered');
             break;
         }
       }

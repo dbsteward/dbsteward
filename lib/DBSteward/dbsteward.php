@@ -245,6 +245,18 @@ class dbsteward {
       'pgdata' => array()
     );
 
+    // Somewhere after PHP 5, without these array casts, we get a warning that "Parameter must be an array or an object that implements Countable"
+    if (isset($options['xml'])) {
+      $options['xml'] = (array)$options['xml'];
+    }
+
+    if (isset($options['oldxml'])) {
+      $options['oldxml'] = (array)$options['oldxml'];
+    }
+
+    if (isset($options['newxml'])) {
+      $options['newxml'] = (array)$options['newxml'];
+    }
 
     ///// XML file parameter sanity checks
     if ( isset($options['xml']) ) {
@@ -997,7 +1009,7 @@ class dbsteward {
     }
     $format_list = array();
     while( ($file = readdir($dh)) !== false ) {
-      if ( strlen($file) > 0 && $file{0} != '.' ) {
+      if ( strlen($file) > 0 && $file[0] != '.' ) {
         if ( is_dir($sql_format_dir . "/" . $file) ) {
           $format_list[] = $file;
         }

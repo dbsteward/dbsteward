@@ -14,7 +14,7 @@ require_once __DIR__ . '/Mysql5ExtractionTest.php';
 class Mysql5ExtractProcedureTest extends Mysql5ExtractionTest { 
 
   public function testExtractProcedure() {
-    $sql = <<<SQL
+    $sql = <<<ENDSQL
 DROP PROCEDURE IF EXISTS why_would_i_do_this;
 DELIMITER __;
 CREATE DEFINER = deployment PROCEDURE why_would_i_do_this (IN `str` varchar(25), OUT `len` int(11))
@@ -26,7 +26,7 @@ BEGIN
   SELECT length(str)
     INTO len;
 END;__
-SQL;
+ENDSQL;
 
   $expected = <<<XML
 <function name="why_would_i_do_this" owner="ROLE_OWNER" returns="" description="" procedure="true" cachePolicy="VOLATILE" mysqlEvalType="MODIFIES_SQL_DATA" securityDefiner="true">

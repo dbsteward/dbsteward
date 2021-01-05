@@ -264,7 +264,11 @@ class mysql5 extends sql99 {
       $table_primary_keys = mysql5_table::primary_key_columns($table);
       $table_column_names = dbx::to_array($table->column, 'name');
       $node_rows =& dbx::get_table_rows($table); // the <rows> element
-      $data_column_names = preg_split("/,|\s/", $node_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
+      $columns = "";
+      if ($node_rows) {
+        $columns = $node_rows['columns'];
+      }
+      $data_column_names = preg_split("/,|\s/", $columns, -1, PREG_SPLIT_NO_EMPTY);
 
       // set serial primary keys to the max value after inserts have been performed
       // only if the PRIMARY KEY is not a multi column

@@ -606,7 +606,11 @@ class pgsql8 extends sql99 {
       // set serial primary keys to the max value after inserts have been performed
       // only if the PRIMARY KEY is not a multi column
       $node_rows = & dbx::get_table_rows($table);
-      $columns = preg_split("/,|\s/", $node_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
+      $columns = '';
+      if ($node_rows) {
+        $columns = $node_rows['columns'];
+      }
+      $columns = preg_split("/,|\s/", $columns, -1, PREG_SPLIT_NO_EMPTY);
       if (isset($table['primaryKey'])
         && strlen($table['primaryKey']) > 0 && in_array(dbsteward::string_cast($table['primaryKey']), $columns)) {
         $pk_column = dbsteward::string_cast($table['primaryKey']);
@@ -1771,7 +1775,6 @@ WAIT FOR EVENT (
     }
 
     // for all schemas, all tables - get table constraints that are not type 'FOREIGN KEY'
-    dbsteward::info("Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
     $sql = "SELECT constraint_name, constraint_type, table_schema, table_name, array_agg(columns) AS columns
       FROM (
       SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name::text AS columns
@@ -1784,6 +1787,7 @@ WAIT FOR EVENT (
       GROUP BY results.constraint_name, results.constraint_type, results.table_schema, results.table_name;";
     $rc_constraint = pgsql8_db::query($sql);
     while (($constraint_row = pg_fetch_assoc($rc_constraint)) !== FALSE) {
+      dbsteward::info("Analyze table constraints " . $constraint_row['table_schema'] . "." . $constraint_row['table_name'] . "." . $constraint_row['constraint_name']);
       $nodes = $doc->xpath("schema[@name='" . $constraint_row['table_schema'] . "']");
       if (count($nodes) != 1) {
         throw new exception("failed to find constraint analysis schema '" . $constraint_row['table_schema'] . "'");
@@ -2175,30 +2179,30 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     for ($i = 0; $i < strlen($input); $i++) {
       //echo "$i, $inquote, $nextval\n";
       if ($inquote) {
-        if ($input{$i} == '"') {
+        if ($input[$i] == '"') {
           $inquote = FALSE;
         }
         else {
-          if ($input{$i} == "\\") {
+          if ($input[$i] == "\\") {
             $i++;
-            $nextval .= $input{$i};
+            $nextval .= $input[$i];
           }
           else {
-            $nextval .= $input{$i};
+            $nextval .= $input[$i];
           }
         }
       }
       else {
-        if ($input{$i} == ',') {
+        if ($input[$i] == ',') {
           $rv[] = $nextval;
           $nextval = '';
         }
         else {
-          if ($input{$i} == '"') {
+          if ($input[$i] == '"') {
             $inquote = TRUE;
           }
           else {
-            $nextval .= $input{$i};
+            $nextval .= $input[$i];
           }
         }
       }
