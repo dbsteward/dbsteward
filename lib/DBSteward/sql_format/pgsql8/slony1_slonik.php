@@ -19,19 +19,20 @@ class slony1_slonik {
 
     $doc = new SimpleXMLElement('<dbsteward></dbsteward>');
     $line = '';
-    while (($c = fgetc($fp_slonik)) !== FALSE) {
+    $comment = false;
+    while (($c = fgetc($fp_slonik)) !== false) {
       switch ($c) {// catch lines starting with # comments and ignore them
         case '#':
           // only if line hasn't started yet
           if (strlen(trim($line)) == 0) {
-            $comment = TRUE;
+            $comment = true;
           }
         break; // convert newlines to spaces
 
         case "\n":
           $c = ' ';
           // newline encountered, so comment is over
-          $comment = FALSE;
+          $comment = false;
         break; // the statement terminated
 
         case ';':
@@ -46,7 +47,7 @@ class slony1_slonik {
           // late-start # comment line
           $trimmed_line = trim($line);
           if ($trimmed_line[0] == '#') {
-            $comment = TRUE;
+            $comment = true;
           }
           // as long as it isn't a comment
           else if (!$comment) {
