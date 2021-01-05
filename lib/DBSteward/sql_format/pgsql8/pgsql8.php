@@ -2175,30 +2175,30 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     for ($i = 0; $i < strlen($input); $i++) {
       //echo "$i, $inquote, $nextval\n";
       if ($inquote) {
-        if ($input{$i} == '"') {
+        if ($input[$i] == '"') {
           $inquote = FALSE;
         }
         else {
-          if ($input{$i} == "\\") {
+          if ($input[$i] == "\\") {
             $i++;
-            $nextval .= $input{$i};
+            $nextval .= $input[$i];
           }
           else {
-            $nextval .= $input{$i};
+            $nextval .= $input[$i];
           }
         }
       }
       else {
-        if ($input{$i} == ',') {
+        if ($input[$i] == ',') {
           $rv[] = $nextval;
           $nextval = '';
         }
         else {
-          if ($input{$i} == '"') {
+          if ($input[$i] == '"') {
             $inquote = TRUE;
           }
           else {
-            $nextval .= $input{$i};
+            $nextval .= $input[$i];
           }
         }
       }

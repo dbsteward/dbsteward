@@ -997,7 +997,7 @@ class dbsteward {
     }
     $format_list = array();
     while( ($file = readdir($dh)) !== false ) {
-      if ( strlen($file) > 0 && $file{0} != '.' ) {
+      if ( strlen($file) > 0 && $file[0] != '.' ) {
         if ( is_dir($sql_format_dir . "/" . $file) ) {
           $format_list[] = $file;
         }

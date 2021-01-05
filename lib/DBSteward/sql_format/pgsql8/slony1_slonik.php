@@ -45,7 +45,7 @@ class slony1_slonik {
         default:
           // late-start # comment line
           $trimmed_line = trim($line);
-          if ($trimmed_line{0} == '#') {
+          if ($trimmed_line[0] == '#') {
             $comment = TRUE;
           }
           // as long as it isn't a comment
