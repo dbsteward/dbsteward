@@ -273,7 +273,7 @@ xml_parser::save_xml(dirname(__FILE__) . '/../../../../dbsteward_monitor.xml', $
         if (preg_match(self::PATTERN_END_OF_FUNCTION, $new_line, $matches) > 0) {
           $end_of_function = $matches[1];
 
-          if ($end_of_function{0} == "'") {
+          if ($end_of_function[0] == "'") {
             $end_of_function = "'";
           } else {
             $end_of_function = substr($end_of_function, 0, strpos($end_of_function, '$', 1) + 1);

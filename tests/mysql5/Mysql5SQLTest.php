@@ -138,7 +138,7 @@ class Mysql5SQLTest extends PHPUnit_Framework_TestCase {
 </dbsteward>
 XML;
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 GRANT SELECT, UPDATE, DELETE ON * TO `deployment`;
 
 DROP FUNCTION IF EXISTS `public_a_function`;
@@ -323,7 +323,7 @@ ALTER TABLE `hotel_rate`
 
 CREATE OR REPLACE DEFINER = deployment SQL SECURITY DEFINER VIEW `public_a_view`
 AS SELECT * FROM user, group;
-SQL;
+ENDSQL;
 
     $dbs = new SimpleXMLElement($xml);
     $ofs = new mock_output_file_segmenter();
