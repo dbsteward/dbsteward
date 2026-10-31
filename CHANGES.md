@@ -1,5 +1,21 @@
 # DBSteward Changelog
 
+## Unreleased
+
+Breaking
+  - PHP 8.3 or newer is required; PHP 5.5 - 7.x support is dropped (all are end of life)
+
+New
+  - Runs on PHP 8.3, 8.4 and 8.5 without errors or deprecation notices
+  - CI moved from Travis CI to GitHub Actions (PHP 8.3/8.4/8.5, PostgreSQL 17, MySQL 8.4)
+
+Changes
+  - Upgrade monolog/monolog 1.16 -> 3.x, kevinlebrun/colors.php 0.4 -> 1.x, phpunit 4.4 -> 12.x
+  - Remove abandoned satooshi/php-coveralls dev dependency
+  - Fix reserved identifier check using the wrong SQL format's word list on PHP 8.1+
+  - Fix mssql10 format and pgsql8 dump parsing calling non-static methods statically
+  - Fix nonexistent pg_fetch() call in pgsql8 data extraction
+
 ## 1.4.3 - 2020-02-04
 
 Changes
