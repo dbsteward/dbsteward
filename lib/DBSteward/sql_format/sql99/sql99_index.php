@@ -13,10 +13,10 @@ class sql99_index {
     if ( strcasecmp($node_index_a['name'], $node_index_b['name']) != 0 ) {
       $equal = false;
     }
-    else if ( strcasecmp($node_index_a['unique'], $node_index_b['unique']) != 0 ) {
+    else if ( strcasecmp((string)$node_index_a['unique'], (string)$node_index_b['unique']) != 0 ) {
       $equal = false;
     }
-    else if ( strcasecmp($node_index_a['using'], $node_index_b['using']) != 0 ) {
+    else if ( strcasecmp((string)$node_index_a['using'], (string)$node_index_b['using']) != 0 ) {
       $equal = false;
     }
     else {
@@ -46,7 +46,7 @@ class sql99_index {
   
   public static function index_name($table, $column, $suffix) {
     $table_len = strlen($table);
-    $column_len = strlen($column);
+    $column_len = strlen((string)$column);
     $suffix_len = strlen($suffix);
 
     // figure out how to build "{$table}_{$column}_{$suffix}"
@@ -73,7 +73,7 @@ class sql99_index {
     }
 
     $table = substr($table, 0, min($table_max, $table_len));
-    $column = substr($column, 0, min($column_max, $column_len));
+    $column = substr((string)$column, 0, min($column_max, $column_len));
 
     if ($column_len > 0) {
       return "{$table}_{$column}_{$suffix}";

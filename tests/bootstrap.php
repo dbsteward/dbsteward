@@ -120,6 +120,6 @@ else {
 }
 
 dbsteward::$DEBUG = true;
-dbsteward::$LOG_LEVEL = Monolog\Logger::DEBUG;
+dbsteward::$LOG_LEVEL = Monolog\Level::Debug;
 dbsteward::$BRING_THE_RAIN = false;
 // dbsteward::$ENABLE_COLOR = false;

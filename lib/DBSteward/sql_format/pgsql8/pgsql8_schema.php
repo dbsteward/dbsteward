@@ -33,7 +33,7 @@ class pgsql8_schema extends sql99_schema {
 
       // schema comment
       if (isset($node_schema['description']) && strlen($node_schema['description']) > 0) {
-        $ddl .= "COMMENT ON SCHEMA " . $schema_name . " IS '" . pg_escape_string($node_schema['description']) . "';\n";
+        $ddl .= "COMMENT ON SCHEMA " . $schema_name . " IS '" . pgsql8::escape_string_literal($node_schema['description']) . "';\n";
       }
     }
 

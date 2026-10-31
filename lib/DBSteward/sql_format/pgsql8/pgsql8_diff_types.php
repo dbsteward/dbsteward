@@ -131,15 +131,15 @@ class pgsql8_diff_types {
       $ofs->write("ALTER DOMAIN $domain DROP DEFAULT;\n");
     }
     // default is changed
-    elseif (strcmp($old_domain['default'], $new_domain['default']) !== 0) {
+    elseif (strcmp((string)$old_domain['default'], (string)$new_domain['default']) !== 0) {
       $old_default = pgsql8::value_escape($base_type, (string)$old_domain['default']);
       $new_default = pgsql8::value_escape($base_type, (string)$new_domain['default']);
       $ofs->write("-- domain default changed from $old_default\n");
       $ofs->write("ALTER DOMAIN $domain SET DEFAULT $new_default;\n");
     }
 
-    $old_null = strcasecmp($old_domain['null'], 'false') !== 0;
-    $new_null = strcasecmp($new_domain['null'], 'false') !== 0;
+    $old_null = strcasecmp((string)$old_domain['null'], 'false') !== 0;
+    $new_null = strcasecmp((string)$new_domain['null'], 'false') !== 0;
 
     // NULL -> NOT NULL
     if ($old_null && !$new_null) {

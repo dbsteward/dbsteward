@@ -56,7 +56,7 @@ class pgsql8_table extends sql99_table {
 
     // table comment
     if (isset($node_table['description']) && strlen($node_table['description']) > 0) {
-      $sql .= "\nCOMMENT ON TABLE " . $table_name . " IS '" . pg_escape_string(dbsteward::string_cast($node_table['description'])) . "';\n";
+      $sql .= "\nCOMMENT ON TABLE " . $table_name . " IS '" . pgsql8::escape_string_literal(dbsteward::string_cast($node_table['description'])) . "';\n";
     }
 
     foreach(dbx::get_table_columns($node_table) as $column) {
@@ -70,7 +70,7 @@ class pgsql8_table extends sql99_table {
       // column comments
       if ( isset($column['description']) && strlen($column['description']) > 0 ) {
         $sql .= "\nCOMMENT ON COLUMN " . $table_name . '.' . pgsql8::get_quoted_column_name($column['name'])
-          . " IS '" . pg_escape_string(dbsteward::string_cast($column['description'])) . "';\n";
+          . " IS '" . pgsql8::escape_string_literal(dbsteward::string_cast($column['description'])) . "';\n";
       }
     }   
 

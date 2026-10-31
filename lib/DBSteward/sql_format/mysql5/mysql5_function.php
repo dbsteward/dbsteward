@@ -23,7 +23,7 @@ class mysql5_function extends sql99_function {
   public static function get_creation_sql($node_schema, $node_function) {
     $name = static::get_declaration($node_schema, $node_function);
 
-    $definer = (strlen($node_function['owner']) > 0) ? xml_parser::role_enum(dbsteward::$new_database,$node_function['owner']) : 'CURRENT_USER';
+    $definer = (strlen((string)$node_function['owner']) > 0) ? xml_parser::role_enum(dbsteward::$new_database,$node_function['owner']) : 'CURRENT_USER';
 
     // always drop the function first, just to be safe, and to be compatible with pgsql8's CREATE OR REPLACE
     $sql = static::get_drop_sql($node_schema, $node_function) . "\n";

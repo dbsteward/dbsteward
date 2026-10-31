@@ -188,7 +188,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             'command' => "\tALTER COLUMN " . pgsql8::get_quoted_column_name($new_column['name']) . " SET NOT NULL"
           );
           // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 3
-          if ( strlen($new_column['default']) > 0 ) {
+          if ( strlen((string)$new_column['default']) > 0 ) {
             $commands[] = array(
               'stage' => 'AFTER1',
               'command' => "UPDATE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
@@ -364,7 +364,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         }
       }
 
-      if ( strcasecmp($old_column['null'], $new_column['null']) != 0 ) {
+      if ( strcasecmp((string)$old_column['null'], (string)$new_column['null']) != 0 ) {
         if (pgsql8_column::null_allowed($new_table, $new_column)) {
           $commands[] = array(
             'stage' => '1',
@@ -386,7 +386,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           // if the default value is defined in the dbsteward XML
           // set the value of the column to the default in end of stage 1 so that NOT NULL can be applied in stage 3
           // this way custom <sql> tags can be avoided for upgrade generation if defaults are specified
-          if ( strlen($new_column['default']) > 0 ) {
+          if ( strlen((string)$new_column['default']) > 0 ) {
             $commands[] = array(
               'stage' => 'AFTER1',
               'command' => "UPDATE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
@@ -402,7 +402,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       }
 
       // drop sequence and default if converting from *serial to *int
-      if ( preg_match('/serial$/', $old_column['type']) > 0 &&
+      if ( preg_match('/serial$/', (string)$old_column['type']) > 0 &&
            ($new_column['type'] == 'int' || $new_column['type'] == 'bigint') ) {
 
           $commands[] = array(

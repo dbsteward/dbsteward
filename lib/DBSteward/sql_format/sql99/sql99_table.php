@@ -259,7 +259,7 @@ class sql99_table {
       $b_column_type = $constraint_b['foreign_key_data']['column']->attributes()['type'];
     }
 
-    if ( strcasecmp($a_column_type, $b_column_type) != 0 ) {
+    if ( strcasecmp((string)$a_column_type, (string)$b_column_type) != 0 ) {
       return false;
     }
 
@@ -271,7 +271,7 @@ class sql99_table {
     if ( isset($constraint_b['foreignOnDelete']) ) {
       $b_foreign_on_delete = $constraint_b['foreignOnDelete'];
     }
-    if ( strcasecmp($a_foreign_on_delete, $b_foreign_on_delete) != 0 ) {
+    if ( strcasecmp((string)$a_foreign_on_delete, (string)$b_foreign_on_delete) != 0 ) {
       return false;
     }
 
@@ -283,7 +283,7 @@ class sql99_table {
     if ( isset($constraint_b['foreignOnUpdate']) ) {
       $b_foreign_on_update = $constraint_b['foreignOnUpdate'];
     }
-    if ( strcasecmp($a_foreign_on_update, $b_foreign_on_update) != 0 ) {
+    if ( strcasecmp((string)$a_foreign_on_update, (string)$b_foreign_on_update) != 0 ) {
       return false;
     }
 
@@ -348,7 +348,7 @@ class sql99_table {
     $name = false;
 
     foreach(dbx::get_table_columns($node_table) as $column) {
-      if (strcasecmp($column['oldColumnName'], $old_column_name) == 0) {
+      if (strcasecmp((string)$column['oldColumnName'], (string)$old_column_name) == 0) {
         $name = $column['name'];
         break;
       }

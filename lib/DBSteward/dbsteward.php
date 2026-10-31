@@ -116,7 +116,7 @@ class dbsteward {
   public static $ENABLE_COLOR = true;
   public static $BRING_THE_RAIN = false; // Hardcore mode
   public static $DEBUG = false;
-  public static $LOG_LEVEL = Monolog\Logger::NOTICE;
+  public static $LOG_LEVEL = Monolog\Level::Notice;
   protected static $logger = null;
   
   
@@ -256,6 +256,10 @@ class dbsteward {
 
     if (isset($options['newxml'])) {
       $options['newxml'] = (array)$options['newxml'];
+    }
+
+    if (isset($options['pgdataxml'])) {
+      $options['pgdataxml'] = (array)$options['pgdataxml'];
     }
 
     ///// XML file parameter sanity checks
@@ -515,7 +519,7 @@ class dbsteward {
     
     $xml_collect_data_addendums = 0;
     if (isset($options["xmlcollectdataaddendums"]) && $options["xmlcollectdataaddendums"] > 0) {
-      $xml_collect_data_addendums = (integer)$options["xmlcollectdataaddendums"];
+      $xml_collect_data_addendums = (int)$options["xmlcollectdataaddendums"];
       if ($mode != dbsteward::MODE_BUILD) {
         throw new Exception("--xmlcollectdataaddendums is only supported for fresh builds");
       }
@@ -736,7 +740,7 @@ class dbsteward {
   }
 
   protected static function set_verbosity($options) {
-    static $levels = array(Monolog\Logger::ERROR, Monolog\Logger::WARNING, Monolog\Logger::NOTICE, Monolog\Logger::INFO, Monolog\Logger::DEBUG);
+    static $levels = array(Monolog\Level::Error, Monolog\Level::Warning, Monolog\Level::Notice, Monolog\Level::Info, Monolog\Level::Debug);
 
     $debug = isset($options['debug']);
     $v = isset($options['v']) ? count((array)$options['v']) : 0;
@@ -745,7 +749,7 @@ class dbsteward {
 
     if ($debug) {
       self::$DEBUG = true;
-      self::$LOG_LEVEL = Monolog\Logger::DEBUG;
+      self::$LOG_LEVEL = Monolog\Level::Debug;
       if ($v) {
         self::$BRING_THE_RAIN = true;
       }
@@ -983,23 +987,23 @@ class dbsteward {
   }
   public static function trace($text) {
     if (self::$BRING_THE_RAIN) {
-      self::log(Monolog\Logger::DEBUG, $text);
+      self::log(Monolog\Level::Debug, $text);
     }
   }
   public static function debug($text) {
-    self::log(Monolog\Logger::DEBUG, $text);
+    self::log(Monolog\Level::Debug, $text);
   }
   public static function info($text) {
-    self::log(Monolog\Logger::INFO, $text);
+    self::log(Monolog\Level::Info, $text);
   }
   public static function notice($text) {
-    self::log(Monolog\Logger::NOTICE, $text);
+    self::log(Monolog\Level::Notice, $text);
   }
   public static function warning($text) {
-    self::log(Monolog\Logger::WARNING, $text);
+    self::log(Monolog\Level::Warning, $text);
   }
   public static function error($text) {
-    self::log(Monolog\Logger::ERROR, $text);
+    self::log(Monolog\Level::Error, $text);
   }
   
   public static function get_sql_formats() {

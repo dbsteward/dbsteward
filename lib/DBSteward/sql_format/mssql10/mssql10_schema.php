@@ -37,7 +37,7 @@ class mssql10_schema extends sql99_schema {
    *
    * @return string
    */
-  public function get_drop_sql($node_schema) {
+  public static function get_drop_sql($node_schema) {
     $ddl = "DROP SCHEMA " . mssql10::get_quoted_schema_name($node_schema['name']) . ";\n";
     return $ddl;
   }
@@ -49,7 +49,7 @@ class mssql10_schema extends sql99_schema {
    *
    * @return true if schema contains function with given $declaration, otherwise false
    */
-  public function contains_function($node_schema, $declaration) {
+  public static function contains_function($node_schema, $declaration) {
     $found = FALSE;
 
     foreach (dbx::get_functions($node_schema) as $node_function) {

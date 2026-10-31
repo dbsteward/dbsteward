@@ -134,7 +134,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
 
     $table_name =  mysql5::get_fully_qualified_table_name($new_schema, $new_table['name']);
 
-    if (strcasecmp($new_part, $old_part)) {
+    if (strcasecmp((string)$new_part, (string)$old_part)) {
       if (is_null($new_part)) {
         $ofs1->write("ALTER TABLE $table_name\n  REMOVE PARTITIONING;\n\n");
       }
@@ -840,7 +840,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
       $sql .= "\n" . $opt_sql;
     }
 
-    if ( strlen($table['description']) > 0 ) {
+    if ( strlen((string)$table['description']) > 0 ) {
       $sql .= "\nCOMMENT " . mysql5::quote_string_value($table['description']);
     }
 

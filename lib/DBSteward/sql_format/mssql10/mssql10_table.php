@@ -61,7 +61,7 @@ class mssql10_table extends sql99_table {
    *
    * @return created SQL command
    */
-  public function get_drop_sql($node_schema, $node_table) {
+  public static function get_drop_sql($node_schema, $node_table) {
     if ( !is_object($node_schema) ) {
       var_dump($node_schema);
       throw new exception("node_schema is not an object");
@@ -83,7 +83,7 @@ class mssql10_table extends sql99_table {
    *
    * @return string
    */
-  public function get_constraint_sql($constraint) {
+  public static function get_constraint_sql($constraint) {
     if (!is_array($constraint)) {
       throw new exception("constraint is not an array?");
     }
@@ -105,7 +105,7 @@ class mssql10_table extends sql99_table {
     return $sql;
   }
 
-  public function get_constraint_drop_sql($constraint) {
+  public static function get_constraint_drop_sql($constraint) {
     if (!is_array($constraint)) {
       throw new exception("constraint is not an array?");
     }

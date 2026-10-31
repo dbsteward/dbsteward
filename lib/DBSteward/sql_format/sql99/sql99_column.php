@@ -58,7 +58,7 @@ class sql99_column {
   }
 
   public static function is_serial($type) {
-    return preg_match('/^serial[48]?|bigserial$/i', $type) > 0;
+    return preg_match('/^serial[48]?|bigserial$/i', (string)$type) > 0;
   }
 
   public static function convert_serial($type) {

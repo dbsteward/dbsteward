@@ -57,7 +57,7 @@ class mssql10_function extends pgsql8_function {
    *
    * @return created SQL
    */
-  public function get_drop_sql($node_schema, $node_function) {
+  public static function get_drop_sql($node_schema, $node_function) {
     $declaration = self::get_declaration($node_schema, $node_function);
     $declaration = str_ireplace("character varying", "varchar", $declaration);
     $declaration = str_ireplace("varying", "varchar", $declaration);

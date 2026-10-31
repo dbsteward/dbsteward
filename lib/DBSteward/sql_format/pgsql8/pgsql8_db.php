@@ -38,7 +38,8 @@ class pgsql8_db {
   }
 
   public static function disconnect() {
-    self::$db_conn = pg_close(self::$db_conn);
+    pg_close(self::$db_conn);
+    self::$db_conn = NULL;
   }  
 
 }

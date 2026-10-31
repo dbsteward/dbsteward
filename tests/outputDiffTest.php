@@ -213,25 +213,25 @@ XML;
     $upgrade_stage1_schema1_sql = file_get_contents($this->output_prefix . '_upgrade_slony_replica_set_100_stage1_schema1.sql');
     $upgrade_stage1_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage1_schema1_sql);
     $this->assertTrue(
-      (boolean)preg_match('/ALTER COLUMN "test_id" TYPE int/i', $upgrade_stage1_schema1_sql),
+      (bool)preg_match('/ALTER COLUMN "test_id" TYPE int/i', $upgrade_stage1_schema1_sql),
       "Column type change was not found in upgrade_slony_replica_set_100_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
     $this->assertTrue(
-      (boolean)preg_match('/ALTER COLUMN "test_id" DROP DEFAULT/i', $upgrade_stage1_schema1_sql),
+      (bool)preg_match('/ALTER COLUMN "test_id" DROP DEFAULT/i', $upgrade_stage1_schema1_sql),
       "Removal of SERIAL default not found in upgrade_slony_replica_set_100_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
 
     $upgrade_stage3_schema1_sql = file_get_contents($this->output_prefix . '_upgrade_slony_replica_set_100_stage3_schema1.sql');
     $upgrade_stage3_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage3_schema1_sql);
     $this->assertTrue(
-      (boolean)preg_match('/DROP SEQUENCE IF EXISTS "dbsteward"."serial_test_test_id_seq"/i', $upgrade_stage3_schema1_sql),
+      (bool)preg_match('/DROP SEQUENCE IF EXISTS "dbsteward"."serial_test_test_id_seq"/i', $upgrade_stage3_schema1_sql),
       "Serial drop was not found in upgrade_slony_replica_set_100_stage3_schema1.sql:\n$upgrade_stage3_schema1_sql"
       );
 
     $upgrade_stage1_slony_slonik = file_get_contents($this->output_prefix . '_upgrade_slony_replica_set_100_stage1.slonik');
     $upgrade_stage1_slony_slonik = preg_replace('/\s+/', ' ', $upgrade_stage1_slony_slonik);
     $this->assertTrue(
-      (boolean)preg_match('/SET DROP SEQUENCE \( ORIGIN = 1, ID = 2 \);/i', $upgrade_stage1_slony_slonik),
+      (bool)preg_match('/SET DROP SEQUENCE \( ORIGIN = 1, ID = 2 \);/i', $upgrade_stage1_slony_slonik),
       "Serial drop was not found in upgrade_stage1_slony.slonik:\n$upgrade_stage1_slony_slonik"
       );
   }
@@ -264,12 +264,12 @@ XML;
     $upgrade_stage3_schema1_sql = file_get_contents($this->output_prefix . '_upgrade_stage3_schema1.sql');
     $upgrade_stage3_schema1_sql = preg_replace('/\s+/', ' ', $upgrade_stage3_schema1_sql);
     $this->assertTrue(
-      (boolean)preg_match('/DROP TABLE IF EXISTS `__sequences`;/i', $upgrade_stage3_schema1_sql),
+      (bool)preg_match('/DROP TABLE IF EXISTS `__sequences`;/i', $upgrade_stage3_schema1_sql),
       "Sequences drop was not found in upgrade_stage3_schema1.sql:\n$upgrade_stage3_schema1_sql"
       );
     
     $this->assertTrue(
-      (boolean)preg_match('/DROP TRIGGER IF EXISTS `__dbsteward_serial_test_test_id_serial_trigger`;/i', $upgrade_stage1_schema1_sql),
+      (bool)preg_match('/DROP TRIGGER IF EXISTS `__dbsteward_serial_test_test_id_serial_trigger`;/i', $upgrade_stage1_schema1_sql),
       "Serial trigger drop was not found in upgrade_stage1_schema1.sql:\n$upgrade_stage1_schema1_sql"
       );
   }
@@ -334,12 +334,12 @@ XML;
     $upgrade_single_stage_sql = preg_replace('/\s+/', ' ', $upgrade_single_stage_sql);
 
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote("ALTER TABLE `user` MODIFY COLUMN `user_name` varchar(64)",'/').'/i', $upgrade_single_stage_sql, $matches),
+      (bool)preg_match('/'.preg_quote("ALTER TABLE `user` MODIFY COLUMN `user_name` varchar(64)",'/').'/i', $upgrade_single_stage_sql, $matches),
       "user_name column type change was not found in upgrade_single_stage_sql.sql:\n$upgrade_single_stage_sql"
       );
 
     $this->assertTrue(
-      (boolean)preg_match('/'.preg_quote("UPDATE `user` SET `user_name` = 'Administrator' WHERE (`user_id` = 1);",'/').'/i', $upgrade_single_stage_sql),
+      (bool)preg_match('/'.preg_quote("UPDATE `user` SET `user_name` = 'Administrator' WHERE (`user_id` = 1);",'/').'/i', $upgrade_single_stage_sql),
       "Update of user_name column static value not found in upgrade_single_stage.sql:\n$upgrade_single_stage_sql"
       );
   }

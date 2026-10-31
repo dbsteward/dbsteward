@@ -54,6 +54,6 @@ class sql99_view {
         return array((string)$node_schema['name'], $parts[0]);
       }
       return $parts;
-    }, preg_split('/[\,\s]+/', $node_view['dependsOnViews'], -1, PREG_SPLIT_NO_EMPTY));
+    }, preg_split('/[\,\s]+/', (string)$node_view['dependsOnViews'], -1, PREG_SPLIT_NO_EMPTY));
   }
 }

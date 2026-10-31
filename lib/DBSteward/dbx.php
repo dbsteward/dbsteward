@@ -220,7 +220,7 @@ class dbx {
     return $node_rows;
   }
 
-  public function &create_table_constraint(&$node_table, $name) {
+  public static function &create_table_constraint(&$node_table, $name) {
     $node_constraint = $node_table->addChild('constraint');
     $node_constraint->addAttribute('name', $name);
     return $node_constraint;
@@ -401,7 +401,7 @@ class dbx {
     return $return_index;
   }
 
-  public function &create_table_index(&$node_table, $name) {
+  public static function &create_table_index(&$node_table, $name) {
     $node_index = $node_table->addChild('index');
     $node_index->addAttribute('name', $name);
     return $node_index;
@@ -547,7 +547,7 @@ class dbx {
   }
 
   public static function foreign_key($db_doc, $node_schema, $node_table, $column, &$foreign) {
-    $fschema = strlen($column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
+    $fschema = strlen((string)$column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
     $foreign['schema'] = dbx::get_schema($db_doc, $fschema);
     if (!$foreign['schema']) {
       throw new exception("Failed to find foreign schema '" . dbsteward::string_cast($column['foreignSchema']) . "' for " . dbsteward::string_cast($node_schema['name']) . "." . dbsteward::string_cast($node_table['name']) . "." . dbsteward::string_cast($column['name']));

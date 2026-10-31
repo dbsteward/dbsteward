@@ -813,7 +813,7 @@ class mysql5 extends sql99 {
     if (strlen($value) > 0) {
       // data types that should be quoted
       $enum_regex = dbx::enum_regex($db_doc);
-      if (strlen($enum_regex) > 0) {
+      if (strlen((string)$enum_regex) > 0) {
         $enum_regex = '|' . $enum_regex;
       }
       $PATTERN_QUOTED_TYPES = "/^char.*|^string|^date.*|^time.*|^varchar.*|^interval|^money.*|^inet" . $enum_regex . "/i";

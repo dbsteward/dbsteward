@@ -865,7 +865,7 @@ class mssql10_diff_tables extends pgsql8_diff_tables {
     }
   }
 
-  protected function table_data_row_deleted($row) {
+  protected static function table_data_row_deleted($row) {
     if ( isset($row['delete']) && strcasecmp($row['delete'], 'true') == 0 ) {
       return true;
     }

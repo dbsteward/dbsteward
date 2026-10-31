@@ -12,6 +12,23 @@ class pgsql8 extends sql99 {
 
   const QUOTE_CHAR = '"';
 
+  /**
+   * Escape a value for use inside a single-quoted SQL string literal.
+   *
+   * Replaces connection-less pg_escape_string(), which is deprecated since PHP 8.1
+   * ("Automatic fetching of PostgreSQL connection"). Output is identical to libpq
+   * PQescapeString() with standard_conforming_strings off, which is what
+   * pg_escape_string() produced when no connection was open: quotes and
+   * backslashes are doubled and the value ends at the first NUL byte.
+   *
+   * @param mixed $value
+   * @return string
+   */
+  public static function escape_string_literal($value) {
+    $value = explode("\0", (string)$value, 2)[0];
+    return str_replace(array('\\', "'"), array('\\\\', "''"), $value);
+  }
+
   const PATTERN_SERIAL_COLUMN = '/^serial|bigserial$/i';
 
   const PATTERN_REPLICATED_COLUMN = '/^serial|bigserial$/i';
@@ -66,7 +83,7 @@ class pgsql8 extends sql99 {
       // context_replica_set_id -10 means object does not have slonySetId defined
       return self::$context_replica_set_id = -10;
     }
-    $set_id = (integer)($obj['slonySetId']);
+    $set_id = (int)($obj['slonySetId']);
     return self::$context_replica_set_id = $set_id;
   }
   
@@ -247,7 +264,7 @@ class pgsql8 extends sql99 {
     if (strlen($value) > 0) {
       // data types that should be quoted
       $enum_regex = dbx::enum_regex($db_doc);
-      if (strlen($enum_regex) > 0) {
+      if (strlen((string)$enum_regex) > 0) {
         $enum_regex = '|' . $enum_regex;
       }
 
@@ -262,7 +279,7 @@ class pgsql8 extends sql99 {
 
       // data types that should be quoted
       if (preg_match("/^bool.*|^character.*|^string|^text|^date|^time.*|^(?:var)?char.*|^interval|^money.*|^inet|uuid|ltree" . $enum_regex . "/i", $type) > 0) {
-        $value = "'" . pg_escape_string($value) . "'";
+        $value = "'" . pgsql8::escape_string_literal($value) . "'";
 
         // data types that should have E prefix to their quotes
         if (pgsql8::E_ESCAPE
@@ -2359,7 +2376,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
             }
             else if (pg_num_rows($rs) > 1) {
               dbsteward::notice($table_name . " contains more than one row WHERE " . $primary_key_expression);
-              while (($db_row = pg_fetch($rs)) !== FALSE) {
+              while (($db_row = pg_fetch_assoc($rs)) !== FALSE) {
                 dbsteward::notice("\t" . implode(', ', $db_row));
               }
             }
@@ -2506,9 +2523,9 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    */
   protected static function get_slony_replica_set_node_ids($replica_set) {
     $node_ids = array();
-    $node_ids[] = (integer)($replica_set['originNodeId']);
+    $node_ids[] = (int)($replica_set['originNodeId']);
     foreach($replica_set->slonyReplicaSetNode AS $set_node) {
-      $node_ids[] = (integer)($set_node['id']);
+      $node_ids[] = (int)($set_node['id']);
     }
     return $node_ids;
   }
@@ -2524,12 +2541,12 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
   protected static function get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_id, $attribute) {
     $replica_node = NULL;
     // is the node_id specified the origin node?
-    if ( (integer)($replica_set['originNodeId']) == $node_id ) {
+    if ( (int)($replica_set['originNodeId']) == $node_id ) {
       $replica_node = $replica_set;
     }
     else {
       foreach($replica_set->slonyReplicaSetNode AS $set_node) {
-        if ( (integer)($set_node['id']) == $node_id ) {
+        if ( (int)($set_node['id']) == $node_id ) {
           $replica_node = $set_node;
         }
       }
@@ -2556,7 +2573,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       throw new exception("no slonyNode elements in database definition");
     }
     foreach($db_doc->database->slony->slonyNode AS $slony_node) {
-      if ( (integer)($slony_node['id']) == $node_id ) {
+      if ( (int)($slony_node['id']) == $node_id ) {
         return $slony_node;
       }
     }
@@ -2575,7 +2592,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       else if (!is_numeric(dbsteward::string_cast($table['slonyId']))) {
         throw new exception('table ' . $table['name'] . " slonyId " . $table['slonyId'] . " is not numeric");
       }
-      else if ( strcmp($replica_set['id'], $table['slonySetId']) == 0 ) {
+      else if ( strcmp($replica_set['id'], (string)$table['slonySetId']) == 0 ) {
         // this table is for the intended replica set
         return TRUE;
       }
@@ -2612,7 +2629,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       else if (!is_numeric(dbsteward::string_cast($sequence['slonyId']))) {
         throw new exception('sequence ' . $sequence['name'] . " slonyId " . $sequence['slonyId'] . " is not numeric");
       }
-      else if ( strcmp($replica_set['id'], $sequence['slonySetId']) == 0 ) {
+      else if ( strcmp($replica_set['id'], (string)$sequence['slonySetId']) == 0 ) {
         // this sequence is for the intended replica set
         return TRUE;
       }
@@ -2640,7 +2657,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
   
   public static function slony_replica_set_contains_table_column_serial_sequence($db_doc, $replica_set, $schema, $table, $column) {    
     // is it a serial column and therefore an implicit sequence to replicate?
-    if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, $column['type']) > 0) {
+    if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, (string)$column['type']) > 0) {
 
       if (isset($column['slonyId']) && strlen($column['slonyId']) > 0) {
         if (strcasecmp('IGNORE_REQUIRED', $column['slonyId']) == 0) {
@@ -2651,7 +2668,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         else if (!is_numeric(dbsteward::string_cast($column['slonyId']))) {
           throw new exception("serial column " . $column['name'] . " slonyId " . $column['slonyId'] . " is not numeric");
         }
-        else if ( strcmp($replica_set['id'], $column['slonySetId']) == 0 ) {
+        else if ( strcmp($replica_set['id'], (string)$column['slonySetId']) == 0 ) {
           // this sequence is for the intended replica set
           return TRUE;
         }

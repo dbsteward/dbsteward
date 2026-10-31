@@ -23,7 +23,7 @@ class mysql5_table extends sql99_table {
       throw new exception("node_table object element name is not table. check stack for offending caller");
     }
 
-    if ( strlen($node_table['inherits']) > 0 ) {
+    if ( strlen((string)$node_table['inherits']) > 0 ) {
       //@TODO: implement compatibility with pgsql table inheritance
       dbsteward::error("Skipping table '{$node_table['name']}' because MySQL does not support table inheritance");
       return "-- Skipping table '{$node_table['name']}' because MySQL does not support table inheritance";
@@ -47,7 +47,7 @@ class mysql5_table extends sql99_table {
       $sql .= "\n" . $opt_sql;
     }
     
-    if ( strlen($node_table['description']) > 0 ) {
+    if ( strlen((string)$node_table['description']) > 0 ) {
       $sql .= "\nCOMMENT " . mysql5::quote_string_value($node_table['description']);
     }
     

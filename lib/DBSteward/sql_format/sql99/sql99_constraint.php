@@ -13,7 +13,7 @@ class sql99_constraint {
   public static function foreign_key_lookup($db_doc, $node_schema, $node_table, $column, $visited = array()) {
     $foreign = array();
 
-    $fschema = strlen($column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
+    $fschema = strlen((string)$column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
     $foreign['schema'] = dbx::get_schema($db_doc, $fschema);
     if ( ! $foreign['schema'] ) {
       throw new Exception("Failed to find foreign schema '{$column['foreignSchema']}' for {$node_schema['name']}.{$node_table['name']}.{$column['name']}");
@@ -71,7 +71,7 @@ class sql99_constraint {
     }
 
     // fall back to current schema name if not explicit
-    $fschema_name = strlen($node_fkey['foreignSchema']) ? (string)$node_fkey['foreignSchema'] : (string)$node_schema['name'];
+    $fschema_name = strlen((string)$node_fkey['foreignSchema']) ? (string)$node_fkey['foreignSchema'] : (string)$node_schema['name'];
     $fschema = dbx::get_schema($db_doc, $fschema_name);
     if (!$fschema) {
       throw new Exception("Failed to find foreign schema '$fschema_name' for foreignKey $lschema_name.$ltable_name.$index_name");
@@ -364,7 +364,7 @@ class sql99_constraint {
       $b_column_type = $constraint_b['foreign_key_data']['column']->attributes()['type'];
     }
 
-    if ( strcasecmp($a_column_type, $b_column_type) != 0 ) {
+    if ( strcasecmp((string)$a_column_type, (string)$b_column_type) != 0 ) {
       return false;
     }
 
@@ -376,7 +376,7 @@ class sql99_constraint {
     if ( isset($constraint_b['foreignOnDelete']) ) {
       $b_foreign_on_delete = $constraint_b['foreignOnDelete'];
     }
-    if ( strcasecmp($a_foreign_on_delete, $b_foreign_on_delete) != 0 ) {
+    if ( strcasecmp((string)$a_foreign_on_delete, (string)$b_foreign_on_delete) != 0 ) {
       return false;
     }
 
@@ -388,7 +388,7 @@ class sql99_constraint {
     if ( isset($constraint_b['foreignOnUpdate']) ) {
       $b_foreign_on_update = $constraint_b['foreignOnUpdate'];
     }
-    if ( strcasecmp($a_foreign_on_update, $b_foreign_on_update) != 0 ) {
+    if ( strcasecmp((string)$a_foreign_on_update, (string)$b_foreign_on_update) != 0 ) {
       return false;
     }
 

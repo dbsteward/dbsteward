@@ -32,7 +32,7 @@ class ofs_replica_set_router {
     if ( !is_numeric($set_id) || $set_id < 1 ) {
       throw new exception("set_replica_set_ofs() passed invalid replica set id");
     }
-    $set_id = (integer)$set_id;
+    $set_id = (int)$set_id;
     $this->ofs[$set_id] = $ofs;
     return $this->ofs[$set_id];
   }
@@ -63,7 +63,7 @@ class ofs_replica_set_router {
       // context_replica_set_id -10 means object does not have slonySetId defined
       // use the natural first replica set as the replica context
       $first_replica_set = pgsql8::get_slony_replica_set_natural_first(dbsteward::$new_database);
-      $use_replica_set_id = (integer)($first_replica_set['id']);
+      $use_replica_set_id = (int)($first_replica_set['id']);
     }
     
     // make sure replica set id to use is known

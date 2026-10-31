@@ -98,17 +98,20 @@ class sql99 {
    * @return boolean
    */
   public static function is_identifier_blacklisted($name) {
-    static $list;
+    // Cache per blacklist file: since PHP 8.1 a method's static variables are shared
+    // with subclasses that inherit it, so a single cached list would leak the first
+    // format's reserved words (e.g. pgsql8) into every other format (e.g. mysql5).
+    static $lists = array();
     $file = static::get_identifier_blacklist_file();
     if ($file === null) {
       // no blacklist file, so assume $name isn't blacklisted
       return false;
     }
-    if ($list === null) {
-      $list = array_fill_keys(array_map('trim', file($file)), true);
+    if (!isset($lists[$file])) {
+      $lists[$file] = array_fill_keys(array_map('trim', file($file)), true);
     }
 
-    return array_key_exists(strtolower($name), $list);
+    return array_key_exists(strtolower($name), $lists[$file]);
   }
 
   /**

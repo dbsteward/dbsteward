@@ -162,7 +162,7 @@ class pgsql8_permission {
 
         // set serial columns permissions based on table permissions
         foreach($node_object->column AS $column ) {
-          if ( preg_match(pgsql8::PATTERN_TABLE_LINKED_TYPES, $column['type']) > 0 ) {
+          if ( preg_match(pgsql8::PATTERN_TABLE_LINKED_TYPES, (string)$column['type']) > 0 ) {
             $col_sequence = pgsql8::identifier_name($node_schema['name'], $node_object['name'], $column['name'], '_seq');
 
             $seq_priv = array();

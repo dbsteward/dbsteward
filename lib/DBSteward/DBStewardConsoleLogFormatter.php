@@ -1,32 +1,35 @@
 <?php
 
-use Monolog\Logger;
 use Colors\Color;
+use Monolog\Formatter\LineFormatter;
+use Monolog\Level;
+use Monolog\LogRecord;
 
-class DBStewardConsoleLogFormatter extends Monolog\Formatter\LineFormatter {
+/**
+ * Console log line formatter: "LEVEL    message", with continuation lines
+ * indented under the message and the line colorized by severity.
+ */
+class DBStewardConsoleLogFormatter extends LineFormatter {
   public function __construct() {
-    parent::__construct('%padded_level% %message%', null, true, false);
+    parent::__construct('%extra.padded_level% %message%', null, true, false);
   }
-  public function format(array $record) {
-    $record['padded_level'] = str_pad($record['level_name'], 8);
-    $record['message'] = str_replace("\n", "\n         ", $record['message']);
+
+  public function format(LogRecord $record): string {
+    $record = $record->with(
+      message: str_replace("\n", "\n         ", $record->message),
+      extra: $record->extra + ['padded_level' => str_pad($record->level->getName(), 8)]
+    );
     $output = parent::format($record);
-    if (dbsteward::$ENABLE_COLOR) {
-      $c = new Color($output);
-      switch ($record['level']) {
-        case Logger::DEBUG:
-          $c->dark_gray();
-          break;
-        case Logger::WARNING:
-          $c->yellow();
-          break;
-        case Logger::ERROR:
-          $c->red();
-          break;
-      }
-      return $c . PHP_EOL;
-    } else {
+    if (!dbsteward::$ENABLE_COLOR) {
       return $output . PHP_EOL;
     }
+    $c = new Color($output);
+    match ($record->level) {
+      Level::Debug => $c->dark_gray(),
+      Level::Warning => $c->yellow(),
+      Level::Error => $c->red(),
+      default => null,
+    };
+    return $c . PHP_EOL;
   }
 }

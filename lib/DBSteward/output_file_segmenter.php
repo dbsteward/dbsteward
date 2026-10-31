@@ -146,7 +146,7 @@ class output_file_segmenter {
    */
   protected function count_statements($sql) {
     //@TODO is this method adequate?
-    $lines = explode("\n", $sql);
+    $lines = explode("\n", (string)$sql);
     foreach($lines as $line) {
       // strip comments off end of line
       if ( strpos($line, '--') !== FALSE ) {
@@ -180,7 +180,7 @@ class output_file_segmenter {
       $this->wrote_fixed_file_header = TRUE;
       $this->write_header();
     }
-    if ( ($bytes_written = fwrite($this->file_pointer, $sql)) === FALSE ) {
+    if ( ($bytes_written = fwrite($this->file_pointer, (string)$sql)) === FALSE ) {
       throw new exception("failed to write to file_pointer: " . var_export($this->file_pointer, TRUE) . " text: " . $sql);
     }
     $this->count_statements($sql);

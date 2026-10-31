@@ -64,7 +64,7 @@ class mysql5_column extends sql99_column {
       $definition .=  " AUTO_INCREMENT";
     }
 
-    if ( strlen($node_column['default']) > 0 ) {
+    if ( strlen((string)$node_column['default']) > 0 ) {
       if ( static::is_serial($node_column['type']) ) {
         $note = "Ignoring default '{$node_column['default']}' on {$node_schema['name']}.{$node_table['name']}.{$node_column['name']} because it is a serial type";
         dbsteward::warning($note."\n");
@@ -88,7 +88,7 @@ class mysql5_column extends sql99_column {
       }
     }
 
-    if ( strlen($node_column['description']) > 0 ) {
+    if ( strlen((string)$node_column['description']) > 0 ) {
       $definition .= " COMMENT " . mysql5::quote_string_value($node_column['description']);
     }
 
@@ -100,12 +100,12 @@ class mysql5_column extends sql99_column {
 
   /** Check to see if the given type is marked AUTO_INCREMENT */
   public static function is_auto_increment($type) {
-    return stripos($type,'auto_increment') !== FALSE;
+    return stripos((string)$type,'auto_increment') !== FALSE;
   }
 
   /** Remove any AUTO_INCREMENT flag in the given type */
   public static function un_auto_increment($type) {
-    return preg_replace('/\s*auto_increment\s*/i','',$type);
+    return preg_replace('/\s*auto_increment\s*/i','',(string)$type);
   }
 
   public static function column_type($db_doc, $node_schema, $node_table, $node_column, &$foreign=NULL) {

@@ -73,12 +73,12 @@ class pgsql8_sequence {
     }
 
     $cycle = 'NO CYCLE';
-    if ( strlen($node_sequence['cycle']) > 0  && strcasecmp($node_sequence['cycle'], 'false') != 0) {
+    if ( strlen((string)$node_sequence['cycle']) > 0  && strcasecmp((string)$node_sequence['cycle'], 'false') != 0) {
       $cycle = 'CYCLE';
     }
 
     $owned_by = '';
-    if (strlen($node_sequence['ownedBy']) > 0) {
+    if (strlen((string)$node_sequence['ownedBy']) > 0) {
       $owned_by = " OWNED BY " . $node_sequence['ownedBy'];
     }
 
@@ -99,7 +99,7 @@ class pgsql8_sequence {
 
     // sequence comment
     if (isset($schema['description']) && strlen($schema['description']) > 0) {
-      $ddl .= "COMMENT ON SCHEMA " . $sequence_name . " IS '" . pg_escape_string($schema['description']) . "';\n";
+      $ddl .= "COMMENT ON SCHEMA " . $sequence_name . " IS '" . pgsql8::escape_string_literal($schema['description']) . "';\n";
     }
 
     return $ddl;

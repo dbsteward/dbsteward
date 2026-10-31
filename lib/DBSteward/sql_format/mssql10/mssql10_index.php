@@ -62,7 +62,7 @@ class mssql10_index extends pgsql8_index {
     return $sql;
   }
 
-  public function get_drop_sql($node_schema, $node_table, $node_index) {
+  public static function get_drop_sql($node_schema, $node_table, $node_index) {
     $ddl = "DROP INDEX "
       . mssql10::get_quoted_schema_name($node_schema['name'])
       . "." . mssql10::get_quoted_table_name($node_table['name'])
