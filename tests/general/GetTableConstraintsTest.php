@@ -59,6 +59,7 @@ XML;
     $this->assertEquals('t1', $c['table_name']);
     $this->assertEquals('FOREIGN KEY', $c['type']);
     $this->assertEquals("$local REFERENCES $foreign", $c['definition']);
+    $this->assertEquals('fkey1_idx', $c['foreignIndexName'], 'foreignKey indexName must name the FK index');
     $this->assertEquals(array(
       'schema' => $doc->schema[1],
       'table' => $doc->schema[1]->table[0],

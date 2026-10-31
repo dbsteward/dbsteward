@@ -15,6 +15,8 @@ Changes
   - Fix reserved identifier check using the wrong SQL format's word list on PHP 8.1+
   - Fix mssql10 format and pgsql8 dump parsing calling non-static methods statically
   - Fix nonexistent pg_fetch() call in pgsql8 data extraction
+  - Fix foreignKey element indexName being ignored for the generated mysql5 FOREIGN KEY clause
+  - CLI reports PHP errors (TypeError etc.) as a normal ERROR line with exit code 254
 
 ## 1.4.3 - 2020-02-04
 

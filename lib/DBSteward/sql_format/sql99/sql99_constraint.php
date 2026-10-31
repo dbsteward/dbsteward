@@ -274,7 +274,7 @@ class sql99_constraint {
           $constraint['foreignOnUpdate'] = (string)$node_fkey['onUpdate'];
         }
         if (isset($node_fkey['indexName'])) {
-          $constraint['foreignIndexName'] = (string)$node_fkey['foreignIndexName'];
+          $constraint['foreignIndexName'] = (string)$node_fkey['indexName'];
         }
         $constraints[] = $constraint;
       }
