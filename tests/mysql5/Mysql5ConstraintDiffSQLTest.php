@@ -187,7 +187,6 @@ SQL;
     $this->common($this->xml_pka_uqc, $this->xml_pka, $expected);
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testChangeOne() {
     $expected = <<<SQL
 ALTER TABLE `test`
@@ -198,7 +197,6 @@ SQL;
     $this->common($this->xml_pka, $this->xml_pkb, $expected);
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testAddSomeAndChange() {
     $expected = <<<SQL
 ALTER TABLE `test`
@@ -210,7 +208,6 @@ SQL;
     $this->common($this->xml_pka, $this->xml_pkb_cfke, $expected);
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testDropSomeAndChange() {
     $expected = <<<SQL
 ALTER TABLE `test`
@@ -223,7 +220,6 @@ SQL;
     $this->common($this->xml_pka_uqc_ifkd_cfke, $this->xml_pkb_cfke, $expected);
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testChangePrimaryKeyNameAndTable() {
     $old = <<<XML
 <dbsteward>
@@ -282,7 +278,6 @@ XML;
     $this->common($notauto, $auto, "", 'primaryKey');
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testChangeColumnTypeWithForeignKey() {
     $old = <<<XML
 <dbsteward>

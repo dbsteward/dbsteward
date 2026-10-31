@@ -165,12 +165,10 @@ XML;
 </dbsteward>
 XML;
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testSameToSame() {
     $this->common($this->xml_pka, $this->xml_pka, "");
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testAddSome() {
     $expected = <<<SQL
 ALTER TABLE "public"."test"
@@ -179,7 +177,6 @@ SQL;
     $this->common($this->xml_pka, $this->xml_pka_uqc, $expected);
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testDropSome() {
     $expected = <<<SQL
 ALTER TABLE "public"."test"
@@ -267,7 +264,6 @@ SQL;
     $this->assertEquals($expected, $actual);
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testAutoIncrement() {
     $auto = <<<XML
 <dbsteward>
@@ -296,7 +292,6 @@ XML;
     $this->common($notauto, $auto, "", 'primaryKey');
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testChangeColumnTypeWithForeignKey() {
     $old = <<<XML
 <dbsteward>

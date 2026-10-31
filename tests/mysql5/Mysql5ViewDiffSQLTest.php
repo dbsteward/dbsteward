@@ -40,7 +40,6 @@ XML;
     dbsteward::$new_database = new SimpleXMLElement($db_doc_xml);
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testDrop() {
     $one = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -91,7 +90,6 @@ XML;
     $this->common_drop($one, $alt_one, "DROP VIEW IF EXISTS `test_view`;", "different owner");
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testCreate() {
     $one = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -142,7 +140,6 @@ XML;
     $this->common_create($one, $alt_one, "CREATE OR REPLACE DEFINER = SOMEBODY SQL SECURITY DEFINER VIEW `test_view`\n  AS SELECT * FROM foo;", "different owner");
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testAlwaysRecreate() {
     $view = <<<XML
 <schema name="public" owner="ROLE_OWNER">

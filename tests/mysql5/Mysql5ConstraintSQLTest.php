@@ -24,7 +24,6 @@ class Mysql5ConstraintSQLTest extends PHPUnit\Framework\TestCase {
     mysql5::$use_schema_name_prefix = FALSE;
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testPrimaryKeys() {
     $xml = <<<XML
 <schema name="public" owner="NOBODY">
@@ -56,7 +55,6 @@ XML;
     $this->assertEquals("ALTER TABLE `test` DROP PRIMARY KEY;", mysql5_constraint::get_constraint_drop_sql($pk));
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testCompoundPrimaryKeys() {
     $xml = <<<XML
 <schema name="public" owner="NOBODY">
@@ -89,7 +87,6 @@ XML;
     $this->assertEquals("ALTER TABLE `test` DROP PRIMARY KEY;", mysql5_constraint::get_constraint_drop_sql($pk));
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testInlineForeignKeys() {
     $xml = <<<XML
 <dbsteward>
@@ -188,7 +185,6 @@ XML;
   }
 
   /** Because MySQL, that's why */
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testInlineForeignKeyIndexName() {
     $xml = <<<XML
 <dbsteward>
@@ -247,7 +243,6 @@ XML;
     $this->assertEquals("ALTER TABLE `test` DROP FOREIGN KEY `other_id_fk`;", mysql5_constraint::get_constraint_drop_sql($fk));
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testCyclicForeignKeys() {
     $xml = <<<XML
 <dbsteward>

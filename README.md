@@ -149,17 +149,21 @@ See the DBSteward Development guide https://github.com/dbsteward/dbsteward/blob/
 
 ## 15. How do I run the test suite?
 
-Install dependencies with `composer install`, then run one test group per process
-(the active SQL format is per-process state):
+Install dependencies with `composer install`, prepare the test databases, then run
+one SQL format per process (`composer test` does both groups):
 
 ```bash
-vendor/bin/phpunit --group nodb --exclude-group quarantine     # no database needed
-vendor/bin/phpunit --group pgsql8 --exclude-group quarantine   # needs PostgreSQL
-vendor/bin/phpunit --group mysql5 --exclude-group quarantine   # needs MySQL
+.github/scripts/prepare-test-db.sh pgsql8    # PostgreSQL; PGSQL8_DBHOST, PGPASSWORD
+.github/scripts/prepare-test-db.sh mysql5    # MySQL;      MYSQL5_DBHOST
+vendor/bin/phpunit --group pgsql8 --exclude-group quarantine
+vendor/bin/phpunit --group mysql5 --exclude-group quarantine
 ```
 
+Run the format groups separately: the active SQL format is per-process state, so
+mixing pgsql8 and mysql5 tests in one run (e.g. `--group nodb`) makes them fail.
 Database connection defaults are in `phpunit.xml.dist`; override any of them with an
-environment variable of the same name, e.g. `PGSQL8_DBHOST=db.local`. The CI workflow
-(`.github/workflows/ci.yml`) shows the exact database setup. Tests tagged `quarantine`
-are known failures from before the PHP 8 upgrade (`composer test:quarantine`), and
-`composer rector` applies the code style rules that CI checks.
+environment variable of the same name, e.g. `PGSQL8_DBHOST=db.local`. Test output goes
+to a per-test temp directory (`tests/TestWorkspace.php`), removed after passing tests.
+Tests tagged `quarantine` already failed before the PHP 8 upgrade
+(`composer test:quarantine`), and `composer rector` applies the code style rules that
+CI checks.

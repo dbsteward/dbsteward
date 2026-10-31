@@ -16,11 +16,14 @@ use PHPUnit\Framework\Attributes\After;
  *   read stale output from a previous run or from another test, and the suite is
  *   safe to run in parallel.
  * - Lazy: the directory is only created when a test asks for a path.
- * - Self-cleaning: removed after a passing test, kept after a failing one so the
- *   output can be inspected (the path is printed to STDERR).
+ * - Self-cleaning: removed after a passing test, kept after a failed or errored
+ *   one so the output can be inspected (the path is printed to STDERR).
  *
- * The root defaults to <system temp dir>/dbsteward-tests and can be changed with
- * the DBSTEWARD_TEST_OUTPUT_DIR environment variable (CI uploads it on failure).
+ * Environment:
+ * - DBSTEWARD_TEST_OUTPUT_DIR: root directory (default <system temp dir>/dbsteward-tests)
+ * - DBSTEWARD_KEEP_TEST_OUTPUT=1: keep every test's output. CI sets this because a
+ *   test that only triggers a PHP deprecation or warning still reports "success"
+ *   to this hook, although failOnDeprecation/failOnWarning fail the run.
  */
 trait TestWorkspace {
 
@@ -62,6 +65,9 @@ trait TestWorkspace {
     $dir = $this->workspace_dir;
     $this->workspace_dir = null;
 
+    if (getenv('DBSTEWARD_KEEP_TEST_OUTPUT')) {
+      return;
+    }
     $status = $this->status();
     if ($status->isFailure() || $status->isError()) {
       fwrite(STDERR, "\nTest output kept for inspection: $dir\n");

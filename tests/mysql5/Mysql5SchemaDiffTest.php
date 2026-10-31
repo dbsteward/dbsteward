@@ -95,7 +95,6 @@ XML;
     $this->should_throw($old, $new, 'you cannot use more than one schema in mysql5 without schema name prefixing');
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testMergeSchemasWithoutOldSchemaNameWithSchemaPrefix() {
     mysql5::$use_schema_name_prefix = TRUE;
 
@@ -231,7 +230,6 @@ XML;
     $this->should_throw($old, $new, 'you cannot use more than one schema in mysql5 without schema name prefixing');
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testSplitSchemasWithoutOldSchemaNameWithSchemaPrefix() {
     mysql5::$use_schema_name_prefix = TRUE;
 
@@ -300,7 +298,6 @@ XML;
     $this->should_throw($old, $new, 'you cannot use more than one schema in mysql5 without schema name prefixing');
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testDropSchemaWithObjects() {
     mysql5::$use_schema_name_prefix = TRUE;
 

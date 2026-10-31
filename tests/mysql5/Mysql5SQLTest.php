@@ -25,7 +25,6 @@ class Mysql5SQLTest extends PHPUnit\Framework\TestCase {
     mysql5::$use_schema_name_prefix = TRUE;
   }
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testBuildSchema() {
     $xml = <<<XML
 <dbsteward>

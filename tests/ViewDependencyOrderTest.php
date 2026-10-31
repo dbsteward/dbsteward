@@ -147,7 +147,6 @@ XML;
   }
 
   #[\PHPUnit\Framework\Attributes\Group('mysql5')]
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testViewsDroppedInOrderMysql5() {
     $this->doTestViewsDroppedInOrder('mysql5');
   }
@@ -201,7 +200,6 @@ SQL;
   }
 
   #[\PHPUnit\Framework\Attributes\Group('mysql5')]
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testViewsCreatedInOrderMysql5() {
     $this->doTestViewsCreatedInOrder('mysql5');
   }
@@ -236,7 +234,6 @@ SQL;
   }
 
   #[\PHPUnit\Framework\Attributes\Group('mysql5')]
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testBuildsInOrderMysql5() {
     $this->doTestBuildsInOrder('mysql5');
   }
@@ -272,7 +269,6 @@ SQL;
   }
 
   #[\PHPUnit\Framework\Attributes\Group('mysql5')]
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testUpgradesInOrderMysql5() {
     $this->doTestUpgradesInOrder('mysql5');
   }

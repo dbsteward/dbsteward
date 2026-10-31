@@ -38,7 +38,6 @@ class Mysql5CompleteTableDiffTest extends PHPUnit\Framework\TestCase {
   </database>
 XML;
 
-  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testAutoIncrementPKFK() {
     $a = <<<XML
 <schema name="public" owner="ROLE_OWNER">

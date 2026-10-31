@@ -9,6 +9,8 @@
 
 require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
 #[\PHPUnit\Framework\Attributes\Group('nodb')]
 class TabrowDelimiterTest extends PHPUnit\Framework\TestCase {
   #[\PHPUnit\Framework\Attributes\DataProvider('tabrowParsingProvider')]
