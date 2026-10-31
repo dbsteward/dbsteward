@@ -7,7 +7,10 @@
          cacheDirectory=".phpunit.cache"
          displayDetailsOnTestsThatTriggerDeprecations="true"
          displayDetailsOnTestsThatTriggerWarnings="true"
-         displayDetailsOnPhpunitDeprecations="true">
+         displayDetailsOnPhpunitDeprecations="true"
+         failOnDeprecation="true"
+         failOnPhpunitDeprecation="true"
+         failOnWarning="true">
   <testsuites>
     <testsuite name="dbsteward">
       <directory>tests</directory>

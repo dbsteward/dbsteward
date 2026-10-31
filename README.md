@@ -3,9 +3,8 @@ SQL database definition differencing tool. Structure and data is defined in a DT
 
 [![Latest Stable Version](https://poser.pugx.org/dbsteward/dbsteward/v/stable.png)](https://packagist.org/packages/dbsteward/dbsteward)
 [![CI](https://github.com/dbsteward/dbsteward/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/dbsteward/dbsteward/actions/workflows/ci.yml)
+[![PHP](https://img.shields.io/badge/php-8.3%20%7C%208.4%20%7C%208.5-777BB4?logo=php&logoColor=white)](https://www.php.net/supported-versions.php)
 [![Coverage Status](https://coveralls.io/repos/dbsteward/dbsteward/badge.svg?branch=master)](https://coveralls.io/r/dbsteward/dbsteward?branch=master)
-[![Dependency Status](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master/badge.png)](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master)
-[![Reference Status](https://www.versioneye.com/php/nkiraly:DBSteward/reference_badge.svg)](https://www.versioneye.com/php/nkiraly:DBSteward/references)
 
 [![GitHub Release](http://img.shields.io/github/release/dbsteward/dbsteward.svg?style=plastic)][release]
 [![GitHub License](https://img.shields.io/badge/license-BSD-blue.svg?style=plastic)][license]
@@ -146,3 +145,21 @@ See the Slony slonik output usage guide https://github.com/dbsteward/dbsteward/b
 
 See the DBSteward Development guide https://github.com/dbsteward/dbsteward/blob/master/docs/DEVGUIDE.md for detailed examples.
 
+
+
+## 15. How do I run the test suite?
+
+Install dependencies with `composer install`, then run one test group per process
+(the active SQL format is per-process state):
+
+```bash
+vendor/bin/phpunit --group nodb --exclude-group quarantine     # no database needed
+vendor/bin/phpunit --group pgsql8 --exclude-group quarantine   # needs PostgreSQL
+vendor/bin/phpunit --group mysql5 --exclude-group quarantine   # needs MySQL
+```
+
+Database connection defaults are in `phpunit.xml.dist`; override any of them with an
+environment variable of the same name, e.g. `PGSQL8_DBHOST=db.local`. The CI workflow
+(`.github/workflows/ci.yml`) shows the exact database setup. Tests tagged `quarantine`
+are known failures from before the PHP 8 upgrade (`composer test:quarantine`), and
+`composer rector` applies the code style rules that CI checks.
