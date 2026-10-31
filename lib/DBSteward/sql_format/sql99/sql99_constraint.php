@@ -64,7 +64,7 @@ class sql99_constraint {
       $fcol_names = $lcol_names;
     }
 
-    $index_name = strlen($node_fkey['indexName']) ? (string)$node_fkey['indexName'] : format_index::index_name($ltable_name, $lcol_names[0], 'fkey');
+    $index_name = strlen((string)$node_fkey['indexName']) ? (string)$node_fkey['indexName'] : format_index::index_name($ltable_name, $lcol_names[0], 'fkey');
 
     if (($f=count($fcol_names)) !== ($l=count($lcol_names))) {
       throw new Exception("Column mismatch on foreignKey $lschema_name.$ltable_name.$index_name: $l local columns, $f foreign columns");

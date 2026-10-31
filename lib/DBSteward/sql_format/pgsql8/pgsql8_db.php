@@ -12,11 +12,23 @@ class pgsql8_db {
 
   protected static $db_conn;
 
+  /**
+   * standard_conforming_strings of the most recent connection. libpq keeps this
+   * process-wide and applies it to connection-less escaping, even after the
+   * connection is closed; see pgsql8::escape_string_literal().
+   */
+  protected static $standard_conforming_strings = FALSE;
+
   public static function connect($db_conn_string) {
     self::$db_conn = pg_connect($db_conn_string);
     if (self::$db_conn === FALSE) {
       throw new exception("failed to connect to $db_conn_string");
     }
+    self::$standard_conforming_strings = pg_parameter_status(self::$db_conn, 'standard_conforming_strings') === 'on';
+  }
+
+  public static function standard_conforming_strings() {
+    return self::$standard_conforming_strings;
   }
 
   public static function query($sql) {
@@ -35,6 +47,13 @@ class pgsql8_db {
     $row = pg_fetch_row($rs);
     $s = $row[0];
     return $s;
+  }
+
+  /**
+   * The open connection, or NULL when not connected.
+   */
+  public static function connection() {
+    return self::$db_conn ?: NULL;
   }
 
   public static function disconnect() {

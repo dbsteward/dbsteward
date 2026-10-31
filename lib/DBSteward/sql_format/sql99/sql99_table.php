@@ -232,62 +232,12 @@ class sql99_table {
     return $result;
   }
 
+  /**
+   * Same comparison as sql99_constraint::equals(); kept as the entry point used by
+   * the pgsql8 and mssql10 table differs.
+   */
   public static function constraint_equals($constraint_a, $constraint_b) {
-    if ( strcasecmp($constraint_a['name'], $constraint_b['name']) != 0 ) {
-      return false;
-    }
-    $a_type = null;
-    $b_type = null;
-    if ( isset($constraint_a['type']) ) {
-      $a_type = (string)$constraint_a['type'];
-    }
-    if ( isset($constraint_b['type']) ) {
-      $b_type = (string)$constraint_b['type'];
-    }
-    if ( strcasecmp($a_type, $b_type) != 0 ) {
-      return false;
-    }
-
-    $a_column_type = null;
-    $b_column_type = null;
-    if ( isset($constraint_a['foreign_key_data']) ) {
-      $a_column_type = $constraint_a['foreign_key_data']['column']->attributes()['type'];
-    }
-    if ( isset($constraint_b['foreign_key_data']) ) {
-      $b_column_type = $constraint_b['foreign_key_data']['column']->attributes()['type'];
-    }
-
-    if ( strcasecmp((string)$a_column_type, (string)$b_column_type) != 0 ) {
-      return false;
-    }
-
-    $a_foreign_on_delete = null;
-    $b_foreign_on_delete = null;
-    if ( isset($constraint_a['foreignOnDelete']) ) {
-      $a_foreign_on_delete = $constraint_a['foreignOnDelete'];
-    }
-    if ( isset($constraint_b['foreignOnDelete']) ) {
-      $b_foreign_on_delete = $constraint_b['foreignOnDelete'];
-    }
-    if ( strcasecmp((string)$a_foreign_on_delete, (string)$b_foreign_on_delete) != 0 ) {
-      return false;
-    }
-
-    $a_foreign_on_update = null;
-    $b_foreign_on_update = null;
-    if ( isset($constraint_a['foreignOnUpdate']) ) {
-      $a_foreign_on_update = $constraint_a['foreignOnUpdate'];
-    }
-    if ( isset($constraint_b['foreignOnUpdate']) ) {
-      $b_foreign_on_update = $constraint_b['foreignOnUpdate'];
-    }
-    if ( strcasecmp((string)$a_foreign_on_update, (string)$b_foreign_on_update) != 0 ) {
-      return false;
-    }
-
-    $equals = strcasecmp($constraint_a['definition'], $constraint_b['definition']) == 0;
-
-    return $equals;
+    return sql99_constraint::equals($constraint_a, $constraint_b);
   }
   
   /**

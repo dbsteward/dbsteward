@@ -15,17 +15,27 @@ class pgsql8 extends sql99 {
   /**
    * Escape a value for use inside a single-quoted SQL string literal.
    *
-   * Replaces connection-less pg_escape_string(), which is deprecated since PHP 8.1
-   * ("Automatic fetching of PostgreSQL connection"). Output is identical to libpq
-   * PQescapeString() with standard_conforming_strings off, which is what
-   * pg_escape_string() produced when no connection was open: quotes and
-   * backslashes are doubled and the value ends at the first NUL byte.
+   * Replaces connection-less pg_escape_string(), deprecated since PHP 8.1
+   * ("Automatic fetching of PostgreSQL connection"), with the same results:
+   * - with an open connection (e.g. --dbdatadiff), escape through it, so the
+   *   server's standard_conforming_strings setting is honored;
+   * - without one, match libpq PQescapeString(): quotes are doubled, the value
+   *   ends at the first NUL byte, and backslashes are doubled unless the last
+   *   connection used standard_conforming_strings (never, in normal builds).
    *
    * @param mixed $value
    * @return string
    */
   public static function escape_string_literal($value) {
-    $value = explode("\0", (string)$value, 2)[0];
+    $value = (string)$value;
+    $connection = pgsql8_db::connection();
+    if ($connection) {
+      return pg_escape_string($connection, $value);
+    }
+    $value = explode("\0", $value, 2)[0];
+    if (pgsql8_db::standard_conforming_strings()) {
+      return str_replace("'", "''", $value);
+    }
     return str_replace(['\\', "'"], ['\\\\', "''"], $value);
   }
 

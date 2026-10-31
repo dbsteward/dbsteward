@@ -245,21 +245,12 @@ class dbsteward {
       'pgdata' => []
     ];
 
-    // Somewhere after PHP 5, without these array casts, we get a warning that "Parameter must be an array or an object that implements Countable"
-    if (isset($options['xml'])) {
-      $options['xml'] = (array)$options['xml'];
-    }
-
-    if (isset($options['oldxml'])) {
-      $options['oldxml'] = (array)$options['oldxml'];
-    }
-
-    if (isset($options['newxml'])) {
-      $options['newxml'] = (array)$options['newxml'];
-    }
-
-    if (isset($options['pgdataxml'])) {
-      $options['pgdataxml'] = (array)$options['pgdataxml'];
+    // getopt() returns a string for an option given once and an array when repeated;
+    // normalize the repeatable file options to arrays (count() on a string is a TypeError).
+    foreach (['xml', 'oldxml', 'newxml', 'pgdataxml'] as $file_option) {
+      if (isset($options[$file_option])) {
+        $options[$file_option] = (array)$options[$file_option];
+      }
     }
 
     ///// XML file parameter sanity checks

@@ -88,7 +88,7 @@ class pgsql8_index extends sql99_index {
     else if ( strcasecmp((string)$node_index_a['concurrently'], (string)$node_index_b['concurrently']) != 0 ) {
       $equal = false;
     }
-    else if ( strcasecmp($node_index_a['using'], $node_index_b['using']) != 0 ) {
+    else if ( strcasecmp((string)$node_index_a['using'], (string)$node_index_b['using']) != 0 ) {
       $equal = false;
     }
     else {
