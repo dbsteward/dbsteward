@@ -96,7 +96,7 @@ class sql99_index {
       }
     }
 
-    $names = array();
+    $names = [];
     foreach ($nodes as $node) {
       if (in_array((string)$node['name'], $names)) {
         throw new Exception("Duplicate index name {$node['name']} on table {$node_schema['name']}.{$node_table['name']}");

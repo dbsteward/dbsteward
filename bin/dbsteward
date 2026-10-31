@@ -12,12 +12,12 @@
 try {
   // if a local relative /../lib/DBSteward is available, use that instead of the include-based path
   // this is for the working copy development scenario
-  if ( is_readable(dirname(__FILE__) . '/../lib/DBSteward/dbsteward.php') ) {
-    require_once dirname(__FILE__) . '/../lib/DBSteward/dbsteward.php';
+  if ( is_readable(__DIR__ . '/../lib/DBSteward/dbsteward.php') ) {
+    require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
   }
   // build directory scenario
-  else if ( is_readable(dirname(__FILE__) . '/../DBSteward/dbsteward.php') ) {
-    require_once dirname(__FILE__) . '/../DBSteward/dbsteward.php';
+  else if ( is_readable(__DIR__ . '/../DBSteward/dbsteward.php') ) {
+    require_once __DIR__ . '/../DBSteward/dbsteward.php';
   }
   else {
     // this should be available if we are running as the PEAR installation

@@ -15,8 +15,8 @@ class sql99_diff {
   public static $ignore_start_with = true;
   public static $add_defaults = false;
 
-  public static $old_table_dependency = array();
-  public static $new_table_dependency = array();
+  public static $old_table_dependency = [];
+  public static $new_table_dependency = [];
   
   /**
    * Setup file pointers then call diff_doc_work() to do the actual diffing

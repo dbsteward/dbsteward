@@ -30,7 +30,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
       $old_sequences = static::get_sequences($old_schema);
     }
     else {
-      $old_sequences = array();
+      $old_sequences = [];
     }
 
 
@@ -51,10 +51,10 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
       else {
         // there were schemas in the old schema
 
-        $common_sequences = array();
+        $common_sequences = [];
 
         // only drop sequences not in the new schema
-        $to_drop = array();
+        $to_drop = [];
         foreach ( $old_sequences as $old_seq ) {
           if ( static::schema_contains_sequence($new_schema, $old_seq['name'], true) ) {
             // if the sequence *is* in the new schema, then it might have changed
@@ -69,7 +69,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
         }
 
         // only add sequences not in the old schema
-        $to_insert = array();
+        $to_insert = [];
         foreach ( $new_sequences as $new_seq ) {
           if ( static::schema_contains_sequence($old_schema, $new_seq['name'])) {
             // there used to be a sequence named $new_seq['name']
@@ -114,7 +114,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
   }
 
   private static function diff_single($ofs, $old_seq, $new_seq) {
-    $sql = array();
+    $sql = [];
 
     if ( !dbsteward::$ignore_oldnames && !empty($new_seq['oldSequenceName']) ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::SEQ_COL) . " = '{$new_seq['name']}'";

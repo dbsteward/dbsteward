@@ -99,7 +99,7 @@ class pgsql8_diff extends sql99_diff {
     $new_sql_xml_file = $upgrade_prefix . '_new_sql.xml';
     xml_parser::save_xml($new_sql_xml_file, dbsteward::$new_database->saveXML());
 
-    self::diff_xml(array($old_sql_xml_file), array($new_sql_xml_file), $upgrade_prefix);
+    self::diff_xml([$old_sql_xml_file], [$new_sql_xml_file], $upgrade_prefix);
   }
 
   /**
@@ -234,7 +234,7 @@ class pgsql8_diff extends sql99_diff {
    * @param $ofs3  stage3 output file segmenter
    */
   public static function update_structure($ofs1, $ofs3) {
-    $type_modified_columns = array();
+    $type_modified_columns = [];
     
     pgsql8_diff_languages::diff_languages($ofs1);
     
@@ -271,7 +271,7 @@ class pgsql8_diff extends sql99_diff {
     else {
       // use table dependency order to do structural changes in an intelligent order
 
-      $processed_schemas = array();
+      $processed_schemas = [];
       for($i=0; $i<count(self::$new_table_dependency); $i++) {
         // find the necessary pointers
         $item = self::$new_table_dependency[$i];
@@ -324,7 +324,7 @@ class pgsql8_diff extends sql99_diff {
         pgsql8_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', true);
       }
 
-      $processed_schemas = array();
+      $processed_schemas = [];
       for($i=0; $i<count(self::$new_table_dependency); $i++) {
         // find the necessary pointers
         $item = self::$new_table_dependency[$i];

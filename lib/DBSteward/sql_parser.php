@@ -100,7 +100,7 @@ class sql_parser {
    * @return string   $command without semicolon and trimmed
    */
   public static function remove_last_semicolon($command) {
-    if (substr(trim($command), -1) == ';') {
+    if (str_ends_with(trim($command), ';')) {
       $result = trim(substr(trim($command), 0, strlen(trim($command)) - 1));
     }
     else {
@@ -110,21 +110,21 @@ class sql_parser {
   }
 
   public static function quoted_name_strip($name) {
-    if (substr($name, 0, 1) == '"' && substr($name, -1) == '"') {
+    if (str_starts_with($name, '"') && str_ends_with($name, '"')) {
       $name = substr($name, 1, strlen($name) - 2);
     }
     return $name;
   }
 
   public static function quoted_value_strip($value) {
-    if (substr($value, 0, 1) == "'" && substr($value, -1) == "'") {
+    if (str_starts_with($value, "'") && str_ends_with($value, "'")) {
       $value = substr($value, 1, strlen($value) - 2);
     }
     return $value;
   }
 
   public static function clause_explode($clause) {
-    $segmenting_symbols = array('(', ')', '!=', '<>', '>=', '<=', '=', 'AND', 'OR');
+    $segmenting_symbols = ['(', ')', '!=', '<>', '>=', '<=', '=', 'AND', 'OR'];
 
     // explode all the tokens in the clause with whitespace
     $tokens = preg_split("/[\s]+/", $clause, -1, PREG_SPLIT_NO_EMPTY);
@@ -140,18 +140,18 @@ class sql_parser {
           $pos = strpos($tokens[$i], $segmenting_symbol);
           if ($pos !== FALSE) {
             $before = array_slice($tokens, 0, $i);
-            $leading = array();
+            $leading = [];
             if ($pos > 1) {
-              $leading = array(substr($tokens[$i], 0, $pos));
+              $leading = [substr($tokens[$i], 0, $pos)];
             }
-            $trailing = array(substr($tokens[$i], $pos + 1));
+            $trailing = [substr($tokens[$i], $pos + 1)];
             $after = array_slice($tokens, $i + 1);
           }
         }
 
         // reorder needs to happen?
         if ($leading !== NULL) {
-          $tokens = array_merge($before, $leading, array($segmenting_symbol), $trailing, $after);
+          $tokens = array_merge($before, $leading, [$segmenting_symbol], $trailing, $after);
           $i = -1;
         }
         else {
@@ -185,7 +185,7 @@ class sql_parser {
         }
 
         $before = array_slice($tokens, 0, $group_start);
-        $group = array(array_slice($tokens, $group_start + 1, $group_end - $group_start - 1));
+        $group = [array_slice($tokens, $group_start + 1, $group_end - $group_start - 1)];
         $after = array_slice($tokens, $group_end + 1);
       }
 

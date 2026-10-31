@@ -10,8 +10,8 @@
 
 class sql99_constraint {
 
-  public static function foreign_key_lookup($db_doc, $node_schema, $node_table, $column, $visited = array()) {
-    $foreign = array();
+  public static function foreign_key_lookup($db_doc, $node_schema, $node_table, $column, $visited = []) {
+    $foreign = [];
 
     $fschema = strlen((string)$column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
     $foreign['schema'] = dbx::get_schema($db_doc, $fschema);
@@ -86,22 +86,22 @@ class sql99_constraint {
       throw new Exception("Failed to find foreign table '$ftable_name' for foreignKey $lschema_name.$ltable_name.$index_name");
     }
 
-    $fcols = array();
+    $fcols = [];
     foreach ($fcol_names as $i => $fcol_name) {
       $fcols[] = self::resolve_foreign_column($db_doc,
         $node_schema, $node_table, $lcol_names[$i],
         $fschema, $ftable, $fcol_name);
     }
 
-    $quoted_fcols = implode(', ', array_map('format::get_quoted_column_name', $fcol_names));
+    $quoted_fcols = implode(', ', array_map(format::get_quoted_column_name(...), $fcol_names));
 
-    return array(
+    return [
       'schema' => $fschema,
       'table' => $ftable,
       'column' => $fcols,
       'name' => $index_name,
       'references' => format::get_fully_qualified_table_name($fschema['name'], $ftable['name']) . " ($quoted_fcols)"
-    );
+    ];
   }
 
   /**
@@ -111,7 +111,7 @@ class sql99_constraint {
    */
   private static function resolve_foreign_column($db_doc,
     $local_schema, $local_table, $local_colname,
-    $foreign_schema, $foreign_table, $foreign_colname, $visited=array()) {
+    $foreign_schema, $foreign_table, $foreign_colname, $visited=[]) {
 
     // walk up the foreign table inheritance chain to find the foreign column definition
     $fschema = $foreign_schema;
@@ -201,20 +201,20 @@ class sql99_constraint {
       default:
         throw new Exception("unknown type " . $type . " encountered");
     }
-    $constraints = array();
+    $constraints = [];
 
     if ($type == 'all' || $type == 'primaryKey') {
       if (!empty($node_table['primaryKey'])) {
         $pk_name = static::get_primary_key_name($node_table);
         $pk_def = static::get_primary_key_definition($node_table);
 
-        $constraints[] = array(
+        $constraints[] = [
           'name' => $pk_name,
           'schema_name' => (string)$node_schema['name'],
           'table_name' => (string)$node_table['name'],
           'type' => 'PRIMARY KEY',
           'definition' => $pk_def
-        );
+        ];
       }
       else if ( !dbsteward::$ignore_primary_key_errors ) {
         throw new Exception("Table {$node_schema['name']}.{$node_table['name']} does not have a primaryKey!");
@@ -238,13 +238,13 @@ class sql99_constraint {
             }
             // fallthru
           case 'FOREIGN KEY':
-            $constraints[] = array(
+            $constraints[] = [
               'name' => (string)$node_constraint['name'],
               'schema_name' => (string)$node_schema['name'],
               'table_name' => (string)$node_table['name'],
               'type' => strtoupper((string)$node_constraint['type']),
               'definition' => (string)$node_constraint['definition']
-            );
+            ];
             break;
 
           default:
@@ -257,16 +257,16 @@ class sql99_constraint {
       foreach ($node_table->foreignKey as $node_fkey) {
         $foreign = self::foreign_key_lookup_compound($db_doc, $node_schema, $node_table, $node_fkey);
         $local_cols = preg_split('/[\s,]+/', $node_fkey['columns'], -1, PREG_SPLIT_NO_EMPTY);
-        $quoted_cols = implode(', ', array_map('format::get_quoted_column_name', $local_cols));
+        $quoted_cols = implode(', ', array_map(format::get_quoted_column_name(...), $local_cols));
 
-        $constraint = array(
+        $constraint = [
           'name' => (string)$node_fkey['constraintName'],
           'schema_name' => (string)$node_schema['name'],
           'table_name' => (string)$node_table['name'],
           'type' => 'FOREIGN KEY',
           'definition' => "($quoted_cols) REFERENCES {$foreign['references']}",
           'foreign_key_data' => $foreign
-        );
+        ];
         if (isset($node_fkey['onDelete'])) {
           $constraint['foreignOnDelete'] = (string)$node_fkey['onDelete'];
         }
@@ -296,14 +296,14 @@ class sql99_constraint {
             $foreign['name'] = (string)$column['foreignKeyName'];
           }
 
-          $column_fkey_constraint = array(
+          $column_fkey_constraint = [
             'name' => (string)$foreign['name'],
             'schema_name' => (string)$node_schema['name'],
             'table_name' => (string)$node_table['name'],
             'type' => 'FOREIGN KEY',
             'definition' => '(' . dbsteward::quote_column_name($column['name']) . ') REFERENCES ' . $foreign['references'],
             'foreign_key_data' => $foreign
-          );
+          ];
 
           if ( ! empty($column['foreignIndexName']) ) {
             $column_fkey_constraint['foreignIndexName'] = (string)$column['foreignIndexName'];
@@ -325,13 +325,13 @@ class sql99_constraint {
       foreach ($node_table->column AS $column) {
         // add column check constraints to the list
         if ( isset($column['check']) ) {
-          $column_check_constraint = array(
+          $column_check_constraint = [
             'name' => $column['name'] . '_check',
             'schema_name' => (string)$node_schema['name'],
             'table_name' => (string)$node_table['name'],
             'type' => 'CHECK',
             'definition' => $column['check']
-          );
+          ];
           $constraints[] = $column_check_constraint;
         }
       }
@@ -417,7 +417,7 @@ class sql99_constraint {
   }
 
   public static function get_primary_key_definition($node_table) {
-    return '(' . implode(', ', array_map('format::get_quoted_column_name', static::primary_key_split($node_table['primaryKey']))) . ')';
+    return '(' . implode(', ', array_map(format::get_quoted_column_name(...), static::primary_key_split($node_table['primaryKey']))) . ')';
   }
 
   /**

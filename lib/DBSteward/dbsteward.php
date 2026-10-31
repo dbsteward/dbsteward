@@ -110,7 +110,7 @@ class dbsteward {
   public static $quote_reserved_identifiers = FALSE;
   public static $only_schema_sql = FALSE;
   public static $only_data_sql = FALSE;
-  public static $limit_to_tables = array();
+  public static $limit_to_tables = [];
   public static $single_stage_upgrade = FALSE;
 
   public static $ENABLE_COLOR = true;
@@ -162,7 +162,7 @@ class dbsteward {
   public static $old_database = NULL;
   public static $new_database = NULL;
 
-  function __construct() {
+  public function __construct() {
   }
 
   public static function usage() {
@@ -174,7 +174,7 @@ class dbsteward {
 
   public function arg_parse($argv) {
     $short_opts = 'hvq';
-    $long_opts = array(
+    $long_opts = [
       "sqlformat::",
       "xml::",
       "oldxml::",
@@ -224,26 +224,26 @@ class dbsteward {
       "outputdir::",
       "outputfileprefix::",
       "debug"
-    );
+    ];
     $options = getopt($short_opts, $long_opts);
     self::set_verbosity($options);
 
     if (count($argv) == 1 || isset($options['help']) || isset($options['h'])) {
       $c = new Colors\Color();
-      $c->setTheme(array(
-        'header' => array('underline', 'dark_gray'),
-        'keyword' => array('green'),
-        'value' => array('yellow')
-      ));
+      $c->setTheme([
+        'header' => ['underline', 'dark_gray'],
+        'keyword' => ['green'],
+        'value' => ['yellow']
+      ]);
       echo $c->colorize(self::usage()) . PHP_EOL;
       exit(1);
     }
 
-    $files = array(
-      'old' => array(),
-      'new' => array(),
-      'pgdata' => array()
-    );
+    $files = [
+      'old' => [],
+      'new' => [],
+      'pgdata' => []
+    ];
 
     // Somewhere after PHP 5, without these array casts, we get a warning that "Parameter must be an array or an object that implements Countable"
     if (isset($options['xml'])) {
@@ -325,19 +325,17 @@ class dbsteward {
     if (isset($options['onlytable'])) {
       $onlytables = $options['onlytable'];
       if (!is_array($onlytables)) {
-        $onlytables = array($onlytables);
+        $onlytables = [$onlytables];
       }
       foreach ($onlytables AS $onlytable) {
         $onlytable_schema = 'public';
         $onlytable_table = $onlytable;
-        if (strpos($onlytable_table, '.') !== FALSE) {
+        if (str_contains($onlytable_table, '.')) {
           $chunks = explode('.', $onlytable_table);
           $onlytable_schema = $chunks[0];
           $onlytable_table = $chunks[1];
         }
-        if (!isset(dbsteward::$limit_to_tables[$onlytable_schema])) {
-          dbsteward::$limit_to_tables[$onlytable_schema] = array();
-        }
+        dbsteward::$limit_to_tables[$onlytable_schema] ??= [];
         dbsteward::$limit_to_tables[$onlytable_schema][] = $onlytable_table;
       }
     }
@@ -536,9 +534,7 @@ class dbsteward {
     dbsteward::notice("Using sqlformat=$sql_format");
     dbsteward::set_sql_format($sql_format);
 
-    if (is_null($dbport)) {
-      $dbport = dbsteward::define_sql_format_default_values($sql_format, $options);
-    }
+    $dbport ??= dbsteward::define_sql_format_default_values($sql_format, $options);
     
     // user-specified overrides for identifier quoting
     if (isset($options["quoteschemanames"])) {
@@ -740,7 +736,7 @@ class dbsteward {
   }
 
   protected static function set_verbosity($options) {
-    static $levels = array(Monolog\Level::Error, Monolog\Level::Warning, Monolog\Level::Notice, Monolog\Level::Info, Monolog\Level::Debug);
+    static $levels = [Monolog\Level::Error, Monolog\Level::Warning, Monolog\Level::Notice, Monolog\Level::Info, Monolog\Level::Debug];
 
     $debug = isset($options['debug']);
     $v = isset($options['v']) ? count((array)$options['v']) : 0;
@@ -845,7 +841,7 @@ class dbsteward {
 
   public static function cmd($command, $error_fatal = TRUE) {
     dbsteward::debug("dbsteward::cmd( " . $command . " )");
-    $output = array();
+    $output = [];
     $return_value = 0;
     $last_line = exec($command, $output, $return_value);
     if ($return_value > 0) {
@@ -876,7 +872,7 @@ class dbsteward {
 
   public function xml_sort($files) {
     if (!is_array($files)) {
-      $files = array($files);
+      $files = [$files];
     }
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
@@ -889,7 +885,7 @@ class dbsteward {
   
   public function xml_convert($files) {
     if (!is_array($files)) {
-      $files = array($files);
+      $files = [$files];
     }
     for ($i = 0; $i < count($files); $i++) {
       $file_name = $files[$i];
@@ -1007,11 +1003,11 @@ class dbsteward {
   }
   
   public static function get_sql_formats() {
-    $sql_format_dir = dirname(__FILE__) . "/sql_format/";
+    $sql_format_dir = __DIR__ . "/sql_format/";
     if ( ! ($dh = opendir($sql_format_dir)) ) {
       throw new exception("Failed to open sql_format directory " . $sql_format_dir);
     }
-    $format_list = array();
+    $format_list = [];
     while( ($file = readdir($dh)) !== false ) {
       if ( strlen($file) > 0 && $file[0] != '.' ) {
         if ( is_dir($sql_format_dir . "/" . $file) ) {

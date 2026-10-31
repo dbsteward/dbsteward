@@ -62,7 +62,7 @@ class mssql10_type {
   }
 
   protected static function get_enum_values($node_type) {
-    $enum_values = array();
+    $enum_values = [];
     foreach ($node_type->enum AS $enum) {
       $enum_values[] = $enum['name'];
     }
@@ -135,11 +135,11 @@ class mssql10_type {
           // add column to the beginning of the list so it will be done before earlier changes (foreign key ordering)
           array_unshift(
             $columns,
-            array(
+            [
               'alter_column_schema' => $new_schema,
               'alter_column_table' => $new_table,
               'alter_column_column' => $new_column
-            )
+            ]
           );
         }
       }

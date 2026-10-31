@@ -40,7 +40,7 @@ class sql99_diff_constraints {
     }
     else {
       if (dbsteward::$old_database != NULL) {
-        list($old_schema, $old_table) = dbx::find_old_table(dbsteward::$old_database, $new_schema, $new_table);
+        [$old_schema, $old_table] = dbx::find_old_table(dbsteward::$old_database, $new_schema, $new_table);
       }
 
       if ( $old_schema === NULL || $old_table === NULL ) {
@@ -86,7 +86,7 @@ class sql99_diff_constraints {
    *       added to drop because they are already removed.
   */
   protected static function get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) {
-    $list = array();
+    $list = [];
 
     if (($new_table != null) && ($old_table != null)) {
       if ( $old_table->getName() != 'table' ) {
@@ -115,7 +115,7 @@ class sql99_diff_constraints {
    * @return list of constraints that should be added
    */
   protected static function get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type) {
-    $list = array();
+    $list = [];
 
     if ($new_table != null) {
       if ($old_table == null) {

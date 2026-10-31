@@ -113,11 +113,11 @@ class mysql5_diff extends sql99_diff {
   }
 
   protected static function drop_old_schemas($ofs) {
-    $drop_sequences = array();
+    $drop_sequences = [];
 
     if (is_array(mysql5_diff::$old_table_dependency)) {
       $deps = mysql5_diff::$old_table_dependency;
-      $processed_schemas = array();
+      $processed_schemas = [];
 
       foreach ($deps as $dep) {
         $old_schema = $dep['schema'];
@@ -237,7 +237,7 @@ class mysql5_diff extends sql99_diff {
       }
     }
     else {
-      $processed_schemas = array();
+      $processed_schemas = [];
       for ($i = 0; $i < count(mysql5_diff::$new_table_dependency); $i++) {
         // find the necessary pointers
         $item = mysql5_diff::$new_table_dependency[$i];
@@ -286,7 +286,7 @@ class mysql5_diff extends sql99_diff {
         mysql5_diff_constraints::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', TRUE);
       }
 
-      $processed_schemas = array();
+      $processed_schemas = [];
       for ($i = 0; $i < count(mysql5_diff::$new_table_dependency); $i++) {
         // find the necessary pointers
         $item = mysql5_diff::$new_table_dependency[$i];

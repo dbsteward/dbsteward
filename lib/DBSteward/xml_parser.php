@@ -186,7 +186,7 @@ class xml_parser {
       foreach ($overlay->includeFile AS $includeFile) {
         $include_file_name = (string)($includeFile['name']);
         // if include_file_name does not appear to be absolute, make it relative to its parent
-        if (substr($include_file_name, 0, 1) != '/') {
+        if (!str_starts_with($include_file_name, '/')) {
           $include_file_name = dirname($file_name) . '/' . $include_file_name;
         }
         dbsteward::notice("Compositing XML includeFile " . $include_file_name);
@@ -245,7 +245,7 @@ class xml_parser {
             }
 
             // check to make sure there aren't duplicate sqlFormats
-            $f = function ($n) { return strtolower($n['sqlFormat']); };
+            $f = (fn($n) => strtolower($n['sqlFormat']));
             $base_formats = array_map($f, $base_node->xpath("functionDefinition"));
             $overlay_formats = array_map($f, $child->xpath("functionDefinition"));
 
@@ -299,7 +299,7 @@ class xml_parser {
       }
       // match trigger tags by attributes that are unique in postgresql
       else if (strcasecmp('trigger', $tag_name) == 0) {
-        $trigger_attributes = array('name', 'table');
+        $trigger_attributes = ['name', 'table'];
         $attributes_xpath = "";
         foreach ($trigger_attributes AS $trigger_attribute) {
           $attributes_xpath .= "@" . $trigger_attribute . "='" . $child[$trigger_attribute] . "' and ";
@@ -556,7 +556,7 @@ class xml_parser {
     $primary_key_index = self::data_row_overlay_primary_key_index($base_primary_keys, $base_cols, $overlay_cols);
 
     // primary key key => row index
-    $base_pklookup = array();
+    $base_pklookup = [];
     $i = 0;
     foreach ($base_table_rows->row as $base_row) {
       $s = '';
@@ -623,7 +623,7 @@ class xml_parser {
   public static function data_row_overlay_primary_key_index($primary_key_cols, $base_cols, $overlay_cols) {
     // create a map to  find the numeric column index of each primary key
     // in the base and overlay column lists
-    $primary_key_index = array('overlay' => array(), 'base' => array());
+    $primary_key_index = ['overlay' => [], 'base' => []];
 
     foreach ($primary_key_cols AS $primary_key) {
       $base_idx = array_search($primary_key, $base_cols);
@@ -712,7 +712,7 @@ class xml_parser {
     // streamline DTD use out of the box by
     // creating a list of possible relative paths where the DTD can be found
     // @NOTICE: the FIRST path that is readable will be used
-    $dtd_file_paths = array(
+    $dtd_file_paths = [
       // source working copy location
       __DIR__ . '/../DBSteward/dbsteward.dtd',
       // is it in a FreeBSD PEAR location ?
@@ -720,7 +720,7 @@ class xml_parser {
       // is it in a Mac OS user's home pear/share/pear bear mare location ?
       $dtd_file = __DIR__ . '/../../data/DBSteward/DBSteward/dbsteward.dtd',
       $dtd_file = __DIR__ . '/../../../data/DBSteward/DBSteward/dbsteward.dtd'
-    );
+    ];
     foreach($dtd_file_paths AS $dtd_file_path) {
       if (is_readable($dtd_file_path)) {
         $dtd_file = $dtd_file_path;
@@ -739,7 +739,7 @@ class xml_parser {
     try {
       $whereIsCommand = (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? 'where' : 'which';
       dbsteward::cmd("$whereIsCommand xmllint");
-    } catch (Exception $ex) {
+    } catch (Exception) {
       throw new Exception("Could not locate xmllint executable. Please ensure it is in your PATH, or install libxml2 from http://xmlsoft.org");
     }
 
@@ -768,15 +768,15 @@ class xml_parser {
   }
 
   public static function table_dependency_order($db_doc) {
-    $table_list = array();
+    $table_list = [];
     $schemas = $db_doc->xpath('schema');
     foreach ($schemas AS $schema) {
       $tables = $schema->xpath('table');
       foreach ($tables AS $table) {
-        $table_list[] = array(
+        $table_list[] = [
           'schema' => $schema,
           'table' => $table
-        );
+        ];
       }
     }
 
@@ -786,7 +786,7 @@ class xml_parser {
     // if the dependency is solvable we should get it by the second pass
     /**/
     $table_list_count = count($table_list);
-    $visited = array();
+    $visited = [];
     for ($i = 0; $i < $table_list_count; $i++) {
       for ($j = $i + 1; $j < $table_list_count; $j++) {
         $visited_index = $table_list[$j]['schema']['name'].$table_list[$j]['table']['name'];
@@ -801,16 +801,14 @@ class xml_parser {
           dbsteward::trace("table_dependency_order i = $i j = $j    i (" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . ") has dependency on j (" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . ")");
 
           // increment that i table dependency was visited
-          if ( !isset($visited[$visited_index]) ) {
-            $visited[$visited_index] = 0;
-          }
+          $visited[$visited_index] ??= 0;
           $visited[$visited_index] += 1;
           
           // pull i out
           $table = $table_list[$i];
           unset($table_list[$i]);
           // append i to end
-          $table_list = array_merge($table_list, array($table));
+          $table_list = array_merge($table_list, [$table]);
 
           // check the $i index again, the array has been reformed
           $i--;
@@ -836,12 +834,12 @@ class xml_parser {
           continue 2;
         }
       }
-      $table_list[] = array(
+      $table_list[] = [
         'schema' => $schema,
-        'table' => array(
+        'table' => [
           'name' => dbsteward::TABLE_DEPENDENCY_IGNORABLE_NAME
-        )
-      );
+        ]
+      ];
     }
     
     return $table_list;
@@ -924,7 +922,7 @@ class xml_parser {
     dbsteward::debug("DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . "ENTER table_dependency_sort()");
     self::$table_dependency_sort_depth++;
     for ($i = 0; $i < floor(count($table_list) / 2); $i++) {
-      $append_list = array();
+      $append_list = [];
 
       for ($j = $i + 1; $j < count($table_list); $j++) {
         if ($recursion_index !== FALSE) {
@@ -933,7 +931,7 @@ class xml_parser {
         // i depends on j ?
         if (self::table_has_dependency($table_list[$i], $table_list[$j])) {
           dbsteward::debug("DEPTH " . sprintf("%03d", self::$table_dependency_sort_depth) . "\t" . $table_list[$i]['schema']['name'] . "." . $table_list[$i]['table']['name'] . " " . $i . "\tDEPENDS ON\t" . $table_list[$j]['schema']['name'] . "." . $table_list[$j]['table']['name'] . " " . $j);
-          $append_list = array_merge($append_list, array($table_list[$i]));
+          $append_list = array_merge($append_list, [$table_list[$i]]);
           // discard the i entry in main array
           unset($table_list[$i]);
           // reindex main list
@@ -1158,7 +1156,7 @@ class xml_parser {
     $doc = simplexml_load_file($file_name);
 
     // create a list of schemas and tables to get around simplexml iterator nodes - they can't be sorted and/or unset/set like PHP array()s
-    $table_map = array();
+    $table_map = [];
 
     // sort the various levels of db definition
     // sort schema order
@@ -1178,11 +1176,11 @@ class xml_parser {
           // the_pkey_indexes list is a list of row->col's that are primary key cols, in primaryKey order
           if (!isset($table['primaryKey'])) {
             // if the primaryKey isn't defined, specify col 0 and 1 as the pkey
-            $pkey_indexes = array(0, 1);
+            $pkey_indexes = [0, 1];
           }
           else {
             $rows_cols = preg_split("/[\,\s]+/", $table->rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
-            $pkey_indexes = array();
+            $pkey_indexes = [];
             foreach ($pkey_cols AS $pkey_col) {
               $pkey_indexes[] = array_search($pkey_col, $rows_cols);
             }
@@ -1226,8 +1224,8 @@ class xml_parser {
   protected static function file_sort_children(&$node, $child_name, $child_id_attribute, $child_id_map = NULL) {
     // this is used to sget around simplexml iterator nodes - they can't be sorted and/or unset/set like PHP array()s
     // get a list of children identified by id_attribute
-    $child_ids = array();
-    $child_node_xml = array();
+    $child_ids = [];
+    $child_node_xml = [];
     foreach ($node->{$child_name} AS $child_node) {
       if ($child_id_map === NULL) {
         $child_id = (string)($child_node[$child_id_attribute]);
@@ -1276,7 +1274,7 @@ class xml_parser {
    */
   protected static function file_sort_reappend_child(&$node, $child_name) {
     if (isset($node->{$child_name})) {
-      $child_nodes = array();
+      $child_nodes = [];
       foreach ($node->{$child_name} AS $child) {
         $child_nodes[] = $child->asXML();
       }
@@ -1300,10 +1298,10 @@ class xml_parser {
   protected static function file_sort_prepend_child(&$node, $child_name, $child_id_attrib, $child_id_attrib_values) {
     if (isset($node->{$child_name})) {
       if (!is_array($child_id_attrib_values)) {
-        $child_id_attrib_values = array($child_id_attrib_values);
+        $child_id_attrib_values = [$child_id_attrib_values];
       }
-      $prepend_child_nodes = array();
-      $child_nodes = array();
+      $prepend_child_nodes = [];
+      $child_nodes = [];
       foreach ($node->{$child_name} AS $child) {
         // is this the node to prepend?
         if (isset($child[$child_id_attrib]) && in_array($child[$child_id_attrib], $child_id_attrib_values)) {
@@ -1546,7 +1544,7 @@ class xml_parser {
         foreach ($schema->table as $table) {
           foreach ($table->column as $column) {
             if (isset($column['type'])) {
-              list($column['type'], $d) = self::mysql5_type_convert($column['type'], $column['default']);
+              [$column['type'], $d] = self::mysql5_type_convert($column['type'], $column['default']);
               if (isset($column['default'])) {
                 $column['default'] = $d;
               }
@@ -1555,10 +1553,10 @@ class xml_parser {
         }
 
         foreach ($schema->function as $function) {
-          list($function['returns'], $_) = self::mysql5_type_convert($function['returns']);
+          [$function['returns'], $_] = self::mysql5_type_convert($function['returns']);
 
           foreach ($function->functionParameter as $param) {
-            list($param['type'], $_) = self::mysql5_type_convert($param['type']);
+            [$param['type'], $_] = self::mysql5_type_convert($param['type']);
           }
         }
       }
@@ -1577,7 +1575,7 @@ class xml_parser {
     // so when converting types, we don't know if it might be in an index,
     // so we play it safe
 
-    if (substr($type, -2) == '[]') {
+    if (str_ends_with($type, '[]')) {
       $type = 'varchar(3500)';
     }
 
@@ -1655,7 +1653,7 @@ class xml_parser {
       $type = (string)$type . " AUTO_INCREMENT";
     }
 
-    return array($type, $value);
+    return [$type, $value];
   }
 
   protected static function mssql10_type_convert(&$column) {
@@ -1664,7 +1662,7 @@ class xml_parser {
     // is that mssql will not allow binary blobs or long string types to be keys of indexes and foreign keys
     // attempting to do so results in errors like
     // Column 'app_mode' in table 'dbo.registration_step_list' is of a type that is invalid for use as a key column in an index.
-    if (substr($column['type'], -2) == '[]') {
+    if (str_ends_with($column['type'], '[]')) {
       $column['type'] = 'varchar(896)';
     }
 
@@ -1800,10 +1798,8 @@ class xml_parser {
     // if slony set IDs are required
     if (dbsteward::$require_slony_set_id) {
       // if slonySetId is not specified
-      if (!isset($element['slonySetId'])) {
-        // set unspecified slonySetIds to $id
-        $element['slonySetId'] = $id;
-      }
+      // set unspecified slonySetIds to $id
+      $element['slonySetId'] ??= $id;
     }
   }
 

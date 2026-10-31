@@ -107,12 +107,10 @@ class sql99_table {
 
     // collect rows to add in $new_rows, index by row_data_columns
     // @TODO: the caller then data_rows_overlay()'s these all at once
-    $new_rows = array();
+    $new_rows = [];
     // $new_rows contains all of the variants of rows collections to add to the table
     // it is expected that there is a low number of insert statement variants
-    if ( !isset($new_rows[$row_data_columns]) ) {
-      $new_rows[$row_data_columns] = new SimpleXMLElement('<rows/>');
-    }
+    $new_rows[$row_data_columns] ??= new SimpleXMLElement('<rows/>');
     // have the xml_parser compositor add the row with it's overlay logic
     // which compensates for additional columns, missing columns
     // and all the rest of the variants for <rows> <row> elements
@@ -130,7 +128,7 @@ class sql99_table {
   }
 
   public static function get_column_list(&$node_table) {
-    $cols = array();
+    $cols = [];
     foreach(dbx::get_table_columns($node_table) as $node_column) {
       $cols[] = $node_column['name'];
     }
@@ -139,7 +137,7 @@ class sql99_table {
 
   public static function primary_key_columns(&$node_table) {
     if ( empty($node_table['primaryKey']) ) {
-      return array();
+      return [];
     }
     return preg_split("/[\,\s]+/", $node_table['primaryKey'], -1, PREG_SPLIT_NO_EMPTY);
   }
@@ -151,7 +149,7 @@ class sql99_table {
     // break up the clause by its parenthetical () and logical AND OR segmentation
     $clause = sql_parser::clause_explode($where);
     if ( !is_array($clause) ) {
-      $clause = array($clause);
+      $clause = [$clause];
     }
 
     $new_table_rows = dbx::get_table_rows($new_table);
@@ -194,7 +192,7 @@ class sql99_table {
 
         break;
       }
-      else if ( in_array($clause[$i], array('=', '!=', '<>')) ) {
+      else if ( in_array($clause[$i], ['=', '!=', '<>']) ) {
         // evaluate the clause operator against the row
 
         // is the left hand item a column in this row?
@@ -306,7 +304,7 @@ class sql99_table {
       // don't check if ignore_oldnames is on
       return FALSE;
     }
-    if ( strpos($constraint['definition'], 'REFERENCES') !== FALSE ) {
+    if ( str_contains($constraint['definition'], 'REFERENCES') ) {
       //echo $constraint['schema_name'] . "." . $constraint['table_name'] . "  " . $constraint['name'] . " definition = " . $constraint['definition'] . "\n";
       if (preg_match(static::PATTERN_CONSTRAINT_REFERENCES_TABLE, $constraint['definition'], $matches) > 0) {
         $references_schema_name = $matches[1];
@@ -366,7 +364,7 @@ class sql99_table {
   public static function get_table_options($node_schema, $node_table) {
     $nodes = $node_table->tableOption;
     $sql_format = dbsteward::get_sql_format();
-    $opts = array();
+    $opts = [];
 
     foreach ($nodes as $node) {
       if ($node['sqlFormat'] != $sql_format) continue;
@@ -391,7 +389,7 @@ class sql99_table {
    * @return string           SQL
    */
   public static function get_table_options_sql($options) {
-    $opt_sqls = array();
+    $opt_sqls = [];
     foreach ($options as $name => $val) {
       $opt_sqls[] = static::format_table_option($name, $val);
     }

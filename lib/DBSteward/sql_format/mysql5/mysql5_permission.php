@@ -31,9 +31,7 @@ class mysql5_permission extends sql99_permission {
 
     $object_name = '';
     $object_type = strtoupper($node_object->getName());
-    $privileges = array_map(function ($p) use ($object_type){
-      return mysql5_permission::get_real_privilege($p, $object_type);
-    }, static::get_permission_privileges($node_permission));
+    $privileges = array_map(fn($p) => mysql5_permission::get_real_privilege($p, $object_type), static::get_permission_privileges($node_permission));
     $roles = static::get_permission_roles($db_doc, $node_permission);
     $with = static::get_permission_options_sql($node_permission);
 
@@ -58,7 +56,7 @@ class mysql5_permission extends sql99_permission {
         throw new exception("unknown object type encountered: " . $object_type);
     }
 
-    $sql = static::get_sql(strtoupper($action), $object_name, $privileges, array_map('mysql5::get_quoted_object_name', $roles), $with) . "\n";
+    $sql = static::get_sql(strtoupper($action), $object_name, $privileges, array_map(mysql5::get_quoted_object_name(...), $roles), $with) . "\n";
     
     return $sql;
   }
@@ -73,7 +71,7 @@ class mysql5_permission extends sql99_permission {
    * @param string $option_sql optional option sql
    */
   public static function get_sql($action, $objects, $privileges, $roles, $with_grant) {
-    $sql = array();
+    $sql = [];
     $privileges = (array)$privileges;
     $roles = (array)$roles;
 

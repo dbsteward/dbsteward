@@ -58,7 +58,7 @@ class pgsql8_diff_triggers {
    * @return list of triggers that should be dropped
    */
   private static function get_drop_triggers($old_schema, $old_table, $new_schema, $new_table) {
-    $list = array();
+    $list = [];
 
     if (($new_table != null) && ($old_table != null)) {
       $new_triggers = dbx::get_table_triggers($new_schema, $new_table);
@@ -88,7 +88,7 @@ class pgsql8_diff_triggers {
    * @return list of triggers that should be added
    */
   private static function get_new_triggers($old_schema, $old_table, $new_schema, $new_table) {
-    $list = array();
+    $list = [];
 
     if ($new_table != null) {
       if ($old_table == null) {

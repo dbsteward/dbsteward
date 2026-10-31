@@ -19,7 +19,7 @@ class ofs_replica_set_router {
   }
   
   public function __construct() {
-    $this->ofs = array();
+    $this->ofs = [];
   }
   
   /**
@@ -38,21 +38,21 @@ class ofs_replica_set_router {
   }
   
   public function __call($m, $a) {
-    $ignore_ofs_methods = array(
+    $ignore_ofs_methods = [
       '__destruct'
-    );
+    ];
     if ( in_array($m, $ignore_ofs_methods) ) {
       return 'IGNORE_OFS_COMMAND_COMPLETE';
     }
 
     // if the command is in the list of commands to run on all ofs objects, do so
-    $all_ofs_methods = array(
+    $all_ofs_methods = [
       'append_header',
       'append_footer'
-    );
+    ];
     if ( in_array($m, $all_ofs_methods) ) {
       foreach($this->ofs AS $set_id => $ofs) {
-        call_user_func_array(array(&$ofs, $m), $a);
+        call_user_func_array([&$ofs, $m], $a);
       }
       return 'ALL_OFS_COMMAND_COMPLETE';
     }
@@ -77,7 +77,7 @@ class ofs_replica_set_router {
     
     $active_set_ofs = $this->ofs[$use_replica_set_id];
     dbsteward::debug("[OFS RSR] __call calling " . $use_replica_set_id . " ofs::" . $m);
-    return call_user_func_array(array(&$active_set_ofs, $m), $a);
+    return call_user_func_array([&$active_set_ofs, $m], $a);
   }
 
 }

@@ -170,12 +170,12 @@ class mysql5_diff_tables extends sql99_diff_tables {
     // alterations to each column as possible.
 
     // arbitrary sql
-    $extra = array(
-      'BEFORE1' => array(),
-      'AFTER1' => array(),
-      'BEFORE3' => array(),
-      'AFTER3' => array()
-    );
+    $extra = [
+      'BEFORE1' => [],
+      'AFTER1' => [],
+      'BEFORE3' => [],
+      'AFTER3' => []
+    ];
 
     // each entry is keyed by column name, and has a 'command' key, which may be one of
     //  nothing: do nothing
@@ -185,15 +185,15 @@ class mysql5_diff_tables extends sql99_diff_tables {
     //  modify: redefine without rename
     // the 'defaults' key is whether to give the column a DEFAULT clause if it is NOT NULL
     // the 'nulls' key is whether to include NULL / NOT NULL in the column definition
-    $commands = array(
-      '1' => array(),
-      '3' => array()
-    );
+    $commands = [
+      '1' => [],
+      '3' => []
+    ];
 
-    $defaults = array(
-      'set' => array(),    // in stage 1, ALTER TABLE new_table ALTER COLUMN new_column SET DEFAULT new_column[default] ?: getDefaultValue(type)
-      'drop' => array()    // after that, ALTER TABLE new_table ALTER COLUMN new_column DROP DEFAULT
-    );
+    $defaults = [
+      'set' => [],    // in stage 1, ALTER TABLE new_table ALTER COLUMN new_column SET DEFAULT new_column[default] ?: getDefaultValue(type)
+      'drop' => []    // after that, ALTER TABLE new_table ALTER COLUMN new_column DROP DEFAULT
+    ];
 
     foreach(dbx::get_table_columns($old_table) as $old_column) {
       if (!mysql5_table::contains_column($new_table, $old_column['name'])) {
@@ -202,23 +202,23 @@ class mysql5_diff_tables extends sql99_diff_tables {
         }
         else {
           // echo "NOTICE: add_drop_table_columns()  " . $new_table['name'] . " does not contain " . $old_column['name'] . "\n";
-          $commands['3'][(string)$old_column['name']] = array(
+          $commands['3'][(string)$old_column['name']] = [
             'command' => 'drop',
             'column' => $old_column
-          );
+          ];
         }
       }
     }
 
     $new_columns = dbx::get_table_columns($new_table);
     foreach ($new_columns as $col_index => $new_column) {
-      $cmd1 = array(
+      $cmd1 = [
         'command' => 'nothing',
         'column' => $new_column,
         'defaults' => mysql5_diff::$add_defaults,
         'nulls' => TRUE,
         'auto_increment' => FALSE
-      );
+      ];
 
       if (!mysql5_table::contains_column($old_table, $new_column['name'], TRUE)) {
         // column not present in old table, is either renamed or new
@@ -373,7 +373,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
     }
 
     // output stage 1 sql
-    $stage1_commands = array();
+    $stage1_commands = [];
     foreach ($commands['1'] as $column_name => $command) {
       $stage1_commands[] = $get_command_sql($command);
     }
@@ -405,7 +405,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
     }
 
     // output stage 3 sql
-    $stage3_commands = array();
+    $stage3_commands = [];
     foreach ($commands['3'] as $column_name => $command) {
       $stage3_commands[] = $get_command_sql($command);
     }
@@ -440,7 +440,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
   public static function drop_tables($ofs, $old_schema, $new_schema, $old_table = null, $new_table = null) {
     if ($old_schema != null ) {
       if ($old_table != null) {
-        $tables = array($old_table);
+        $tables = [$old_table];
       }
       else {
         $tables = dbx::get_tables($old_schema);
@@ -547,8 +547,8 @@ class mysql5_diff_tables extends sql99_diff_tables {
 
   // @TODO: pull this up to sql99_diff_tables
   private static function get_data_row_insert($node_schema, $node_table, $data_row_columns, $data_row) {
-    $columns = array();
-    $values = array();
+    $columns = [];
+    $values = [];
     $data_row_columns_count = count($data_row_columns);
 
     for($i=0; $i < $data_row_columns_count; $i++) {
@@ -578,9 +578,9 @@ class mysql5_diff_tables extends sql99_diff_tables {
    * @return void
    */
   public static function table_data_rows_compare($table_a, $table_b, $in_both, &$a_rows, &$b_rows, &$changes) {
-    $a_rows = array();
-    $b_rows = array();
-    $changes = array();
+    $a_rows = [];
+    $b_rows = [];
+    $changes = [];
     $table_a_data_rows = dbx::get_table_rows($table_a);
     $table_b_data_rows = dbx::get_table_rows($table_b);
     // data_row_overlay_key_search() needs these to do the matching
@@ -611,7 +611,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
       // but the table B and A columns are reversed compared to data_rows_overlay() as the comparison is B vs A not base vs overlay (AvB)
       // so the columns to match as base and overlay are reversed, comared to other calls to data_row_overlay_primary_key_index()
       $primary_key_index = xml_parser::data_row_overlay_primary_key_index($table_b_primary_keys, $table_b_data_rows_columns, $table_a_data_rows_columns);
-      $base_pklookup = array();
+      $base_pklookup = [];
       $i = 0;
       if (count($primary_key_index['base'])) {
         foreach ($table_b_data_rows->row as $base_row) {
@@ -658,7 +658,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
             }
             else {
               // do table data row diff, add rows to return by reference rows for both A and B
-              $changed_columns = array();
+              $changed_columns = [];
               static::table_data_row_diff($table_a_data_rows_columns, $table_a_data_row, $table_b_data_rows_columns, $table_b_data_row, $changed_columns);
               $a_rows[] = $table_a_data_row;
               $b_rows[] = $table_b_data_row;
@@ -712,7 +712,7 @@ class mysql5_diff_tables extends sql99_diff_tables {
     // determining difference status
     // storing the difference as we go
     $difference = false;
-    $changed_columns = array();
+    $changed_columns = [];
     $new_cols_count = count($new_cols);
     for($i=0; $i < $new_cols_count; $i++) {
       $old_col_index = array_search($new_cols[$i], $old_cols);
@@ -722,10 +722,10 @@ class mysql5_diff_tables extends sql99_diff_tables {
         $difference = true;
 
         // record differences for caller to use
-        $changed_columns[] = array(
+        $changed_columns[] = [
           'name' => $new_cols[$i],
           'new_col' => $new_row->col[$i]
-        );
+        ];
       }
       else {
         if ( strcmp($old_row->col[$old_col_index], $new_row->col[$i]) != 0 ) {
@@ -733,11 +733,11 @@ class mysql5_diff_tables extends sql99_diff_tables {
           $difference = true;
 
           // record differences for caller to use
-          $changed_columns[] = array(
+          $changed_columns[] = [
             'name' => $new_cols[$i],
             'old_col' => $old_row->col[$old_col_index],
             'new_col' => $new_row->col[$i]
-          );
+          ];
         }
       }
     }
@@ -769,8 +769,8 @@ class mysql5_diff_tables extends sql99_diff_tables {
 
     // what columns from new_data_row are different in old_data_row?
     // those are the ones to push through the update statement to make the database current
-    $old_columns = array();
-    $update_columns = array();
+    $old_columns = [];
+    $update_columns = [];
 
     foreach($changed_columns AS $changed_column) {
       if ( !isset($changed_column['old_col']) ) {

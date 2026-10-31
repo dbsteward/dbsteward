@@ -253,16 +253,16 @@ class pgsql8_table extends sql99_table {
   }
 
   public static function parse_storage_params($param_string) {
-    $params = array();
+    $params = [];
     foreach (explode(',',substr($param_string,1,-1)) as $param) {
-      list($k,$v) = explode('=',$param,2);
+      [$k, $v] = explode('=',$param,2);
       $params[$k] = $v;
     }
     return $params;
   }
 
   public static function compose_storage_params($params) {
-    $strs = array();
+    $strs = [];
     foreach ($params as $k=>$v) {
       $strs[] = $k.'='.$v;
     }

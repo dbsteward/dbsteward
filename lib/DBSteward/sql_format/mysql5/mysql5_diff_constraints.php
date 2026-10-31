@@ -19,7 +19,7 @@ class mysql5_diff_constraints extends sql99_diff_constraints {
     }
     else {
       if (dbsteward::$old_database != NULL) {
-        list($old_schema, $old_table) = dbx::find_old_table(dbsteward::$old_database, $new_schema, $new_table);
+        [$old_schema, $old_table] = dbx::find_old_table(dbsteward::$old_database, $new_schema, $new_table);
       }
 
       if ( $old_schema === NULL || $old_table === NULL ) {
@@ -46,7 +46,7 @@ class mysql5_diff_constraints extends sql99_diff_constraints {
 
   public static function get_multiple_drop_sql($node_schema, $node_table, $constraints) {
     if (count($constraints) == 0) return '';
-    $bits = array();
+    $bits = [];
     foreach ($constraints as $constraint) {
       if (strcasecmp($constraint['type'], 'PRIMARY KEY') == 0) {
         // we're dropping the PK constraint, so we need to drop AUTO_INCREMENT on any affected columns first!
@@ -66,7 +66,7 @@ class mysql5_diff_constraints extends sql99_diff_constraints {
   }
 
   public static function get_multiple_create_bits($node_schema, $node_table, $constraints) {
-    $bits = array();
+    $bits = [];
     foreach ($constraints as $constraint) {
       $bits[] = mysql5_constraint::get_constraint_sql($constraint, FALSE);
       if (strcasecmp($constraint['type'], 'PRIMARY KEY') == 0) {

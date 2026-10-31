@@ -44,7 +44,7 @@ class pgsql8_diff_types {
       
       pgsql8::set_context_replica_set_id($new_type);
       
-      $columns = array();
+      $columns = [];
       $is_domain = strcasecmp($new_type['type'], 'domain') === 0;
       $n = $is_domain ? 3 : 4;
       $word = $is_domain ? 'domain' : 'type';
@@ -153,7 +153,7 @@ class pgsql8_diff_types {
     }
 
     // diff constraints
-    $old_constraints = array();
+    $old_constraints = [];
     foreach ($old_type->domainConstraint as $old_constraint) {
       $old_constraints[(string)$old_constraint['name']] = pgsql8_type::normalize_domain_constraint($old_constraint);
     }

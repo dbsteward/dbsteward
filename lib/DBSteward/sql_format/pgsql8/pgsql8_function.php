@@ -64,7 +64,7 @@ class pgsql8_function {
       // no arguments to set for the function
     } else {
       $arguement_parts = explode(',', trim($arguments));
-      $args = array();
+      $args = [];
       foreach($arguement_parts as $part) {
         $chunks = preg_split("/[\s]+/", $part, -1, PREG_SPLIT_NO_EMPTY);
         // per http://www.postgresql.org/docs/8.4/static/sql-createfunction.html

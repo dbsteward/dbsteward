@@ -42,7 +42,7 @@ class pgsql8_parser_grant_revoke {
 
       $operations = preg_split("/[\,\s]+/", $matches[2], -1, PREG_SPLIT_NO_EMPTY);
       if ( !is_array($operations) ) {
-        $permission = array($operations);
+        $permission = [$operations];
       }
       for($i=0; $i < count($operations); $i++) {
         $operations[$i] = strtoupper($operations[$i]);

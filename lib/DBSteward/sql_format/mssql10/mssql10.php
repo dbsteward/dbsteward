@@ -99,7 +99,7 @@ class mssql10 {
         }
       }
     }
-    
+
     // types: enumerated list, etc
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->type AS $type) {
@@ -344,14 +344,14 @@ class mssql10 {
       // complain when assholes use colon time notation instead of postgresql verbose for interval expressions
       if (dbsteward::$require_verbose_interval_notation) {
         if (preg_match('/interval/i', $type) > 0) {
-          if (substr($value, 0, 1) != '@') {
+          if (!str_starts_with($value, '@')) {
             throw new exception("bad interval value: " . $value . " -- interval types must be postgresql verbose format: '@ 2 hours 30 minutes' etc for cfxn comparisons to work");
           }
         }
       }
 
       // mssql doesn't understand epoch
-      if (stripos('date', $type) !== FALSE
+      if (stripos('date', (string) $type) !== FALSE
         && strcasecmp($value, 'epoch') == 0) {
         $value = '1970-01-01';
       }
@@ -395,7 +395,7 @@ class mssql10 {
   public static function strip_single_quoting($value) {
     // if the value is surrounded on the outside by 's
     // kill them, and kill escaped single quotes too
-    if (strlen($value) > 2 && substr($value, 0, 1) == "'" && substr($value, -1) == "'") {
+    if (strlen($value) > 2 && str_starts_with($value, "'") && str_ends_with($value, "'")) {
       $value = substr($value, 1, -1);
       $value = str_replace("''", "'", $value);
     }

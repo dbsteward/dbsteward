@@ -82,7 +82,7 @@ class pgsql8_parser_alter_table {
         throw new exception("schema " . $schema_name . " not found in database object");
       }
       // is it actually a sequence ownership reference?
-      if ( substr($table_name, -4) == '_seq' ) {
+      if ( str_ends_with($table_name, '_seq') ) {
         //@TODO: figure out what sequences are not table linked and need to have ownership set on them
       }
       else {

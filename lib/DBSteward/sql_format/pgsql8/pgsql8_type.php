@@ -153,11 +153,11 @@ class pgsql8_type {
           // add column to the beginning of the list so it will be done before earlier changes (foreign key ordering)
           array_unshift(
             $columns,
-            array(
+            [
               'alter_column_schema' => $new_schema,
               'alter_column_table' => $new_table,
               'alter_column_column' => $new_column
-            )
+            ]
           );
         }
       }

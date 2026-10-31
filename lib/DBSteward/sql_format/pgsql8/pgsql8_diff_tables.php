@@ -33,10 +33,10 @@ class pgsql8_diff_tables extends sql99_diff_tables {
     if ($old_table == null) {
       $old_cluster = null;
     } else {
-      $old_cluster = isset($old_table['clusterIndex']) ? $old_table['clusterIndex'] : null;
+      $old_cluster = $old_table['clusterIndex'] ?? null;
     }
 
-    $new_cluster = isset($new_table['clusterIndex']) ? $new_table['clusterIndex'] : null;
+    $new_cluster = $new_table['clusterIndex'] ?? null;
 
     if ((($old_cluster == null) && ($new_cluster != null)) ||
         (($old_cluster != null) && ($new_cluster != null) && (strcmp($new_cluster, $old_cluster) != 0) )) {
@@ -109,7 +109,7 @@ class pgsql8_diff_tables extends sql99_diff_tables {
    * @param $new_table new table
    */
   private static function add_alter_statistics($ofs, $old_table, $new_schema, $new_table) {
-    $stats = array();
+    $stats = [];
 
     foreach(dbx::get_table_columns($new_table) as $new_column) {
       $old_column = dbx::get_table_column($old_table, $new_column['name']);
@@ -158,12 +158,12 @@ class pgsql8_diff_tables extends sql99_diff_tables {
           // oldColumnName renamed column ? rename column instead of create new one
           $old_column_name = pgsql8::get_quoted_column_name($new_column['oldColumnName']);
           $new_column_name = pgsql8::get_quoted_column_name($new_column['name']);
-          $commands[] = array(
+          $commands[] = [
             'stage' => 'AFTER1',
             'command' => "-- column rename from oldColumnName specification\n"
               . "ALTER TABLE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
               . " RENAME COLUMN $old_column_name TO $new_column_name;"
-          );
+          ];
           continue;
         }
         
@@ -177,24 +177,24 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
 }
 /**/
 
-        $commands[] = array(
+        $commands[] = [
           'stage' => '1',
           'command' => "\tADD COLUMN " . pgsql8_column::get_full_definition(dbsteward::$new_database, $new_schema, $new_table, $new_column, pgsql8_diff::$add_defaults, false)
-        );
+        ];
         // instead we put the NOT NULL defintion in stage3 schema changes once data has been updated in stage2 data
         if ( ! pgsql8_column::null_allowed($new_table, $new_column) ) {
-          $commands[] = array(
+          $commands[] = [
             'stage' => '3',
             'command' => "\tALTER COLUMN " . pgsql8::get_quoted_column_name($new_column['name']) . " SET NOT NULL"
-          );
+          ];
           // also, if it's defined, default the column in stage 1 so the SET NULL will actually pass in stage 3
           if ( strlen((string)$new_column['default']) > 0 ) {
-            $commands[] = array(
+            $commands[] = [
               'stage' => 'AFTER1',
               'command' => "UPDATE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
                 . " SET " . pgsql8::get_quoted_column_name($new_column['name']) . " = DEFAULT"
                 . " WHERE " . pgsql8::get_quoted_column_name($new_column['name']) . " IS NULL;"
-            );
+            ];
           }
 
         }
@@ -204,11 +204,11 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         // because the data in those columns is being placed in as a default by the local db server
         // to compensate, add UPDATE statements to make the these column's values NOW() from the master
         if ( pgsql8_column::has_default_now($new_table, $new_column) ) {
-          $commands[] = array(
+          $commands[] = [
               'stage' => 'AFTER1',
               'command' => "UPDATE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
                 . " SET " . pgsql8::get_quoted_column_name($new_column['name']) . " = " . $new_column['default'] . " ; -- has_default_now: this statement is to make sure new columns are in sync on replicas"
-            );
+            ];
         }
 
         if (pgsql8_diff::$add_defaults && !pgsql8_column::null_allowed($new_table, $new_column)) {
@@ -224,28 +224,28 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             $db_doc_new_column = dbx::get_table_column($db_doc_new_table, $new_column['name']);
             if ( $db_doc_new_column ) {
               if ( isset($db_doc_new_column['beforeAddStage1']) ) {
-                $commands[] = array(
+                $commands[] = [
                   'stage' => 'BEFORE1',
                   'command' => trim($db_doc_new_column['beforeAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage1 definition"
-                );
+                ];
               }
               if ( isset($db_doc_new_column['afterAddStage1']) ) {
-                $commands[] = array(
+                $commands[] = [
                   'stage' => 'AFTER1',
                   'command' => trim($db_doc_new_column['afterAddStage1']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage1 definition"
-                );
+                ];
               }
               if ( isset($db_doc_new_column['beforeAddStage3']) ) {
-                $commands[] = array(
+                $commands[] = [
                   'stage' => 'BEFORE3',
                   'command' => trim($db_doc_new_column['beforeAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " beforeAddStage3 definition"
-                );
+                ];
               }
               if ( isset($db_doc_new_column['afterAddStage3']) ) {
-                $commands[] = array(
+                $commands[] = [
                   'stage' => 'AFTER3',
                   'command' => trim($db_doc_new_column['afterAddStage3']) . " -- from " . $new_schema['name'] . "." . $new_table['name'] . "." . $new_column['name'] . " afterAddStage3 definition"
-                );
+                ];
               }
             }
             else {
@@ -277,18 +277,18 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           // table indicating oldTableName = table['name'] present in new schema? don't do DROP statement
           $old_table_name = pgsql8::get_quoted_table_name($old_table['name']);
           $old_column_name = pgsql8::get_quoted_column_name($old_column['name']);
-          $commands[] = array(
+          $commands[] = [
             'stage' => 'AFTER3',
             'command' => "-- $old_table_name DROP COLUMN $old_column_name omitted: new column $renamed_column_name indicates it is the replacement for " . $old_column_name
-          );
+          ];
         }
         else {
           //echo "NOTICE: add_drop_table_columns()  " . $new_table['name'] . " does not contain " . $old_column['name'] . "\n";
 
-          $commands[] = array(
+          $commands[] = [
             'stage' => '3',
             'command' => "\tDROP COLUMN " . pgsql8::get_quoted_column_name($old_column['name'])
-          );
+          ];
         }
       }
     }
@@ -337,48 +337,48 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           $type_using_comment = '- found XML convertUsing: ' . $new_column['convertUsing'] . ' ';
         }
 
-        $commands[] = array(
+        $commands[] = [
           'stage' => '1',
           'command' => "\tALTER COLUMN " . $new_column_name
             . " TYPE " . $new_column_type
             . $type_using
             . " /* TYPE change - table: " . $new_table['name'] . " original: " . $old_column_type . " new: " . $new_column_type . ' ' . $type_using_comment . '*/'
-        );
+        ];
       }
 
-      $old_default = isset($old_column['default']) ? $old_column['default'] : '';
-      $new_default = isset($new_column['default']) ? $new_column['default'] : '';
+      $old_default = $old_column['default'] ?? '';
+      $new_default = $new_column['default'] ?? '';
 
       if (strcmp($old_default, $new_default) != 0) {
         if (strlen($new_default) == 0) {
-          $commands[] = array(
+          $commands[] = [
             'stage' => '1',
             'command' => "\tALTER COLUMN " . $new_column_name . " DROP DEFAULT"
-          );
+          ];
         } else {
           $commands[] =
-          array(
+          [
             'stage' => '1',
             'command' => "\tALTER COLUMN " . $new_column_name . " SET DEFAULT " . $new_default
-          );
+          ];
         }
       }
 
       if ( strcasecmp((string)$old_column['null'], (string)$new_column['null']) != 0 ) {
         if (pgsql8_column::null_allowed($new_table, $new_column)) {
-          $commands[] = array(
+          $commands[] = [
             'stage' => '1',
             'command' => "\tALTER COLUMN " . $new_column_name . " DROP NOT NULL"
-          );
+          ];
         } else {
           if (pgsql8_diff::$add_defaults) {
             $default_value = pgsql8_column::get_default_value($new_column_type);
 
             if ($default_value != null) {
-              $commands[] = array(
+              $commands[] = [
                 'stage' => '1',
                 'command' => "\tALTER COLUMN " . $new_column_name . " SET DEFAULT " . $default_value
-              );
+              ];
               $drop_defaults_columns[] = $new_column;
             }
           }
@@ -387,17 +387,17 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           // set the value of the column to the default in end of stage 1 so that NOT NULL can be applied in stage 3
           // this way custom <sql> tags can be avoided for upgrade generation if defaults are specified
           if ( strlen((string)$new_column['default']) > 0 ) {
-            $commands[] = array(
+            $commands[] = [
               'stage' => 'AFTER1',
               'command' => "UPDATE " . pgsql8::get_quoted_schema_name($new_schema['name']) . "." . pgsql8::get_quoted_table_name($new_table['name'])
                 . " SET " . $new_column_name . " = " . $new_column['default'] . " WHERE " . $new_column_name . " IS NULL; -- has_default_now: make modified column that is null the default value before NOT NULL hits"
-            );
+            ];
           }
 
-          $commands[] = array(
+          $commands[] = [
             'stage' => '3',
             'command' => "\tALTER COLUMN " . $new_column_name . " SET NOT NULL"
-          );
+          ];
         }
       }
 
@@ -405,15 +405,15 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       if ( preg_match('/serial$/', (string)$old_column['type']) > 0 &&
            ($new_column['type'] == 'int' || $new_column['type'] == 'bigint') ) {
 
-          $commands[] = array(
+          $commands[] = [
             'stage' => 'BEFORE3',
             'command' => "DROP SEQUENCE IF EXISTS " . pgsql8::get_quoted_schema_name($new_schema['name']) . '.' . pgsql8::get_quoted_table_name(pgsql8::identifier_name($new_schema['name'], $new_table['name'], $new_column['name'], '_seq')) . ";"
-          );
+          ];
 
-          $commands[] = array(
+          $commands[] = [
             'stage' => '1',
             'command' => "\tALTER COLUMN " . $new_column_name . " DROP DEFAULT"
-          );
+          ];
       }
     }
   }
@@ -435,11 +435,11 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     if (isset($new_table['oldTableName'])) {
       throw new exception("Changing a partitioned table's name is not supported: " . $old_table['name']);
     }
-    $old_options = array();
+    $old_options = [];
     foreach ($old_table->tablePartition->tablePartitionOption AS $option) {
       $old_options[(string)$option['name']] = (string)$option['value'];
     }
-    $new_options = array();
+    $new_options = [];
     foreach ($new_table->tablePartition->tablePartitionOption AS $option) {
       $new_options[(string)$option['name']] = (string)$option['value'];
     }
@@ -575,8 +575,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    * @param $new_table  new table
    */
   private static function update_table_columns($ofs1, $ofs3, $old_table, $new_schema, $new_table) {
-    $commands = array();
-    $drop_defaults_columns = array();
+    $commands = [];
+    $drop_defaults_columns = [];
     self::add_drop_table_columns($commands, $old_table, $new_table);
     self::add_create_table_columns($commands, $old_table, $new_schema, $new_table, $drop_defaults_columns);
     self::add_modify_table_columns($commands, $old_table, $new_schema, $new_table, $drop_defaults_columns);
@@ -823,9 +823,9 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    * @return void
    */
   public static function table_data_rows_compare($table_a, $table_b, $in_both, &$a_rows, &$b_rows, &$changes) {
-    $a_rows = array();
-    $b_rows = array();
-    $changes = array();
+    $a_rows = [];
+    $b_rows = [];
+    $changes = [];
     $table_a_data_rows = dbx::get_table_rows($table_a);
     $table_b_data_rows = dbx::get_table_rows($table_b);
     // data_row_overlay_key_search() needs these to do the matching
@@ -859,7 +859,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
       
       // @TODO: Find some way to merge this with the algorithm in xml_parser::data_rows_overlay?
 
-      $base_pklookup = array();
+      $base_pklookup = [];
       $i = 0;
       if (count($primary_key_index['base'])) {
         foreach ($table_b_data_rows->row as $base_row) {
@@ -907,7 +907,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
             }
             else {
               // do table data row diff, add rows to return by reference rows for both A and B
-              $changed_columns = array();
+              $changed_columns = [];
               pgsql8_diff_tables::table_data_row_diff($table_a_data_rows_columns, $table_a_data_row, $table_b_data_rows_columns, $table_b_data_row, $changed_columns);
               $a_rows[] = $table_a_data_row;
               $b_rows[] = $table_b_data_row;
@@ -967,7 +967,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     // determining difference status
     // storing the difference as we go
     $difference = false;
-    $changed_columns = array();
+    $changed_columns = [];
     $new_cols_count = count($new_cols);
     for($i=0; $i < $new_cols_count; $i++) {
       $old_col_index = array_search($new_cols[$i], $old_cols);
@@ -977,10 +977,10 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
         $difference = true;
 
         // record differences for caller to use
-        $changed_columns[] = array(
+        $changed_columns[] = [
           'name' => $new_cols[$i],
           'new_col' => $new_row->col[$i]
-        );
+        ];
       }
       else {
         if ( strcmp($old_row->col[$old_col_index], $new_row->col[$i]) != 0 ) {
@@ -988,11 +988,11 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
           $difference = true;
 
           // record differences for caller to use
-          $changed_columns[] = array(
+          $changed_columns[] = [
             'name' => $new_cols[$i],
             'old_col' => $old_row->col[$old_col_index],
             'new_col' => $new_row->col[$i]
-          );
+          ];
         }
       }
     }
@@ -1009,8 +1009,8 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   }
 
   private static function get_data_row_insert($node_schema, $node_table, $data_row_columns, $data_row) {
-    $columns = array();
-    $values = array();
+    $columns = [];
+    $values = [];
     foreach ($data_row_columns as $i => $data_column_name) {
       $columns[] = pgsql8::get_quoted_column_name($data_column_name);
       $values[] = pgsql8::column_value_default($node_schema, $node_table, $data_column_name, $data_row->col[$i]);
@@ -1147,7 +1147,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
   */
   private static function get_drop_constraints($old_schema, $old_table, $new_schema, $new_table, $type) {
     pgsql8::set_context_replica_set_id($new_table);
-    $list = array();
+    $list = [];
 
     if (($new_table != null) && ($old_table != null)) {
       if ( $old_table->getName() != 'table' ) {
@@ -1178,7 +1178,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
    * @return list of constraints that should be added
    */
   private static function get_new_constraints($old_schema, $old_table, $new_schema, $new_table, $type) {
-    $list = array();
+    $list = [];
 
     if ($new_table != null) {
       if ($old_table == null) {
@@ -1206,7 +1206,7 @@ if ( preg_match('/time|date/i', $new_column['type']) > 0 ) {
     $table_name = (string)$table['name'];
     $fq_name = pgsql8::get_fully_qualified_table_name($schema_name, $table_name);
 
-    $actions = array();
+    $actions = [];
     $sql = "";
 
     // create and alter have the same syntax:

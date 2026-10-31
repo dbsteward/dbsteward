@@ -56,7 +56,7 @@ class mssql10_diff_triggers {
    * @return list of triggers that should be dropped
    */
   private static function get_drop_triggers($old_schema, $old_table, $new_schema, $new_table) {
-    $list = array();
+    $list = [];
 
     if (($new_table != NULL) && ($old_table != NULL)) {
       $new_triggers = dbx::get_table_triggers($new_schema, $new_table);
@@ -86,7 +86,7 @@ class mssql10_diff_triggers {
    * @return list of triggers that should be added
    */
   private static function get_new_triggers($old_schema, $old_table, $new_schema, $new_table) {
-    $list = array();
+    $list = [];
 
     if ($new_table != NULL) {
       if ($old_table == NULL) {

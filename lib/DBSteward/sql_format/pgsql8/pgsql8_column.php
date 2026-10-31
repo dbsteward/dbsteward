@@ -186,10 +186,10 @@ class pgsql8_column extends sql99_column {
     if ( preg_match('/[\s]+/', $type) > 0 ) {
       // type contains whitespace
       // split the type and look for bad tokens
-      $bad_keywords = array(
+      $bad_keywords = [
         'DEFAULT',
         'UNIQUE'
-      );
+      ];
       $tokens = preg_split("/[\s]+/", $type, -1, PREG_SPLIT_NO_EMPTY);
 
       foreach($tokens AS $token) {

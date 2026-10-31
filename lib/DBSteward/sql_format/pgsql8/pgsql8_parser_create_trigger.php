@@ -27,7 +27,7 @@ class pgsql8_parser_create_trigger {
     if (preg_match(self::PATTERN, trim($command), $matches) > 0) {
       $trigger_name = trim($matches[1]);
       $when = $matches[2];
-      $events = array();
+      $events = [];
       if ( strlen($matches[3]) > 0 ) {
         $events[] = $matches[3];
       }

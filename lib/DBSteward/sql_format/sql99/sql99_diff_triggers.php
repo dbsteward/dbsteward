@@ -55,7 +55,7 @@ class sql99_diff_triggers {
    * @return list of triggers that should be dropped
    */
   protected static function get_drop_triggers($old_schema, $old_table, $new_schema, $new_table) {
-    $list = array();
+    $list = [];
 
     if (($new_table != null) && ($old_table != null)) {
       foreach(static::get_table_triggers($old_schema, $old_table) as $old_trigger) {
@@ -78,7 +78,7 @@ class sql99_diff_triggers {
    * @return list of triggers that should be added
    */
   protected static function get_new_triggers($old_schema, $old_table, $new_schema, $new_table) {
-    $list = array();
+    $list = [];
 
     if ($new_table != null) {
       if ($old_table == null) {

@@ -42,7 +42,7 @@ class mssql10_diff_types {
         continue;
       }
       
-      $columns = array();
+      $columns = [];
       
       $ofs->write("-- type " . $new_type['name'] . " definition migration (1/4): dependant tables column constraint drop\n");
       $ofs->write(mssql10_type::column_constraint_temporary_drop($columns, $old_schema, $old_type) . "\n");

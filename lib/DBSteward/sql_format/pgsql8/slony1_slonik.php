@@ -97,16 +97,16 @@ class slony1_slonik {
   }
 
   public static function parse_params($line) {
-    if (substr($line, 0, 1) != '(') {
+    if (!str_starts_with($line, '(')) {
       throw new exception("slonik params don't start with (: " . $line);
     }
-    if (substr($line, -1, 1) != ')') {
+    if (!str_ends_with($line, ')')) {
       throw new exception("slonik params don't end with ): " . $line);
     }
     // knock off the ( and ) now that we know they are there
     $param_list = explode(',', substr($line, 1, strlen($line) - 2));
 
-    $params = array();
+    $params = [];
     for ($i = 0; $i < count($param_list); $i++) {
       // split the params at the =
       $chunks = explode('=', trim($param_list[$i]));
@@ -189,10 +189,10 @@ class slony1_slonik {
     }
 
     // table primary key sequence
-    if (strpos($params['comment'], 'primary key') !== FALSE) {
+    if (str_contains($params['comment'], 'primary key')) {
       // assume comment leads with table name
       // discipline.radiologic_tech_specialty_list primary key|sequence etc
-      $table = trim(str_ireplace(array('primary key', 'sequence'), '', $params['comment']));
+      $table = trim(str_ireplace(['primary key', 'sequence'], '', $params['comment']));
       // strip sequence prefix, if present
       $table = str_ireplace($schema . '.', '', $table);
       // table maximum len is 29
@@ -201,7 +201,7 @@ class slony1_slonik {
       // figure out table / column name using the fully qualified name and comment section
       $column = $fqn_chunks[1];
       // if it matches, strip off the leading table name
-      if (substr($column, 0, strlen($table)) == $table) {
+      if (str_starts_with($column, $table)) {
         $column = substr($column, strlen($table) + 1);
         // +1 because of 0 index plus _
       }

@@ -47,7 +47,8 @@
   },
   "require-dev": {
     "ext-pdo_mysql": "*",
-    "phpunit/phpunit": "^12.0"
+    "phpunit/phpunit": "^12.0",
+    "rector/rector": "^2"
   },
   "suggest": {
     "ext-pdo": "Necessary to extract a schema from a MySQL database"
@@ -61,10 +62,12 @@
   },
   "scripts": {
     "test": "phpunit --exclude-group quarantine",
-    "test:quarantine": "phpunit --group quarantine"
+    "test:quarantine": "phpunit --group quarantine",
+    "rector": "rector process"
   },
   "scripts-descriptions": {
     "test": "Run the test suite (needs PostgreSQL/MySQL for the pgsql8/mysql5 groups)",
-    "test:quarantine": "Run tests that failed before the PHP 8 upgrade"
+    "test:quarantine": "Run tests that failed before the PHP 8 upgrade",
+    "rector": "Apply the modern-PHP rules configured in rector.php"
   }
 }
