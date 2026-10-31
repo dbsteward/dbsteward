@@ -9,9 +9,7 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
 class ColumnDefaultIsFunctionTest extends dbstewardUnitTestBase {
   
   /**
@@ -71,7 +69,7 @@ EXP;
     
     $this->set_xml_content_a($xml);
     $this->build_db('pgsql8');
-    $actual = file_get_contents(dirname(__FILE__) . '/../testdata/unit_test_xml_a_build.sql');
-    $this->assertContains($expected, $actual);
+    $actual = file_get_contents($this->workspacePath('unit_test_xml_a_build.sql'));
+    $this->assertStringContainsString($expected, $actual);
   }
 }

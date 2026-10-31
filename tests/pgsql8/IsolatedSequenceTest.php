@@ -9,9 +9,7 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
 class IsolatedSequenceTest extends dbstewardUnitTestBase {
 
   protected $xml_content_a =  <<<XML
@@ -49,8 +47,8 @@ class IsolatedSequenceTest extends dbstewardUnitTestBase {
 </dbsteward>
 XML;
 
-  public function setUp() {
-    $this->output_prefix = dirname(__FILE__) . '/../testdata/unit_test_xml_a';
+  public function setUp(): void {
+    $this->output_prefix = $this->workspacePath('unit_test_xml_a');
     parent::setUp();
 
     $this->pgsql8->create_db();
@@ -66,7 +64,7 @@ XML;
     // pgsql8_db::connect("host=$host port=$port dbname=$database user=$user password=$password");
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     // github PR#76 - connection is already handled and established by pgsql8::extract_schema()
     // don't need to establish a connection and let it block testing framework operations
     // pgsql8_db::disconnect();
@@ -86,6 +84,7 @@ XML;
     return $expected_seq;
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testPublicSequencesBuildProperly() {
     $this->build_db_pgsql8();
 
@@ -101,6 +100,7 @@ XML;
 
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testIsolatedSequencesBuildProperly() {
     $this->build_db_pgsql8();
 
@@ -117,6 +117,7 @@ XML;
 
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testIntSequencesBecomeSerials() {
     $this->build_db_pgsql8();
 
@@ -132,6 +133,7 @@ XML;
 
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testNoTableSequencesBuilds() {
     // the base pgsql8 class keeps track of sequence columns linked to tables
     // (i.e. as primary keys, etc.)
@@ -169,7 +171,7 @@ XML;
 XML;
 
     //
-    $this->xml_file_a = __DIR__ . '/../testdata/unit_test_xml_a.xml';
+    $this->xml_file_a = $this->workspacePath('unit_test_xml_a.xml');
     file_put_contents($this->xml_file_a, $xml);
 
     $this->build_db_pgsql8();

@@ -160,7 +160,7 @@ XML;
   private $mysql5_single_xml_a; // = $pgsql8_single_xml_a
   private $mysql5_single_xml_b; // = $pgsql8_single_xml_b
 
-  protected function setUp() {
+  protected function setUp(): void {
     $this->mssql10_serial_xml_a = $this->pgsql8_serial_xml_a;
     $this->mssql10_serial_xml_b = $this->pgsql8_serial_xml_b;
 
@@ -180,7 +180,7 @@ XML;
   protected function do_upgrade($sql_format) {
     $old_db_doc = simplexml_load_file($this->xml_file_a);
     $new_db_doc = simplexml_load_file($this->xml_file_b);
-    $this->output_prefix = dirname(__FILE__) . '/testdata/' .  $sql_format . '_unit_test_xml_a'; 
+    $this->output_prefix = $this->workspacePath() . '/' .  $sql_format . '_unit_test_xml_a'; 
     // need to unfortunately do the one thing austin told me not to:
     // use more than one format type per run
     if (strcasecmp($sql_format, 'pgsql8') == 0) {
@@ -194,16 +194,14 @@ XML;
     }
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testSerialToIntPgsql8() {
     $this->xml_content_a = $this->pgsql8_serial_xml_a;
-    $this->xml_file_a = dirname(__FILE__) . '/testdata/type_diff_xml_a.xml';
+    $this->xml_file_a = $this->workspacePath('type_diff_xml_a.xml');
     file_put_contents($this->xml_file_a, $this->xml_content_a);
 
     $this->xml_content_b = $this->pgsql8_serial_xml_b;
-    $this->xml_file_b = dirname(__FILE__) . '/testdata/type_diff_xml_b.xml';
+    $this->xml_file_b = $this->workspacePath('type_diff_xml_b.xml');
     file_put_contents($this->xml_file_b, $this->xml_content_b);
 
     $this->apply_options_pgsql8();
@@ -239,17 +237,16 @@ XML;
   /**
    * Test that when the only serial is converted to an int, and there are no sequences,
    * that the sequences table and serial trigger is dropped
-   *
-   * @group mysql5
    */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testSerialToIntMysql5() {
     dbsteward::$single_stage_upgrade = false;
     $this->xml_content_a = $this->mysql5_serial_xml_a;
-    $this->xml_file_a = dirname(__FILE__) . '/testdata/type_diff_xml_a.xml';
+    $this->xml_file_a = $this->workspacePath('type_diff_xml_a.xml');
     file_put_contents($this->xml_file_a, $this->xml_content_a);
 
     $this->xml_content_b = $this->mysql5_serial_xml_b;
-    $this->xml_file_b = dirname(__FILE__) . '/testdata/type_diff_xml_b.xml';
+    $this->xml_file_b = $this->workspacePath('type_diff_xml_b.xml');
     file_put_contents($this->xml_file_b, $this->xml_content_b);
 
     $this->apply_options_mysql5();
@@ -274,16 +271,14 @@ XML;
       );
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testSingleStageColumnAndDataChangePgsql8() {
     $this->xml_content_a = $this->pgsql8_single_xml_a;
-    $this->xml_file_a = __DIR__ . '/testdata/type_diff_xml_a.xml';
+    $this->xml_file_a = $this->workspacePath('type_diff_xml_a.xml');
     file_put_contents($this->xml_file_a, $this->xml_content_a);
 
     $this->xml_content_b = $this->pgsql8_single_xml_b;
-    $this->xml_file_b = __DIR__ . '/testdata/type_diff_xml_b.xml';
+    $this->xml_file_b = $this->workspacePath('type_diff_xml_b.xml');
     file_put_contents($this->xml_file_b, $this->xml_content_b);
 
     $this->apply_options_pgsql8();
@@ -297,29 +292,27 @@ XML;
 
     $upgrade_single_stage_sql = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
     // $upgrade_single_stage_sql = preg_replace('/\s+/', ' ', $upgrade_single_stage_sql);
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       '/'.preg_quote('ALTER COLUMN "user_name" TYPE varchar(64)','/').'/i',
       $upgrade_single_stage_sql,
       "user_name column type change was not found in upgrade_single_stage.sql"
     );
 
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       '/'.preg_quote('UPDATE "dbsteward"."user" SET "user_name" = E\'Administrator\' WHERE ("user_id" = \'1\');','/').'/i',
       $upgrade_single_stage_sql,
       "Update of user_name column static value not found in upgrade_single_stage.sql"
     );
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testSingleStageColumnAndDataChangeMysql5() {
     $this->xml_content_a = $this->mysql5_single_xml_a;
-    $this->xml_file_a = __DIR__ . '/testdata/type_diff_xml_a.xml';
+    $this->xml_file_a = $this->workspacePath('type_diff_xml_a.xml');
     file_put_contents($this->xml_file_a, $this->xml_content_a);
 
     $this->xml_content_b = $this->mysql5_single_xml_b;
-    $this->xml_file_b = __DIR__ . '/testdata/type_diff_xml_b.xml';
+    $this->xml_file_b = $this->workspacePath('type_diff_xml_b.xml');
     file_put_contents($this->xml_file_b, $this->xml_content_b);
 
     $this->apply_options_mysql5();

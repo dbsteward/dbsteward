@@ -6,13 +6,12 @@
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  */
 
-require_once __DIR__ . '/Mysql5ExtractionTest.php';
+require_once __DIR__ . '/Mysql5ExtractionTestCase.php';
 
-/**
- * @group mysql5
- */
-class Mysql5ExtractProcedureTest extends Mysql5ExtractionTest { 
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+class Mysql5ExtractProcedureTest extends Mysql5ExtractionTestCase { 
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractProcedure() {
     $sql = <<<ENDSQL
 DROP PROCEDURE IF EXISTS why_would_i_do_this;

@@ -13,7 +13,7 @@
 
 require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
-class duplicateFunctionTest extends PHPUnit_Framework_TestCase {
+class duplicateFunctionTest extends PHPUnit\Framework\TestCase {
 
   private $pgsql8_xml_a = <<<XML
 <dbsteward>
@@ -331,49 +331,40 @@ XML;
 </dbsteward>
 XML;
 
-  protected function setUp() {
+  protected function setUp(): void {
     $this->mssql10_xml_a = $this->pgsql8_xml_a;
     $this->mssql10_xml_b = $this->pgsql8_xml_b;
   }
   
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testDuplicationFunctionDefinitionAllowedPGSQL8() {
     $this->do_allowed('pgsql8');
   }
   
-  /**
-   * @group mssql10
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mssql10')]
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testDuplicationFunctionDefinitionAllowedMSSQL10() {
     $this->do_allowed('mssql10');
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testDuplicationFunctionDefinitionAllowedMYSQL5() {
     $this->do_allowed('mysql5');
   }
   
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testDuplicationFunctionDefinitionNotAllowedPGSQL8() {
     $this->do_not_allowed('pgsql8');
   }
   
-  /**
-   * @group mssql10
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mssql10')]
   public function testDuplicationFunctionDefinitionNotAllowedMSSQL10() {
     $this->do_not_allowed('mssql10');
   }
   
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testDuplicationFunctionDefinitionNotAllowedMYSQL5() {
     $this->do_not_allowed('mysql5');
   }

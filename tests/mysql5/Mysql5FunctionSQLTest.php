@@ -9,12 +9,10 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- */
-class Mysql5FunctionSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+class Mysql5FunctionSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -130,14 +128,12 @@ ENDSQL;
     $this->assertEquals($expected, $actual);
   }
 
-  /**
-   * @dataProvider characteristicsProvider
-   */
+  #[\PHPUnit\Framework\Attributes\DataProvider('characteristicsProvider')]
   public function testCharacteristics($cachePolicy, $evalType, $expected) {
     $this->assertEquals($expected, mysql5_function::get_characteristics($cachePolicy, $evalType));
   }
 
-  public function characteristicsProvider() {
+  public static function characteristicsProvider() {
     return array(
       // basic behavior, no evalType specified
       array('IMMUTABLE', '', array('NO SQL', 'DETERMINISTIC')),

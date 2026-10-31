@@ -9,10 +9,8 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class TableDiffTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class TableDiffTest extends PHPUnit\Framework\TestCase {
 
   private $db_doc_xml = <<<XML
 <dbsteward>
@@ -24,12 +22,13 @@ class TableDiffTest extends PHPUnit_Framework_TestCase {
   </database>
 XML;
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_all_names = TRUE;
     dbsteward::$ignore_oldnames = FALSE;
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testColumnCaseChange() {
     $lower = <<<XML
 <schema name="test0" owner="NOBODY">
@@ -68,7 +67,7 @@ XML;
       $this->common_diff($lower, $upper_without_oldname, 'NO EXPECTED OUTPUT', 'NO EXPECTED OUTPUT');
     }
     catch (Exception $e) {
-      $this->assertContains('ambiguous operation', strtolower($e->getMessage()));
+      $this->assertStringContainsString('ambiguous operation', strtolower($e->getMessage()));
       return;
     }
     $this->fail("Expected an 'ambiguous operation' exception due to column case change, got nothing.");

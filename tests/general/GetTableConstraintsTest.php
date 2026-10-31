@@ -9,16 +9,16 @@
 
 use DBSteward\Definition\XML\XMLDatabaseDefinition;
 
-class GetTableConstraintsTest extends PHPUnit_Framework_TestCase {
-  public function setUp() {
+class GetTableConstraintsTest extends PHPUnit\Framework\TestCase {
+  public function setUp(): void {
     dbsteward::$quote_all_names = true;
   }
-  /** @group pgsql8 */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testGetsExplicitForeignKeysPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     $this->_testGetsExplicitForeignKeys('("t1c1", "t1c2")', '"s2"."t2" ("t2c1", "t2c2")');
   }
-  /** @group mysql5 */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testGetsExplicitForeignKeysMysql5() {
     dbsteward::set_sql_format('mysql5');
     $this->_testGetsExplicitForeignKeys('(`t1c1`, `t1c2`)', '`t2` (`t2c1`, `t2c2`)');
@@ -71,12 +71,12 @@ XML;
     ), $c['foreign_key_data']);
   }
 
-  /** @group pgsql8 */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testExplicitFKeyDefaultSchemaPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     $this->_testExplicitFKeyDefaultSchema('("t1c1", "t1c2")', '"s1"."t2" ("t2c1", "t2c2")');
   }
-  /** @group mysql5 */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testExplicitFKeyDefaultSchemaMysql5() {
     dbsteward::set_sql_format('mysql5');
     $this->_testExplicitFKeyDefaultSchema('(`t1c1`, `t1c2`)', '`t2` (`t2c1`, `t2c2`)');
@@ -126,12 +126,12 @@ XML;
     ), $c['foreign_key_data']);
   }
 
-  /** @group pgsql8 */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testExplicitFKeyDefaultColumnsPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     $this->_testExplicitFKeyDefaultColumns('("t2c1", "t2c2")', '"s2"."t2" ("t2c1", "t2c2")');
   }
-  /** @group mysql5 */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testExplicitFKeyDefaultColumnsMysql5() {
     dbsteward::set_sql_format('mysql5');
     $this->_testExplicitFKeyDefaultColumns('(`t2c1`, `t2c2`)', '`t2` (`t2c1`, `t2c2`)');

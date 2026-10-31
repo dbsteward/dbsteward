@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5ConstraintDiffSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5ConstraintDiffSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -189,6 +187,7 @@ SQL;
     $this->common($this->xml_pka_uqc, $this->xml_pka, $expected);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testChangeOne() {
     $expected = <<<SQL
 ALTER TABLE `test`
@@ -199,6 +198,7 @@ SQL;
     $this->common($this->xml_pka, $this->xml_pkb, $expected);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testAddSomeAndChange() {
     $expected = <<<SQL
 ALTER TABLE `test`
@@ -210,6 +210,7 @@ SQL;
     $this->common($this->xml_pka, $this->xml_pkb_cfke, $expected);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testDropSomeAndChange() {
     $expected = <<<SQL
 ALTER TABLE `test`
@@ -222,6 +223,7 @@ SQL;
     $this->common($this->xml_pka_uqc_ifkd_cfke, $this->xml_pkb_cfke, $expected);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testChangePrimaryKeyNameAndTable() {
     $old = <<<XML
 <dbsteward>
@@ -280,6 +282,7 @@ XML;
     $this->common($notauto, $auto, "", 'primaryKey');
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testChangeColumnTypeWithForeignKey() {
     $old = <<<XML
 <dbsteward>

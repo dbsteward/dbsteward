@@ -9,8 +9,8 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-class PullUpSerialStartDMLTest extends PHPUnit_Framework_TestCase {
-  public function setUp() {
+class PullUpSerialStartDMLTest extends PHPUnit\Framework\TestCase {
+  public function setUp(): void {
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
     dbsteward::$quote_column_names = TRUE;
@@ -18,23 +18,17 @@ class PullUpSerialStartDMLTest extends PHPUnit_Framework_TestCase {
     dbsteward::$quote_object_names = TRUE;
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testPgsql8() {
     $this->common('pgsql8', "SELECT setval(pg_get_serial_sequence('public.table', 'column'), 5, TRUE);");
   }
 
-  /**
-   * @group mssql10
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mssql10')]
   public function testMssql10() {
     $this->common('mssql10', "SELECT setval(pg_get_serial_sequence('public.table', 'column'), 5, TRUE);");
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testMysql5() {
     $this->common('mysql5', "SELECT setval('__public_table_column_serial_seq', 5, TRUE);");
   }

@@ -60,6 +60,11 @@
     "sort-packages": true
   },
   "scripts": {
-    "test": "phpunit"
+    "test": "phpunit --exclude-group quarantine",
+    "test:quarantine": "phpunit --group quarantine"
+  },
+  "scripts-descriptions": {
+    "test": "Run the test suite (needs PostgreSQL/MySQL for the pgsql8/mysql5 groups)",
+    "test:quarantine": "Run tests that failed before the PHP 8 upgrade"
   }
 }

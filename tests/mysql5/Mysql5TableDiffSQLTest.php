@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5TableDiffSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5TableDiffSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -251,6 +249,7 @@ XML;
       "");
   }
 
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testEnums() {
     $old = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -474,7 +473,7 @@ XML;
       $this->common_diff($old, $new, 'NO EXPECTED OUTPUT', 'NO EXPECTED OUTPUT');
     }
     catch (Exception $e) {
-      $this->assertContains('ambiguous operation', strtolower($e->getMessage()));
+      $this->assertStringContainsString('ambiguous operation', strtolower($e->getMessage()));
       return;
     }
     $this->fail("Expected an 'ambiguous operation' exception due to column case change, got nothing.");
@@ -519,7 +518,7 @@ XML;
     $this->assertEquals($expected3, $actual3, "during stage 3: $message");
   }
 
-  private function common_drop($xml_a, $xml_b, $expected, $message=NULL) {
+  private function common_drop($xml_a, $xml_b, $expected, $message = '') {
     dbsteward::$old_database = new SimpleXMLElement($this->db_doc_xml . $xml_a . '</dbsteward>');
     dbsteward::$new_database = new SimpleXMLElement($this->db_doc_xml . $xml_b . '</dbsteward>');
 

@@ -9,12 +9,10 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class DomainsTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class DomainsTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_all_names = TRUE;
   }
@@ -34,7 +32,7 @@ XML;
       $sql = pgsql8_type::get_creation_sql($schema, $type);
     }
     catch (exception $e) {
-      $this->assertContains('no domainType element', $e->getMessage());
+      $this->assertStringContainsString('no domainType element', $e->getMessage());
       return;
     }
     $this->fail("Expected 'no domainType element' exception, got DDL: $sql");

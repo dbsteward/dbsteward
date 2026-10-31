@@ -9,19 +9,18 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- */
-class Mysql5ExtractionTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+abstract class Mysql5ExtractionTestCase extends PHPUnit\Framework\TestCase {
+  protected $conn;
 
   const DEBUG = false;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->conn = $GLOBALS['db_config']->mysql5_conn;
     $this->createSchema();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     $this->dropSchema();
   }
 

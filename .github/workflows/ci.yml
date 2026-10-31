@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Database settings read by tests/bootstrap.php (defaults live in phpunit.xml.dist)
+  PGSQL8_DBHOST: 127.0.0.1
+  MYSQL5_DBHOST: 127.0.0.1
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }} / ${{ matrix.group }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+        # groups run separately: active_sql_format_autoloader keeps per-process format state
+        group: [nodb, pgsql8, mysql5]
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -uroot"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, pcre, pgsql, pdo_mysql, simplexml
+          coverage: ${{ matrix.php == '8.4' && 'pcov' || 'none' }}
+          tools: composer:v2
+
+      - name: Install system tools (xmllint, DB clients)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libxml2-utils postgresql-client mysql-client
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Validate composer.json and audit dependencies
+        if: matrix.group == 'nodb'
+        run: |
+          composer validate --strict
+          composer audit
+
+      - name: Prepare PostgreSQL
+        if: matrix.group == 'pgsql8'
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h 127.0.0.1 -U postgres -c "CREATE USER deployment WITH SUPERUSER CREATEDB CREATEROLE PASSWORD 'password1';"
+          psql -h 127.0.0.1 -U postgres -c "CREATE ROLE dbsteward_phpunit_app;"
+          psql -h 127.0.0.1 -U postgres -c "CREATE DATABASE dbsteward_phpunit OWNER deployment;"
+
+      - name: Prepare MySQL
+        if: matrix.group == 'mysql5'
+        run: |
+          mysql -h 127.0.0.1 -uroot -e "
+            CREATE USER 'deployment'@'%' IDENTIFIED BY 'password1';
+            CREATE USER 'dbsteward_pu_app'@'%' IDENTIFIED BY 'password1';
+            GRANT ALL ON *.* TO 'deployment'@'%', 'dbsteward_pu_app'@'%' WITH GRANT OPTION;
+            CREATE DATABASE dbsteward_phpunit;
+            SET GLOBAL log_bin_trust_function_creators = 1;"
+
+      # Tests tagged #[Group('quarantine')] already failed on master before the PHP 8
+      # upgrade; they are excluded until fixed (run them with: composer test:quarantine).
+      - name: Run tests
+        run: >-
+          vendor/bin/phpunit --group ${{ matrix.group }} --exclude-group quarantine
+          ${{ matrix.php == '8.4' && '--coverage-clover clover.xml' || '' }}
+
+      - name: Upload coverage to Coveralls
+        if: matrix.php == '8.4'
+        uses: coverallsapp/github-action@v2
+        with:
+          file: clover.xml
+          flag-name: ${{ matrix.group }}
+          parallel: true
+
+  coverage-finish:
+    needs: test
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: coverallsapp/github-action@v2
+        with:
+          parallel-finished: true

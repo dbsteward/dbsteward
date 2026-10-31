@@ -9,12 +9,10 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class TableOptionsSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class TableOptionsSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;

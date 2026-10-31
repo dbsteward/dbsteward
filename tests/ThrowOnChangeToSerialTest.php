@@ -11,8 +11,8 @@ require_once __DIR__ . '/dbstewardUnitTestBase.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/pgsql8/pgsql8.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/pgsql8/pgsql8_diff.php';
 
-class ThrowOnChangeToSerial extends PHPUnit_Framework_TestCase {
-  public function setUp() {
+class ThrowOnChangeToSerialTest extends PHPUnit\Framework\TestCase {
+  public function setUp(): void {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -39,9 +39,7 @@ XML;
     dbsteward::$old_database = $db;
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testThrowWhenChangedToSerial() {
     $none = <<<XML
 <schema name="public" owner="ROLE_OWNER">

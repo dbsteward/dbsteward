@@ -11,11 +11,9 @@ require_once __DIR__ . '/dbstewardUnitTestBase.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/pgsql8/pgsql8.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/pgsql8/pgsql8_diff.php';
 
-/**
- * @group pgsql8
- * @group mysql5
- */
-class PhingConfigTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+class PhingConfigTest extends PHPUnit\Framework\TestCase {
 
   public function testSaneConfig() {
     // not exactly an ini file, oh well

@@ -9,7 +9,7 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-class TypeQuotingTest extends PHPUnit_Framework_TestCase {
+class TypeQuotingTest extends PHPUnit\Framework\TestCase {
 
   private $xml_empty = <<<XML_EMPTY
 <dbsteward>
@@ -63,12 +63,10 @@ XML_EMPTY;
 </dbsteward>
 XML_NEW;
 
-  public function setUp() {
+  public function setUp(): void {
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testTableColumnTypeQuotingPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_all_names = TRUE;
@@ -94,15 +92,15 @@ XML_NEW;
     $mofs = new mock_output_file_segmenter();
     pgsql8::build_schema($doc, $mofs, $table_dependency);
     $actual = trim($mofs->_get_output());
-    $this->assertContains($expected, $actual);
+    $this->assertStringContainsString($expected, $actual);
     // make sure the type is referred to with quoting in a table creation as part of a definition build
     $expected_column = '"table_shable_mode" "enumCamelCaseType"';
-    $this->assertContains($expected_column, $actual);
+    $this->assertStringContainsString($expected_column, $actual);
     
     // make sure the type is referred to with quoting when generating table create statements
     $expected = '"table_shable_mode" "enumCamelCaseType"';
     $sql = pgsql8_table::get_creation_sql($schema, $table);
-    $this->assertContains($expected, $sql);
+    $this->assertStringContainsString($expected, $sql);
     
     // make sure create table quotes the type name
     $expected = '"table_shable_mode" "enumCamelCaseType"';
@@ -110,11 +108,11 @@ XML_NEW;
     var_dump(dbx::get_tables($schema));
     pgsql8_diff_tables::diff_tables($mofs, $mofs, NULL, $schema);
     $actual = trim($mofs->_get_output());
-    $this->assertContains($expected, $actual);
+    $this->assertStringContainsString($expected, $actual);
     
     // make sure insert statements are made that match the XML definition
     $expected = "INSERT INTO \"schema1\".\"table_shable\" (\"table_shable_id\", \"table_shable_value\", \"table_shable_mode\") VALUES (1, E'shim sham', BETA);";
     $actual = trim(pgsql8_diff_tables::get_data_sql(NULL, NULL, $schema, $table, FALSE));
-    $this->assertContains($expected, $actual);
+    $this->assertStringContainsString($expected, $actual);
   }
 }

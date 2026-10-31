@@ -9,15 +9,13 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
 class Pgsql8XmlParserTest extends dbstewardUnitTestBase {
 
   /**
    * 
    */
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     static::$last_quote_all_names = dbsteward::$quote_all_names;
     dbsteward::$quote_all_names = TRUE;
@@ -26,14 +24,12 @@ class Pgsql8XmlParserTest extends dbstewardUnitTestBase {
   /**
    * 
    */
-  public function tearDown() {
+  public function tearDown(): void {
     dbsteward::$quote_all_names = static::$last_quote_all_names;
     parent::tearDown();
   }
 
-  /**
-   * @dataProvider processProvider()
-   */
+  #[\PHPUnit\Framework\Attributes\DataProvider('processProvider')]
   public function testProcess($in_xml, $out_xml) {
     $doc = new SimpleXMLElement(file_get_contents($in_xml));
     pgsql8_xml_parser::process($doc);

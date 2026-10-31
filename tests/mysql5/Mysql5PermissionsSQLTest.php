@@ -9,13 +9,12 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5PermissionsSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5PermissionsSQLTest extends PHPUnit\Framework\TestCase {
+  private $dbdoc;
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -119,7 +118,7 @@ XML;
     $this->common($xml, NULL, "GRANT SELECT ON * TO `dbsteward_phpunit_app`;");
   }
 
-  private function common($schema_xml, $obj=NULL, $expected) {
+  private function common($schema_xml, $obj, $expected) {
     $schema = new SimpleXMLElement($schema_xml);
     $node_obj = $obj? $schema->{$obj} : $schema;
     $actual = mysql5_permission::get_permission_sql($this->dbdoc, $schema, $node_obj, $node_obj->grant);

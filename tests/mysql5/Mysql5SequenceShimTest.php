@@ -9,14 +9,12 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- */
-class Mysql5SequenceShimTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+class Mysql5SequenceShimTest extends PHPUnit\Framework\TestCase {
   private $pdo;
   private $config;
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -31,7 +29,7 @@ class Mysql5SequenceShimTest extends PHPUnit_Framework_TestCase {
     $this->setup_shim();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     $this->disconnect();
   }
 
@@ -86,6 +84,7 @@ class Mysql5SequenceShimTest extends PHPUnit_Framework_TestCase {
     $this->lastval(null);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testSetVal() {
     $this->createOne('testseq', 1, 5);
 

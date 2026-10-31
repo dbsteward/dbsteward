@@ -12,8 +12,10 @@
 
 require_once __DIR__ . '/../lib/DBSteward/dbsteward.php';
 
-class WarnOnOverriddenRoleTest extends PHPUnit_Framework_TestCase {
-  public function setUp() {
+class WarnOnOverriddenRoleTest extends PHPUnit\Framework\TestCase {
+  protected $testHandler;
+  protected $dbdoc;
+  public function setUp(): void {
     $this->testHandler = new Monolog\Handler\TestHandler;
     dbsteward::get_logger()->pushHandler($this->testHandler);
 
@@ -42,24 +44,20 @@ class WarnOnOverriddenRoleTest extends PHPUnit_Framework_TestCase {
 XML;
     $this->dbdoc = new SimpleXMLElement($xml);
   }
-  public function tearDown() {
+  public function tearDown(): void {
     dbsteward::get_logger()->popHandler();
   }
 
-  /**
-   * @group pgsql8
-   * @group mysql5
-   * @group mssql10
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('mssql10')]
   public function testDefaultValue() {
     $this->assertFalse(dbsteward::$ignore_custom_roles);
   }
 
-  /**
-   * @group pgsql8
-   * @group mysql5
-   * @group mssql10
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('mssql10')]
   public function testWarningWhenTrue() {
     dbsteward::$ignore_custom_roles = TRUE;
 
@@ -69,14 +67,12 @@ XML;
     $role = xml_parser::role_enum($this->dbdoc, 'invalid');
     $this->assertEquals('deployment', $role);
 
-    $this->assertLogged(Monolog\Logger::WARNING, "Warning: Ignoring custom roles. Role 'invalid' is being overridden by ROLE_OWNER ('deployment').");
+    $this->assertLogged(Monolog\Level::Warning, "Warning: Ignoring custom roles. Role 'invalid' is being overridden by ROLE_OWNER ('deployment').");
   }
 
-  /**
-   * @group pgsql8
-   * @group mysql5
-   * @group mssql10
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('mssql10')]
   public function testThrowWhenFalse() {
     dbsteward::$ignore_custom_roles = FALSE;
 

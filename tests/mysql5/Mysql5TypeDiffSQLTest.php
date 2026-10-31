@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5TypeDiffSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5TypeDiffSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -132,7 +130,7 @@ XML;
   MODIFY COLUMN `enum_col` ENUM('x','y','z');");
   }
 
-  private function common($xml_a, $xml_b, $expected, $message = NULL) {
+  private function common($xml_a, $xml_b, $expected, $message = '') {
     $schema_a = new SimpleXMLElement($xml_a);
     $schema_b = new SimpleXMLElement($xml_b);
 

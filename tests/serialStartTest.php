@@ -13,7 +13,7 @@
 
 require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
-class serialStartTest extends PHPUnit_Framework_TestCase {
+class serialStartTest extends PHPUnit\Framework\TestCase {
 
   private $pgsql8_xml_a = <<<XML
 <dbsteward>
@@ -158,9 +158,7 @@ XML;
     $diff_class::diff_doc_work($ofs1, $ofs2, $ofs3, $ofs4);
   }
   
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testSerialStartPGSQL8() {
     dbsteward::$generate_slonik = FALSE;
     // build version a
@@ -169,12 +167,12 @@ XML;
     $xml_a_sql = $ofs->_get_output();
 
     // 1) Confirm serial starts are applied when creating new tables
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       '/-- serialStart 1234 specified for user_info\.user.user_id/i',
       $xml_a_sql,
       "serialStart specification not announced in a comment"
     );
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       "/SELECT setval\(pg_get_serial_sequence\('user_info.user', 'user_id'\), 1234, TRUE\);/i",
       $xml_a_sql,
       "sequence start not being set via setval"
@@ -186,21 +184,19 @@ XML;
     $xml_b_upgrade_stage4_data1_sql = $ofs4->_get_output();
 
     // 2) Confirm when adding new tables with serial columns that serial starts are applied in stage 4
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       '/-- serialStart 5678 specified for user_info.user_attribute.user_attribute_id/i',
       $xml_b_upgrade_stage4_data1_sql,
       "serialStart specification not announced in a comment in stage 4"
     );
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       "/SELECT setval\(pg_get_serial_sequence\('user_info.user_attribute', 'user_attribute_id'\), 5678, TRUE\);/i",
       $xml_b_upgrade_stage4_data1_sql,
       "sequence start not being set via setval in stage 4"
     );
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testSerialStartMySQL5() {
     // build version a
     $ofs = new mock_output_file_segmenter();
@@ -208,12 +204,12 @@ XML;
     $xml_a_sql = $ofs->_get_output();
 
     // 1) Confirm serial starts are applied when creating new tables
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       '/-- serialStart 1234 specified for user_info.user.user_id/i',
       $xml_a_sql,
       "serialStart specification not announced in a comment in build"
     );
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       "/SELECT setval\('__user_info_user_user_id_serial_seq', 1234, TRUE\);/i",
       $xml_a_sql,
       "sequence start not being set via setval in build"
@@ -225,12 +221,12 @@ XML;
     $xml_b_upgrade_stage4_data1_sql = $ofs4->_get_output();
 
     // 2) Confirm when adding new tables with serial columns that serial starts are applied in stage 4
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       '/-- serialStart 5678 specified for user_info.user_attribute.user_attribute_id/i',
       $xml_b_upgrade_stage4_data1_sql,
       "serialStart specification not announced in a comment in stage 4"
     );
-    $this->assertRegExp(
+    $this->assertMatchesRegularExpression(
       "/SELECT setval\('__user_info_user_attribute_user_attribute_id_serial_seq', 5678, TRUE\);/i",
       $xml_b_upgrade_stage4_data1_sql,
       "sequence start not being set via setval in stage 4"

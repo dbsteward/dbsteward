@@ -9,10 +9,8 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class InheritedRowTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class InheritedRowTest extends PHPUnit\Framework\TestCase {
 
   private $xml_parent = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -72,11 +70,12 @@ XML;
 </schema>
 XML;
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_all_names = TRUE;
   }
   
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testDefineRows() {
     $schema_parent = simplexml_load_string($this->xml_parent);
     $schema_child = simplexml_load_string($this->xml_child);

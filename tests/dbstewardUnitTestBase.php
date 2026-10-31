@@ -20,8 +20,10 @@ require_once __DIR__ . '/dbsteward_pgsql8_connection.php';
 require_once __DIR__ . '/dbsteward_mssql10_connection.php';
 require_once __DIR__ . '/dbsteward_mysql5_connection.php';
 require_once __DIR__ . '/mock_output_file_segmenter.php';
+require_once __DIR__ . '/TestWorkspace.php';
 
-class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
+class dbstewardUnitTestBase extends PHPUnit\Framework\TestCase {
+  use TestWorkspace;
 
   // Directory containing data files used for testing
   protected static $test_data_dir = NULL;
@@ -33,6 +35,8 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected $xml_content_b = "XML_CONTENT_B_UNDEFINED";
   protected $xml_content_c = "XML_CONTENT_C_UNDEFINED";
 
+  protected $output_prefix;
+
   protected $xml_file_a;
   protected $xml_file_b;
   protected $xml_file_c;
@@ -41,15 +45,12 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
   protected $mssql10;
   protected $mysql5;
 
-  protected function setUp() {
-    if ( !is_dir(__DIR__ . '/testdata') ) {
-      mkdir(__DIR__ . '/testdata');
-    }
-    $this->output_prefix = dirname(__FILE__) . '/testdata/unit_test_xml_a';
-    $this->xml_file_a = __DIR__ . '/testdata/unit_test_xml_a.xml';
+  protected function setUp(): void {
+    $this->output_prefix = $this->workspacePath('unit_test_xml_a');
+    $this->xml_file_a = $this->workspacePath('unit_test_xml_a.xml');
     file_put_contents($this->xml_file_a, $this->xml_content_a);
 
-    $this->xml_file_b = __DIR__ . '/testdata/unit_test_xml_b.xml';
+    $this->xml_file_b = $this->workspacePath('unit_test_xml_b.xml');
     file_put_contents($this->xml_file_b, $this->xml_content_b);
     
     $this->pgsql8 = $GLOBALS['db_config']->pgsql8_conn;
@@ -67,7 +68,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     pgsql8::$known_pg_identifiers = array();
   }
   
-  protected function tearDown() {
+  protected function tearDown(): void {
     // make sure connection is closed to DB can be dropped
     // when running multiple tests
     if ($this->mssql10) {
@@ -140,7 +141,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     pgsql8::$table_slony_ids = array();
     pgsql8::$sequence_slony_ids = array();
     pgsql8::$known_pg_identifiers = array();
-    
+
     // build the upgrade DDL first, incase dbsteward code wants to throw about something
     $old_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
     $new_db_doc = xml_parser::xml_composite(array($this->xml_file_b));
@@ -152,7 +153,7 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->pgsql8->run_file($this->output_prefix . '_upgrade_stage2_data1.sql');
     $this->pgsql8->run_file($this->output_prefix . '_upgrade_stage3_schema1.sql');
     $this->pgsql8->run_file($this->output_prefix . '_upgrade_stage4_data1.sql');
-    
+
     //@TODO: confirm tables defined in B are present
   }
   
@@ -185,10 +186,10 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     mssql10::build_upgrade($this->xml_file_a, $this->xml_file_b);
     
     // upgrade database to "B" with each stage file
-    $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
-    $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
-    $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
-    $this->mssql10->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
+    $this->mssql10->run_file($this->workspacePath('upgrade_stage1_schema1.sql'));
+    $this->mssql10->run_file($this->workspacePath('upgrade_stage2_data1.sql'));
+    $this->mssql10->run_file($this->workspacePath('upgrade_stage3_schema1.sql'));
+    $this->mssql10->run_file($this->workspacePath('upgrade_stage4_data1.sql'));
     $old_db_doc = xml_parser::xml_composite(array($this->xml_file_a));
     $new_db_doc = xml_parser::xml_composite(array($this->xml_file_b));
     mssql10::build_upgrade('', $old_db_doc, $old_db_doc, array(), $this->output_prefix, $new_db_doc, $new_db_doc, array()); 
@@ -235,17 +236,17 @@ class dbstewardUnitTestBase extends PHPUnit_Framework_TestCase {
     $this->mysql5->run_file($this->output_prefix . '_upgrade_stage2_data1.sql');
     $this->mysql5->run_file($this->output_prefix . '_upgrade_stage3_schema1.sql');
     $this->mysql5->run_file($this->output_prefix . '_upgrade_stage4_data1.sql');
-    
-    
+
+
     // build the upgrade DDL first, incase dbsteward code wants to throw about something
     mysql5::build_upgrade($this->xml_file_a, $this->xml_file_b);
-    
+
     // upgrade database to "B" with each stage file
-    $this->mysql5->run_file(__DIR__ . '/testdata/upgrade_stage1_schema1.sql');
-    $this->mysql5->run_file(__DIR__ . '/testdata/upgrade_stage2_data1.sql');
-    $this->mysql5->run_file(__DIR__ . '/testdata/upgrade_stage3_schema1.sql');
-    $this->mysql5->run_file(__DIR__ . '/testdata/upgrade_stage4_data1.sql');
-    
+    $this->mysql5->run_file($this->workspacePath('upgrade_stage1_schema1.sql'));
+    $this->mysql5->run_file($this->workspacePath('upgrade_stage2_data1.sql'));
+    $this->mysql5->run_file($this->workspacePath('upgrade_stage3_schema1.sql'));
+    $this->mysql5->run_file($this->workspacePath('upgrade_stage4_data1.sql'));
+
     //@TODO: confirm tables defined in B are present
   }
 

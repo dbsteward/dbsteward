@@ -10,8 +10,8 @@
 require_once __DIR__ . '/dbstewardUnitTestBase.php';
 require_once __DIR__ . '/../lib/DBSteward/sql_format/sql99/sql99.php';
 
-class IdentifiersTest extends PHPUnit_Framework_TestCase {
-  public function setUp() {
+class IdentifiersTest extends PHPUnit\Framework\TestCase {
+  public function setUp(): void {
     dbsteward::$quote_all_names = FALSE;
     dbsteward::$quote_schema_names = FALSE;
     dbsteward::$quote_table_names = FALSE;
@@ -23,75 +23,59 @@ class IdentifiersTest extends PHPUnit_Framework_TestCase {
   }
 
 
-  /**
-   * @group pgsql8
-   * @group nodb
-   * @dataProvider illegalUnquotedPgsql8Identifiers
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('illegalUnquotedPgsql8Identifiers')]
   public function testPgsql8UnquotedIllegalThrowsIfNotQuotingIllegals($ident) {
     $this->doUnquotedIllegalThrows('pgsql8', $ident);
   }
 
-  /**
-   * @group pgsql8
-   * @group nodb
-   * @dataProvider illegalUnquotedPgsql8Identifiers
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('illegalUnquotedPgsql8Identifiers')]
   public function testPgsql8UnquotedIllegalDoesNotThrowIfQuotingIllegals($ident) {
     $this->doUnquotedIllegalDoesNotThrow('pgsql8', $ident);
   }
 
-  /**
-   * @group pgsql8
-   * @group nodb
-   * @dataProvider reservedPgsql8Identifiers
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('reservedPgsql8Identifiers')]
   public function testPgsql8UnquotedReservedThrowsIfNotQuotingReserveds($ident) {
     $this->doUnquotedReservedThrows('pgsql8', $ident);
   }
 
-  /**
-   * @group pgsql8
-   * @group nodb
-   * @dataProvider reservedPgsql8Identifiers
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('reservedPgsql8Identifiers')]
   public function testPgsql8UnquotedReservedDoesNotThrowIfQuotingReserveds($ident) {
     $this->doUnquotedReservedDoesNotThrow('pgsql8', $ident);
   }
 
 
-  /**
-   * @group mysql5
-   * @group nodb
-   * @dataProvider illegalUnquotedMysql5Identifiers
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('illegalUnquotedMysql5Identifiers')]
   public function testMysql5UnquotedIllegalThrowsIfNotQuotingIllegals($ident) {
     $this->doUnquotedIllegalThrows('mysql5', $ident);
   }
 
-  /**
-   * @group mysql5
-   * @group nodb
-   * @dataProvider illegalUnquotedMysql5Identifiers
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('illegalUnquotedMysql5Identifiers')]
   public function testMysql5UnquotedIllegalDoesNotThrowIfQuotingIllegals($ident) {
     $this->doUnquotedIllegalDoesNotThrow('mysql5', $ident);
   }
 
-  /**
-   * @group mysql5
-   * @group nodb
-   * @dataProvider reservedMysql5Identifiers
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('reservedMysql5Identifiers')]
   public function testMysql5UnquotedReservedThrowsIfNotQuotingReserveds($ident) {
     $this->doUnquotedReservedThrows('mysql5', $ident);
   }
 
-  /**
-   * @group mysql5
-   * @group nodb
-   * @dataProvider reservedMysql5Identifiers
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('reservedMysql5Identifiers')]
   public function testMysql5UnquotedReservedDoesNotThrowIfQuotingReserveds($ident) {
     $this->doUnquotedReservedDoesNotThrow('mysql5', $ident);
   }
@@ -105,7 +89,7 @@ class IdentifiersTest extends PHPUnit_Framework_TestCase {
       $quoted = $format::get_quoted_name($ident, FALSE, $format::QUOTE_CHAR);
     }
     catch (Exception $ex) {
-      $this->assertContains('illegal identifier', strtolower($ex->getMessage()));
+      $this->assertStringContainsString('illegal identifier', strtolower($ex->getMessage()));
       return;
     }
     $this->fail("Expected an exception when quoting illegal $format identifier '$ident', got no exception, returned $quoted");
@@ -133,7 +117,7 @@ class IdentifiersTest extends PHPUnit_Framework_TestCase {
       $quoted = $format::get_quoted_name($ident, FALSE, $format::QUOTE_CHAR);
     }
     catch (Exception $ex) {
-      $this->assertContains('reserved identifier', strtolower($ex->getMessage()));
+      $this->assertStringContainsString('reserved identifier', strtolower($ex->getMessage()));
       return;
     }
     $this->fail("Expected an exception when quoting reserved $format identifier '$ident', got no exception, returned $quoted");
@@ -155,9 +139,23 @@ class IdentifiersTest extends PHPUnit_Framework_TestCase {
 
 
   /**
+   * Each format must use its own reserved word list, regardless of which format
+   * looked one up first (PHP 8.1 shares inherited method static variables).
+   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  public function testReservedWordListIsPerFormat() {
+    $this->assertTrue(pgsql8::is_identifier_blacklisted('select'));
+    $this->assertFalse(pgsql8::is_identifier_blacklisted('declare'));
+    $this->assertTrue(mysql5::is_identifier_blacklisted('declare'));
+    $this->assertTrue(mysql5::is_identifier_blacklisted('iterate'));
+  }
+
+  /**
    * These should be illegal in any rdbms
    */
-  public function illegalUnquotedIdentifiers() {
+  public static function illegalUnquotedIdentifiers() {
     return array(
       array('with-dash'),
       array('with space'),
@@ -170,9 +168,9 @@ class IdentifiersTest extends PHPUnit_Framework_TestCase {
   /**
    * Illegal in pgsql8
    */
-  public function illegalUnquotedPgsql8Identifiers() {
+  public static function illegalUnquotedPgsql8Identifiers() {
     return array_merge(
-      $this->illegalUnquotedIdentifiers(),
+      self::illegalUnquotedIdentifiers(),
       array(
         array('with$dolla'),
         array('reallyreallyreallyreallyreallyreallyreallyreallyreallyreallylongstringwhywouldsomeonedothis'),
@@ -181,27 +179,27 @@ class IdentifiersTest extends PHPUnit_Framework_TestCase {
       ));
   }
 
-  public function reservedPgsql8Identifiers() {
-    return $this->loadBlacklistWords('pgsql8');
+  public static function reservedPgsql8Identifiers() {
+    return self::loadBlacklistWords('pgsql8');
   }
 
-  public function reservedMysql5Identifiers() {
-    return $this->loadBlacklistWords('mysql5');
+  public static function reservedMysql5Identifiers() {
+    return self::loadBlacklistWords('mysql5');
   }
 
 
   /**
    * Illegal in mysql5
    */
-  public function illegalUnquotedMysql5Identifiers() {
+  public static function illegalUnquotedMysql5Identifiers() {
     return array_merge(
-      $this->illegalUnquotedIdentifiers(),
+      self::illegalUnquotedIdentifiers(),
       array(
         array('with`quotechar')
       ));
   }
 
-  private function loadBlacklistWords($format) {
+  private static function loadBlacklistWords($format) {
     $blacklist = file($format::get_identifier_blacklist_file());
     $keys = array_rand($blacklist, 5);
     return array_map(function($word) {

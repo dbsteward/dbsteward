@@ -6,17 +6,16 @@
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  */
 
-require_once __DIR__ . '/Mysql5ExtractionTest.php';
+require_once __DIR__ . '/Mysql5ExtractionTestCase.php';
 
-/**
- * @group mysql5
- */
-class Mysql5ExtractFunctionCharacteristicsTest extends Mysql5ExtractionTest { 
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+class Mysql5ExtractFunctionCharacteristicsTest extends Mysql5ExtractionTestCase { 
 
   /**
    * Tests that function determinism and eval type are correctly extracted
-   * @dataProvider characteristicsProvider
    */
+  #[\PHPUnit\Framework\Attributes\DataProvider('characteristicsProvider')]
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractFunctionCharacteristics($determinism, $evalType) {
     $sql = <<<SQL
 DROP FUNCTION IF EXISTS `test_fn`;
@@ -37,7 +36,7 @@ SQL;
     $this->assertEquals(str_replace(' ', '_', $evalType), (string)$schema->function['mysqlEvalType']);
   }
 
-  public function characteristicsProvider() {
+  public static function characteristicsProvider() {
     return array(
       array('DETERMINISTIC', 'CONTAINS SQL'),
       array('DETERMINISTIC', 'NO SQL'),

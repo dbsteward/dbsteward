@@ -9,9 +9,7 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
 class RequireSlonyIdTest extends dbstewardUnitTestBase {
   private $table_with = <<<XML
 <table name="foo" owner="ROLE_OWNER" primaryKey="id" slonyId="1">
@@ -63,17 +61,18 @@ XML;
 
 XML;
 
-  public function setUp() {
-    $this->xml_file_a = __DIR__ . '/../testdata/unit_test_xml_a.xml';
-    $this->xml_file_b = __DIR__ . '/../testdata/unit_test_xml_b.xml';
-    $this->output_prefix = dirname(__FILE__) . '/../testdata/unit_test_xml_a';
+  public function setUp(): void {
+    $this->xml_file_a = $this->workspacePath('unit_test_xml_a.xml');
+    $this->xml_file_b = $this->workspacePath('unit_test_xml_b.xml');
+    $this->output_prefix = $this->workspacePath('unit_test_xml_a');
     dbsteward::set_sql_format('pgsql8');
   }
   
-  public function tearDown() {
+  public function tearDown(): void {
     // doesn't do anything
   }
   
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testSlonyIdCheck() {
     dbsteward::$generate_slonik = FALSE;
     dbsteward::$require_slony_id = FALSE;

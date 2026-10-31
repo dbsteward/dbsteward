@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- * @group nodb
- */
-class Pgsql8TypeDiffSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Pgsql8TypeDiffSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -113,7 +111,7 @@ LANGUAGE plpgsql; -- DBSTEWARD_FUNCTION_DEFINITION_END
 -- type arch_type definition migration (6/6): dependent tables type restoration');
   }
 
-  private function common($xml_a, $xml_b, $expected, $message = NULL) {
+  private function common($xml_a, $xml_b, $expected, $message = '') {
     $schema_a = new SimpleXMLElement($xml_a);
     $schema_b = new SimpleXMLElement($xml_b);
 

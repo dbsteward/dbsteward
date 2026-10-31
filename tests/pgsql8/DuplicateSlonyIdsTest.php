@@ -9,9 +9,7 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
 class DuplicateSlonyIdsTest extends dbstewardUnitTestBase {
 
   public function testDuplicateTableIds() {
@@ -218,14 +216,14 @@ XML;
     if ($expected !== false) {
       $this->expect_exception($expected, function() use($doc, $replica_sets) {
         foreach ($replica_sets as $replica_set) {
-          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, __DIR__.'/../testdata/DuplicateSlonyIdsTest');
+          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, $this->workspacePath('DuplicateSlonyIdsTest'));
         }
       });
     }
     else {
       $this->expect_no_exception(function() use($doc, $replica_sets) {
         foreach ($replica_sets as $replica_set) {
-          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, __DIR__.'/../testdata/DuplicateSlonyIdsTest');
+          pgsql8::build_upgrade_slonik_replica_set($doc, $doc, $replica_set, $replica_set, $this->workspacePath('DuplicateSlonyIdsTest'));
         }
       });
     }
@@ -271,14 +269,14 @@ XML;
     if ($expected !== false) {
       $this->expect_exception($expected, function() use($adoc, $bdoc, $replica_sets) {
         foreach ($replica_sets as $replica_set) {
-          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, __DIR__.'/../testdata/DuplicateSlonyIdsTest');
+          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, $this->workspacePath('DuplicateSlonyIdsTest'));
         }
       });
     }
     else {
       $this->expect_no_exception(function() use($adoc, $bdoc, $replica_sets) {
         foreach ($replica_sets as $replica_set) {
-          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, __DIR__.'/../testdata/DuplicateSlonyIdsTest');
+          pgsql8::build_upgrade_slonik_replica_set($adoc, $bdoc, $replica_set, $replica_set, $this->workspacePath('DuplicateSlonyIdsTest'));
         }
       });
     }

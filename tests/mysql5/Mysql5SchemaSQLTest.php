@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5SchemaSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5SchemaSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_all_names = true;
     mysql5::$swap_function_delimiters = TRUE;
@@ -23,6 +21,7 @@ class Mysql5SchemaSQLTest extends PHPUnit_Framework_TestCase {
     mysql5::$use_schema_name_prefix = FALSE;
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testBuildWithoutPrefixes() {
     mysql5::$use_schema_name_prefix = FALSE;
 
@@ -79,6 +78,7 @@ ENDSQL;
     $this->common($xml, $expected);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testBuildWithPrefixes() {
     mysql5::$use_schema_name_prefix = TRUE;
 

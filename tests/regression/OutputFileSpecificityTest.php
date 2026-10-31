@@ -12,7 +12,7 @@ require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
 class OutputFileSpecificityTest extends dbstewardUnitTestBase {
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
   }
 
@@ -124,9 +124,9 @@ XML;
     $new_table_xml = '';
     $this->setup_definition_xml($base_xml, $strict_overlay_xml, $new_table_xml);
 
-    $this->xml_file_a = dirname(__FILE__) . '/../testdata/pgsql8_unit_test_xml_a.xml';
-    $this->xml_file_b = dirname(__FILE__) . '/../testdata/pgsql8_unit_test_xml_b.xml';
-    $this->xml_file_c = dirname(__FILE__) . '/../testdata/pgsql8_unit_test_xml_c.xml';
+    $this->xml_file_a = $this->workspacePath('pgsql8_unit_test_xml_a.xml');
+    $this->xml_file_b = $this->workspacePath('pgsql8_unit_test_xml_b.xml');
+    $this->xml_file_c = $this->workspacePath('pgsql8_unit_test_xml_c.xml');
 
     $this->set_xml_content_a($base_xml);
     $this->set_xml_content_b($strict_overlay_xml);
@@ -145,9 +145,9 @@ XML;
     $new_table_xml = '';
     $this->setup_definition_xml($base_xml, $strict_overlay_xml, $new_table_xml);
 
-    $this->xml_file_a = dirname(__FILE__) . '/../testdata/mysql5_unit_test_xml_a.xml';
-    $this->xml_file_b = dirname(__FILE__) . '/../testdata/mysql5_unit_test_xml_b.xml';
-    $this->xml_file_c = dirname(__FILE__) . '/../testdata/mysql5_unit_test_xml_c.xml';
+    $this->xml_file_a = $this->workspacePath('mysql5_unit_test_xml_a.xml');
+    $this->xml_file_b = $this->workspacePath('mysql5_unit_test_xml_b.xml');
+    $this->xml_file_c = $this->workspacePath('mysql5_unit_test_xml_c.xml');
 
     $this->set_xml_content_a($base_xml);
     $this->set_xml_content_b($strict_overlay_xml);
@@ -159,20 +159,14 @@ XML;
     $this->setup_output_options('mysql5', $output_file_dir, $output_file_prefix);
   }
 
-  public function output_variance_provider() {
-    $output_dir1 = dirname(__FILE__) . '/../testdata_outputdir_dir_' . date("His");
-    if (!is_dir($output_dir1)) {
-      mkdir($output_dir1);
-    }
-    $output_dir2 = dirname(__FILE__) . '/../testdata_outputdir_fileprefix_' . date("His");
-    if (!is_dir($output_dir2)) {
-      mkdir($output_dir2);
-    }
-
+  /**
+   * [output directory name inside the test workspace or FALSE, output file prefix or FALSE]
+   */
+  public static function output_variance_provider() {
     return array(
       array(FALSE, FALSE),
-      array($output_dir1, FALSE),
-      array($output_dir2, 'gloopy_glop'),
+      array('outputdir_dir', FALSE),
+      array('outputdir_fileprefix', 'gloopy_glop'),
       array(FALSE, 'solo_nobo'),
     );
   }
@@ -182,8 +176,9 @@ XML;
     dbsteward::$file_output_prefix = FALSE;
 
     if ($output_file_dir === FALSE) {
-      $this->output_prefix = dirname(__FILE__) . '/../testdata';
+      $this->output_prefix = $this->workspacePath();
     } else {
+      $output_file_dir = $this->workspaceSubdir($output_file_dir);
       $this->output_prefix = $output_file_dir;
       // match dbsteward specification
       dbsteward::$file_output_directory = $output_file_dir;
@@ -198,10 +193,8 @@ XML;
     }
   }
 
-  /**
-   * @group pgsql8
-   * @dataProvider output_variance_provider
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('output_variance_provider')]
   public function testUpgradeIdenticalDDLPgsql8($output_file_dir, $output_file_prefix) {
     $this->apply_options_pgsql8();
     $this->setup_pgsql8($output_file_dir, $output_file_prefix);
@@ -211,10 +204,10 @@ XML;
     pgsql8::build_upgrade('', 'column_nulls_identical_test_pgsql8_old', $base_db_doc, array(), $this->output_prefix, 'column_nulls_identical_test_pgsql8_new', $upgrade_db_doc, array());
 
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
-    $this->assertNotRegExp('/ALTER\s+/', $text, 'Diff SQL output contains ALTER statements');
-    $this->assertNotRegExp('/UPDATE\s+/', $text, 'Diff SQL output contains UPDATE statements');
-    $this->assertNotRegExp('/INSERT\s+/', $text, 'Diff SQL output contains INSERT statements');
-    $this->assertNotRegExp('/DELETE\s+/', $text, 'Diff SQL output contains DELETE statements');
+    $this->assertDoesNotMatchRegularExpression('/ALTER\s+/', $text, 'Diff SQL output contains ALTER statements');
+    $this->assertDoesNotMatchRegularExpression('/UPDATE\s+/', $text, 'Diff SQL output contains UPDATE statements');
+    $this->assertDoesNotMatchRegularExpression('/INSERT\s+/', $text, 'Diff SQL output contains INSERT statements');
+    $this->assertDoesNotMatchRegularExpression('/DELETE\s+/', $text, 'Diff SQL output contains DELETE statements');
 
 
     // and do identical comparison with strict definitions on top
@@ -223,16 +216,14 @@ XML;
     pgsql8::build_upgrade('', 'column_nulls_identical_strict_pgsql8_old', $base_db_doc, array(), $this->output_prefix, 'column_nulls_identical_strict_pgsql8_new', $upgrade_db_doc, array());
 
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
-    $this->assertNotRegExp('/ALTER\s+/', $text, 'Diff SQL output contains ALTER statements');
-    $this->assertNotRegExp('/UPDATE\s+/', $text, 'Diff SQL output contains UPDATE statements');
-    $this->assertNotRegExp('/INSERT\s+/', $text, 'Diff SQL output contains INSERT statements');
-    $this->assertNotRegExp('/DELETE\s+/', $text, 'Diff SQL output contains DELETE statements');
+    $this->assertDoesNotMatchRegularExpression('/ALTER\s+/', $text, 'Diff SQL output contains ALTER statements');
+    $this->assertDoesNotMatchRegularExpression('/UPDATE\s+/', $text, 'Diff SQL output contains UPDATE statements');
+    $this->assertDoesNotMatchRegularExpression('/INSERT\s+/', $text, 'Diff SQL output contains INSERT statements');
+    $this->assertDoesNotMatchRegularExpression('/DELETE\s+/', $text, 'Diff SQL output contains DELETE statements');
   }
 
-  /**
-   * @group mysql5
-   * @dataProvider output_variance_provider
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('output_variance_provider')]
   public function testUpgradeIdenticalDDLMysql5($output_file_dir, $output_file_prefix) {
     $this->apply_options_mysql5();
     $this->setup_mysql5($output_file_dir, $output_file_prefix);
@@ -243,10 +234,10 @@ XML;
 
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
 
-    $this->assertNotRegExp('/ALTER\s+/', $text, 'Diff SQL output contains ALTER statements');
-    $this->assertNotRegExp('/UPDATE\s+/', $text, 'Diff SQL output contains UPDATE statements');
-    $this->assertNotRegExp('/INSERT\s+/', $text, 'Diff SQL output contains INSERT statements');
-    $this->assertNotRegExp('/DELETE\s+/', $text, 'Diff SQL output contains DELETE statements');
+    $this->assertDoesNotMatchRegularExpression('/ALTER\s+/', $text, 'Diff SQL output contains ALTER statements');
+    $this->assertDoesNotMatchRegularExpression('/UPDATE\s+/', $text, 'Diff SQL output contains UPDATE statements');
+    $this->assertDoesNotMatchRegularExpression('/INSERT\s+/', $text, 'Diff SQL output contains INSERT statements');
+    $this->assertDoesNotMatchRegularExpression('/DELETE\s+/', $text, 'Diff SQL output contains DELETE statements');
 
 
     // and do identical comparison with strict definitions on top
@@ -256,16 +247,14 @@ XML;
 
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
 
-    $this->assertNotRegExp('/ALTER\s+/', $text, 'Diff SQL output contains ALTER statements');
-    $this->assertNotRegExp('/UPDATE\s+/', $text, 'Diff SQL output contains UPDATE statements');
-    $this->assertNotRegExp('/INSERT\s+/', $text, 'Diff SQL output contains INSERT statements');
-    $this->assertNotRegExp('/DELETE\s+/', $text, 'Diff SQL output contains DELETE statements');
+    $this->assertDoesNotMatchRegularExpression('/ALTER\s+/', $text, 'Diff SQL output contains ALTER statements');
+    $this->assertDoesNotMatchRegularExpression('/UPDATE\s+/', $text, 'Diff SQL output contains UPDATE statements');
+    $this->assertDoesNotMatchRegularExpression('/INSERT\s+/', $text, 'Diff SQL output contains INSERT statements');
+    $this->assertDoesNotMatchRegularExpression('/DELETE\s+/', $text, 'Diff SQL output contains DELETE statements');
   }
 
-  /**
-   * @group pgsql8
-   * @dataProvider output_variance_provider
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('output_variance_provider')]
   public function testFullBuildPgsql8($output_file_dir, $output_file_prefix) {
     $this->apply_options_pgsql8();
     $this->setup_pgsql8($output_file_dir, $output_file_prefix);
@@ -275,33 +264,31 @@ XML;
     pgsql8::build($this->output_prefix, $base_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure SET NOT NULL is specified for action column
-    $this->assertContains('ALTER COLUMN "action" SET NOT NULL', $text);
+    $this->assertStringContainsString('ALTER COLUMN "action" SET NOT NULL', $text);
     // make sure SET NOT NULL is NOT specified for description column
-    $this->assertNotContains('ALTER COLUMN "description" SET NOT NULL', $text);
+    $this->assertStringNotContainsString('ALTER COLUMN "description" SET NOT NULL', $text);
 
     // build base + strict, check contents
     $strict_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b));
     pgsql8::build($this->output_prefix, $strict_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure SET NOT NULL is specified for action column
-    $this->assertContains('ALTER COLUMN "action" SET NOT NULL', $text);
+    $this->assertStringContainsString('ALTER COLUMN "action" SET NOT NULL', $text);
     // make sure SET NOT NULL is specified for description column
-    $this->assertContains('ALTER COLUMN "description" SET NOT NULL', $text);
+    $this->assertStringContainsString('ALTER COLUMN "description" SET NOT NULL', $text);
 
     // build base + strict + new table, check contents
     $addtable_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b, $this->xml_file_c));
     pgsql8::build($this->output_prefix, $addtable_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure NOT NULL is specified for resolution column
-    $this->assertContains('ALTER COLUMN "resolution" SET NOT NULL', $text);
+    $this->assertStringContainsString('ALTER COLUMN "resolution" SET NOT NULL', $text);
     // make sure NOT NULL is NOT specified for points column
-    $this->assertNotContains('ALTER COLUMN "points" SET NOT NULL', $text);
+    $this->assertStringNotContainsString('ALTER COLUMN "points" SET NOT NULL', $text);
   }
 
-  /**
-   * @group mysql5
-   * @dataProvider output_variance_provider
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('output_variance_provider')]
   public function testFullBuildMysql5($output_file_dir, $output_file_prefix) {
     $this->apply_options_mysql5();
     $this->setup_mysql5($output_file_dir, $output_file_prefix);
@@ -311,33 +298,31 @@ XML;
     mysql5::build($this->output_prefix, $base_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure NOT NULL is specified for action column
-    $this->assertContains('`action` character varying(16) NOT NULL', $text);
+    $this->assertStringContainsString('`action` character varying(16) NOT NULL', $text);
     // make sure NOT NULL is NOT specified for description column
-    $this->assertNotContains('`description` character varying(200) NOT NULL', $text);
+    $this->assertStringNotContainsString('`description` character varying(200) NOT NULL', $text);
 
     // build base + strict, check contents
     $strict_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b));
     mysql5::build($this->output_prefix, $strict_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure NOT NULL is specified for action column
-    $this->assertContains('`action` character varying(16) NOT NULL', $text);
+    $this->assertStringContainsString('`action` character varying(16) NOT NULL', $text);
     // make sure NOT NULL is specified for description column
-    $this->assertContains('`description` character varying(200) NOT NULL', $text);
+    $this->assertStringContainsString('`description` character varying(200) NOT NULL', $text);
 
     // build base + strict + new table, check contents
     $addtable_db_doc = xml_parser::xml_composite(array($this->xml_file_a, $this->xml_file_b, $this->xml_file_c));
     mysql5::build($this->output_prefix, $addtable_db_doc);
     $text = file_get_contents($this->output_prefix . '_build.sql');
     // make sure NOT NULL is specified for resolution column
-    $this->assertContains('`resolution` character varying(16) NOT NULL', $text);
+    $this->assertStringContainsString('`resolution` character varying(16) NOT NULL', $text);
     // make sure NOT NULL is NOT specified for points column
-    $this->assertNotContains('`points` int NOT NULL', $text);
+    $this->assertStringNotContainsString('`points` int NOT NULL', $text);
   }
 
-  /**
-   * @group pgsql8
-   * @dataProvider output_variance_provider
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('output_variance_provider')]
   public function testUpgradeNewTablePgsql8($output_file_dir, $output_file_prefix) {
     $this->apply_options_pgsql8();
     $this->setup_pgsql8($output_file_dir, $output_file_prefix);
@@ -350,17 +335,15 @@ XML;
     pgsql8::build_upgrade('', 'newtable_upgrade_test_pgsql8_base', $base_db_doc, array(), $this->output_prefix, 'newtable_upgrade_test_pgsql8_newtable', $newtable_db_doc, array());
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
     // make sure NOT NULL is specified for description column
-    $this->assertContains('ALTER COLUMN "description" SET NOT NULL', $text);
+    $this->assertStringContainsString('ALTER COLUMN "description" SET NOT NULL', $text);
     // make sure NOT NULL is specified for resolution column
-    $this->assertContains('ALTER COLUMN "resolution" SET NOT NULL', $text);
+    $this->assertStringContainsString('ALTER COLUMN "resolution" SET NOT NULL', $text);
     // make sure NOT NULL is NOT specified for points column
-    $this->assertNotContains('ALTER COLUMN "points" SET NOT NULL', $text);
+    $this->assertStringNotContainsString('ALTER COLUMN "points" SET NOT NULL', $text);
   }
 
-  /**
-   * @group mysql5
-   * @dataProvider output_variance_provider
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\DataProvider('output_variance_provider')]
   public function testUpgradeNewTableMysql5($output_file_dir, $output_file_prefix) {
     $this->apply_options_mysql5();
     $this->setup_mysql5($output_file_dir, $output_file_prefix);
@@ -373,11 +356,11 @@ XML;
     mysql5::build_upgrade('', 'newtable_upgrade_test_pgsql8_base', $base_db_doc, array(), $this->output_prefix, 'newtable_upgrade_test_pgsql8_newtable', $newtable_db_doc, array());
     $text = file_get_contents($this->output_prefix . '_upgrade_single_stage.sql');
     // make sure NOT NULL is specified for description column
-    $this->assertContains('`description` character varying(200) NOT NULL', $text);
+    $this->assertStringContainsString('`description` character varying(200) NOT NULL', $text);
     // make sure NOT NULL is specified for resolution column
-    $this->assertContains('`resolution` character varying(16) NOT NULL', $text);
+    $this->assertStringContainsString('`resolution` character varying(16) NOT NULL', $text);
     // make sure NOT NULL is NOT specified for points column
-    $this->assertNotContains('`points` int NOT NULL', $text);
+    $this->assertStringNotContainsString('`points` int NOT NULL', $text);
   }
 
 }

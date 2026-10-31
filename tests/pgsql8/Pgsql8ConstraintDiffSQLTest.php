@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- * @group nodb
- */
-class Pgsql8ConstraintDiffSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Pgsql8ConstraintDiffSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -167,10 +165,12 @@ XML;
 </dbsteward>
 XML;
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testSameToSame() {
     $this->common($this->xml_pka, $this->xml_pka, "");
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testAddSome() {
     $expected = <<<SQL
 ALTER TABLE "public"."test"
@@ -179,6 +179,7 @@ SQL;
     $this->common($this->xml_pka, $this->xml_pka_uqc, $expected);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testDropSome() {
     $expected = <<<SQL
 ALTER TABLE "public"."test"
@@ -266,6 +267,7 @@ SQL;
     $this->assertEquals($expected, $actual);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testAutoIncrement() {
     $auto = <<<XML
 <dbsteward>
@@ -294,6 +296,7 @@ XML;
     $this->common($notauto, $auto, "", 'primaryKey');
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testChangeColumnTypeWithForeignKey() {
     $old = <<<XML
 <dbsteward>

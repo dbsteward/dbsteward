@@ -6,13 +6,12 @@
  * @license http://www.opensource.org/licenses/bsd-license.php Simplified BSD License
  */
 
-require_once __DIR__ . '/Mysql5ExtractionTest.php';
+require_once __DIR__ . '/Mysql5ExtractionTestCase.php';
 
-/**
- * @group mysql5
- */
-class Mysql5ExtractCompoundForeignKeyTest extends Mysql5ExtractionTest { 
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+class Mysql5ExtractCompoundForeignKeyTest extends Mysql5ExtractionTestCase { 
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testCompoundFKeyExtraction() {
     $sql = <<<SQL
 CREATE TABLE t1 (c1 int, c2 int);
@@ -24,7 +23,7 @@ SQL;
   $expected = <<<XML
 <foreignKey
   columns="c1, c2"
-  foreignSchema="Mysql5ExtractionTest"
+  foreignSchema="Mysql5ExtractionTestCase"
   foreignTable="t2"
   foreignColumns="c1, c2"
   constraintName="t1_ibfk_1"

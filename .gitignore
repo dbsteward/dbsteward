@@ -1,4 +1,6 @@
 build
+# test output now goes to the system temp dir (tests/TestWorkspace.php);
+# kept ignored so leftovers from older checkouts don't show up
 tests/testdata*
 /nbproject/
 /tickets/
@@ -9,3 +11,4 @@ clover.xml
 coveralls-upload.json
 phpunit.xml
 dbsteward.php
+.phpunit.cache
