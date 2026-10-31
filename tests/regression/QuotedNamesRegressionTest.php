@@ -9,25 +9,19 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
+class QuotedNamesRegressionTest extends PHPUnit\Framework\TestCase {
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testPgsql8() {
     $this->quoteTestCommon('pgsql8');
   }
 
-  /**
-   * @group mssql10
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mssql10')]
   public function testMssql10() {
     $this->quoteTestCommon('mssql10');
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testMysql5() {
     $this->quoteTestCommon('mysql5', array('in ', 'in-', 'in'.mysql5::QUOTE_CHAR, 'in.'));
   }
@@ -61,7 +55,7 @@ class QuotedNamesRegressionTest extends PHPUnit_Framework_TestCase {
               call_user_func("$format::get_quoted_{$object}_name",$invalid_name);
             }
             catch ( Exception $ex ) {
-              $this->assertContains('Illegal identifier', $ex->getMessage());
+              $this->assertStringContainsString('Illegal identifier', $ex->getMessage());
               continue;
             }
             $this->fail("Expected 'Illegal identifier' exception, but no exception was thrown for identifier '$invalid_name'");

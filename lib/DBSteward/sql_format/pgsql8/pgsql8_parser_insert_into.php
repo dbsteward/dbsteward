@@ -21,7 +21,7 @@ class pgsql8_parser_insert_into {
    * @param command INSERT INTO command
    *
    */
-  public static $columns_cache = array();
+  public static $columns_cache = [];
   public static function parse($database, $command) {
     if (preg_match(self::PATTERN_INSERT_INTO, $command, $matches) > 0) {
       $line = $command;
@@ -29,13 +29,13 @@ class pgsql8_parser_insert_into {
       $table_name = $matches[1];
       $columns_signature = md5($matches[2]);
       if ( !isset(self::$columns_cache[$columns_signature]) ) {
-        self::$columns_cache[$columns_signature] = $columns = self::column_split($matches[2], array('"') );
+        self::$columns_cache[$columns_signature] = $columns = self::column_split($matches[2], ['"'] );
       }
       else {
         $columns = self::$columns_cache[$columns_signature];
       }
 
-      $data_row = self::column_split($matches[3], array("'") );
+      $data_row = self::column_split($matches[3], ["'"] );
 
       if ( count($columns) != count($data_row) ) {
         throw new exception("column count " . count($columns) . " does not match data_row count " . count($data_row));
@@ -69,7 +69,7 @@ class pgsql8_parser_insert_into {
   }
 
   public static function column_split($column_list, $token_quotes) {
-    $columns = array();
+    $columns = [];
     $in_quoted = false;
     $col = "";
     for($i=0; $i<strlen($column_list); $i++) {

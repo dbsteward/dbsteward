@@ -2,10 +2,9 @@
 SQL database definition differencing tool. Structure and data is defined in a DTD-enforced, human-readable XML format. Outputs transactional SQL statement files to apply your changes.
 
 [![Latest Stable Version](https://poser.pugx.org/dbsteward/dbsteward/v/stable.png)](https://packagist.org/packages/dbsteward/dbsteward)
-[![dbsteward/dbsteward/master Build Status](https://travis-ci.org/dbsteward/dbsteward.png?branch=master)](https://travis-ci.org/dbsteward/dbsteward)
+[![CI](https://github.com/dbsteward/dbsteward/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/dbsteward/dbsteward/actions/workflows/ci.yml)
+[![PHP](https://img.shields.io/badge/php-8.3%20%7C%208.4%20%7C%208.5-777BB4?logo=php&logoColor=white)](https://www.php.net/supported-versions.php)
 [![Coverage Status](https://coveralls.io/repos/dbsteward/dbsteward/badge.svg?branch=master)](https://coveralls.io/r/dbsteward/dbsteward?branch=master)
-[![Dependency Status](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master/badge.png)](https://www.versioneye.com/php/nkiraly:DBSteward/dev-master)
-[![Reference Status](https://www.versioneye.com/php/nkiraly:DBSteward/reference_badge.svg)](https://www.versioneye.com/php/nkiraly:DBSteward/references)
 
 [![GitHub Release](http://img.shields.io/github/release/dbsteward/dbsteward.svg?style=plastic)][release]
 [![GitHub License](https://img.shields.io/badge/license-BSD-blue.svg?style=plastic)][license]
@@ -15,7 +14,7 @@ SQL database definition differencing tool. Structure and data is defined in a DT
 [license]: https://raw.githubusercontent.com/dbsteward/dbsteward/master/LICENSE.md
 [twitter]: https://twitter.com/intent/tweet?text=Hey%20@dbsteward%20&url=%5Bobject%20Object%5D
 
-NOTICE: Due to dependency updates, DBSteward 1.4.0 was the last version to support PHP 5.3 and 5.4. Please upgrade your run-times to at least PHP 5.5 before upgrading to DBSteward 1.4.2+
+NOTICE: DBSteward now requires PHP 8.3 or newer (tested on 8.3, 8.4 and 8.5). DBSteward 1.4.3 is the last release that runs on PHP 5.5 - 7.x; those PHP versions are end of life and no longer receive security fixes.
 
 ## Want Updates?
 Subscribe to the [DBSteward Announce](https://groups.google.com/forum/#!forum/dbsteward-announce) mailing list
@@ -34,7 +33,7 @@ Many developers maintain complete and upgrade script versions of their applicati
 
 Using DBSteward to generate or difference a database definition: https://github.com/dbsteward/dbsteward/blob/master/docs/USING.md
 
-Installing DBSteward with Composer / PEAR: https://github.com/dbsteward/dbsteward/blob/master/docs/INSTALLING.md
+Installing DBSteward with Composer: https://github.com/dbsteward/dbsteward/blob/master/docs/INSTALLING.md
 
 XML Format examples and ancedotes: https://github.com/dbsteward/dbsteward/blob/master/docs/XMLGUIDE.md
 
@@ -103,8 +102,8 @@ To start tinkering with the possibilities, install DBSteward with Composer with 
 
 You will also need to have the `xmllint` executable installed in your PATH, available from [libxml2](http://xmlsoft.org).
 
-You can also of get a checkout at git://github.com/dbsteward/dbsteward.git
-It is runnable in source-checkout form, as php bin/dbsteward.php
+You can also get a checkout with `git clone https://github.com/dbsteward/dbsteward.git`
+and run `composer install` in it. It is then runnable in source-checkout form as `php bin/dbsteward`.
 
 
 ## 6. How do I convert an existing database to DBSteward definition?
@@ -146,3 +145,25 @@ See the Slony slonik output usage guide https://github.com/dbsteward/dbsteward/b
 
 See the DBSteward Development guide https://github.com/dbsteward/dbsteward/blob/master/docs/DEVGUIDE.md for detailed examples.
 
+
+
+## 15. How do I run the test suite?
+
+Install dependencies with `composer install`, prepare the test databases, then run
+one SQL format per process (`composer test` does both groups):
+
+```bash
+.github/scripts/prepare-test-db.sh pgsql8    # PostgreSQL; PGSQL8_DBHOST, PGPASSWORD
+.github/scripts/prepare-test-db.sh mysql5    # MySQL;      MYSQL5_DBHOST
+vendor/bin/phpunit --group pgsql8 --exclude-group quarantine
+vendor/bin/phpunit --group mysql5 --exclude-group quarantine
+```
+
+Run the format groups separately: the active SQL format is per-process state, so
+mixing pgsql8 and mysql5 tests in one run (e.g. `--group nodb`) makes them fail.
+Database connection defaults are in `phpunit.xml.dist`; override any of them with an
+environment variable of the same name, e.g. `PGSQL8_DBHOST=db.local`. Test output goes
+to a per-test temp directory (`tests/TestWorkspace.php`), removed after passing tests.
+Tests tagged `quarantine` already failed before the PHP 8 upgrade
+(`composer test:quarantine`), and `composer rector` applies the code style rules that
+CI checks.

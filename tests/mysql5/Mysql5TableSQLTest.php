@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5TableSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5TableSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -152,7 +150,7 @@ XML;
 
     // check that we validate the number of partitions
     $table->tablePartition->tablePartitionOption[0]['value'] = 'id';
-    $table->tablePartition->tablePartitionOption[1]['value'] = 'x';
+    $table->tablePartition->tablePartitionOption[1]['value'] = '-1';
     $this->expect("tablePartitionOption 'number' must be an integer greater than 0", $get_sql);
 
     // check that using an expression does NOT quote the value
@@ -195,7 +193,7 @@ XML;
 
     // check that we validate the number of partitions
     $table->tablePartition->tablePartitionOption[0]['value'] = 'id';
-    $table->tablePartition->tablePartitionOption[1]['value'] = 'x';
+    $table->tablePartition->tablePartitionOption[1]['value'] = '-1';
     $this->expect("tablePartitionOption 'number' must be an integer greater than 0", $get_sql);
 
     // check that using an expression does NOT quote the value
@@ -264,7 +262,7 @@ XML;
       $res = call_user_func($callback);
     }
     catch (exception $ex) {
-      $this->assertContains(strtolower($err), strtolower($ex->getMessage()));
+      $this->assertStringContainsString(strtolower($err), strtolower($ex->getMessage()));
       return;
     }
     $this->fail("Expected to catch exception with message containing '$err', instead got result:\n".print_r($res));

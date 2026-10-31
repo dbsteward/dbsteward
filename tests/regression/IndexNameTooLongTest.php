@@ -11,10 +11,8 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-class IndexNameTooLongTest extends PHPUnit_Framework_TestCase {
-  /**
-   * @group pgsql8
-   */
+class IndexNameTooLongTest extends PHPUnit\Framework\TestCase {
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testPgsql8IndexNameLengthLongColumn() {
     $table = 'resource_device_type_list';
     $column = 'resource_device_type_locator_channel';
@@ -25,9 +23,7 @@ class IndexNameTooLongTest extends PHPUnit_Framework_TestCase {
     $this->assertEquals(pgsql8::MAX_IDENTIFIER_LENGTH, $l = strlen($actual), "Generated index name '$actual' has length $l but pgsql max is 63");
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testPgsql8IndexNameLengthLongTable() {
     $table = 'resource_device_type_locator_channel';
     $column = 'resource_device_type_list';
@@ -38,9 +34,7 @@ class IndexNameTooLongTest extends PHPUnit_Framework_TestCase {
     $this->assertEquals(pgsql8::MAX_IDENTIFIER_LENGTH, $l = strlen($actual), "Generated index name '$actual' has length $l but pgsql max is 63");
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testPgsql8IndexNameLengthShortTableColumn() {
     $table = 'resource_device_type_list';
     $column = 'resource_device_type_list';
@@ -52,9 +46,7 @@ class IndexNameTooLongTest extends PHPUnit_Framework_TestCase {
     $this->assertEquals($expected, $actual);
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testPgsql8IndexNameLengthNoColumn() {
     $table = 'resource_device_type_list';
     $column = '';
@@ -66,9 +58,7 @@ class IndexNameTooLongTest extends PHPUnit_Framework_TestCase {
     $this->assertEquals($expected, $actual);
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testPgsql8IndexNameLengthNoColumnLongTable() {
     $table = 'resource_device_type_locator_channel_type_list_id_holy_crap_dont_do_this';
     $column = '';

@@ -67,7 +67,7 @@ class mssql10_column extends pgsql8_column {
     if (preg_match('/[\s]+/', $type) > 0) {
       // type contains whitespace
       // split the type and look for bad tokens
-      $bad_keywords = array('DEFAULT', 'UNIQUE');
+      $bad_keywords = ['DEFAULT', 'UNIQUE'];
       $tokens = preg_split("/[\s]+/", $type, -1, PREG_SPLIT_NO_EMPTY);
 
       foreach ($tokens AS $token) {
@@ -153,7 +153,7 @@ class mssql10_column extends pgsql8_column {
 
   public static function enum_type_check($db_doc, $node_schema, $node_table, $node_column, &$drop_sql, &$add_sql) {
     // if the column type is a defined enum, (re)add a check constraint to enforce the pseudo-enum
-    $foreign = array();
+    $foreign = [];
     $column_type = mssql10_column::column_type($db_doc, $node_schema, $node_table, $node_column, $foreign, FALSE);
     if (preg_match('/' . dbx::enum_regex($db_doc) . '/i', $column_type) > 0) {
       $type_schema_name = sql_parser::get_schema_name($column_type, $db_doc);

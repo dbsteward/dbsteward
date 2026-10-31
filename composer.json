@@ -36,23 +36,44 @@
     }
   ],
   "require": {
-    "php": ">=5.5.0",
+    "php": "^8.3",
     "ext-dom": "*",
     "ext-pcre": "*",
     "ext-pgsql": "*",
     "ext-simplexml": "*",
     "ext-spl": "*",
-    "monolog/monolog": "1.16.0",
-    "kevinlebrun/colors.php": "^0.4.1"
+    "monolog/monolog": "^3.12",
+    "kevinlebrun/colors.php": "^1.0"
   },
   "require-dev": {
-    "ext-mysqli": "*",
-    "ext-pgsql": "*",
-    "phpunit/phpunit": "4.4.*",
-    "satooshi/php-coveralls": "dev-master"
+    "ext-pdo_mysql": "*",
+    "phpunit/phpunit": "^12.5.8",
+    "rector/rector": "^2.0"
   },
   "suggest": {
     "ext-pdo": "Necessary to extract a schema from a MySQL database"
   },
-  "bin": ["bin/dbsteward"]
+  "bin": ["bin/dbsteward"],
+  "config": {
+    "platform": {
+      "php": "8.3.0"
+    },
+    "sort-packages": true
+  },
+  "scripts": {
+    "test": [
+      "phpunit --group pgsql8 --exclude-group quarantine",
+      "phpunit --group mysql5 --exclude-group quarantine"
+    ],
+    "test:quarantine": [
+      "phpunit --group quarantine --filter '/^(?!.*mysql5)/i'",
+      "phpunit --group quarantine --filter '/mysql5/i'"
+    ],
+    "rector": "rector process"
+  },
+  "scripts-descriptions": {
+    "test": "Run the test suite, one SQL format per process (needs PostgreSQL and MySQL)",
+    "test:quarantine": "Run tests that failed before the PHP 8 upgrade, one SQL format per process",
+    "rector": "Apply the modern-PHP rules configured in rector.php"
+  }
 }

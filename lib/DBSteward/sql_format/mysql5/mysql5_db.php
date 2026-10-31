@@ -38,7 +38,7 @@ class mysql5_db {
                           FROM tables
                           WHERE table_type = 'base table'
                             AND table_name != '$table_name'
-                            AND table_schema = ?", array($this->dbname));
+                            AND table_schema = ?", [$this->dbname]);
   }
 
   public function get_table($name) {
@@ -49,7 +49,7 @@ class mysql5_db {
                          WHERE table_type = 'base table'
                            AND table_schema = ?
                            AND table_name = ?
-                         LIMIT 1", array($this->dbname, $name), 'one');
+                         LIMIT 1", [$this->dbname, $name], 'one');
   }
 
   public function get_partition_info($table) {
@@ -59,7 +59,7 @@ class mysql5_db {
                            WHERE table_schema = ?
                              AND table_name = ?
                            ORDER BY partition_ordinal_position",
-                          array($this->dbname, $table->table_name));
+                          [$this->dbname, $table->table_name]);
 
     if (count($parts) === 0) return null;
 
@@ -68,35 +68,33 @@ class mysql5_db {
     switch ($method) {
       case 'HASH':
       case 'LINEAR HASH':
-        return (object)array(
+        return (object)[
           'type' => $method,
           'number' => count($parts),
           'expression' => $parts[0]->partition_expression
-        );
+        ];
 
       case 'KEY':
       case 'LINEAR KEY':
-        return (object)array(
+        return (object)[
           'type' => $method,
           'number' => count($parts),
           'columns' => str_replace(mysql5::QUOTE_CHAR, '', $parts[0]->partition_expression)
-        );
+        ];
 
       case 'LIST':
       case 'RANGE':
       case 'RANGE COLUMNS':
-        return (object)array(
+        return (object)[
           'type' => $method,
           'expression' => $method == 'RANGE COLUMNS' ?
             str_replace(mysql5::QUOTE_CHAR, '', $parts[0]->partition_expression)
             : $parts[0]->partition_expression,
-          'segments' => array_map(function($p) {
-            return (object)array(
-              'name' => $p->partition_name,
-              'value' => $p->partition_description
-            );
-          }, $parts)
-        );
+          'segments' => array_map(fn($p) => (object)[
+            'name' => $p->partition_name,
+            'value' => $p->partition_description
+          ], $parts)
+        ];
 
       default:
         dbsteward::error("Unrecognized partition method $method!");
@@ -105,7 +103,7 @@ class mysql5_db {
   }
 
   public function get_table_options($table) {
-    $create_sql = $this->query("SHOW CREATE TABLE `{$this->dbname}`.`{$table->table_name}`", array(), 'one')->{"Create Table"};
+    $create_sql = $this->query("SHOW CREATE TABLE `{$this->dbname}`.`{$table->table_name}`", [], 'one')->{"Create Table"};
     
     $opts = $this->parse_create_table_for_options($create_sql);
 
@@ -128,10 +126,10 @@ class mysql5_db {
     // merge the two sets of name=>value, lowercasing the option names
     $opts = array_merge(
       array_combine(
-        array_map('strtolower',$matches['name']),
+        array_map(strtolower(...),$matches['name']),
         $matches['value']),
       array_combine(
-        array_map('strtolower',$matches['name1']),
+        array_map(strtolower(...),$matches['name1']),
         $matches['value1'])
     );
 
@@ -148,12 +146,12 @@ class mysql5_db {
   }
 
   public function uses_sequences() {
-    return $this->query("SELECT COUNT(*) FROM tables WHERE table_schema = ? and table_name = ?", array($this->dbname, mysql5_sequence::TABLE_NAME), 'scalar') != 0;
+    return $this->query("SELECT COUNT(*) FROM tables WHERE table_schema = ? and table_name = ?", [$this->dbname, mysql5_sequence::TABLE_NAME], 'scalar') != 0;
   }
 
   public function get_sequences() {
     if (!$this->uses_sequences()) {
-      return array();
+      return [];
     }
 
     $table_name = mysql5_sequence::TABLE_NAME;
@@ -172,7 +170,7 @@ class mysql5_db {
                          FROM columns
                          WHERE table_name = ?
                            AND table_schema = ?
-                         ORDER BY ordinal_position ASC",array($db_table->table_name, $this->dbname));
+                         ORDER BY ordinal_position ASC",[$db_table->table_name, $this->dbname]);
   }
 
   public function is_serial_column($db_table, $db_column) {
@@ -190,14 +188,14 @@ class mysql5_db {
     $seq_name = '__public_' . $db_table->table_name . '_' . $db_column->column_name . '_serial_seq';
     $has_seq = $this->query("SELECT COUNT(*) = 1
                                FROM `{$this->dbname}`.`$table_name`
-                              WHERE `$name_col` = ?", array($seq_name), 'scalar');
+                              WHERE `$name_col` = ?", [$seq_name], 'scalar');
 
     // @TODO: unify with mysql5_column::get_serial_trigger_name()
     $trig_name = '__public_' . $db_table->table_name . '_' . $db_column->column_name . '_serial_trigger';
     $has_trig = $this->query("SELECT COUNT(*) = 1
                                 FROM triggers
                                WHERE trigger_schema = ?
-                                 AND trigger_name = ?", array($this->dbname, $trig_name), 'scalar');
+                                 AND trigger_name = ?", [$this->dbname, $trig_name], 'scalar');
 
     if ($has_seq && $has_trig) {
       return strcasecmp($db_column->data_type,'bigint')===0 ? 'bigserial' : 'serial';
@@ -216,7 +214,7 @@ class mysql5_db {
                                      LEFT OUTER JOIN table_constraints USING (table_schema, table_name, constraint_name)
                                    WHERE statistics.table_schema = ?
                                      AND statistics.table_name = ?
-                                   GROUP BY index_name", array($this->dbname, $db_table->table_name));
+                                   GROUP BY index_name", [$this->dbname, $db_table->table_name]);
     foreach ($indices as &$idx) {
       // massage the output
       $idx->columns = explode(',',$idx->columns);
@@ -239,7 +237,7 @@ class mysql5_db {
                                  WHERE table_constraints.table_schema = ?
                                    AND table_constraints.table_name = ?
                                    AND (table_constraints.constraint_type != 'UNIQUE')
-                                 GROUP BY constraint_name;", array($this->dbname, $db_table->table_name));
+                                 GROUP BY constraint_name;", [$this->dbname, $db_table->table_name]);
 
     foreach ($constraints as &$constraint) {
       // massage the output
@@ -259,7 +257,7 @@ class mysql5_db {
                            WHERE table_schema = ?
                              AND table_name = ?
                              AND grantee LIKE ?
-                           GROUP BY is_grantable", array($this->dbname, $db_table->table_name, "'$username'@%"));
+                           GROUP BY is_grantable", [$this->dbname, $db_table->table_name, "'$username'@%"]);
   }
 
   public function get_global_grants($username) {
@@ -272,7 +270,7 @@ class mysql5_db {
                                AND privilege_type NOT IN ('CREATE TABLESPACE', 'CREATE USER', 'FILE', 'PROCESS', 'RELOAD',
                                                           'REPLICATION CLIENT', 'REPLICATION SLAVE', 'SHOW DATABASES', 'SHUTDOWN', 'SUPER')
                          ) AS tbl
-                         GROUP BY is_grantable;", array('schema'=>$this->dbname, 'grantee'=>"'$username'@%"));
+                         GROUP BY is_grantable;", ['schema'=>$this->dbname, 'grantee'=>"'$username'@%"]);
   }
 
   public function get_functions() {
@@ -288,7 +286,7 @@ class mysql5_db {
                    definer, sql_data_access, dtd_identifier
             FROM routines
             WHERE routine_schema = ? $not_shim_fns";
-    $functions = $this->query($sql, array($this->dbname));
+    $functions = $this->query($sql, [$this->dbname]);
 
     foreach ($functions as $fn) {
       $fn->parameters = $this->query("SELECT parameter_mode, parameter_name, data_type, character_maximum_length,
@@ -297,7 +295,7 @@ class mysql5_db {
                                              WHERE specific_schema = ?
                                                AND specific_name = ?
                                                AND parameter_name IS NOT NULL
-                                             ORDER BY ordinal_position ASC", array($this->dbname, $fn->routine_name));
+                                             ORDER BY ordinal_position ASC", [$this->dbname, $fn->routine_name]);
     }
 
     return $functions;
@@ -309,14 +307,14 @@ class mysql5_db {
                                 action_orientation AS forEach, action_timing AS 'when'
                          FROM triggers
                          WHERE trigger_schema = ?
-                           AND trigger_name NOT LIKE '__public_%_%_serial_trigger'", array($this->dbname));
+                           AND trigger_name NOT LIKE '__public_%_%_serial_trigger'", [$this->dbname]);
   }
 
   public function get_views() {
     return $this->query("SELECT table_name AS view_name, view_definition AS view_query,
                                         definer, 'DEFINER' AS security_type
                                  FROM views
-                                 WHERE table_schema = ?", array($this->dbname));
+                                 WHERE table_schema = ?", [$this->dbname]);
   }
 
   public function parse_enum_values($enum) {
@@ -329,8 +327,8 @@ class mysql5_db {
     }
   }
 
-  private function query($sql, $params = array(), $type='all') {
-    static $stmts = array();
+  private function query($sql, $params = [], $type='all') {
+    static $stmts = [];
     if (!array_key_exists($sql, $stmts)) {
       $stmts[$sql] = $this->pdo->prepare($sql);
       if (!$stmts[$sql]) {

@@ -78,18 +78,18 @@ XML;
 </dbsteward>
 XML;
 
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
   }
 
-  /**
-   * @group pgsql8
-   * @group mysql5
-   * @group mssql10
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('mssql10')]
   public function testAddSerialColumn() {
     $dir = __DIR__;
-    $cmd = "$dir/../dbsteward.php --oldxml=$dir/testdata/unit_test_xml_a.xml --newxml=$dir/testdata/unit_test_xml_b.xml";
+    $old_xml = escapeshellarg($this->xml_file_a);
+    $new_xml = escapeshellarg($this->xml_file_b);
+    $cmd = "$dir/../dbsteward.php --oldxml=$old_xml --newxml=$new_xml";
     system($cmd);
     $this->output_prefix = str_replace('xml_a', 'xml_b', $this->output_prefix);
     $sql_file = file_get_contents($this->output_prefix . '_upgrade_stage4_data1.sql');

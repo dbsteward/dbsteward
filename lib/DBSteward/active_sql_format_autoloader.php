@@ -8,7 +8,7 @@
  */
 
 // use the explicit format loader by default
-spl_autoload_register('active_sql_format_autoloader::loadFormat');
+spl_autoload_register(active_sql_format_autoloader::loadFormat(...));
 class active_sql_format_autoloader {
   private static $fallback = 'sql99';
   private static $format;
@@ -18,7 +18,7 @@ class active_sql_format_autoloader {
   public static function init($format) {
     self::$format = $format;
     if ( ! self::$loaded ) {
-      spl_autoload_register('active_sql_format_autoloader::loadActive');
+      spl_autoload_register(active_sql_format_autoloader::loadActive(...));
       self::$loaded = TRUE;
     }
   }
@@ -28,7 +28,7 @@ class active_sql_format_autoloader {
     // look for the class in self::$format/{self::$format}_diff_tables.php
     // then alias active_sql_format_diff_tables to that class
 
-    if ( stripos($class, self::$prefix) === 0 ) {
+    if ( stripos($class, (string) self::$prefix) === 0 ) {
       $actual = str_replace(self::$prefix, self::$format, $class);
       $file = SQLFORMAT_DIR . '/' . self::$format . "/$actual.php";
 
@@ -49,7 +49,7 @@ class active_sql_format_autoloader {
   }
   public static function loadFormat($class) {
     // maybe we're looking at a raw format?
-    list($format) = explode('_', $class, 2);
+    [$format] = explode('_', $class, 2);
     if ( strtolower($format) == 'slony1' ) {
       $format = 'pgsql8';
     }

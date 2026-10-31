@@ -9,12 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
 class SlonyIdOutputTest extends dbstewardUnitTestBase {
+  protected $testHandler;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->testHandler = new Monolog\Handler\TestHandler;
     dbsteward::get_logger()->pushHandler($this->testHandler);
 
@@ -23,7 +22,7 @@ class SlonyIdOutputTest extends dbstewardUnitTestBase {
     pgsql8::$sequence_slony_ids = array();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     dbsteward::get_logger()->popHandler();
   }
 
@@ -79,17 +78,17 @@ OUTXML;
       $old_db_doc = simplexml_load_string($xml);
       dbsteward::$generate_slonik = TRUE;
 
-      $output_prefix_path = dirname(__FILE__) . '/../testdata/' . 'slony_id_output';
+      $output_prefix_path = $this->workspacePath() . '/' . 'slony_id_output';
       pgsql8::build($output_prefix_path, $old_db_doc);
 
-      $this->assertLogged(Monolog\Logger::NOTICE, '/101:\s101-102/');
+      $this->assertLogged(Monolog\Level::Notice, '/101:\s101-102/');
       // before 1098 wasn't getting put into first natural order, now it should be
-      $this->assertLogged(Monolog\Logger::NOTICE, '/101:\s[\d\-]+,\s*1098/', "SlonyIds without slonySetIds are not put into first natural order slonySet");
-      $this->assertLogged(Monolog\Logger::NOTICE, '/201:\s105-106/');
+      $this->assertLogged(Monolog\Level::Notice, '/101:\s[\d\-]+,\s*1098/', "SlonyIds without slonySetIds are not put into first natural order slonySet");
+      $this->assertLogged(Monolog\Level::Notice, '/201:\s105-106/');
   }
   
 
-  private function assertLogged($level, $regex, $message = null) {
+  private function assertLogged($level, $regex, $message = '') {
     $this->assertTrue($this->testHandler->hasRecordThatMatches($regex, $level),
       "Expected to find a log matching $regex\n$message");
   }

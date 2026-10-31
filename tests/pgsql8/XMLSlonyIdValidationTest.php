@@ -248,12 +248,11 @@ XML;
 </dbsteward>
 XML;
   
-  /**
-   * @group pgsql8
-   * @expectedException        Exception
-   * @expectedExceptionMessage Table user_info.user missing slonyId and slonyIds are required
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testBadTableIdPGSQL8() {
+    $this->expectException(Exception::class);
+    $this->expectExceptionMessage('Table user_info.user missing slonyId and slonyIds are required');
+
     // reset options
     $this->apply_options_pgsql8();
 
@@ -274,9 +273,8 @@ XML;
     throw new Exception("Table without slonyId definition did not throw");
   }
   
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testGoodTableIdPGSQL8() {
     // reset options
     $this->apply_options_pgsql8();
@@ -295,12 +293,11 @@ XML;
     $this->pgsql8->run_file($this->output_prefix . '_build.sql');
   }
 
-  /**
-   * @group pgsql8
-   * @expectedException        Exception
-   * @expectedExceptionMessage user_info.user.user_id serial column missing slonyId and slonyIds are required
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testBadSerialIdPGSQL8() {
+    $this->expectException(Exception::class);
+    $this->expectExceptionMessage('user_info.user.user_id serial column missing slonyId and slonyIds are required');
+
     // reset options
     $this->apply_options_pgsql8();
 
@@ -321,9 +318,8 @@ XML;
     throw new Exception("Serial column without slonyId definition did not throw");
   }
   
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testGoodSerialIdPGSQL8() {
     // reset options
     $this->apply_options_pgsql8();

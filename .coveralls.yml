@@ -1,3 +1,0 @@
-src_dir: lib/DBSteward
-coverage_clover: clover.xml
-json_path: coveralls-upload.json

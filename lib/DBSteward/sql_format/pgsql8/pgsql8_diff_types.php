@@ -44,7 +44,7 @@ class pgsql8_diff_types {
       
       pgsql8::set_context_replica_set_id($new_type);
       
-      $columns = array();
+      $columns = [];
       $is_domain = strcasecmp($new_type['type'], 'domain') === 0;
       $n = $is_domain ? 3 : 4;
       $word = $is_domain ? 'domain' : 'type';
@@ -131,15 +131,15 @@ class pgsql8_diff_types {
       $ofs->write("ALTER DOMAIN $domain DROP DEFAULT;\n");
     }
     // default is changed
-    elseif (strcmp($old_domain['default'], $new_domain['default']) !== 0) {
+    elseif (strcmp((string)$old_domain['default'], (string)$new_domain['default']) !== 0) {
       $old_default = pgsql8::value_escape($base_type, (string)$old_domain['default']);
       $new_default = pgsql8::value_escape($base_type, (string)$new_domain['default']);
       $ofs->write("-- domain default changed from $old_default\n");
       $ofs->write("ALTER DOMAIN $domain SET DEFAULT $new_default;\n");
     }
 
-    $old_null = strcasecmp($old_domain['null'], 'false') !== 0;
-    $new_null = strcasecmp($new_domain['null'], 'false') !== 0;
+    $old_null = strcasecmp((string)$old_domain['null'], 'false') !== 0;
+    $new_null = strcasecmp((string)$new_domain['null'], 'false') !== 0;
 
     // NULL -> NOT NULL
     if ($old_null && !$new_null) {
@@ -153,7 +153,7 @@ class pgsql8_diff_types {
     }
 
     // diff constraints
-    $old_constraints = array();
+    $old_constraints = [];
     foreach ($old_type->domainConstraint as $old_constraint) {
       $old_constraints[(string)$old_constraint['name']] = pgsql8_type::normalize_domain_constraint($old_constraint);
     }

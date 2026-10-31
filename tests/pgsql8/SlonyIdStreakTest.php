@@ -9,12 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
 class SlonyIdStreakTest extends dbstewardUnitTestBase {
+  protected $testHandler;
 
-  public function setUp() {
+  public function setUp(): void {
     $this->testHandler = new Monolog\Handler\TestHandler;
     dbsteward::get_logger()->pushHandler($this->testHandler);
 
@@ -23,7 +22,7 @@ class SlonyIdStreakTest extends dbstewardUnitTestBase {
     pgsql8::$sequence_slony_ids = array();
   }
 
-  public function tearDown() {
+  public function tearDown(): void {
     dbsteward::get_logger()->popHandler();
   }
 
@@ -79,13 +78,13 @@ SLONXML;
       $old_db_doc = simplexml_load_string($xml);
       dbsteward::$generate_slonik = TRUE;
 
-      $output_prefix_path = dirname(__FILE__) . '/../testdata/' . 'slony_id_streak';
+      $output_prefix_path = $this->workspacePath() . '/' . 'slony_id_streak';
       pgsql8::build($output_prefix_path, $old_db_doc);
 
-      $this->assertLogged(Monolog\Logger::NOTICE, '/sequence ID segments.*:\s1-2, 5-6, 98/');
+      $this->assertLogged(Monolog\Level::Notice, '/sequence ID segments.*:\s1-2, 5-6, 98/');
   }
 
-  private function assertLogged($level, $regex, $message = null) {
+  private function assertLogged($level, $regex, $message = '') {
     $this->assertTrue($this->testHandler->hasRecordThatMatches($regex, $level),
       "Expected to find a log matching $regex\n$message");
   }

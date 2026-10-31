@@ -1,39 +1,59 @@
-<phpunit
-    verbose="true"
-    backupGlobals="false"
-    bootstrap="tests/bootstrap.php">
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         backupGlobals="false"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         displayDetailsOnTestsThatTriggerDeprecations="true"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         displayDetailsOnPhpunitDeprecations="true"
+         failOnDeprecation="true"
+         failOnPhpunitDeprecation="true"
+         failOnWarning="true">
+  <testsuites>
+    <testsuite name="dbsteward">
+      <directory>tests</directory>
+    </testsuite>
+  </testsuites>
+
+  <source>
+    <include>
+      <directory suffix=".php">lib</directory>
+    </include>
+  </source>
+
+  <!--
+    Database connection defaults for the test suite. Each value can be overridden
+    by setting an environment variable of the same name (e.g. in CI); force="false"
+    keeps an already-set environment variable.
+  -->
   <php>
-    <const name="PGSQL8_DBHOST" value="localhost"/>
-    <const name="PGSQL8_DBPORT" value="5432"/>
-    <const name="PGSQL8_DBNAME" value="dbsteward_phpunit"/>
-    <const name="PGSQL8_DBUSER" value="deployment"/>
-    <const name="PGSQL8_DBPASS" value="password1"/>
-    <const name="PGSQL8_DBNAME_MANAGEMENT" value="postgres"/>
-    <const name="PGSQL8_DBUSER_MANAGEMENT" value="deployment"/>
-    <const name="PGSQL8_DBPASS_MANAGEMENT" value="password1"/>
-    
-    <const name="MSSQL10_DBHOST" value="localhost"/>
-    <const name="MSSQL10_DBPORT" value="1433"/>
-    <const name="MSSQL10_DBNAME" value="dbsteward_phpunit"/>
-    <const name="MSSQL10_DBUSER" value="deployment"/>
-    <const name="MSSQL10_DBPASS" value="password1"/>
-    <const name="MSSQL10_DBNAME_MANAGEMENT" value="dbsteward_phpunit"/>
-    <const name="MSSQL10_DBUSER_MANAGEMENT" value="deployment"/>
-    <const name="MSSQL10_DBPASS_MANAGEMENT" value="password1"/>
-    
-    <const name="MYSQL5_DBHOST" value="localhost"/>
-    <const name="MYSQL5_DBPORT" value="3306"/>
-    <const name="MYSQL5_DBNAME" value="dbsteward_phpunit"/>
-    <const name="MYSQL5_DBUSER" value="deployment"/>
-    <const name="MYSQL5_DBPASS" value="password1"/>
-    <const name="MYSQL5_DBNAME_MANAGEMENT" value="mysql"/>
-    <const name="MYSQL5_DBUSER_MANAGEMENT" value="deployment"/>
-    <const name="MYSQL5_DBPASS_MANAGEMENT" value="password1"/>
+    <env name="PGSQL8_DBHOST" value="localhost" force="false"/>
+    <env name="PGSQL8_DBPORT" value="5432" force="false"/>
+    <env name="PGSQL8_DBNAME" value="dbsteward_phpunit" force="false"/>
+    <env name="PGSQL8_DBUSER" value="deployment" force="false"/>
+    <env name="PGSQL8_DBPASS" value="password1" force="false"/>
+    <env name="PGSQL8_DBNAME_MANAGEMENT" value="postgres" force="false"/>
+    <env name="PGSQL8_DBUSER_MANAGEMENT" value="deployment" force="false"/>
+    <env name="PGSQL8_DBPASS_MANAGEMENT" value="password1" force="false"/>
+
+    <env name="MSSQL10_DBHOST" value="localhost" force="false"/>
+    <env name="MSSQL10_DBPORT" value="1433" force="false"/>
+    <env name="MSSQL10_DBNAME" value="dbsteward_phpunit" force="false"/>
+    <env name="MSSQL10_DBUSER" value="deployment" force="false"/>
+    <env name="MSSQL10_DBPASS" value="password1" force="false"/>
+    <env name="MSSQL10_DBNAME_MANAGEMENT" value="dbsteward_phpunit" force="false"/>
+    <env name="MSSQL10_DBUSER_MANAGEMENT" value="deployment" force="false"/>
+    <env name="MSSQL10_DBPASS_MANAGEMENT" value="password1" force="false"/>
+
+    <env name="MYSQL5_DBHOST" value="localhost" force="false"/>
+    <env name="MYSQL5_DBPORT" value="3306" force="false"/>
+    <env name="MYSQL5_DBNAME" value="dbsteward_phpunit" force="false"/>
+    <env name="MYSQL5_DBUSER" value="deployment" force="false"/>
+    <env name="MYSQL5_DBPASS" value="password1" force="false"/>
+    <env name="MYSQL5_DBNAME_MANAGEMENT" value="mysql" force="false"/>
+    <env name="MYSQL5_DBUSER_MANAGEMENT" value="deployment" force="false"/>
+    <env name="MYSQL5_DBPASS_MANAGEMENT" value="password1" force="false"/>
   </php>
-  <filter>
-    <blacklist>
-      <directory suffix=".php">./vendor</directory>
-      <directory suffix=".php">./tests</directory>
-    </blacklist>
-  </filter>
 </phpunit>

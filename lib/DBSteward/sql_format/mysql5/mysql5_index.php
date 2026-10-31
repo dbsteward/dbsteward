@@ -92,7 +92,7 @@ class mysql5_index extends sql99_index {
       $nodes[] = $fkey_index;
     }
 
-    $names = array();
+    $names = [];
     foreach ($nodes as $node) {
       if (in_array((string)$node['name'], $names)) {
         throw new Exception("Duplicate index name {$node['name']} on table {$node_schema['name']}.{$node_table['name']}");
@@ -195,7 +195,7 @@ class mysql5_index extends sql99_index {
   }
 
   protected static function get_dimension_list($node_schema, $node_table, $node_index) {
-    $dimensions = array();
+    $dimensions = [];
     foreach ( $node_index->indexDimension as $dimension ) {
       // mysql only supports indexed columns, not indexed expressions like in pgsql or mssql
       if ( ! mysql5_table::contains_column($node_table, $dimension) ) {

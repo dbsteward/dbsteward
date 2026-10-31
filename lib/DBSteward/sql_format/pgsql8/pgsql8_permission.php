@@ -162,10 +162,10 @@ class pgsql8_permission {
 
         // set serial columns permissions based on table permissions
         foreach($node_object->column AS $column ) {
-          if ( preg_match(pgsql8::PATTERN_TABLE_LINKED_TYPES, $column['type']) > 0 ) {
+          if ( preg_match(pgsql8::PATTERN_TABLE_LINKED_TYPES, (string)$column['type']) > 0 ) {
             $col_sequence = pgsql8::identifier_name($node_schema['name'], $node_object['name'], $column['name'], '_seq');
 
-            $seq_priv = array();
+            $seq_priv = [];
             // if you can SELECT, INSERT or UPDATE the table, you can SELECT on the sequence
             if ( in_array('SELECT', $perms) || in_array('INSERT', $perms) || in_array('UPDATE', $perms) ) {
               $seq_priv[] = 'SELECT';
@@ -238,7 +238,7 @@ class pgsql8_permission {
       throw new exception("node_permission operation definition is empty");
     }
 
-    $valid_permission_operations = array(
+    $valid_permission_operations = [
       'USAGE',
       'SELECT',
       'DELETE',
@@ -252,9 +252,9 @@ class pgsql8_permission {
       'CREATE TABLE',
       'ALTER',
       'TRUNCATE'
-    );
+    ];
 
-    $list = array();
+    $list = [];
     $operation_chunks = preg_split(dbsteward::PATTERN_SPLIT_OPERATION, $node_permission['operation'], -1, PREG_SPLIT_NO_EMPTY);
     for($i = 0; $i < count($operation_chunks); $i++) {
       $chunk = strtoupper(trim($operation_chunks[$i]));

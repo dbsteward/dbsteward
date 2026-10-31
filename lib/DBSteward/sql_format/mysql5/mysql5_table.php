@@ -23,7 +23,7 @@ class mysql5_table extends sql99_table {
       throw new exception("node_table object element name is not table. check stack for offending caller");
     }
 
-    if ( strlen($node_table['inherits']) > 0 ) {
+    if ( strlen((string)$node_table['inherits']) > 0 ) {
       //@TODO: implement compatibility with pgsql table inheritance
       dbsteward::error("Skipping table '{$node_table['name']}' because MySQL does not support table inheritance");
       return "-- Skipping table '{$node_table['name']}' because MySQL does not support table inheritance";
@@ -33,7 +33,7 @@ class mysql5_table extends sql99_table {
 
     $sql = "CREATE TABLE $table_name (\n";
 
-    $cols = array();
+    $cols = [];
     foreach ( $node_table->column as $column ) {
       $cols[] = mysql5_column::get_full_definition(dbsteward::$new_database, $node_schema, $node_table, $column, false);
 
@@ -47,7 +47,7 @@ class mysql5_table extends sql99_table {
       $sql .= "\n" . $opt_sql;
     }
     
-    if ( strlen($node_table['description']) > 0 ) {
+    if ( strlen((string)$node_table['description']) > 0 ) {
       $sql .= "\nCOMMENT " . mysql5::quote_string_value($node_table['description']);
     }
     
@@ -102,9 +102,7 @@ class mysql5_table extends sql99_table {
 
             $cond = $type == 'LIST' ? 'IN' : 'LESS THAN';
 
-            $segs = static::map_partition_segments($table_name, $tablePartition, function($name, $value) use ($cond) {
-              return "PARTITION $name VALUES $cond ($value)";
-            });
+            $segs = static::map_partition_segments($table_name, $tablePartition, fn($name, $value) => "PARTITION $name VALUES $cond ($value)");
 
             return "PARTITION BY $type ($expr) (\n  " . implode(",\n  ", $segs) . "\n)";
 
@@ -118,7 +116,7 @@ class mysql5_table extends sql99_table {
   }
 
   public static function get_partition_options($table_name, $tablePartition) {
-    $options = array();
+    $options = [];
     foreach ($tablePartition->tablePartitionOption as $opt) {
       $name = isset($opt['name']) ? trim(strtolower($opt['name'])) : '';
       $value = isset($opt['value']) ? trim($opt['value']) : '';
@@ -168,7 +166,7 @@ class mysql5_table extends sql99_table {
       $cols = preg_split('/\s*,\s*/', trim($options['columns']), -1, PREG_SPLIT_NO_EMPTY);
     }
     elseif (isset($options['column']) && strlen(trim($options['column']))) {
-      $cols = array(trim($options['column']));
+      $cols = [trim($options['column'])];
     }
     else {
       throw new exception("tablePartitionOption 'column' or 'columns' must be specified for $type partition on $table_name");
@@ -189,7 +187,7 @@ class mysql5_table extends sql99_table {
   }
 
   protected static function map_partition_segments($table_name, $tablePartition, $callback) {
-    $segs = array();
+    $segs = [];
     foreach ($tablePartition->tablePartitionSegment as $segment) {
       $name = isset($segment['name']) ? trim($segment['name']) : '';
       $value = isset($segment['value']) ? trim($segment['value']) : '';
@@ -235,7 +233,7 @@ class mysql5_table extends sql99_table {
   }
 
   public static function get_sequences_needed($schema, $table) {
-    $sequences = array();
+    $sequences = [];
     $owner = $table['owner'];
 
     foreach ( $table->column as $column ) {
@@ -286,7 +284,7 @@ class mysql5_table extends sql99_table {
   }
 
   public static function get_triggers_needed($schema, $table) {
-    $triggers = array();
+    $triggers = [];
 
     foreach ( $table->column as $column ) {
       // we need a trigger for each serial column

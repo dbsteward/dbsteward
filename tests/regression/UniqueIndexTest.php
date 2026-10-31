@@ -9,7 +9,9 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-class UniqueIndexTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class UniqueIndexTest extends PHPUnit\Framework\TestCase {
 
   private $xml_empty = <<<XML_EMPTY
 <dbsteward>
@@ -80,6 +82,7 @@ XML_NEW;
 </dbsteward>
 XML_TWO;
 
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testTwoTablesWithTwoIndexes() {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_all_names = TRUE;
@@ -125,7 +128,7 @@ XML_TWO;
       pgsql8::build_schema($doc, $mofs, $table_dependency);
     }
     catch (Exception $e) {
-      $this->assertContains('duplicate index name', strtolower($e->getMessage()));
+      $this->assertStringContainsString('duplicate index name', strtolower($e->getMessage()));
       return;
     }
     $this->fail("build_schema did not detect duplicate index names");

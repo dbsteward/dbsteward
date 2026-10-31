@@ -82,13 +82,13 @@ class pgsql8_index extends sql99_index {
     if ( strcasecmp($node_index_a['name'], $node_index_b['name']) != 0 ) {
       $equal = false;
     }
-    else if ( strcasecmp($node_index_a['unique'], $node_index_b['unique']) != 0 ) {
+    else if ( strcasecmp((string)$node_index_a['unique'], (string)$node_index_b['unique']) != 0 ) {
       $equal = false;
     }
-    else if ( strcasecmp($node_index_a['concurrently'], $node_index_b['concurrently']) != 0 ) {
+    else if ( strcasecmp((string)$node_index_a['concurrently'], (string)$node_index_b['concurrently']) != 0 ) {
       $equal = false;
     }
-    else if ( strcasecmp($node_index_a['using'], $node_index_b['using']) != 0 ) {
+    else if ( strcasecmp((string)$node_index_a['using'], (string)$node_index_b['using']) != 0 ) {
       $equal = false;
     }
     else {

@@ -19,7 +19,7 @@ class ofs_replica_set_router {
   }
   
   public function __construct() {
-    $this->ofs = array();
+    $this->ofs = [];
   }
   
   /**
@@ -32,27 +32,27 @@ class ofs_replica_set_router {
     if ( !is_numeric($set_id) || $set_id < 1 ) {
       throw new exception("set_replica_set_ofs() passed invalid replica set id");
     }
-    $set_id = (integer)$set_id;
+    $set_id = (int)$set_id;
     $this->ofs[$set_id] = $ofs;
     return $this->ofs[$set_id];
   }
   
   public function __call($m, $a) {
-    $ignore_ofs_methods = array(
+    $ignore_ofs_methods = [
       '__destruct'
-    );
+    ];
     if ( in_array($m, $ignore_ofs_methods) ) {
       return 'IGNORE_OFS_COMMAND_COMPLETE';
     }
 
     // if the command is in the list of commands to run on all ofs objects, do so
-    $all_ofs_methods = array(
+    $all_ofs_methods = [
       'append_header',
       'append_footer'
-    );
+    ];
     if ( in_array($m, $all_ofs_methods) ) {
       foreach($this->ofs AS $set_id => $ofs) {
-        call_user_func_array(array(&$ofs, $m), $a);
+        call_user_func_array([&$ofs, $m], $a);
       }
       return 'ALL_OFS_COMMAND_COMPLETE';
     }
@@ -63,7 +63,7 @@ class ofs_replica_set_router {
       // context_replica_set_id -10 means object does not have slonySetId defined
       // use the natural first replica set as the replica context
       $first_replica_set = pgsql8::get_slony_replica_set_natural_first(dbsteward::$new_database);
-      $use_replica_set_id = (integer)($first_replica_set['id']);
+      $use_replica_set_id = (int)($first_replica_set['id']);
     }
     
     // make sure replica set id to use is known
@@ -77,7 +77,7 @@ class ofs_replica_set_router {
     
     $active_set_ofs = $this->ofs[$use_replica_set_id];
     dbsteward::debug("[OFS RSR] __call calling " . $use_replica_set_id . " ofs::" . $m);
-    return call_user_func_array(array(&$active_set_ofs, $m), $a);
+    return call_user_func_array([&$active_set_ofs, $m], $a);
   }
 
 }

@@ -9,11 +9,9 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5SequenceDiffSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5SequenceDiffSQLTest extends PHPUnit\Framework\TestCase {
   private $xml_0 = <<<XML
 <schema name="test0" owner="NOBODY">
 </schema>
@@ -45,7 +43,7 @@ XML;
 </schema>
 XML;
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;

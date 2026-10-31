@@ -23,7 +23,7 @@ class mysql5_function extends sql99_function {
   public static function get_creation_sql($node_schema, $node_function) {
     $name = static::get_declaration($node_schema, $node_function);
 
-    $definer = (strlen($node_function['owner']) > 0) ? xml_parser::role_enum(dbsteward::$new_database,$node_function['owner']) : 'CURRENT_USER';
+    $definer = (strlen((string)$node_function['owner']) > 0) ? xml_parser::role_enum(dbsteward::$new_database,$node_function['owner']) : 'CURRENT_USER';
 
     // always drop the function first, just to be safe, and to be compatible with pgsql8's CREATE OR REPLACE
     $sql = static::get_drop_sql($node_schema, $node_function) . "\n";
@@ -37,7 +37,7 @@ class mysql5_function extends sql99_function {
     $sql .= "CREATE DEFINER = $definer $function_type $name (";
 
     if ( isset($node_function->functionParameter) ) {
-      $params = array();
+      $params = [];
       foreach ( $node_function->functionParameter as $param ) {
         if ( isset($param['direction']) && ! static::is_procedure($node_function) ) {
           throw new exception("Parameter directions are not supported in MySQL functions");
@@ -74,7 +74,7 @@ class mysql5_function extends sql99_function {
     }
     $sql .= "LANGUAGE SQL\n";
 
-    list($eval_type, $determinism) = static::get_characteristics((string)$node_function['cachePolicy'], (string)$node_function['mysqlEvalType']);
+    [$eval_type, $determinism] = static::get_characteristics((string)$node_function['cachePolicy'], (string)$node_function['mysqlEvalType']);
     $eval_type = str_replace('_', ' ', $eval_type);
     $sql .= "$eval_type\n$determinism\n";
 
@@ -110,18 +110,18 @@ class mysql5_function extends sql99_function {
         if (!$eval_type) {
           $eval_type = 'NO SQL';
         }
-        return array($eval_type, 'DETERMINISTIC');
+        return [$eval_type, 'DETERMINISTIC'];
       case 'STABLE':
         if (!$eval_type) {
           $eval_type = 'READS SQL DATA';
         }
-        return array($eval_type, 'NOT DETERMINISTIC');
+        return [$eval_type, 'NOT DETERMINISTIC'];
       case 'VOLATILE':
       default:
         if (!$eval_type) {
           $eval_type = 'MODIFIES SQL DATA';
         }
-        return array($eval_type, 'NOT DETERMINISTIC');
+        return [$eval_type, 'NOT DETERMINISTIC'];
     }
   }
 
@@ -187,9 +187,7 @@ class mysql5_function extends sql99_function {
     }
 
     // if the args are different, consider it changed
-    $agg = function ($a, $param) {
-      return $a . $param['name'] . $param['type'];
-    };
+    $agg = (fn($a, $param) => $a . $param['name'] . $param['type']);
     $params_a = array_reduce($node_function_a->xpath('functionParameter'), $agg);
     $params_b = array_reduce($node_function_b->xpath('functionParameter'), $agg);
 

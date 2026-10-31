@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5TableOptionsSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5TableOptionsSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -116,6 +114,7 @@ XML;
     $this->assertEquals('', mysql5_table::get_table_options_sql(mysql5_table::get_table_options($schema, $schema->table)));
   }
 
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testDuplicates() {
     $xml = <<<XML
 <schema name="public" owner="NOBODY">
@@ -142,6 +141,7 @@ XML;
     $this->fail("Was expecting duplicate tableOption exception, got nothing");
   }
 
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testEmptyName() {
     $xml = <<<XML
 <schema name="public" owner="NOBODY">

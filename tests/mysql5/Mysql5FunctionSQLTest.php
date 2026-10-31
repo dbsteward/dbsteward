@@ -9,12 +9,10 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- */
-class Mysql5FunctionSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+class Mysql5FunctionSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -80,7 +78,7 @@ XML;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
@@ -89,7 +87,7 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
+ENDSQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
@@ -112,7 +110,7 @@ END</functionDefinition>
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP PROCEDURE IF EXISTS `why_would_i_do_this`;
 CREATE DEFINER = the_owner PROCEDURE `why_would_i_do_this` (IN `str` varchar(25), OUT `len` int(11))
 LANGUAGE SQL
@@ -123,21 +121,19 @@ BEGIN
   SELECT length(str)
   INTO len;
 END;
-SQL;
+ENDSQL;
 
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
     $this->assertEquals($expected, $actual);
   }
 
-  /**
-   * @dataProvider characteristicsProvider
-   */
+  #[\PHPUnit\Framework\Attributes\DataProvider('characteristicsProvider')]
   public function testCharacteristics($cachePolicy, $evalType, $expected) {
     $this->assertEquals($expected, mysql5_function::get_characteristics($cachePolicy, $evalType));
   }
 
-  public function characteristicsProvider() {
+  public static function characteristicsProvider() {
     return array(
       // basic behavior, no evalType specified
       array('IMMUTABLE', '', array('NO SQL', 'DETERMINISTIC')),
@@ -169,7 +165,7 @@ SQL;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
@@ -178,7 +174,7 @@ NO SQL
 DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
+ENDSQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
@@ -186,7 +182,7 @@ SQL;
 
     $schema->function['cachePolicy'] = "STABLE";
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
@@ -195,7 +191,7 @@ READS SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
+ENDSQL;
 
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
@@ -203,7 +199,7 @@ SQL;
 
     $schema->function['cachePolicy'] = "VOLATILE";
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
@@ -212,7 +208,7 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
+ENDSQL;
 
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
@@ -231,7 +227,7 @@ SQL;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = SOMEBODY FUNCTION `test_fn` ()
 RETURNS text
@@ -240,7 +236,7 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
+ENDSQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
@@ -262,7 +258,7 @@ SQL;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
@@ -271,7 +267,7 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY DEFINER
 RETURN 'xyz';
-SQL;
+ENDSQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
@@ -323,7 +319,7 @@ XML;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` ENUM('x','y','z'))
 RETURNS ENUM('a','b','c')
@@ -332,7 +328,7 @@ MODIFIES SQL DATA
 NOT DETERMINISTIC
 SQL SECURITY INVOKER
 RETURN 'xyz';
-SQL;
+ENDSQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
@@ -420,7 +416,7 @@ END;
 XML;
     $schema = new SimpleXMLElement($xml);
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP FUNCTION IF EXISTS `test_fn`;
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
 RETURNS text
@@ -437,7 +433,7 @@ BEGIN
     RETURN val;
   END IF;
 END;
-SQL;
+ENDSQL;
     
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
@@ -445,7 +441,7 @@ SQL;
 
     mysql5::$swap_function_delimiters = TRUE;
 
-    $expected = <<<SQL
+    $expected = <<<ENDSQL
 DROP FUNCTION IF EXISTS `test_fn`;
 DELIMITER \$_$
 CREATE DEFINER = CURRENT_USER FUNCTION `test_fn` (`a` text, `b` int, `c` date)
@@ -464,7 +460,7 @@ BEGIN
   END IF;
 END\$_$
 DELIMITER ;
-SQL;
+ENDSQL;
     $actual = trim(mysql5_function::get_creation_sql($schema, $schema->function));
 
     $this->assertEquals($expected, $actual);

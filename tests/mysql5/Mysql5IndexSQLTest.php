@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5IndexSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5IndexSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_schema_names = TRUE;
     dbsteward::$quote_table_names = TRUE;
@@ -257,7 +255,7 @@ XML;
       mysql5_index::get_table_indexes($schema, $table);
     }
     catch (Exception $ex) {
-      $this->assertContains('Duplicate index name', $ex->getMessage());
+      $this->assertStringContainsString('Duplicate index name', $ex->getMessage());
       return;
     }
     $this->fail("Expected an exception because a table had duplicate index names");

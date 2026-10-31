@@ -7,12 +7,12 @@
  * @author Rusty Hamilton <rusty@shrub3.net>
  */
 
+require_once __DIR__ . '/../TestWorkspace.php';
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class SlonyIdDiffTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class SlonyIdDiffTest extends PHPUnit\Framework\TestCase {
+  use TestWorkspace;
   
   protected $oldxml = <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -79,12 +79,12 @@ XML;
     
     $old_replica_set = pgsql8::get_slony_replica_sets(dbsteward::$old_database);
     $new_replica_set = pgsql8::get_slony_replica_sets(dbsteward::$new_database);
-    $slony_prefix = dirname(__FILE__) . '/../testdata/slonyid_diff_test';
+    $slony_prefix = $this->workspacePath('slonyid_diff_test');
     pgsql8::build_upgrade_slonik_replica_set(dbsteward::$old_database, dbsteward::$new_database, $old_replica_set, $new_replica_set, $slony_prefix);    
     return $slony_prefix;
   }
   
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     dbsteward::set_sql_format('pgsql8');
     
@@ -110,12 +110,12 @@ XML;
     pgsql8_diff::diff_doc_work($ofs, $ofs, $ofs, $ofs);
     
     if ( $is_transactional ) {
-      $this->assertRegExp('/^BEGIN;/im', $ofs->_get_output(), 'output contains BEGIN statement');
-      $this->assertRegExp('/^COMMIT;/im', $ofs->_get_output(), 'output contains COMMIT statement');
+      $this->assertMatchesRegularExpression('/^BEGIN;/im', $ofs->_get_output(), 'output contains BEGIN statement');
+      $this->assertMatchesRegularExpression('/^COMMIT;/im', $ofs->_get_output(), 'output contains COMMIT statement');
     }
     else {
-      $this->assertRegExp('/^(?!BEGIN;).*$/im', $ofs->_get_output(), 'output contains BEGIN statement');
-      $this->assertRegExp('/^(?!COMMIT;).*$/im', $ofs->_get_output(), 'output contains COMMIT statement');
+      $this->assertMatchesRegularExpression('/^(?!BEGIN;).*$/im', $ofs->_get_output(), 'output contains BEGIN statement');
+      $this->assertMatchesRegularExpression('/^(?!COMMIT;).*$/im', $ofs->_get_output(), 'output contains COMMIT statement');
     }
   }
   

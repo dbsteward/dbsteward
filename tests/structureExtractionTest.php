@@ -11,9 +11,8 @@ require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
 class structureExtractionTest extends dbstewardUnitTestBase {
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testBuildExtractCompare_pgsql8() {
     $xml = <<<XML
 <dbsteward>
@@ -69,9 +68,10 @@ XML;
   }
 
   /**
-   * @group mysql5
    * @outputBuffering disabled
    */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testBuildExtractCompare_mysql5() {
     // this definition has the following things:
     // tables with foreign keys
@@ -172,23 +172,23 @@ XML;
     $upgrade_stage4_data1_sql = $this->get_script($this->output_prefix . '_upgrade_stage4_data1.sql');
 
     // check for no differences as expressed in DDL / DML
-    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage1_schema1_sql);
+    $this->assertDoesNotMatchRegularExpression('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage1_schema1_sql);
 
-    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage2_data1_sql);
+    $this->assertDoesNotMatchRegularExpression('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage2_data1_sql);
 
-    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage3_schema1_sql);
+    $this->assertDoesNotMatchRegularExpression('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage3_schema1_sql);
     
-    $this->assertNotRegExp('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage4_data1_sql);
+    $this->assertDoesNotMatchRegularExpression('/^\s*(ALTER|CREATE|DROP|UPDATE|DROP|INSERT)/im', $upgrade_stage4_data1_sql);
     
     // 4) Check for and validate tables in resultant XML definiton
     $this->compare_xml_definition();
   }
   
   protected function write_xml_definition_to_disk() {
-    $this->xml_file_a = __DIR__ . '/testdata/extract_diff_xml_a.xml';
+    $this->xml_file_a = $this->workspacePath('extract_diff_xml_a.xml');
     file_put_contents($this->xml_file_a, $this->xml_content_a);
 
-    $this->xml_file_b = __DIR__ . '/testdata/extract_diff_xml_b.xml';
+    $this->xml_file_b = $this->workspacePath('extract_diff_xml_b.xml');
     file_put_contents($this->xml_file_b, $this->xml_content_b);
   }
   

@@ -26,8 +26,8 @@ class pgsql8_language {
       . ( strcasecmp(dbsteward::string_cast($node_language['procedural']), 'true') == 0 ? "PROCEDURAL " : "" )
       . "LANGUAGE "
       . pgsql8::get_quoted_object_name($node_language['name'])
-      . ( strlen($node_language['handler']) > 0 ? "HANDLER " . pgsql8::get_quoted_function_name($node_language['handler']) : "" )
-      . ( strlen($node_language['validator']) > 0 ? "VALIDATOR " . pgsql8::get_quoted_function_name($node_language['validator']) : "" )
+      . ( strlen((string)$node_language['handler']) > 0 ? "HANDLER " . pgsql8::get_quoted_function_name($node_language['handler']) : "" )
+      . ( strlen((string)$node_language['validator']) > 0 ? "VALIDATOR " . pgsql8::get_quoted_function_name($node_language['validator']) : "" )
       . " ;\n";
 
     if ( strlen($node_language['owner']) > 0 ) {

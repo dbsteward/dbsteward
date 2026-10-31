@@ -9,13 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group mysql5
- * @group nodb
- */
-class Mysql5SchemaSQLTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class Mysql5SchemaSQLTest extends PHPUnit\Framework\TestCase {
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('mysql5');
     dbsteward::$quote_all_names = true;
     mysql5::$swap_function_delimiters = TRUE;
@@ -54,7 +52,7 @@ class Mysql5SchemaSQLTest extends PHPUnit_Framework_TestCase {
 </dbsteward>
 XML;
 
-    $expected = <<<'SQL'
+    $expected = <<<'ENDSQL'
 DROP FUNCTION IF EXISTS `function1`;
 DELIMITER $_$
 CREATE DEFINER = CURRENT_USER FUNCTION `function1` (`a` text, `b` int, `c` date)
@@ -74,7 +72,7 @@ CREATE TABLE `table1` (
 ALTER TABLE `table1`
   ADD PRIMARY KEY (`col1`);
 
-SQL;
+ENDSQL;
     
     $this->common($xml, $expected);
   }
@@ -120,7 +118,7 @@ SQL;
 </dbsteward>
 XML;
 
-    $expected = <<<'SQL'
+    $expected = <<<'ENDSQL'
 DROP FUNCTION IF EXISTS `schema1_function1`;
 DELIMITER $_$
 CREATE DEFINER = CURRENT_USER FUNCTION `schema1_function1` (`a` text, `b` int, `c` date)
@@ -252,7 +250,7 @@ ALTER TABLE `schema2_table2`
 
 CREATE OR REPLACE DEFINER = the_owner SQL SECURITY DEFINER VIEW `schema2_view`
   AS SELECT * FROM table2;
-SQL;
+ENDSQL;
     
     $this->common($xml, $expected);
   }

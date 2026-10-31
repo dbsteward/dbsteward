@@ -9,10 +9,10 @@
 
 require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
-/**
- * @group nodb
- */
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
 class ViewDependencyOrderTest extends dbstewardUnitTestBase {
+  private $doc_with;
+  private $doc_without;
   private $xml_with = <<<XML
 <dbsteward>
   <database>
@@ -53,22 +53,18 @@ XML;
 </dbsteward>
 XML;
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::$quote_all_names = true;
     $this->doc_with = simplexml_load_string($this->xml_with);
     $this->doc_without = simplexml_load_string($this->xml_without);
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testDependencyOrderingPgsql8() {
     $this->doTestDependencyOrdering('pgsql8');
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testDependencyOrderingMysql5() {
     $this->doTestDependencyOrdering('mysql5');
   }
@@ -90,16 +86,12 @@ XML;
     $this->assertEquals(array($schema, $view1), $arr[1], 'view1 should be visited after view2');
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testComplexDependencyOrderingPgsql8() {
     $this->doTestComplexDependencyOrdering('pgsql8');
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testComplexDependencyOrderingMysql5() {
     $this->doTestComplexDependencyOrdering('mysql5');
   }
@@ -149,16 +141,12 @@ XML;
     $this->assertEquals($expected, $actual);
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testViewsDroppedInOrderPgsql8() {
     $this->doTestViewsDroppedInOrder('pgsql8');
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testViewsDroppedInOrderMysql5() {
     $this->doTestViewsDroppedInOrder('mysql5');
   }
@@ -206,16 +194,12 @@ SQL;
     $this->assertEquals($expected, $actual);
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testViewsCreatedInOrderPgsql8() {
     $this->doTestViewsCreatedInOrder('pgsql8');
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testViewsCreatedInOrderMysql5() {
     $this->doTestViewsCreatedInOrder('mysql5');
   }
@@ -244,16 +228,12 @@ SQL;
     $this->assertEquals($expected, $actual);
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testBuildsInOrderPgsql8() {
     $this->doTestBuildsInOrder('pgsql8');
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testBuildsInOrderMysql5() {
     $this->doTestBuildsInOrder('mysql5');
   }
@@ -283,16 +263,12 @@ SQL;
     $this->assertEquals($expected, $actual);
   }
 
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testUpgradesInOrderPgsql8() {
     $this->doTestUpgradesInOrder('pgsql8');
   }
 
-  /**
-   * @group mysql5
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testUpgradesInOrderMysql5() {
     $this->doTestUpgradesInOrder('mysql5');
   }

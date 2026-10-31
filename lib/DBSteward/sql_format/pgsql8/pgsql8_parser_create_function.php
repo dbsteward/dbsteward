@@ -62,7 +62,7 @@ class pgsql8_parser_create_function {
       $function_modifiers = preg_replace("/\\s+/", " ", $function_modifiers);
       // kill trailing semicolon
       $function_modifiers = trim($function_modifiers);
-      if ( substr($function_modifiers, -1) == ';' ) {
+      if ( str_ends_with($function_modifiers, ';') ) {
         $function_modifiers = trim(substr($function_modifiers, 0, -1));
       }
       $function_modifiers = ' ' . $function_modifiers . ' ';

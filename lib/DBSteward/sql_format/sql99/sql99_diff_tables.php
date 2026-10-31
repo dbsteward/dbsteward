@@ -144,9 +144,9 @@ class sql99_diff_tables {
       return;
     }
     if ($new_schema && $new_table) {
-      $alter_options = array();
-      $create_options = array();
-      $drop_options = array();
+      $alter_options = [];
+      $create_options = [];
+      $drop_options = [];
 
       $old_options = format_table::get_table_options($old_schema, $old_table);
       $new_options = format_table::get_table_options($new_schema, $new_table);

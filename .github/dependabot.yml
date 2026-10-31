@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Keeps the SHA-pinned actions in .github/workflows current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ['*']
+
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    # Security fixes still open PRs immediately; routine updates are batched.
+    groups:
+      composer-dev:
+        dependency-type: development
+      composer-runtime:
+        dependency-type: production
+        update-types: [minor, patch]
+    # Wait a week after a release before proposing it (supply-chain cooldown).
+    cooldown:
+      default-days: 7

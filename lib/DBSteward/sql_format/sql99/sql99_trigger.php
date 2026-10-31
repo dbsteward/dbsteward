@@ -26,7 +26,7 @@ class sql99_trigger {
 
     $equals =
       strcasecmp($trigger_a['when'], $trigger_b['when']) == 0
-      && strcasecmp($trigger_a['forEach'], $trigger_b['forEach']) == 0
+      && strcasecmp((string)$trigger_a['forEach'], (string)$trigger_b['forEach']) == 0
       && strcasecmp($trigger_a['event'], $trigger_b['event']) == 0;
 
     return $equals;

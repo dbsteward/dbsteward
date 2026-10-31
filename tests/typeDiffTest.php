@@ -229,9 +229,8 @@ XML;
 </dbsteward>
 XML;
   
-  /**
-   * @group pgsql8
-   */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testAddEnumMemberPGSQL8() {
     $this->set_xml_content_a($this->pgsql8_xml_a);
     $this->set_xml_content_b($this->pgsql8_xml_b);
@@ -240,9 +239,8 @@ XML;
     $this->upgrade_db_pgsql8();
   }
   
-  /**
-   * @group mssql10
-   */
+  #[\PHPUnit\Framework\Attributes\Group('mssql10')]
+  #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
   public function testAddEnumMemberMSSQL10() {
     $this->set_xml_content_a($this->pgsql8_xml_a);
     $this->set_xml_content_b($this->pgsql8_xml_b);

@@ -12,15 +12,14 @@
 
 require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
-class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
+class tableHasDependencyTest extends PHPUnit\Framework\TestCase {
 
   /**
    * confirm that table dependencies are detected through inheritsSchema on the table element
-   * 
-   * @group nodb
-   * @group pgsql8
-   * @group mysql5
    */
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testDependencyOfChildViaInheritsSchema() {
     $parent = '<schema name="parentSchema" />';
     $parent_table = '
@@ -43,11 +42,10 @@ class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
   
   /**
    * confirm that table dependencies are detected through foreignSchema/foreignTable/foreignColumn inline in column element
-   * 
-   * @group nodb
-   * @group pgsql8
-   * @group mysql5
    */
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testDependencyOfChildViaColumnInlineForeignKey() {
     $parent = '<schema name="parentSchema" />';
     $parent_table = '
@@ -72,11 +70,10 @@ class tableHasDependencyTest extends PHPUnit_Framework_TestCase {
 
   /**
    * confirm that table dependencies are detected through foreignKey elements
-   * 
-   * @group nodb
-   * @group pgsql8
-   * @group mysql5
    */
+  #[\PHPUnit\Framework\Attributes\Group('nodb')]
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testDependencyOfChildViaForeignKey() {
     $parent = '<schema name="parentSchema" />';
     $parent_table = '

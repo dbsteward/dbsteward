@@ -9,10 +9,8 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class EscapeCharTypeTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class EscapeCharTypeTest extends PHPUnit\Framework\TestCase {
 
   private $xml = <<<XML
 <schema name="public" owner="ROLE_OWNER">
@@ -29,7 +27,7 @@ class EscapeCharTypeTest extends PHPUnit_Framework_TestCase {
 </schema>
 XML;
 
-  public function setUp() {
+  public function setUp(): void {
     dbsteward::set_sql_format('pgsql8');
     dbsteward::$quote_all_names = TRUE;
   }

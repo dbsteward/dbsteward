@@ -9,13 +9,13 @@
 
 require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
-class OptionalForeignSchemaTest extends \PHPUnit_Framework_TestCase {
-  /** @group pgsql8 */
+class OptionalForeignSchemaTest extends PHPUnit\Framework\TestCase {
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testDbxForeignKeyPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     $this->_testDbxForeignKey();
   }
-  /** @group mysql5 */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testDbxForeignKeyMysql5() {
     dbsteward::set_sql_format('mysql5');
     $this->_testDbxForeignKey();
@@ -35,12 +35,12 @@ class OptionalForeignSchemaTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals($table2_t2id, $foreign['column']);
   }
 
-  /** @group pgsql8 */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testXmlParserTableHasDepPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     $this->_testXmlParserTableHasDep();
   }
-  /** @group mysql5 */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testXmlParserTableHasDepMysql5() {
     dbsteward::set_sql_format('mysql5');
     $this->_testXmlParserTableHasDep();
@@ -54,12 +54,12 @@ class OptionalForeignSchemaTest extends \PHPUnit_Framework_TestCase {
     $this->assertTrue(xml_parser::table_has_dependency($table1, $table2));
   }
 
-  /** @group pgsql8 */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testConstraintFKLookupPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     $this->_testConstraintFKLookup();
   }
-  /** @group mysql5 */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testConstraintFKLookupMysql5() {
     dbsteward::set_sql_format('mysql5');
     $this->_testConstraintFKLookup();
@@ -79,12 +79,12 @@ class OptionalForeignSchemaTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals($table2_t2id, $foreign['column']);
   }
 
-  /** @group pgsql8 */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testFormatGetTableConstraintsPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     $this->_testFormatGetTableConstraints();
   }
-  /** @group mysql5 */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testFormatGetTableConstraintsMysql5() {
     dbsteward::set_sql_format('mysql5');
     $this->_testFormatGetTableConstraints();
@@ -107,12 +107,12 @@ class OptionalForeignSchemaTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals($table2_t2id, $foreign['column']);
   }
 
-  /** @group pgsql8 */
+  #[\PHPUnit\Framework\Attributes\Group('pgsql8')]
   public function testConstraintGetTableConstraintsPgsql8() {
     dbsteward::set_sql_format('pgsql8');
     $this->_testConstraintGetTableConstraints();
   }
-  /** @group mysql5 */
+  #[\PHPUnit\Framework\Attributes\Group('mysql5')]
   public function testConstraintGetTableConstraintsMysql5() {
     dbsteward::set_sql_format('mysql5');
     $this->_testConstraintGetTableConstraints();

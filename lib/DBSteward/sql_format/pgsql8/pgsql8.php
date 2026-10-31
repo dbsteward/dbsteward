@@ -12,6 +12,33 @@ class pgsql8 extends sql99 {
 
   const QUOTE_CHAR = '"';
 
+  /**
+   * Escape a value for use inside a single-quoted SQL string literal.
+   *
+   * Replaces connection-less pg_escape_string(), deprecated since PHP 8.1
+   * ("Automatic fetching of PostgreSQL connection"), with the same results:
+   * - with an open connection (e.g. --dbdatadiff), escape through it, so the
+   *   server's standard_conforming_strings setting is honored;
+   * - without one, match libpq PQescapeString(): quotes are doubled, the value
+   *   ends at the first NUL byte, and backslashes are doubled unless the last
+   *   connection used standard_conforming_strings (never, in normal builds).
+   *
+   * @param mixed $value
+   * @return string
+   */
+  public static function escape_string_literal($value) {
+    $value = (string)$value;
+    $connection = pgsql8_db::connection();
+    if ($connection) {
+      return pg_escape_string($connection, $value);
+    }
+    $value = explode("\0", $value, 2)[0];
+    if (pgsql8_db::standard_conforming_strings()) {
+      return str_replace("'", "''", $value);
+    }
+    return str_replace(['\\', "'"], ['\\\\', "''"], $value);
+  }
+
   const PATTERN_SERIAL_COLUMN = '/^serial|bigserial$/i';
 
   const PATTERN_REPLICATED_COLUMN = '/^serial|bigserial$/i';
@@ -28,8 +55,8 @@ class pgsql8 extends sql99 {
    */
   const VALID_IDENTIFIER_REGEX = '/^[a-z_]\w{0,62}$/i';
 
-  public static $table_slony_ids = array();
-  public static $sequence_slony_ids = array();
+  public static $table_slony_ids = [];
+  public static $sequence_slony_ids = [];
 
   public static function get_identifier_blacklist_file() {
     return __DIR__ . '/pgsql8_identifier_blacklist.txt';
@@ -53,12 +80,12 @@ class pgsql8 extends sql99 {
     }
     
     // if not explicit NULL, must be a SimpleXMLElement
-    if ( !is_object($obj) || strcasecmp(get_class($obj), 'SimpleXMLElement') != 0 ) {
+    if ( !is_object($obj) || strcasecmp($obj::class, 'SimpleXMLElement') != 0 ) {
       throw new exception("set_context_replica_set_id passed non-SimpleXMLElement object");
     }
     
     // must be a schema table column trigger sequence type function view element to be defining slonySetId context attribute
-    if ( !in_array(strtolower($obj->getName()), array('schema', 'table', 'column', 'trigger', 'sequence', 'sql', 'type', 'function', 'view')) ) {
+    if ( !in_array(strtolower($obj->getName()), ['schema', 'table', 'column', 'trigger', 'sequence', 'sql', 'type', 'function', 'view']) ) {
       throw new exception("set_context_replica_set_id passed element that is not a schema table column trigger sequence sql type function view element -- " . $obj->getName());
     }
 
@@ -66,7 +93,7 @@ class pgsql8 extends sql99 {
       // context_replica_set_id -10 means object does not have slonySetId defined
       return self::$context_replica_set_id = -10;
     }
-    $set_id = (integer)($obj['slonySetId']);
+    $set_id = (int)($obj['slonySetId']);
     return self::$context_replica_set_id = $set_id;
   }
   
@@ -96,7 +123,7 @@ class pgsql8 extends sql99 {
   }
 
   public static $track_pg_identifiers = FALSE;
-  public static $known_pg_identifiers = array();
+  public static $known_pg_identifiers = [];
   public static function identifier_name($schema, $table, $column, $suffix) {
     // make sure SimpleXML attributes cast into strings as these are used for array keys
     $schema = trim($schema);
@@ -139,12 +166,8 @@ class pgsql8 extends sql99 {
     $ident_name = $ident_table . '_' . $ident_column . $suffix;
 
     if (self::$track_pg_identifiers) {
-      if (!isset(self::$known_pg_identifiers[$schema])) {
-        self::$known_pg_identifiers[$schema] = array();
-      }
-      if (!isset(self::$known_pg_identifiers[$schema][$table])) {
-        self::$known_pg_identifiers[$schema][$table] = array();
-      }
+      self::$known_pg_identifiers[$schema] ??= [];
+      self::$known_pg_identifiers[$schema][$table] ??= [];
       if (in_array($ident_name, self::$known_pg_identifiers[$schema][$table])) {
         dbsteward::trace("rename ident_name FROM " . $ident_name);
         $inc = 1;
@@ -166,7 +189,7 @@ class pgsql8 extends sql99 {
   }
 
   public static function strip_escaping_e($value) {
-    if (strlen($value) > 2 && substr($value, 0, 2) == "E'" && substr($value, -1) == "'") {
+    if (strlen($value) > 2 && str_starts_with($value, "E'") && str_ends_with($value, "'")) {
       // just cut off the E, as we still want the data to be ' quoted
       $value = substr($value, 1);
     }
@@ -175,7 +198,7 @@ class pgsql8 extends sql99 {
 
   public static function strip_string_quoting($value) {
     // 'string' becomes string
-    if (strlen($value) > 2 && substr($value, 0, 1) == "'" && substr($value, -1) == "'") {
+    if (strlen($value) > 2 && str_starts_with($value, "'") && str_ends_with($value, "'")) {
       $value = substr($value, 1);
       $value = substr($value, 0, -1);
     }
@@ -247,14 +270,14 @@ class pgsql8 extends sql99 {
     if (strlen($value) > 0) {
       // data types that should be quoted
       $enum_regex = dbx::enum_regex($db_doc);
-      if (strlen($enum_regex) > 0) {
+      if (strlen((string)$enum_regex) > 0) {
         $enum_regex = '|' . $enum_regex;
       }
 
       // complain when assholes use colon time notation instead of postgresql verbose for interval expressions
       if (dbsteward::$require_verbose_interval_notation) {
         if (preg_match('/interval/i', $type) > 0) {
-          if (substr($value, 0, 1) != '@') {
+          if (!str_starts_with($value, '@')) {
             throw new exception("bad interval value: " . $value . " -- interval types must be postgresql verbose format: '@ 2 hours 30 minutes' etc for cfxn comparisons to work");
           }
         }
@@ -262,7 +285,7 @@ class pgsql8 extends sql99 {
 
       // data types that should be quoted
       if (preg_match("/^bool.*|^character.*|^string|^text|^date|^time.*|^(?:var)?char.*|^interval|^money.*|^inet|uuid|ltree" . $enum_regex . "/i", $type) > 0) {
-        $value = "'" . pg_escape_string($value) . "'";
+        $value = "'" . pgsql8::escape_string_literal($value) . "'";
 
         // data types that should have E prefix to their quotes
         if (pgsql8::E_ESCAPE
@@ -606,7 +629,11 @@ class pgsql8 extends sql99 {
       // set serial primary keys to the max value after inserts have been performed
       // only if the PRIMARY KEY is not a multi column
       $node_rows = & dbx::get_table_rows($table);
-      $columns = preg_split("/,|\s/", $node_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
+      $columns = '';
+      if ($node_rows) {
+        $columns = $node_rows['columns'];
+      }
+      $columns = preg_split("/,|\s/", $columns, -1, PREG_SPLIT_NO_EMPTY);
       if (isset($table['primaryKey'])
         && strlen($table['primaryKey']) > 0 && in_array(dbsteward::string_cast($table['primaryKey']), $columns)) {
         $pk_column = dbsteward::string_cast($table['primaryKey']);
@@ -1352,7 +1379,7 @@ WAIT FOR EVENT (
 
   public static function slony_compare($files) {
     if (!is_array($files)) {
-      $files = array($files);
+      $files = [$files];
     }
     $output_prefix = dirname($files[0]) . '/' . substr(basename($files[0]), 0, -4);
 
@@ -1413,11 +1440,11 @@ WAIT FOR EVENT (
 
   public static function slony_diff($old_files, $new_files) {
     if (!is_array($old_files)) {
-      $old_files = array($old_files);
+      $old_files = [$old_files];
     }
     $old_output_prefix = dirname($old_files[0]) . '/' . substr(basename($old_files[0]), 0, -4);
     if (!is_array($new_files)) {
-      $new_files = array($new_files);
+      $new_files = [$new_files];
     }
     $new_output_prefix = dirname($new_files[0]) . '/' . substr(basename($new_files[0]), 0, -4);
 
@@ -1461,10 +1488,10 @@ WAIT FOR EVENT (
    */
   public static function sql_diff($old, $new, $upgrade_prefix) {
     if (!is_array($old)) {
-      $old = array($old);
+      $old = [$old];
     }
     if (!is_array($new)) {
-      $new = array($new);
+      $new = [$new];
     }
     dbsteward::notice("Calculating sql differences:");
     dbsteward::notice("Old set:  " . implode(', ', $old));
@@ -1482,7 +1509,7 @@ WAIT FOR EVENT (
    */
   public static function extract_schema($host, $port, $database, $user, $password) {
     // serials that are implicitly created as part of a table, no need to explicitly create these
-    $table_serials = array();
+    $table_serials = [];
 
     dbsteward::notice("Connecting to pgsql8 host " . $host . ':' . $port . ' database ' . $database . ' as ' . $user);
     // if not supplied, ask for the password
@@ -1518,7 +1545,7 @@ WAIT FOR EVENT (
             WHERE schemaname NOT IN ('information_schema', 'pg_catalog')
             ORDER BY schemaname, tablename;";
     $rs = pgsql8_db::query($sql);
-    $sequence_cols = array();
+    $sequence_cols = [];
     while (($row = pg_fetch_assoc($rs)) !== FALSE) {
 
       dbsteward::info("Analyze table options " . $row['schemaname'] . "." . $row['tablename']);
@@ -1565,7 +1592,7 @@ WAIT FOR EVENT (
             SELECT oid FROM pg_catalog.pg_namespace WHERE nspname = '".$node_schema['name']."')";
         $params_rs = pgsql8_db::query($sql);
         $params_row = pg_fetch_assoc($params_rs);
-        $params = array();
+        $params = [];
         if (!empty($params_row['reloptions'])) {
           // reloptions is formatted as {name=value,name=value}
           $params = explode(',', substr($params_row['reloptions'],1,-1));
@@ -1580,9 +1607,9 @@ WAIT FOR EVENT (
         dbsteward::info("Analyze table columns " . $row['schemaname'] . "." . $row['tablename']);
 
         $column_descriptions_raw = self::parse_sql_array($row['column_descriptions']);
-        $column_descriptions = array();
+        $column_descriptions = [];
         foreach ($column_descriptions_raw as $desc) {
-          list($idx, $description) = explode(';', $desc, 2);
+          [$idx, $description] = explode(';', $desc, 2);
           $column_descriptions[$idx] = $description;
         }
 
@@ -1771,7 +1798,6 @@ WAIT FOR EVENT (
     }
 
     // for all schemas, all tables - get table constraints that are not type 'FOREIGN KEY'
-    dbsteward::info("Analyze table constraints " . $row['schemaname'] . "." . $row['tablename']);
     $sql = "SELECT constraint_name, constraint_type, table_schema, table_name, array_agg(columns) AS columns
       FROM (
       SELECT tc.constraint_name, tc.constraint_type, tc.table_schema, tc.table_name, kcu.column_name::text AS columns
@@ -1784,6 +1810,7 @@ WAIT FOR EVENT (
       GROUP BY results.constraint_name, results.constraint_type, results.table_schema, results.table_name;";
     $rc_constraint = pgsql8_db::query($sql);
     while (($constraint_row = pg_fetch_assoc($rc_constraint)) !== FALSE) {
+      dbsteward::info("Analyze table constraints " . $constraint_row['table_schema'] . "." . $constraint_row['table_name'] . "." . $constraint_row['constraint_name']);
       $nodes = $doc->xpath("schema[@name='" . $constraint_row['table_schema'] . "']");
       if (count($nodes) != 1) {
         throw new exception("failed to find constraint analysis schema '" . $constraint_row['table_schema'] . "'");
@@ -1846,13 +1873,13 @@ WAIT FOR EVENT (
             INNER JOIN pg_attribute fc_att ON fc_att.attrelid = con.foreign_table AND fc_att.attnum = con.foreign_col
             GROUP BY con.constraint_name, lns.nspname, lt_cl.relname, fns.nspname, ft_cl.relname, con.update_rule, con.delete_rule;";
     $rc_fk = pgsql8_db::query($sql);
-    $rules = array(
+    $rules = [
       'a' => 'NO_ACTION',
       'r' => 'RESTRICT',
       'c' => 'CASCADE',
       'n' => 'SET_NULL',
       'd' => 'SET_DEFAULT'
-    );
+    ];
     while (($fk_row = pg_fetch_assoc($rc_fk)) !== FALSE) {
       $local_cols = explode(' ', $fk_row['local_columns']);
       $foreign_cols = explode(' ', $fk_row['foreign_columns']);
@@ -2166,39 +2193,39 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    
     // {} signifies an empty array
     if (strlen($input) === 0) {
-      return array();
+      return [];
     }
     
-    $rv = array();
+    $rv = [];
     $nextval = '';
     $inquote = FALSE;
     for ($i = 0; $i < strlen($input); $i++) {
       //echo "$i, $inquote, $nextval\n";
       if ($inquote) {
-        if ($input{$i} == '"') {
+        if ($input[$i] == '"') {
           $inquote = FALSE;
         }
         else {
-          if ($input{$i} == "\\") {
+          if ($input[$i] == "\\") {
             $i++;
-            $nextval .= $input{$i};
+            $nextval .= $input[$i];
           }
           else {
-            $nextval .= $input{$i};
+            $nextval .= $input[$i];
           }
         }
       }
       else {
-        if ($input{$i} == ',') {
+        if ($input[$i] == ',') {
           $rv[] = $nextval;
           $nextval = '';
         }
         else {
-          if ($input{$i} == '"') {
+          if ($input[$i] == '"') {
             $inquote = TRUE;
           }
           else {
-            $nextval .= $input{$i};
+            $nextval .= $input[$i];
           }
         }
       }
@@ -2215,7 +2242,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     // will be receiving something like '{superuser=rwU/superuser_role,normal_role=rw/superuser_role}'
     // first, split into each array entry
     if (empty($grant_str)) {
-      return array();
+      return [];
     }
     $perm_trim = trim($grant_str, '{}');
     $perm_list = explode(',', $perm_trim);
@@ -2223,7 +2250,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     if (count($perm_list) == 1) {
     }
 
-    $grants = array();
+    $grants = [];
 
     // split each entry into user / perm
     foreach ($perm_list as $perm_entry) {
@@ -2248,11 +2275,11 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    */
   protected static function make_grant_list($perm_set) {
     // AFAICT the only permissions allowed for sequences are SELECT/UPDATE/USAGE
-    $mappings = array(
+    $mappings = [
       'a' => 'UPDATE',
       'r' => 'SELECT',
       'U' => 'USAGE'
-    );
+    ];
 
     // perm set will be something like rwU/superuser_role, split on /
     $grant_str = explode('/', $perm_set);
@@ -2261,7 +2288,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
     }
     $grant_chars = str_split($grant_str[0]);
 
-    $perms = array();
+    $perms = [];
     foreach ($grant_chars as $grant_char) {
       if (array_key_exists($grant_char, $mappings)) {
         $perms[] = $mappings[$grant_char];
@@ -2296,7 +2323,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
           $primary_key_cols = self::primary_key_split($table['primaryKey']);
           $cols = preg_split("/[\,\s]+/", $table->rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
 
-          $col_types = array();
+          $col_types = [];
           foreach ($table->column AS $table_column) {
             $type = '';
 
@@ -2306,7 +2333,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
               if (strlen($type) > 0) {
                 throw new exception("type of " . $type . " was found for " . dbsteward::string_cast($cols[$j]) . " in table " . dbsteward::string_cast($table['name']) . " but it is foreign keyed!");
               }
-              $foreign = array();
+              $foreign = [];
               dbx::foreign_key($db_doc, $schema, $table, $table_column, $foreign);
               // don't need to error-check, foreign_key() is self-checking if it doesnt find the fkey col it will complain
               $type = $foreign['column']['type'];
@@ -2355,7 +2382,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
             }
             else if (pg_num_rows($rs) > 1) {
               dbsteward::notice($table_name . " contains more than one row WHERE " . $primary_key_expression);
-              while (($db_row = pg_fetch($rs)) !== FALSE) {
+              while (($db_row = pg_fetch_assoc($rs)) !== FALSE) {
                 dbsteward::notice("\t" . implode(', ', $db_row));
               }
             }
@@ -2501,10 +2528,10 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
    * @return array
    */
   protected static function get_slony_replica_set_node_ids($replica_set) {
-    $node_ids = array();
-    $node_ids[] = (integer)($replica_set['originNodeId']);
+    $node_ids = [];
+    $node_ids[] = (int)($replica_set['originNodeId']);
     foreach($replica_set->slonyReplicaSetNode AS $set_node) {
-      $node_ids[] = (integer)($set_node['id']);
+      $node_ids[] = (int)($set_node['id']);
     }
     return $node_ids;
   }
@@ -2520,12 +2547,12 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
   protected static function get_slony_replica_set_node_attribute($db_doc, $replica_set, $node_id, $attribute) {
     $replica_node = NULL;
     // is the node_id specified the origin node?
-    if ( (integer)($replica_set['originNodeId']) == $node_id ) {
+    if ( (int)($replica_set['originNodeId']) == $node_id ) {
       $replica_node = $replica_set;
     }
     else {
       foreach($replica_set->slonyReplicaSetNode AS $set_node) {
-        if ( (integer)($set_node['id']) == $node_id ) {
+        if ( (int)($set_node['id']) == $node_id ) {
           $replica_node = $set_node;
         }
       }
@@ -2552,7 +2579,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       throw new exception("no slonyNode elements in database definition");
     }
     foreach($db_doc->database->slony->slonyNode AS $slony_node) {
-      if ( (integer)($slony_node['id']) == $node_id ) {
+      if ( (int)($slony_node['id']) == $node_id ) {
         return $slony_node;
       }
     }
@@ -2571,7 +2598,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       else if (!is_numeric(dbsteward::string_cast($table['slonyId']))) {
         throw new exception('table ' . $table['name'] . " slonyId " . $table['slonyId'] . " is not numeric");
       }
-      else if ( strcmp($replica_set['id'], $table['slonySetId']) == 0 ) {
+      else if ( strcmp($replica_set['id'], (string)$table['slonySetId']) == 0 ) {
         // this table is for the intended replica set
         return TRUE;
       }
@@ -2608,7 +2635,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
       else if (!is_numeric(dbsteward::string_cast($sequence['slonyId']))) {
         throw new exception('sequence ' . $sequence['name'] . " slonyId " . $sequence['slonyId'] . " is not numeric");
       }
-      else if ( strcmp($replica_set['id'], $sequence['slonySetId']) == 0 ) {
+      else if ( strcmp($replica_set['id'], (string)$sequence['slonySetId']) == 0 ) {
         // this sequence is for the intended replica set
         return TRUE;
       }
@@ -2636,7 +2663,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
   
   public static function slony_replica_set_contains_table_column_serial_sequence($db_doc, $replica_set, $schema, $table, $column) {    
     // is it a serial column and therefore an implicit sequence to replicate?
-    if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, $column['type']) > 0) {
+    if (preg_match(pgsql8::PATTERN_SERIAL_COLUMN, (string)$column['type']) > 0) {
 
       if (isset($column['slonyId']) && strlen($column['slonyId']) > 0) {
         if (strcasecmp('IGNORE_REQUIRED', $column['slonyId']) == 0) {
@@ -2647,7 +2674,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         else if (!is_numeric(dbsteward::string_cast($column['slonyId']))) {
           throw new exception("serial column " . $column['name'] . " slonyId " . $column['slonyId'] . " is not numeric");
         }
-        else if ( strcmp($replica_set['id'], $column['slonySetId']) == 0 ) {
+        else if ( strcmp($replica_set['id'], (string)$column['slonySetId']) == 0 ) {
           // this sequence is for the intended replica set
           return TRUE;
         }
@@ -2729,7 +2756,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
         self::$sequence_slony_ids[(int)$column['slonySetId']][] = dbsteward::string_cast($column['slonyId']);
       }
       else {
-        self::$sequence_slony_ids[(int)$column['slonySetId']] = array(dbsteward::string_cast($column['slonyId']));
+        self::$sequence_slony_ids[(int)$column['slonySetId']] = [dbsteward::string_cast($column['slonyId'])];
       }
     }
     else {
@@ -2740,7 +2767,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
           self::$sequence_slony_ids[(int)$first_replica_set['id']][] = dbsteward::string_cast($column['slonyId']);
         }
         else {
-          self::$sequence_slony_ids[(int)$first_replica_set['id']] = array(dbsteward::string_cast($column['slonyId']));
+          self::$sequence_slony_ids[(int)$first_replica_set['id']] = [dbsteward::string_cast($column['slonyId'])];
         }
       }
       else {
@@ -2750,7 +2777,7 @@ WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
           self::$sequence_slony_ids['NoSlonySet'][] = dbsteward::string_cast($column['slonyId']);
         }
         else {
-          self::$sequence_slony_ids['NoSlonySet'] = array(dbsteward::string_cast($column['slonyId']));
+          self::$sequence_slony_ids['NoSlonySet'] = [dbsteward::string_cast($column['slonyId'])];
         }
       }
     }

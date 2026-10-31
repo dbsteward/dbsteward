@@ -60,7 +60,7 @@ class pgsql8_column extends sql99_column {
     $column_type = pgsql8_column::column_type($db_doc, $node_schema, $node_table, $node_column, $foreign);
     $definition = pgsql8::get_quoted_column_name($node_column['name']) . ' ' . $column_type;
 
-    if (strlen($node_column['default']) > 0) {
+    if (strlen((string)$node_column['default']) > 0) {
       if (! $include_default_nextval && static::has_default_nextval($node_table, $node_column)) {
         // if the default is a nextval expression, don't specify it in the regular full definition
         // because if the sequence has not been defined yet,
@@ -104,7 +104,7 @@ class pgsql8_column extends sql99_column {
     $base_sql = "ALTER TABLE " . $fq_table_name . " ALTER COLUMN " . pgsql8::get_quoted_column_name($node_column['name']) . " SET";
     $sql = $base_sql;
     $changes = FALSE;
-    if (strlen($node_column['default']) > 0) {
+    if (strlen((string)$node_column['default']) > 0) {
       if (! $include_default_nextval && static::has_default_nextval($node_table, $node_column)) {
         // if the default is a nextval expression, don't specify it in the regular full definition
         // because if the sequence has not been defined yet,
@@ -186,10 +186,10 @@ class pgsql8_column extends sql99_column {
     if ( preg_match('/[\s]+/', $type) > 0 ) {
       // type contains whitespace
       // split the type and look for bad tokens
-      $bad_keywords = array(
+      $bad_keywords = [
         'DEFAULT',
         'UNIQUE'
-      );
+      ];
       $tokens = preg_split("/[\s]+/", $type, -1, PREG_SPLIT_NO_EMPTY);
 
       foreach($tokens AS $token) {

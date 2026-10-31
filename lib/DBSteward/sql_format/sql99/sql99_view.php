@@ -40,7 +40,7 @@ class sql99_view {
     }
 
     // if last char is ;, prune it
-    if ( substr($q, -1) == ';' ) {
+    if ( str_ends_with($q, ';') ) {
       $q = substr($q, 0, -1);
     }
 
@@ -51,9 +51,9 @@ class sql99_view {
     return array_map(function($s) use ($node_schema) {
       $parts = explode('.', $s, 2);
       if (count($parts) == 1) {
-        return array((string)$node_schema['name'], $parts[0]);
+        return [(string)$node_schema['name'], $parts[0]];
       }
       return $parts;
-    }, preg_split('/[\,\s]+/', $node_view['dependsOnViews'], -1, PREG_SPLIT_NO_EMPTY));
+    }, preg_split('/[\,\s]+/', (string)$node_view['dependsOnViews'], -1, PREG_SPLIT_NO_EMPTY));
   }
 }

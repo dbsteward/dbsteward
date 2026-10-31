@@ -1,0 +1,249 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  # Monthly safety net while the code is idle: only the lint job (composer audit)
+  # and the next-PHP job run on schedule, not the full test matrix. Dependabot
+  # already reports new security advisories as they are published. GitHub disables
+  # schedules after 60 days without repository activity, so this is not the
+  # primary alerting mechanism.
+  schedule:
+    - cron: '17 5 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Third-party actions are pinned to commit SHAs (tags are mutable); Dependabot
+# (.github/dependabot.yml) keeps the pins current.
+
+jobs:
+  # Fast checks that need no database; test jobs only start when these pass.
+  lint:
+    name: Lint, audit & smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.4'
+          extensions: dom, pcre, pgsql, pdo_mysql, simplexml
+          coverage: none
+
+      - uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Audit dependencies for security advisories
+        run: composer audit
+
+      - name: Lint PHP syntax
+        shell: bash
+        run: |
+          { find lib tests -name '*.php' -print0; printf 'bin/dbsteward\0'; } \
+            | xargs -0 -n1 -P4 php -l | (! grep -v '^No syntax errors')
+
+      - name: Check lib/ follows rector.php rules
+        run: vendor/bin/rector process --dry-run --no-progress-bar
+
+      - name: Install xmllint
+        run: sudo apt-get update -q && sudo apt-get install -yq --no-install-recommends libxml2-utils
+
+      # Builds and diffs the sample definitions; fails on any PHP error, warning
+      # or deprecation in the CLI output.
+      - name: Smoke test CLI on sample definitions
+        shell: bash
+        run: |
+          work=$(mktemp -d)
+          cp xml/someapp_v1.xml xml/someapp_v2.xml "$work"
+          cd "$work"
+          dbs="$GITHUB_WORKSPACE/bin/dbsteward"
+          php "$dbs" --sqlformat=pgsql8 --xml=someapp_v1.xml 2>&1 | tee build.log
+          php "$dbs" --sqlformat=pgsql8 --oldxml=someapp_v1.xml --newxml=someapp_v2.xml 2>&1 | tee -a build.log
+          test -s someapp_v1_build.sql && test -s someapp_v2_upgrade_stage1_schema1.sql
+          if grep -E 'Deprecated:|Warning:|Notice:|Fatal error:' build.log; then exit 1; fi
+
+  test:
+    name: PHP ${{ matrix.php }} · ${{ matrix.group }}${{ matrix.deps == 'lowest' && ' · lowest deps' || '' }}
+    needs: lint
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4', '8.5']
+        # One SQL format per process: active_sql_format_autoloader aliases format_*
+        # classes permanently, so mixing formats in one run leaks state between
+        # tests. Every test belongs to pgsql8 and/or mysql5 (the nodb tag only marks
+        # tests that need no database; never run it as a group on its own).
+        group: [pgsql8, mysql5]
+        deps: [locked]
+        include:
+          # Prove the lower bounds of the ^ constraints in composer.json work.
+          - { php: '8.3', group: pgsql8, deps: lowest }
+
+    # Database services start only for the group that needs them (an empty image
+    # skips the service container).
+    services:
+      postgres:
+        image: ${{ matrix.group == 'pgsql8' && 'postgres:17' || '' }}
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      mysql:
+        image: ${{ matrix.group == 'mysql5' && 'mysql:8.4' || '' }}
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -uroot"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+
+    env:
+      # Read by tests/bootstrap.php; the other defaults live in phpunit.xml.dist.
+      PGSQL8_DBHOST: 127.0.0.1
+      MYSQL5_DBHOST: 127.0.0.1
+      # Per-test scratch output (tests/TestWorkspace.php). Kept for every test here
+      # and uploaded only when the job fails.
+      DBSTEWARD_TEST_OUTPUT_DIR: ${{ github.workspace }}/build/test-output
+      DBSTEWARD_KEEP_TEST_OUTPUT: '1'
+      COVERAGE: ${{ matrix.php == '8.4' && matrix.deps == 'locked' }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, pcre, pgsql, pdo_mysql, simplexml
+          coverage: ${{ env.COVERAGE == 'true' && 'pcov' || 'none' }}
+
+      - name: Install system tools (xmllint, database clients)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq --no-install-recommends libxml2-utils postgresql-client mysql-client
+
+      - uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+        with:
+          dependency-versions: ${{ matrix.deps }}
+
+      - name: Prepare test database
+        run: .github/scripts/prepare-test-db.sh ${{ matrix.group }}
+
+      # Tests tagged #[Group('quarantine')] already failed on master before the PHP 8
+      # upgrade; they are excluded until fixed (run them with: composer test:quarantine).
+      - name: Run tests
+        shell: bash
+        run: >-
+          vendor/bin/phpunit
+          --group ${{ matrix.group }}
+          --exclude-group quarantine
+          --log-junit build/junit.xml
+          ${{ env.COVERAGE == 'true' && '--coverage-clover build/clover.xml' || '' }}
+
+      - name: Write test summary
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import xml.etree.ElementTree as ET
+          try:
+              s = ET.parse('build/junit.xml').getroot().find('testsuite')
+          except (OSError, ET.ParseError):
+              print('No JUnit report was produced.'); raise SystemExit
+          a = {k: int(s.get(k, 0)) for k in ('tests', 'assertions', 'failures', 'errors', 'skipped')}
+          print(f"### PHP ${{ matrix.php }} · ${{ matrix.group }} · ${{ matrix.deps }} deps")
+          print('| Tests | Assertions | Failures | Errors | Skipped |\n|---|---|---|---|---|')
+          print(f"| {a['tests']} | {a['assertions']} | {a['failures']} | {a['errors']} | {a['skipped']} |")
+          for tc in s.iter('testcase'):
+              for kind in ('failure', 'error'):
+                  if tc.find(kind) is not None:
+                      print(f"- **{kind}** `{tc.get('class')}::{tc.get('name')}`")
+          PY
+
+      - name: Upload test results on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-php${{ matrix.php }}-${{ matrix.group }}-${{ matrix.deps }}
+          path: |
+            build/junit.xml
+            build/test-output/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload coverage to Coveralls
+        if: env.COVERAGE == 'true'
+        uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
+        with:
+          file: build/clover.xml
+          flag-name: ${{ matrix.group }}
+          parallel: true
+          # A coverage service outage must not fail the build.
+          fail-on-error: false
+
+  # Early warning for the next PHP release (nightly build); never blocks merges.
+  php-next:
+    name: PHP 8.6 nightly · pgsql8 (non-blocking)
+    needs: lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGSQL8_DBHOST: 127.0.0.1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.6'
+          extensions: dom, pcre, pgsql, pdo_mysql, simplexml
+          coverage: none
+
+      - name: Install system tools (xmllint, psql)
+        run: sudo apt-get update -q && sudo apt-get install -yq --no-install-recommends libxml2-utils postgresql-client
+
+      - uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+        with:
+          # The lock file targets PHP 8.3; let the nightly build install it anyway.
+          composer-options: --ignore-platform-req=php+
+
+      - name: Prepare test database
+        run: .github/scripts/prepare-test-db.sh pgsql8
+
+      - name: Run tests
+        run: vendor/bin/phpunit --group pgsql8 --exclude-group quarantine
+
+  coverage:
+    name: Finish coverage report
+    needs: test
+    if: ${{ !cancelled() && github.event_name != 'schedule' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
+        with:
+          parallel-finished: true
+          fail-on-error: false

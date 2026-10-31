@@ -58,7 +58,7 @@ class pgsql8_diff_indexes {
    *       to drop because they are already removed.
    */
   public static function get_drop_indexes($old_schema, $old_table, $new_schema, $new_table) {
-    $list = array();
+    $list = [];
 
     if (($new_table != null) && ($old_table != null)) {
       foreach(format_index::get_table_indexes($old_schema, $old_table) as $index) {
@@ -84,7 +84,7 @@ class pgsql8_diff_indexes {
    * @return list of indexes that should be added
    */
   public static function get_new_indexes($old_schema, $old_table, $new_schema, $new_table) {
-    $list = array();
+    $list = [];
 
     if ($new_table != null) {
       if ($old_table == null) {

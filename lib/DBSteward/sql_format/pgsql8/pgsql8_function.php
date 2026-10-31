@@ -38,7 +38,7 @@ class pgsql8_function {
     $sql .= "; -- DBSTEWARD_FUNCTION_DEFINITION_END\n";
 
     // set function ownership if defined
-    if (strlen($node_function['owner']) > 0 ) {
+    if (strlen((string)$node_function['owner']) > 0 ) {
       $sql .= "ALTER FUNCTION " . pgsql8_function::get_declaration($node_schema, $node_function)
         . " OWNER TO " . xml_parser::role_enum(dbsteward::$new_database, $node_function['owner']) . ";\n";
     }
@@ -46,7 +46,7 @@ class pgsql8_function {
     // set function comment if defined
     if (isset($node_function['description']) && strlen($node_function['description']) > 0) {
       $sql .= "COMMENT ON FUNCTION " . pgsql8_function::get_declaration($node_schema, $node_function)
-        . " IS '" . pg_escape_string($node_function['description']) . "';\n";
+        . " IS '" . pgsql8::escape_string_literal($node_function['description']) . "';\n";
     }
 
     return $sql;
@@ -64,7 +64,7 @@ class pgsql8_function {
       // no arguments to set for the function
     } else {
       $arguement_parts = explode(',', trim($arguments));
-      $args = array();
+      $args = [];
       foreach($arguement_parts as $part) {
         $chunks = preg_split("/[\s]+/", $part, -1, PREG_SPLIT_NO_EMPTY);
         // per http://www.postgresql.org/docs/8.4/static/sql-createfunction.html
@@ -114,7 +114,7 @@ class pgsql8_function {
       if ( isset($parameter['direction']) && strlen($parameter['direction']) > 0 ) {
         $arg .= $parameter['direction'] . ' ';
       }
-      if ( $include_names && strlen($parameter['name']) > 0 ) {
+      if ( $include_names && strlen((string)$parameter['name']) > 0 ) {
         $arg .= $parameter['name'] . ' ';
       }
       $arg .= $parameter['type'];
@@ -201,7 +201,7 @@ class pgsql8_function {
                  pgsql8_function::get_declaration($node_schema_a, $node_function_b)) == 0
       && strcasecmp($a_definition, $b_definition) == 0
       && strcasecmp($a_owner, $b_owner) == 0
-      && strcasecmp($node_function_a['type'], $node_function_b['type']) == 0;
+      && strcasecmp((string)$node_function_a['type'], (string)$node_function_b['type']) == 0;
 
     return $equals;
   }

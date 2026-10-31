@@ -58,7 +58,7 @@ class mysql5_trigger extends sql99_trigger {
       // @TODO: use something like get_fully_qualified_object_name
       $trigger_name = mysql5::get_fully_qualified_table_name($node_schema['name'], $node_trigger['name'] . ($single? '' : "_$event"));
       $trigger_fn = trim($node_trigger['function']);
-      if ( substr($trigger_fn, -1) != ';' ) {
+      if ( !str_ends_with($trigger_fn, ';') ) {
         $trigger_fn .= ';';
       }
       $ddl .= <<<SQL

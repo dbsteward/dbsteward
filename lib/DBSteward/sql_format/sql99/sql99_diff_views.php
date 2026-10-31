@@ -63,7 +63,7 @@ class sql99_diff_views {
    */
   public static function with_views_in_order($db_doc, $callback) {
     if ($db_doc != null) {
-      $visited = array();
+      $visited = [];
 
       $dfs_from = function ($schema, $view) use ($callback, &$dfs_from, $db_doc, &$visited) {
         $key = $schema['name'] . '.' . $view['name'];
@@ -77,7 +77,7 @@ class sql99_diff_views {
 
         $deps = format_view::get_dependencies($schema, $view);
         foreach ($deps as $dep) {
-          list($dep_schema_name, $dep_view_name) = $dep;
+          [$dep_schema_name, $dep_view_name] = $dep;
           // echo "  depends on $dep_schema_name.$dep_view_name\n";
           $dep_schema = dbx::get_schema($db_doc, $dep_schema_name);
           $dep_view = dbx::get_view($dep_schema, $dep_view_name);

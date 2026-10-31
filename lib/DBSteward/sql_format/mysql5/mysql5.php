@@ -119,7 +119,7 @@ class mysql5 extends sql99 {
       foreach ( $schema->grant AS $grant ) {
         $ofs->write(mysql5_permission::get_permission_sql($db_doc, $schema, $schema, $grant) . "\n");
       }
-      
+
       // enums
       foreach ( $schema->type AS $type ) {
         $ofs->write(mysql5_type::get_creation_sql($schema, $type) . "\n");
@@ -136,8 +136,8 @@ class mysql5 extends sql99 {
         }
       }
 
-      $sequences = array();
-      $triggers = array();
+      $sequences = [];
+      $triggers = [];
 
       // create defined tables
       foreach ( $schema->table AS $table ) {
@@ -179,7 +179,7 @@ class mysql5 extends sql99 {
 
       // trigger definitions + triggers used by serials
       $triggers = array_merge($triggers, dbx::to_array($schema->trigger));
-      $unique_triggers = array();
+      $unique_triggers = [];
       foreach ($triggers AS $trigger) {
         // only do triggers set to the current sql format
         if (strcasecmp($trigger['sqlFormat'], dbsteward::get_sql_format()) == 0) {
@@ -189,7 +189,7 @@ class mysql5 extends sql99 {
           if ( array_key_exists($unique_name, $unique_triggers) ) {
             throw new Exception("MySQL will not allow trigger {$trigger['name']} to be created because it happens on the same table/timing/event as trigger {$unique_triggers[$unique_name]}");
           }
-          
+
           $unique_triggers[$unique_name] = $trigger['name'];
           $ofs->write(mysql5_trigger::get_creation_sql($schema, $trigger)."\n");
         }
@@ -264,7 +264,11 @@ class mysql5 extends sql99 {
       $table_primary_keys = mysql5_table::primary_key_columns($table);
       $table_column_names = dbx::to_array($table->column, 'name');
       $node_rows =& dbx::get_table_rows($table); // the <rows> element
-      $data_column_names = preg_split("/,|\s/", $node_rows['columns'], -1, PREG_SPLIT_NO_EMPTY);
+      $columns = "";
+      if ($node_rows) {
+        $columns = $node_rows['columns'];
+      }
+      $data_column_names = preg_split("/,|\s/", $columns, -1, PREG_SPLIT_NO_EMPTY);
 
       // set serial primary keys to the max value after inserts have been performed
       // only if the PRIMARY KEY is not a multi column
@@ -357,7 +361,7 @@ class mysql5 extends sql99 {
         }
       }
 
-      $enum_types = array();
+      $enum_types = [];
       $enum_type = function ($obj, $mem, $values) use (&$enum_types) {
         // if that set of values is defined by a previous enum, use that
         foreach ( $enum_types as $name => $enum ) {
@@ -809,7 +813,7 @@ class mysql5 extends sql99 {
     if (strlen($value) > 0) {
       // data types that should be quoted
       $enum_regex = dbx::enum_regex($db_doc);
-      if (strlen($enum_regex) > 0) {
+      if (strlen((string)$enum_regex) > 0) {
         $enum_regex = '|' . $enum_regex;
       }
       $PATTERN_QUOTED_TYPES = "/^char.*|^string|^date.*|^time.*|^varchar.*|^interval|^money.*|^inet" . $enum_regex . "/i";
@@ -822,14 +826,14 @@ class mysql5 extends sql99 {
       // complain when assholes use colon time notation instead of postgresql verbose for interval expressions
       if (dbsteward::$require_verbose_interval_notation) {
         if (preg_match('/interval/i', $type) > 0) {
-          if (substr($value, 0, 1) != '@') {
+          if (!str_starts_with($value, '@')) {
             throw new exception("bad interval value: " . $value . " -- interval types must be postgresql verbose format: '@ 2 hours 30 minutes' etc for cfxn comparisons to work");
           }
         }
       }
 
       // mssql doesn't understand epoch
-      if (stripos('date', $type) !== FALSE
+      if (stripos('date', (string) $type) !== FALSE
         && strcasecmp($value, 'epoch') == 0) {
         $value = '1970-01-01';
       }
@@ -872,7 +876,7 @@ class mysql5 extends sql99 {
   public static function strip_single_quoting($value) {
     // if the value is surrounded on the outside by 's
     // kill them, and kill escaped single quotes too
-    if (strlen($value) > 2 && substr($value, 0, 1) == "'" && substr($value, -1) == "'") {
+    if (strlen($value) > 2 && str_starts_with($value, "'") && str_ends_with($value, "'")) {
       $value = substr($value, 1, -1);
       $value = str_replace("''", "'", $value);
       $value = str_replace("\'", "'", $value);
@@ -932,7 +936,7 @@ class mysql5 extends sql99 {
 
   public static function strip_string_quoting($value) {
     // 'string' becomes string
-    if (strlen($value) > 2 && $value[0] == "'" && substr($value, -1) == "'") {
+    if (strlen($value) > 2 && $value[0] == "'" && str_ends_with($value, "'")) {
       $value = substr($value, 1, -1);
       $value = str_replace("''", "'", $value);
       $value = str_replace("\\'","'", $value);

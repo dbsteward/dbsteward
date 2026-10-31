@@ -29,7 +29,7 @@ class mysql5_diff_indexes extends sql99_diff_indexes {
   }
 
   public static function diff_indexes_table_bits($old_schema, $old_table, $new_schema, $new_table) {
-    $bits = array();
+    $bits = [];
 
     // Drop indexes that do not exist in new schema or are modified
     foreach(static::get_drop_indexes($old_schema, $old_table, $new_schema, $new_table) as $index) {

@@ -55,14 +55,14 @@ class sql99_permission {
 
   public static function get_permission_roles($db_doc, $node_permission) {
     return array_map(
-      function($o)use($db_doc){return xml_parser::role_enum($db_doc, $o);},
+      fn($o) => xml_parser::role_enum($db_doc, $o),
       preg_split(dbsteward::PATTERN_SPLIT_ROLE, $node_permission['role'], -1, PREG_SPLIT_NO_EMPTY)
     );
   }
 
   public static function get_permission_privileges($node_permission) {
     return array_map(
-      function($o){return strtoupper(trim($o));},
+      fn($o) => strtoupper(trim($o)),
       preg_split(dbsteward::PATTERN_SPLIT_OPERATION, $node_permission['operation'], -1, PREG_SPLIT_NO_EMPTY)
     );
   }

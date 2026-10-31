@@ -9,11 +9,9 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class ColumnValueDefaultTest extends PHPUnit_Framework_TestCase {
-  public function setUp() {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class ColumnValueDefaultTest extends PHPUnit\Framework\TestCase {
+  public function setUp(): void {
     dbsteward::set_sql_format('pgsql8');
   }
 

@@ -128,11 +128,11 @@ class pgsql8_dump_loader {
   public static function load_database($files) {
     // one or more files to load as database
     if ( !is_array($files) ) {
-      $files = array($files);
+      $files = [$files];
     }
 
     pgsql8::$track_pg_identifiers = true;
-    pgsql8::$known_pg_identifiers = array();
+    pgsql8::$known_pg_identifiers = [];
 
     $database = new SimpleXMLElement('<dbsteward></dbsteward>');
     dbx::set_default_schema($database, 'public');
@@ -238,7 +238,7 @@ xml_parser::save_xml(dirname(__FILE__) . '/../../../../dbsteward_monitor.xml', $
     $new_line = trim($line);
     $command = $new_line;
 
-    while(substr(trim($new_line), -1) != ';') {
+    while(!str_ends_with(trim($new_line), ';')) {
       $buffer = fgets($fp);
       if ( $buffer == null ) {
         break; // fp has no more to give
@@ -273,7 +273,7 @@ xml_parser::save_xml(dirname(__FILE__) . '/../../../../dbsteward_monitor.xml', $
         if (preg_match(self::PATTERN_END_OF_FUNCTION, $new_line, $matches) > 0) {
           $end_of_function = $matches[1];
 
-          if ($end_of_function{0} == "'") {
+          if ($end_of_function[0] == "'") {
             $end_of_function = "'";
           } else {
             $end_of_function = substr($end_of_function, 0, strpos($end_of_function, '$', 1) + 1);
@@ -293,7 +293,7 @@ xml_parser::save_xml(dirname(__FILE__) . '/../../../../dbsteward_monitor.xml', $
       $command .= $new_line;
       //$command .= "\n"; // fgets() includes the trailing new line, I don't think we need this
 
-      if ($search_for_semicolon && substr(trim($new_line), -1) == ';') {
+      if ($search_for_semicolon && str_ends_with(trim($new_line), ';')) {
         break;
       }
 

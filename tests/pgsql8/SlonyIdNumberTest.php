@@ -9,10 +9,8 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class SlonyIdNumberTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class SlonyIdNumberTest extends PHPUnit\Framework\TestCase {
   
   protected $slonyidxml = <<<XML
 <dbsteward>
@@ -58,7 +56,7 @@ XML;
   protected $in_doc;
   protected $slonyid_doc;
   
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     dbsteward::set_sql_format('pgsql8');
     

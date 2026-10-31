@@ -7,15 +7,14 @@
  * @author Austin Hyde <austin109@gmail.com>
  */
 
-require_once __DIR__ . '/Mysql5ExtractionTest.php';
+require_once __DIR__ . '/Mysql5ExtractionTestCase.php';
 
-/**
- * @group mysql5
- */
-class Mysql5TablePartitionsExtractionTest extends Mysql5ExtractionTest {
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+class Mysql5TablePartitionsExtractionTest extends Mysql5ExtractionTestCase {
 
   const DEBUG = true;
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractHash() {
     $schema = $this->extract("CREATE TABLE hash_test (id int PRIMARY KEY) PARTITION BY HASH (id) PARTITIONS 4;");
     $partition = $schema->table->tablePartition;
@@ -28,6 +27,7 @@ class Mysql5TablePartitionsExtractionTest extends Mysql5ExtractionTest {
     $this->assertEquals('4', $opts['number']);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractLinearHash() {
     $schema = $this->extract("CREATE TABLE linear_hash_test (id int PRIMARY KEY) PARTITION BY LINEAR HASH (id) PARTITIONS 4;");
     $partition = $schema->table->tablePartition;
@@ -40,6 +40,7 @@ class Mysql5TablePartitionsExtractionTest extends Mysql5ExtractionTest {
     $this->assertEquals('4', $opts['number']);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractKey() {
     $schema = $this->extract("CREATE TABLE key_test (id int, foo int, PRIMARY KEY (id, foo)) PARTITION BY KEY (id, foo) PARTITIONS 4;");
     $partition = $schema->table->tablePartition;
@@ -52,6 +53,7 @@ class Mysql5TablePartitionsExtractionTest extends Mysql5ExtractionTest {
     $this->assertEquals('4', $opts['number']);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractLinearKey() {
     $schema = $this->extract("CREATE TABLE key_test (id int, foo int, PRIMARY KEY (id, foo)) PARTITION BY LINEAR KEY (id, foo) PARTITIONS 4;");
     $partition = $schema->table->tablePartition;
@@ -64,6 +66,7 @@ class Mysql5TablePartitionsExtractionTest extends Mysql5ExtractionTest {
     $this->assertEquals('4', $opts['number']);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractList() {
     $sql = <<<SQL
 CREATE TABLE list_test (id int PRIMARY KEY)
@@ -91,6 +94,7 @@ SQL;
     $this->assertEquals('7,8,9', (string)$partition->tablePartitionSegment[2]['value']);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractRange() {
     $sql = <<<SQL
 CREATE TABLE range_test (id int PRIMARY KEY)
@@ -118,6 +122,7 @@ SQL;
     $this->assertEquals('MAXVALUE', (string)$partition->tablePartitionSegment[2]['value']);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractRangeColumns() {
     $sql = <<<SQL
 CREATE TABLE range_test (id int, foo int, PRIMARY KEY (id, foo))

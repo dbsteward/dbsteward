@@ -43,20 +43,20 @@ class sql99 {
   
   protected static function is_custom_role_defined($doc, $role) {
     if (isset($doc->database->role->addChild->customRole)) {
-      $custom_roles = array();
+      $custom_roles = [];
     }
     else {
       $custom_roles = preg_split("/[\,\s]+/", strtolower($doc->database->role->customRole), -1, PREG_SPLIT_NO_EMPTY);
     }
 
-    $macro_roles = array(
+    $macro_roles = [
       'PGSQL',
       'PUBLIC',
       'ROLE_OWNER',
       'ROLE_APPLICATION',
       'ROLE_REPLICATION',
       'ROLE_READONLY'
-    );
+    ];
     if ( in_array(strtoupper($role), $macro_roles) ) {
       // macro role, say it is defined
       return TRUE;
@@ -98,17 +98,18 @@ class sql99 {
    * @return boolean
    */
   public static function is_identifier_blacklisted($name) {
-    static $list;
+    // Cache per blacklist file: since PHP 8.1 a method's static variables are shared
+    // with subclasses that inherit it, so a single cached list would leak the first
+    // format's reserved words (e.g. pgsql8) into every other format (e.g. mysql5).
+    static $lists = [];
     $file = static::get_identifier_blacklist_file();
     if ($file === null) {
       // no blacklist file, so assume $name isn't blacklisted
       return false;
     }
-    if ($list === null) {
-      $list = array_fill_keys(array_map('trim', file($file)), true);
-    }
+    $lists[$file] ??= array_fill_keys(array_map(trim(...), file($file)), true);
 
-    return array_key_exists(strtolower($name), $list);
+    return array_key_exists(strtolower($name), $lists[$file]);
   }
 
   /**

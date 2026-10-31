@@ -30,7 +30,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
       $old_sequences = static::get_sequences($old_schema);
     }
     else {
-      $old_sequences = array();
+      $old_sequences = [];
     }
 
 
@@ -51,10 +51,10 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
       else {
         // there were schemas in the old schema
 
-        $common_sequences = array();
+        $common_sequences = [];
 
         // only drop sequences not in the new schema
-        $to_drop = array();
+        $to_drop = [];
         foreach ( $old_sequences as $old_seq ) {
           if ( static::schema_contains_sequence($new_schema, $old_seq['name'], true) ) {
             // if the sequence *is* in the new schema, then it might have changed
@@ -69,7 +69,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
         }
 
         // only add sequences not in the old schema
-        $to_insert = array();
+        $to_insert = [];
         foreach ( $new_sequences as $new_seq ) {
           if ( static::schema_contains_sequence($old_schema, $new_seq['name'])) {
             // there used to be a sequence named $new_seq['name']
@@ -114,7 +114,7 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
   }
 
   private static function diff_single($ofs, $old_seq, $new_seq) {
-    $sql = array();
+    $sql = [];
 
     if ( !dbsteward::$ignore_oldnames && !empty($new_seq['oldSequenceName']) ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::SEQ_COL) . " = '{$new_seq['name']}'";
@@ -123,32 +123,32 @@ class mysql5_diff_sequences extends sql99_diff_sequences {
     if ( $new_seq['inc'] == null && $old_seq['inc'] != null ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::INC_COL) . ' = DEFAULT';
     }
-    if ( $new_seq['inc'] != null && strcasecmp($new_seq['inc'], $old_seq['inc']) != 0 ) {
+    if ( $new_seq['inc'] != null && strcasecmp((string)$new_seq['inc'], (string)$old_seq['inc']) != 0 ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::INC_COL) . ' = ' . $new_seq['inc'];
     }
 
     if ( $new_seq['min'] == null && $old_seq['min'] != null ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::MIN_COL) . ' = DEFAULT';
     }
-    elseif ( $new_seq['min'] != null && strcasecmp($new_seq['min'], $old_seq['min']) != 0 ) {
+    elseif ( $new_seq['min'] != null && strcasecmp((string)$new_seq['min'], (string)$old_seq['min']) != 0 ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::MIN_COL) . ' = ' . $new_seq['min'];
     }
 
     if ( $new_seq['max'] == null && $old_seq['max'] != null ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::MAX_COL) . ' = DEFAULT';
     }
-    elseif ( $new_seq['max'] != null && strcasecmp($new_seq['max'], $old_seq['max']) != 0 ) {
+    elseif ( $new_seq['max'] != null && strcasecmp((string)$new_seq['max'], (string)$old_seq['max']) != 0 ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::MAX_COL) . ' = ' . $new_seq['max'];
     }
 
-    if ( $new_seq['start'] != null && strcasecmp($new_seq['start'], $old_seq['start']) != 0 ) {
+    if ( $new_seq['start'] != null && strcasecmp((string)$new_seq['start'], (string)$old_seq['start']) != 0 ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::CUR_COL) . ' = ' . $new_seq['start'];
     }
 
     if ( $new_seq['cycle'] == null && $old_seq['cycle'] != null ) {
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::CYC_COL) . ' = DEFAULT';
     }
-    elseif ( $new_seq['cycle'] != null && strcasecmp($new_seq['cycle'], $old_seq['cycle']) != 0 ) {
+    elseif ( $new_seq['cycle'] != null && strcasecmp((string)$new_seq['cycle'], (string)$old_seq['cycle']) != 0 ) {
       $value = strcasecmp($new_seq['cycle'], 'false') == 0 ? 'FALSE' : 'TRUE';
       $sql[] = mysql5::get_quoted_column_name(mysql5_sequence::CYC_COL) . ' = ' . $value;
     }

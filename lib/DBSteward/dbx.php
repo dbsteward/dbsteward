@@ -29,7 +29,7 @@ class dbx {
     if ($db_doc !== NULL && self::$enum_type_regex_expression === NULL) {
       self::$enum_type_regex_expression = '';
 
-      $enum_type_names = array();
+      $enum_type_names = [];
       $schemas = & dbx::get_schemas($db_doc);
       foreach ($schemas AS $schema) {
         $types = & dbx::get_types($schema);
@@ -182,7 +182,7 @@ class dbx {
     if (!$old_schema) {
       return NULL;
     }
-    return array($old_schema, self::get_table($old_schema, $new_table['oldTableName'] ?: $new_table['name']));
+    return [$old_schema, self::get_table($old_schema, $new_table['oldTableName'] ?: $new_table['name'])];
   }
 
   public static function &get_tables(&$node_schema) {
@@ -220,7 +220,7 @@ class dbx {
     return $node_rows;
   }
 
-  public function &create_table_constraint(&$node_table, $name) {
+  public static function &create_table_constraint(&$node_table, $name) {
     $node_constraint = $node_table->addChild('constraint');
     $node_constraint->addAttribute('name', $name);
     return $node_constraint;
@@ -235,7 +235,7 @@ class dbx {
    * @return array
    */
   public static function get_tables_foreign_keying_to_table($db_doc, $table_dependency, $node_schema, $node_table) {
-    $constraints = array();
+    $constraints = [];
     for($i=0; $i<count($table_dependency); $i++) {
       // find the necessary pointers
       $table_dependency_item = $table_dependency[$i];
@@ -298,7 +298,7 @@ class dbx {
     $node_function = NULL;
     $nodes = $node_schema->xpath("function[@name='" . $name . "']");
     // filter out versions of functon in languages that are not relevant to the current format being processed
-    $filtered_nodes = array();
+    $filtered_nodes = [];
     foreach ($nodes as $node) {
       if (format_function::has_definition($node)) {
         $filtered_nodes[] = $node;
@@ -343,7 +343,7 @@ class dbx {
     $nodes = $node_schema->xpath("function");
 
     // filter out versions of functon in languages that are not relevant to the current format being processed
-    $filtered_nodes = array();
+    $filtered_nodes = [];
     foreach ($nodes as $node) {
       if (format_function::has_definition($node)) {
         $filtered_nodes[] = $node;
@@ -401,7 +401,7 @@ class dbx {
     return $return_index;
   }
 
-  public function &create_table_index(&$node_table, $name) {
+  public static function &create_table_index(&$node_table, $name) {
     $node_index = $node_table->addChild('index');
     $node_index->addAttribute('name', $name);
     return $node_index;
@@ -523,7 +523,7 @@ class dbx {
 
   public static function &get_views(&$node_schema) {
     if ($node_schema == null) {
-      return array();
+      return [];
     }
     $nodes = $node_schema->xpath("view");
     return $nodes;
@@ -547,7 +547,7 @@ class dbx {
   }
 
   public static function foreign_key($db_doc, $node_schema, $node_table, $column, &$foreign) {
-    $fschema = strlen($column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
+    $fschema = strlen((string)$column['foreignSchema']) == 0 ? (string)$node_schema['name'] : (string)$column['foreignSchema'];
     $foreign['schema'] = dbx::get_schema($db_doc, $fschema);
     if (!$foreign['schema']) {
       throw new exception("Failed to find foreign schema '" . dbsteward::string_cast($column['foreignSchema']) . "' for " . dbsteward::string_cast($node_schema['name']) . "." . dbsteward::string_cast($node_table['name']) . "." . dbsteward::string_cast($column['name']));
@@ -576,7 +576,7 @@ class dbx {
     // recurse and find the cascading foreign key
     if (strlen($foreign['column']['type']) == 0 && isset($foreign['column']['foreignColumn'])) {
       dbsteward::trace("Seeking nested foreign key for " . dbsteward::string_cast($foreign['schema']['name']) . "." . dbsteward::string_cast($foreign['table']['name']) . "." . $foreign['column']['name']);
-      $nested_fkey = array();
+      $nested_fkey = [];
       self::foreign_key($db_doc, $foreign['schema'], $foreign['table'], $foreign['column'], $nested_fkey);
       //var_dump($nested_fkey['column']);
       // make a separate clone of the column element because we are specifying the type only for foreign key type referencing
@@ -601,7 +601,7 @@ class dbx {
     $primary_key_index = $primary_key_index['base'];
 
     // figure out the primary key expression
-    $primary_key_expression = array();
+    $primary_key_expression = [];
     foreach ($primary_keys as $primary_column_name) {
       if (!isset($primary_key_index[$primary_column_name])) {
         throw new exception("primary key column named $primary_column_name not found in primary_key_index");
@@ -678,19 +678,19 @@ class dbx {
       if ($thing instanceof SimpleXMLElement) {
         if (count($thing) == 0) {
           if (empty($thing)) {
-            $thing = array();
+            $thing = [];
           }
           else {
-            $thing = array($thing);
+            $thing = [$thing];
           }
         }
       }
       else {
-        $thing = array($thing);
+        $thing = [$thing];
       }
     }
 
-    $arr = array();
+    $arr = [];
     if ($key === false) {
       foreach ($thing as $child) {
         $arr[] = $child;

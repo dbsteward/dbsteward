@@ -9,12 +9,11 @@
 
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class ExtractionTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class ExtractionTest extends PHPUnit\Framework\TestCase {
+  protected $conn;
 
-  public function setUp() {
+  public function setUp(): void {
     // disable pesky output buffering
     while (ob_get_level()) ob_end_clean();
 
@@ -23,7 +22,7 @@ class ExtractionTest extends PHPUnit_Framework_TestCase {
     $this->conn = $GLOBALS['db_config']->pgsql8_conn;
     $this->createSchema();
   }
-  public function tearDown() {
+  public function tearDown(): void {
     $this->dropSchema();
 
     // re-enable output buffering so phpunit doesn't bitch
@@ -31,6 +30,7 @@ class ExtractionTest extends PHPUnit_Framework_TestCase {
   }
 
   /** Tests that indexDimension expressions are correctly extracted */
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractFunctionalIndex() {
     $schema = $this->extract("CREATE TABLE test(name text); CREATE INDEX lower_idx on test(lower(name));");
 
@@ -39,6 +39,7 @@ class ExtractionTest extends PHPUnit_Framework_TestCase {
   }
 
   /** Tests that even very complicated expressions are correctly extracted */
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractComplicatedFunctionalIndex() {
     $schema = $this->extract("CREATE TABLE test(col1 text, col2 text, col3 text);\nCREATE INDEX testidx ON test(lower(col1), col2, (col1||';;'), col3, overlay(trim(col2) placing 'x' from 2));");
     $dims = $schema->table->index->indexDimension;
@@ -65,6 +66,7 @@ class ExtractionTest extends PHPUnit_Framework_TestCase {
     $this->assertEquals("\"overlay\"(btrim(col2), 'x'::text, 2)", (string)$dims[4]);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testIndexesExtractInCorrectOrder() {
     $sql = <<<SQL
 CREATE TABLE i_test (
@@ -101,6 +103,7 @@ SQL;
 
   /**
    * Tests that pgsql8 extracts compound unique constraints correctly */
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractCompoundUniqueConstraint() {
     $sql = <<<SQL
 CREATE TABLE test (
@@ -123,6 +126,7 @@ SQL;
     $this->assertEquals('("col2", "col3", "col4")', (string)$schema->table->constraint['definition']);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractTableColumnComments() {
     $table_description = 'A description of the test table';
     $column_description = 'A description of col1 on the test table';
@@ -144,6 +148,7 @@ SQL;
    * Test that functions with ampersands in their definition bodies
    * extract properly - because XML
    */
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractFunctionWithAmpersandParade() {
     $function_body = <<<SQL
 DECLARE
@@ -171,6 +176,7 @@ SQL;
     $this->assertEquals(trim($function_body), $extracted_function_body);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractFunctionWithArrayTypeAndArgumentNames() {
     $schema = $this->extract("CREATE OR REPLACE FUNCTION increment(arg1 integer[], arg2 uuid[]) RETURNS integer AS $$ BEGIN RETURN 1; END; $$ LANGUAGE plpgsql");
     $this->assertEquals("integer[]", (string)$schema->function->functionParameter[0]->attributes()->type);
@@ -179,6 +185,7 @@ SQL;
     $this->assertEquals("arg2", (string)$schema->function->functionParameter[1]->attributes()->name);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractFunctionWithArrayTypeAndNoArgumentNames() {
     $schema = $this->extract("CREATE OR REPLACE FUNCTION increment(integer[], uuid[]) RETURNS integer AS $$ BEGIN RETURN 1; END; $$ LANGUAGE plpgsql");
     $this->assertEquals("integer[]", (string)$schema->function->functionParameter[0]->attributes()->type);
@@ -187,6 +194,7 @@ SQL;
     $this->assertEquals("", (string)$schema->function->functionParameter[1]->attributes()->name);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractFunctionWithArrayTypeAndMixedArgumentNames() {
     $schema = $this->extract("CREATE OR REPLACE FUNCTION increment(arg1 integer[], uuid[]) RETURNS integer AS $$ BEGIN RETURN 1; END; $$ LANGUAGE plpgsql");
     $this->assertEquals("integer[]", (string)$schema->function->functionParameter[0]->attributes()->type);
@@ -200,17 +208,20 @@ SQL;
     $this->assertEquals("arg1", (string)$schema->function->functionParameter[1]->attributes()->name);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testExtractTableWithArrayType() {
     $schema = $this->extract("CREATE TABLE test(name text[]); CREATE INDEX lower_idx on test(name);");
     $column = $schema->table->column;
     $this->assertEquals("text[]", (string)$schema->table->column->attributes()->type);
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testDoNotExtractSequenceFromTable() {
     $schema = $this->extract("CREATE TABLE test(id serial, blah serial);");
     $this->assertEquals(0, (string)$schema->sequence->count());
   }
 
+  #[\PHPUnit\Framework\Attributes\Group('quarantine')]
   public function testCompositeForeignKeyReferentialConstraints() {
     dbsteward::$quote_all_names = false;
     dbsteward::$quote_schema_names = false;

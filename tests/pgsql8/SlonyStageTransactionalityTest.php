@@ -7,12 +7,12 @@
  * @author Nicholas Kiraly <kiraly.nicholas@gmail.com>
  */
 
+require_once __DIR__ . '/../TestWorkspace.php';
 require_once __DIR__ . '/../dbstewardUnitTestBase.php';
 
-/**
- * @group pgsql8
- */
-class SlonyStageTransactionalityTest extends PHPUnit_Framework_TestCase {
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+class SlonyStageTransactionalityTest extends PHPUnit\Framework\TestCase {
+  use TestWorkspace;
   
   protected $oldxml = <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -105,12 +105,12 @@ XML;
     pgsql8_diff::$new_table_dependency = xml_parser::table_dependency_order(dbsteward::$new_database);
     pgsql8_diff::$old_table_dependency = xml_parser::table_dependency_order(dbsteward::$old_database);
 
-    $output_prefix_path = dirname(__FILE__) . '/../testdata/' . $output_prefix;
+    $output_prefix_path = $this->workspacePath() . '/' . $output_prefix;
     pgsql8::build_upgrade('', 'old_SlonyStageTransactionalityTest', dbsteward::$old_database, array(), $output_prefix_path, 'new_SlonyStageTransactionalityTest', dbsteward::$new_database, array());
     return $output_prefix_path;
   }
   
-  public function setUp() {
+  public function setUp(): void {
     parent::setUp();
     dbsteward::set_sql_format('pgsql8');
     
@@ -154,7 +154,7 @@ XML;
   
   protected function check_stage_content($filename_prefix, $stage_file, $pattern) {
     $stage_content = file_get_contents($filename_prefix . $stage_file);
-    $this->assertRegExp($pattern, $stage_content);
+    $this->assertMatchesRegularExpression($pattern, $stage_content);
   }
   
 }

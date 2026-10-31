@@ -48,7 +48,7 @@ class mssql10_bit_table {
    *
    * @return string
    */
-  public function get_drop_sql($node_schema, $node_sequence) {
+  public static function get_drop_sql($node_schema, $node_sequence) {
     $ddl = "DROP TABLE " . mssql10::get_quoted_schema_name($node_schema['name']) . '.' . mssql10::get_quoted_table_name($node_sequence['name']) . ";\n";
     return $ddl;
   }

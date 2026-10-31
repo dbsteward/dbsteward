@@ -32,7 +32,7 @@ class output_file_segmenter {
    * @param  resource  $current_output_file    matching file name for static file pointer to use for all output
    *
    */
-  function __construct($base_file_name, $starting_file_segment = 1, $file_pointer = NULL, $current_output_file = NULL) {
+  public function __construct($base_file_name, $starting_file_segment = 1, $file_pointer = NULL, $current_output_file = NULL) {
     $this->base_file_name = $base_file_name;
     $this->file_segment = $starting_file_segment;
     $this->statement_count = 0;
@@ -49,7 +49,7 @@ class output_file_segmenter {
     }
   }
   
-  function __destruct() {
+  public function __destruct() {
     // before we insist on writing the footer
     // if write was never called then the file segmenting has not initialized
     // and will blow up when write_footer() calls write()
@@ -146,16 +146,16 @@ class output_file_segmenter {
    */
   protected function count_statements($sql) {
     //@TODO is this method adequate?
-    $lines = explode("\n", $sql);
+    $lines = explode("\n", (string)$sql);
     foreach($lines as $line) {
       // strip comments off end of line
-      if ( strpos($line, '--') !== FALSE ) {
+      if ( str_contains($line, '--') ) {
         $line = substr($line, 0, strpos($line, '--'));
       }
       // kill whitespace at end of line
       $line = rtrim($line);
       // does the line end in a semicolon?
-      if ( substr($line, -1) == ';' ) {
+      if ( str_ends_with($line, ';') ) {
         $this->statement_count += 1;
       }
     }
@@ -180,7 +180,7 @@ class output_file_segmenter {
       $this->wrote_fixed_file_header = TRUE;
       $this->write_header();
     }
-    if ( ($bytes_written = fwrite($this->file_pointer, $sql)) === FALSE ) {
+    if ( ($bytes_written = fwrite($this->file_pointer, (string)$sql)) === FALSE ) {
       throw new exception("failed to write to file_pointer: " . var_export($this->file_pointer, TRUE) . " text: " . $sql);
     }
     $this->count_statements($sql);

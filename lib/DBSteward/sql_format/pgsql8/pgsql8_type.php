@@ -23,7 +23,7 @@ class pgsql8_type {
       $values = '';
       for($i=0; $i < count($node_type->enum); $i++) {
         $value = $node_type->enum[$i]['name'];
-        $values .= "'" . pg_escape_string($value) . "'";
+        $values .= "'" . pgsql8::escape_string_literal($value) . "'";
         if ( $i < count($node_type->enum) - 1 ) {
           $values .= ",";
         }
@@ -64,7 +64,7 @@ class pgsql8_type {
         $ddl .= "\n  DEFAULT " . pgsql8::value_escape($base_type, (string)$info_node['default']);
       }
 
-      $null = strtolower($info_node['null']);
+      $null = strtolower((string)$info_node['null']);
       // NULL is the default, must match exactly "false" to be NOT NULL
       if (strcasecmp($null, "false") === 0) {
         $ddl .= "\n  NOT NULL";
@@ -153,11 +153,11 @@ class pgsql8_type {
           // add column to the beginning of the list so it will be done before earlier changes (foreign key ordering)
           array_unshift(
             $columns,
-            array(
+            [
               'alter_column_schema' => $new_schema,
               'alter_column_table' => $new_table,
               'alter_column_column' => $new_column
-            )
+            ]
           );
         }
       }

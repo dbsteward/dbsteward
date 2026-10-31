@@ -83,7 +83,7 @@ class mssql10 {
     return $db_doc;
   }
 
-  public function build_schema($db_doc, $ofs, $table_depends) {
+  public static function build_schema($db_doc, $ofs, $table_depends) {
     // explicitly create the ROLE_APPLICATION
     // webservers connect as a user granted this role
     $ofs->write("CREATE ROLE " . $db_doc->database->role->application . ";\n");
@@ -99,7 +99,7 @@ class mssql10 {
         }
       }
     }
-    
+
     // types: enumerated list, etc
     foreach ($db_doc->schema AS $schema) {
       foreach ($schema->type AS $type) {
@@ -204,7 +204,7 @@ class mssql10 {
     // @TODO: database configurationParameter support needed ?
   }
 
-  public function build_data($db_doc, $ofs, $tables) {
+  public static function build_data($db_doc, $ofs, $tables) {
     // use the dependency order to then write out the actual data inserts into the data sql file
     $tables_count = count($tables);
     $limit_to_tables_count = count(dbsteward::$limit_to_tables);
@@ -254,7 +254,7 @@ class mssql10 {
     $ofs->write("\n");
   }
 
-  public function build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $old_files, $new_output_prefix, $new_composite_file, $new_db_doc, $new_files) {
+  public static function build_upgrade($old_output_prefix, $old_composite_file, $old_db_doc, $old_files, $new_output_prefix, $new_composite_file, $new_db_doc, $new_files) {
     // place the upgrade files with the new_files set
     $upgrade_prefix = $new_output_prefix . '_upgrade';
 
@@ -344,14 +344,14 @@ class mssql10 {
       // complain when assholes use colon time notation instead of postgresql verbose for interval expressions
       if (dbsteward::$require_verbose_interval_notation) {
         if (preg_match('/interval/i', $type) > 0) {
-          if (substr($value, 0, 1) != '@') {
+          if (!str_starts_with($value, '@')) {
             throw new exception("bad interval value: " . $value . " -- interval types must be postgresql verbose format: '@ 2 hours 30 minutes' etc for cfxn comparisons to work");
           }
         }
       }
 
       // mssql doesn't understand epoch
-      if (stripos('date', $type) !== FALSE
+      if (stripos('date', (string) $type) !== FALSE
         && strcasecmp($value, 'epoch') == 0) {
         $value = '1970-01-01';
       }
@@ -395,7 +395,7 @@ class mssql10 {
   public static function strip_single_quoting($value) {
     // if the value is surrounded on the outside by 's
     // kill them, and kill escaped single quotes too
-    if (strlen($value) > 2 && substr($value, 0, 1) == "'" && substr($value, -1) == "'") {
+    if (strlen($value) > 2 && str_starts_with($value, "'") && str_ends_with($value, "'")) {
       $value = substr($value, 1, -1);
       $value = str_replace("''", "'", $value);
     }

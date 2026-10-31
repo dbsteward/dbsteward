@@ -9,15 +9,16 @@
 
 require_once __DIR__ . '/dbstewardUnitTestBase.php';
 
-class TabrowDelimiterTest extends PHPUnit_Framework_TestCase {
-  /**
-   * @dataProvider tabrowParsingProvider
-   */
+#[\PHPUnit\Framework\Attributes\Group('pgsql8')]
+#[\PHPUnit\Framework\Attributes\Group('mysql5')]
+#[\PHPUnit\Framework\Attributes\Group('nodb')]
+class TabrowDelimiterTest extends PHPUnit\Framework\TestCase {
+  #[\PHPUnit\Framework\Attributes\DataProvider('tabrowParsingProvider')]
   public function testTabrowParsing($tabrow, $delimiter, $expected) {
     $parsed = $this->getParsedRow($tabrow, $delimiter);
     $this->assertEquals($expected, $parsed);
   }
-  public function tabrowParsingProvider() {
+  public static function tabrowParsingProvider() {
     return array(
       array("asdf\t4123\tfalse", false, array('asdf', '4123', 'false')),
       array("asdf,4123,false", ',', array('asdf', '4123', 'false')),

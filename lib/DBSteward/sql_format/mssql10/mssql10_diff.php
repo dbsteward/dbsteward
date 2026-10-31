@@ -124,7 +124,7 @@ class mssql10_diff extends pgsql8_diff {
    * @param $new_database new database
    */
   private static function update_structure($ofs1, $ofs3) {
-    $type_modified_columns = array();
+    $type_modified_columns = [];
     
     // drop all views in all schemas, regardless whether dependency order is known or not
     foreach(dbx::get_schemas(dbsteward::$new_database) AS $new_schema) {
@@ -161,7 +161,7 @@ class mssql10_diff extends pgsql8_diff {
       }
     }
     else {
-      $processed_schemas = array();
+      $processed_schemas = [];
       for ($i = 0; $i < count(mssql10_diff::$new_table_dependency); $i++) {
         // find the necessary pointers
         $item = mssql10_diff::$new_table_dependency[$i];
@@ -210,7 +210,7 @@ class mssql10_diff extends pgsql8_diff {
         mssql10_diff_tables::diff_constraints_table($ofs1, $old_schema, $old_table, $new_schema, $new_table, 'primaryKey', TRUE);
       }
 
-      $processed_schemas = array();
+      $processed_schemas = [];
       for ($i = 0; $i < count(mssql10_diff::$new_table_dependency); $i++) {
         // find the necessary pointers
         $item = mssql10_diff::$new_table_dependency[$i];
